@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_light">#6200EE</color>
+    <color name="primaryVariant_light">#3700B3</color>
+    <color name="secondary_light">#03DAC6</color>
+    <color name="secondaryVariant_light">#018786</color>
+    <color name="background_light">#FAFAFA</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="error_light">#B00020</color>
+    <color name="onPrimary_light">#FFFFFF</color>
+    <color name="onSecondary_light">#000000</color>
+    <color name="onBackground_light">#000000</color>
+    <color name="onSurface_light">#000000</color>
+    <color name="onError_light">#FFFFFF</color>
+</resources>

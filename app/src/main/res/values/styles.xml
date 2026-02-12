@@ -1,26 +1,59 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.CardTally" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- Primary brand color -->
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryVariant">@color/primaryVariant</item>
-        <item name="colorOnPrimary">@color/onPrimary</item>
-        <!-- Secondary brand color -->
-        <item name="colorSecondary">@color/secondary</item>
-        <item name="colorSecondaryVariant">@color/secondaryVariant</item>
-        <item name="colorOnSecondary">@color/onSecondary</item>
-        <!-- Background color -->
-        <item name="android:colorBackground">@color/background</item>
-        <item name="colorOnBackground">@color/onBackground</item>
-        <!-- Surface color -->
-        <item name="colorSurface">@color/surface</item>
-        <item name="colorOnSurface">@color/onSurface</item>
-        <!-- Error color -->
-        <item name="colorError">@color/error</item>
-        <item name="colorOnError">@color/onError</item>
-        <!-- Other attributes -->
-        <item name="android:windowBackground">@color/background</item>
-        <item name="android:textColorPrimary">@color/onBackground</item>
-        <item name="android:textColorSecondary">@color/onSurface</item>
+    
+    <style name="Theme.CardTally.Light" parent="Theme.Material3.Light">
+        <item name="colorPrimary">@color/primary_light</item>
+        <item name="colorPrimaryVariant">@color/primaryVariant_light</item>
+        <item name="colorOnPrimary">@color/onPrimary_light</item>
+        <item name="colorSecondary">@color/secondary_light</item>
+        <item name="colorSecondaryVariant">@color/secondaryVariant_light</item>
+        <item name="colorOnSecondary">@color/onSecondary_light</item>
+        <item name="android:colorBackground">@color/background_light</item>
+        <item name="colorOnBackground">@color/onBackground_light</item>
+        <item name="colorSurface">@color/surface_light</item>
+        <item name="colorOnSurface">@color/onSurface_light</item>
+        <item name="colorError">@color/error_light</item>
+        <item name="colorOnError">@color/onError_light</item>
+        <item name="android:windowBackground">@color/background_light</item>
+        <item name="android:textColorPrimary">@color/onBackground_light</item>
+        <item name="android:textColorSecondary">@color/onSurface_light</item>
     </style>
+
+    <style name="Theme.CardTally.Dark" parent="Theme.Material3.Dark">
+        <item name="colorPrimary">@color/primary_dark</item>
+        <item name="colorPrimaryVariant">@color/primaryVariant_dark</item>
+        <item name="colorOnPrimary">@color/onPrimary_dark</item>
+        <item name="colorSecondary">@color/secondary_dark</item>
+        <item name="colorSecondaryVariant">@color/secondaryVariant_dark</item>
+        <item name="colorOnSecondary">@color/onSecondary_dark</item>
+        <item name="android:colorBackground">@color/background_dark</item>
+        <item name="colorOnBackground">@color/onBackground_dark</item>
+        <item name="colorSurface">@color/surface_dark</item>
+        <item name="colorOnSurface">@color/onSurface_dark</item>
+        <item name="colorError">@color/error_dark</item>
+        <item name="colorOnError">@color/onError_dark</item>
+        <item name="android:windowBackground">@color/background_dark</item>
+        <item name="android:textColorPrimary">@color/onBackground_dark</item>
+        <item name="android:textColorSecondary">@color/onSurface_dark</item>
+    </style>
+
+    <style name="Theme.CardTally.System" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">@color/primary_system</item>
+        <item name="colorPrimaryVariant">@color/primaryVariant_system</item>
+        <item name="colorOnPrimary">@color/onPrimary_system</item>
+        <item name="colorSecondary">@color/secondary_system</item>
+        <item name="colorSecondaryVariant">@color/secondaryVariant_system</item>
+        <item name="colorOnSecondary">@color/onSecondary_system</item>
+        <item name="android:colorBackground">@color/background_system</item>
+        <item name="colorOnBackground">@color/onBackground_system</item>
+        <item name="colorSurface">@color/surface_system</item>
+        <item name="colorOnSurface">@color/onSurface_system</item>
+        <item name="colorError">@color/error_system</item>
+        <item name="colorOnError">@color/onError_system</item>
+        <item name="android:windowBackground">@color/background_system</item>
+        <item name="android:textColorPrimary">@color/onBackground_system</item>
+        <item name="android:textColorSecondary">@color/onSurface_system</item>
+    </style>
+
+    <style name="Theme.CardTally" parent="Theme.CardTally.Light" />
+
 </resources>

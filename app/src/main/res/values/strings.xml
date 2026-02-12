@@ -7,4 +7,10 @@
     <string name="categories">分类管理</string>
     <string name="budget">预算管理</string>
     <string name="settings">设置</string>
+    
+    <string-array name="theme_names">
+        <item>浅色主题</item>
+        <item>深色主题</item>
+        <item>跟随系统</item>
+    </string-array>
 </resources>
