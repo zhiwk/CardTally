@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">CardTally</string>
+    <string name="app_name">卡片记账</string>
+    <string name="app_name_en">CardTally</string>
     <string name="hello_world">Hello World!</string>
     <string name="add_record">添加记录</string>
     <string name="statistics">统计分析</string>
