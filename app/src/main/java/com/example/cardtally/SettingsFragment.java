@@ -1,23 +1,24 @@
 package com.example.cardtally;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
-import android.widget.Toast;
+import android.widget.Switch;
+import android.widget.TextView;
 
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
+import com.example.cardtally.util.QuickAddHelper;
 import com.example.cardtally.util.ThemeHelper;
 
 public class SettingsFragment extends Fragment {
-    private RadioGroup radioGroupTheme;
-    private RadioButton radioLight;
-    private RadioButton radioDark;
-    private RadioButton radioSystem;
+    private CardView cardQuickAdd;
+    private Switch switchQuickAdd;
+    private CardView cardCategory;
+    private CardView cardTheme;
+    private TextView textCurrentTheme;
 
     public SettingsFragment() {
     }
@@ -26,45 +27,69 @@ public class SettingsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 
-        radioGroupTheme = view.findViewById(R.id.radio_group_theme);
-        radioLight = view.findViewById(R.id.radio_light);
-        radioDark = view.findViewById(R.id.radio_dark);
-        radioSystem = view.findViewById(R.id.radio_system);
+        cardQuickAdd = view.findViewById(R.id.card_quick_add);
+        switchQuickAdd = view.findViewById(R.id.switch_quick_add);
+        cardCategory = view.findViewById(R.id.card_category);
+        cardTheme = view.findViewById(R.id.card_theme);
+        textCurrentTheme = view.findViewById(R.id.text_current_theme);
 
-        loadCurrentTheme();
+        switchQuickAdd.setChecked(QuickAddHelper.getQuickAdd(getContext()));
 
-        radioGroupTheme.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+        updateCurrentThemeText();
+
+        switchQuickAdd.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-                int themeMode;
-                if (checkedId == R.id.radio_light) {
-                    themeMode = ThemeHelper.THEME_LIGHT;
-                } else if (checkedId == R.id.radio_dark) {
-                    themeMode = ThemeHelper.THEME_DARK;
-                } else {
-                    themeMode = ThemeHelper.THEME_SYSTEM;
-                }
-                
-                ThemeHelper.saveTheme(getContext(), themeMode);
-                Toast.makeText(getContext(), "主题已更改，重启应用后生效", Toast.LENGTH_SHORT).show();
+            public void onClick(View v) {
+                QuickAddHelper.saveQuickAdd(getContext(), switchQuickAdd.isChecked());
+            }
+        });
+
+        cardCategory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new CategoryManageFragment())
+                        .addToBackStack(null)
+                        .commit();
+            }
+        });
+
+        cardTheme.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new ThemeSettingsFragment())
+                        .addToBackStack(null)
+                        .commit();
             }
         });
 
         return view;
     }
 
-    private void loadCurrentTheme() {
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateCurrentThemeText();
+        switchQuickAdd.setChecked(QuickAddHelper.getQuickAdd(getContext()));
+    }
+
+    private void updateCurrentThemeText() {
         int currentTheme = ThemeHelper.getTheme(getContext());
+        String themeName;
         switch (currentTheme) {
             case ThemeHelper.THEME_LIGHT:
-                radioLight.setChecked(true);
+                themeName = "浅色主题";
                 break;
             case ThemeHelper.THEME_DARK:
-                radioDark.setChecked(true);
+                themeName = "深色主题";
                 break;
             case ThemeHelper.THEME_SYSTEM:
-                radioSystem.setChecked(true);
+                themeName = "跟随系统";
                 break;
+            default:
+                themeName = "浅色主题";
         }
+        textCurrentTheme.setText(themeName);
     }
 }

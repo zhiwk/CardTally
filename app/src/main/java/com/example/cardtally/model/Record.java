@@ -6,23 +6,26 @@ public class Record {
     private double amount;
     private String category;
     private int type; // 0: 支出, 1: 收入
+    private String description;
 
     public Record() {
     }
 
-    public Record(long id, String date, double amount, String category, int type) {
+    public Record(long id, String date, double amount, String category, int type, String description) {
         this.id = id;
         this.date = date;
         this.amount = amount;
         this.category = category;
         this.type = type;
+        this.description = description;
     }
 
-    public Record(String date, double amount, String category, int type) {
+    public Record(String date, double amount, String category, int type, String description) {
         this.date = date;
         this.amount = amount;
         this.category = category;
         this.type = type;
+        this.description = description;
     }
 
     public long getId() {
@@ -63,5 +66,13 @@ public class Record {
 
     public void setType(int type) {
         this.type = type;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

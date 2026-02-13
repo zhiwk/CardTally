@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import com.example.cardtally.util.QuickAddHelper;
 import com.example.cardtally.util.ThemeHelper;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -21,11 +22,17 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setOnNavigationItemSelectedListener(navListener);
+        bottomNavigationView.setOnItemSelectedListener(navListener);
 
         if (savedInstanceState == null) {
+            Fragment initialFragment;
+            if (QuickAddHelper.getQuickAdd(this)) {
+                initialFragment = new AddRecordFragment();
+            } else {
+                initialFragment = new HomeFragment();
+            }
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new HomeFragment())
+                    .replace(R.id.fragment_container, initialFragment)
                     .commit();
         }
     }
@@ -36,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         setTheme(themeResId);
     }
 
-    private BottomNavigationView.OnNavigationItemSelectedListener navListener = new BottomNavigationView.OnNavigationItemSelectedListener() {
+    private BottomNavigationView.OnItemSelectedListener navListener = new BottomNavigationView.OnItemSelectedListener() {
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             Fragment selectedFragment = null;
@@ -46,10 +53,6 @@ public class MainActivity extends AppCompatActivity {
                 selectedFragment = new HomeFragment();
             } else if (itemId == R.id.nav_statistics) {
                 selectedFragment = new StatisticsFragment();
-            } else if (itemId == R.id.nav_add) {
-                selectedFragment = new AddRecordFragment();
-            } else if (itemId == R.id.nav_categories) {
-                selectedFragment = new CategoriesFragment();
             } else if (itemId == R.id.nav_settings) {
                 selectedFragment = new SettingsFragment();
             }

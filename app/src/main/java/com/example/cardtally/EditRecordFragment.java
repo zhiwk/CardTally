@@ -1,5 +1,6 @@
 package com.example.cardtally;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -24,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-public class AddRecordFragment extends Fragment {
+public class EditRecordFragment extends Fragment {
     private EditText editDate;
     private EditText editAmount;
     private EditText editDescription;
@@ -32,17 +33,35 @@ public class AddRecordFragment extends Fragment {
     private RadioGroup radioGroupType;
     private RadioButton radioExpense;
     private RadioButton radioIncome;
-    private Button btnSave;
+    private Button btnUpdate;
     private DatabaseHelper databaseHelper;
+    private Record record;
+    private long recordId;
 
     private List<Category> currentCategories = new ArrayList<>();
 
-    public AddRecordFragment() {
+    public EditRecordFragment() {
+    }
+
+    public static EditRecordFragment newInstance(long recordId) {
+        EditRecordFragment fragment = new EditRecordFragment();
+        Bundle args = new Bundle();
+        args.putLong("record_id", recordId);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            recordId = getArguments().getLong("record_id");
+        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_add_record, container, false);
+        View view = inflater.inflate(R.layout.fragment_edit_record, container, false);
 
         editDate = view.findViewById(R.id.edit_date);
         editAmount = view.findViewById(R.id.edit_amount);
@@ -51,13 +70,11 @@ public class AddRecordFragment extends Fragment {
         radioGroupType = view.findViewById(R.id.radio_group_type);
         radioExpense = view.findViewById(R.id.radio_expense);
         radioIncome = view.findViewById(R.id.radio_income);
-        btnSave = view.findViewById(R.id.btn_save);
+        btnUpdate = view.findViewById(R.id.btn_update);
 
         databaseHelper = new DatabaseHelper(getContext());
 
-        editDate.setText(databaseHelper.getCurrentDate());
-
-        loadCategories(true);
+        loadRecord();
 
         editDate.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -74,14 +91,47 @@ public class AddRecordFragment extends Fragment {
             }
         });
 
-        btnSave.setOnClickListener(new View.OnClickListener() {
+        btnUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveRecord();
+                updateRecord();
             }
         });
 
         return view;
+    }
+
+    private void loadRecord() {
+        List<Record> records = databaseHelper.getAllRecords();
+        for (Record r : records) {
+            if (r.getId() == recordId) {
+                record = r;
+                break;
+            }
+        }
+
+        if (record != null) {
+            editDate.setText(record.getDate());
+            editAmount.setText(String.valueOf(record.getAmount()));
+            editDescription.setText(record.getDescription());
+
+            if (record.getType() == 0) {
+                radioExpense.setChecked(true);
+            } else {
+                radioIncome.setChecked(true);
+            }
+
+            loadCategories(record.getType() == 0);
+
+            int categoryIndex = 0;
+            for (int i = 0; i < currentCategories.size(); i++) {
+                if (currentCategories.get(i).getName().equals(record.getCategory())) {
+                    categoryIndex = i;
+                    break;
+                }
+            }
+            spinnerCategory.setSelection(categoryIndex);
+        }
     }
 
     private void loadCategories(boolean isExpense) {
@@ -116,7 +166,7 @@ public class AddRecordFragment extends Fragment {
         datePickerDialog.show();
     }
 
-    private void saveRecord() {
+    private void updateRecord() {
         String date = editDate.getText().toString().trim();
         String amountStr = editAmount.getText().toString().trim();
         String category = spinnerCategory.getSelectedItem().toString();
@@ -141,22 +191,18 @@ public class AddRecordFragment extends Fragment {
             return;
         }
 
-        Record record = new Record(date, amount, category, type, description);
-        long id = databaseHelper.addRecord(record);
+        record.setDate(date);
+        record.setAmount(amount);
+        record.setCategory(category);
+        record.setType(type);
+        record.setDescription(description);
 
-        if (id != -1) {
-            Toast.makeText(getContext(), "保存成功", Toast.LENGTH_SHORT).show();
-            clearForm();
+        int rowsAffected = databaseHelper.updateRecord(record);
+        if (rowsAffected > 0) {
+            Toast.makeText(getContext(), "更新成功", Toast.LENGTH_SHORT).show();
+            getParentFragmentManager().popBackStack();
         } else {
-            Toast.makeText(getContext(), "保存失败", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "更新失败", Toast.LENGTH_SHORT).show();
         }
-    }
-
-    private void clearForm() {
-        editDate.setText(databaseHelper.getCurrentDate());
-        editAmount.setText("");
-        editDescription.setText("");
-        radioExpense.setChecked(true);
-        spinnerCategory.setSelection(0);
     }
 }
