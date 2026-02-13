@@ -1,27 +1,27 @@
 # CardTally
 
-一个基于 Material Design 风格的现代化记账软件，帮助用户轻松管理个人财务，提供直观的数据分析和优雅的用户界面。
+一个基于 Material Design 风格的现代化 Android 记账应用，帮助用户轻松管理个人财务，提供直观的数据分析和优雅的用户界面。
 
 ## ✨ 功能特性
 
 - **Material Design 风格**：采用 Google 官方设计规范，界面美观、简洁、易用
-- **快速记账**：支持快速添加收支记录，支持分类、标签、备注等详情
-- **数据可视化**：通过图表直观展示收支趋势、分类占比等财务数据
-- **分类管理**：自定义收支分类，支持图标和颜色标识
-- **预算管理**：设置月度/年度预算，实时跟踪预算使用情况
-- **数据导出**：支持导出 Excel、CSV 等格式的财务数据
-- **多设备同步**：云端存储，支持多设备数据同步（可选）
-- **数据安全**：本地加密存储，保护个人财务隐私
+- **快速记账**：支持快速添加收支记录，支持分类、描述等详情
+- **分类管理**：自定义收支分类，支持增删改查
+- **统计分析**：按分类和时间统计收支情况
+- **主题切换**：支持浅色、深色、跟随系统三种主题
+- **快捷记账**：可选择启动时直接进入记账界面
+- **记录管理**：支持编辑和删除已有记录
+- **数据安全**：本地 SQLite 数据库存储，保护个人财务隐私
 
 ## 🛠️ 技术栈
 
-- **前端框架**：Vue 3 / React（根据项目实际选择）
-- **状态管理**：Pinia / Redux（根据项目实际选择）
-- **UI 库**：Material-UI / Vuetify（实现 Material Design 风格）
-- **图表库**：ECharts / Chart.js（数据可视化）
-- **数据存储**：LocalStorage / IndexedDB（本地存储）+ 可选云端存储
-- **构建工具**：Vite / Webpack
-- **包管理**：npm / yarn
+- **开发语言**：Kotlin
+- **最低 SDK**：Android 7.0 (API 24)
+- **目标 SDK**：Android 14 (API 34)
+- **UI 框架**：Material Design Components
+- **架构组件**：Fragment, ViewModel
+- **数据库**：SQLite
+- **构建工具**：Gradle 9.0.0
 
 ## 📦 安装步骤
 
@@ -32,84 +32,111 @@ git clone https://github.com/zhiwk/CardTally.git
 cd CardTally
 ```
 
-### 2. 安装依赖
+### 2. 构建项目
 
 ```bash
-# 使用 npm
-npm install
+# Windows
+./gradlew.bat assembleDebug
 
-# 或使用 yarn
-yarn install
+# Mac/Linux
+./gradlew assembleDebug
 ```
 
-### 3. 开发环境运行
+### 3. 安装应用
 
-```bash
-# 使用 npm
-npm run dev
+将生成的 APK 文件安装到 Android 设备：
 
-# 或使用 yarn
-yarn dev
 ```
-
-### 4. 构建生产版本
-
-```bash
-# 使用 npm
-npm run build
-
-# 或使用 yarn
-yarn build
+app/build/outputs/apk/debug/app-debug.apk
 ```
-
-构建产物将生成在 `dist` 目录中，可部署到静态网站托管服务。
 
 ## 📁 项目结构
 
 ```
 CardTally/
-├── public/              # 静态资源
-├── src/
-│   ├── assets/          # 图片、图标等资源
-│   ├── components/      # 可复用组件
-│   ├── views/           # 页面视图
-│   ├── router/          # 路由配置
-│   ├── store/           # 状态管理
-│   ├── utils/           # 工具函数
-│   ├── services/        # 服务（如数据存储、API 调用）
-│   ├── styles/          # 全局样式
-│   └── main.js          # 应用入口
-├── index.html           # HTML 模板
-├── package.json         # 项目配置
-├── vite.config.js       # Vite 配置（或 webpack.config.js）
-└── README.md            # 项目说明
+├── app/
+│   └── src/
+│       └── main/
+│           ├── java/com/example/cardtally/
+│           │   ├── adapter/          # RecyclerView 适配器
+│           │   ├── database/         # 数据库帮助类
+│           │   ├── model/            # 数据模型类
+│           │   ├── util/             # 工具类
+│           │   ├── MainActivity.kt   # 主活动
+│           │   ├── HomeFragment.kt   # 首页
+│           │   ├── AddRecordFragment.kt    # 添加记录
+│           │   ├── EditRecordFragment.kt   # 编辑记录
+│           │   ├── StatisticsFragment.kt   # 统计分析
+│           │   ├── SettingsFragment.kt     # 设置页面
+│           │   ├── CategoryManageFragment.kt  # 分类管理
+│           │   └── ThemeSettingsFragment.kt   # 主题设置
+│           ├── res/
+│           │   ├── layout/           # 布局文件
+│           │   ├── values/           # 字符串、颜色等资源
+│           │   ├── drawable/         # 图标资源
+│           │   └── menu/             # 菜单资源
+│           └── AndroidManifest.xml
+├── build.gradle                      # 项目级构建配置
+└── README.md                         # 项目说明
 ```
 
 ## 🚀 使用指南
 
 ### 快速记账
-1. 打开应用，点击「+」按钮进入记账页面
+1. 打开应用，点击右下角的「+」按钮进入记账页面
 2. 选择收支类型（收入/支出）
-3. 输入金额、选择分类、添加标签和备注
+3. 输入金额、选择分类、添加描述（可选）
 4. 点击「保存」完成记账
 
 ### 查看统计分析
 1. 进入「统计」页面
-2. 选择时间范围（周/月/年）
-3. 查看收支趋势图、分类占比图等数据
-4. 点击具体分类可查看详细记录
+2. 查看总支出和总收入概览
+3. 切换「按分类统计」或「按时间统计」
+4. 查看详细的统计数据
 
 ### 管理分类
 1. 进入「设置」页面
-2. 选择「分类管理」
-3. 点击「添加分类」创建新分类，或编辑/删除现有分类
-4. 为分类选择图标和颜色，便于识别
+2. 点击「分类管理」
+3. 切换支出/收入标签页
+4. 点击「添加分类」创建新分类，或编辑/删除现有分类
 
-### 设置预算
-1. 进入「预算」页面
-2. 点击「添加预算」
-3. 选择预算类型（月度/年度）、设置金额和时间范围
-4. 保存后可在首页查看预算使用进度
+### 切换主题
+1. 进入「设置」页面
+2. 点击「主题设置」
+3. 选择浅色主题、深色主题或跟随系统
+4. 重启应用生效
+
+### 快捷记账设置
+1. 进入「设置」页面
+2. 打开「是否快捷记账」开关
+3. 下次启动应用将直接进入记账界面
+
+### 编辑/删除记录
+1. 在首页找到要操作的记录
+2. 点击「编辑」按钮修改记录信息
+3. 点击「删除」按钮删除记录
+
+## 🎨 主题预览
+
+### 浅色主题
+- 主色：紫色 (#6200EE)
+- 背景：浅灰色 (#FAFAFA)
+
+### 深色主题
+- 主色：浅紫色 (#BB86FC)
+- 背景：深灰色 (#121212)
+
+### 跟随系统
+- 主色：蓝色 (#1976D2)
+- 根据系统设置自动切换明暗模式
+
+## 📊 默认分类
+
+### 支出分类
+餐饮、交通、购物、娱乐、医疗、教育、住房、其他
+
+### 收入分类
+工资、奖金、投资、兼职、其他
 
 ## 🤝 贡献指南
 
