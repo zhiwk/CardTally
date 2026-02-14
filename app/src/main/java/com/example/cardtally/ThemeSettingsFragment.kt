@@ -38,7 +38,8 @@ class ThemeSettingsFragment : Fragment() {
             }
 
             ThemeHelper.saveTheme(requireContext(), themeMode)
-            Toast.makeText(requireContext(), "主题已更改，重启应用后生效", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "主题已更改", Toast.LENGTH_SHORT).show()
+            requireActivity().recreate()
         }
 
         return view

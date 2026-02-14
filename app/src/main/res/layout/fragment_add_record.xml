@@ -117,6 +117,25 @@
         app:layout_constraintTop_toBottomOf="@+id/label_category" />
 
     <TextView
+        android:id="@+id/label_asset_source"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="资产来源"
+        android:textSize="16sp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spinner_category" />
+
+    <Spinner
+        android:id="@+id/spinner_asset_source"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/label_asset_source" />
+
+    <TextView
         android:id="@+id/label_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -124,7 +143,7 @@
         android:textSize="16sp"
         android:layout_marginTop="24dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/spinner_category" />
+        app:layout_constraintTop_toBottomOf="@+id/spinner_asset_source" />
 
     <EditText
         android:id="@+id/edit_description"

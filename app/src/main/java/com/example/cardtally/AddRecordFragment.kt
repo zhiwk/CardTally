@@ -14,6 +14,7 @@ import android.widget.Spinner
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
+import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
 import java.util.Calendar
@@ -23,6 +24,7 @@ class AddRecordFragment : Fragment() {
     private lateinit var editAmount: EditText
     private lateinit var editDescription: EditText
     private lateinit var spinnerCategory: Spinner
+    private lateinit var spinnerAssetSource: Spinner
     private lateinit var radioGroupType: RadioGroup
     private lateinit var radioExpense: RadioButton
     private lateinit var radioIncome: RadioButton
@@ -30,6 +32,7 @@ class AddRecordFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
 
     private var currentCategories = mutableListOf<Category>()
+    private var currentAssets = mutableListOf<Asset>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,6 +45,7 @@ class AddRecordFragment : Fragment() {
         editAmount = view.findViewById(R.id.edit_amount)
         editDescription = view.findViewById(R.id.edit_description)
         spinnerCategory = view.findViewById(R.id.spinner_category)
+        spinnerAssetSource = view.findViewById(R.id.spinner_asset_source)
         radioGroupType = view.findViewById(R.id.radio_group_type)
         radioExpense = view.findViewById(R.id.radio_expense)
         radioIncome = view.findViewById(R.id.radio_income)
@@ -52,6 +56,7 @@ class AddRecordFragment : Fragment() {
         editDate.setText(databaseHelper.getCurrentDate())
 
         loadCategories(true)
+        loadAssets()
 
         editDate.setOnClickListener {
             showDatePicker()
@@ -83,6 +88,21 @@ class AddRecordFragment : Fragment() {
         spinnerCategory.adapter = adapter
     }
 
+    private fun loadAssets() {
+        currentAssets = databaseHelper.getAllAssets().toMutableList()
+
+        val assetNames = mutableListOf("无")
+        currentAssets.forEach { assetNames.add(it.name) }
+
+        val adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            assetNames
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerAssetSource.adapter = adapter
+    }
+
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
         val year = calendar.get(Calendar.YEAR)
@@ -111,6 +131,7 @@ class AddRecordFragment : Fragment() {
         val date = editDate.text.toString().trim()
         val amountStr = editAmount.text.toString().trim()
         val category = spinnerCategory.selectedItem.toString()
+        val assetSourceName = spinnerAssetSource.selectedItem.toString()
         val description = editDescription.text.toString().trim()
         val type = if (radioExpense.isChecked) 0 else 1
 
@@ -131,12 +152,15 @@ class AddRecordFragment : Fragment() {
             return
         }
 
+        val assetSource = if (assetSourceName == "无") null else assetSourceName
+
         val record = Record(
             date = date,
             amount = amount,
             category = category,
             type = type,
-            description = description
+            description = description,
+            assetSource = assetSource
         )
         val id = databaseHelper.addRecord(record)
 
@@ -154,5 +178,6 @@ class AddRecordFragment : Fragment() {
         editDescription.setText("")
         radioExpense.isChecked = true
         spinnerCategory.setSelection(0)
+        spinnerAssetSource.setSelection(0)
     }
 }

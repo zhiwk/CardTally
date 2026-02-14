@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     
-    <style name="Theme.CardTally.Light" parent="Theme.Material3.Light">
+    <style name="Theme.CardTally.Light" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/primary_light</item>
         <item name="colorPrimaryVariant">@color/primaryVariant_light</item>
         <item name="colorOnPrimary">@color/onPrimary_light</item>
@@ -16,9 +16,11 @@
         <item name="android:windowBackground">@color/background_light</item>
         <item name="android:textColorPrimary">@color/onBackground_light</item>
         <item name="android:textColorSecondary">@color/onSurface_light</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="Theme.CardTally.Dark" parent="Theme.Material3.Dark">
+    <style name="Theme.CardTally.Dark" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/primary_dark</item>
         <item name="colorPrimaryVariant">@color/primaryVariant_dark</item>
         <item name="colorOnPrimary">@color/onPrimary_dark</item>
@@ -34,9 +36,11 @@
         <item name="android:windowBackground">@color/background_dark</item>
         <item name="android:textColorPrimary">@color/onBackground_dark</item>
         <item name="android:textColorSecondary">@color/onSurface_dark</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="Theme.CardTally.System" parent="Theme.Material3.DayNight">
+    <style name="Theme.CardTally.System" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary_system</item>
         <item name="colorPrimaryVariant">@color/primaryVariant_system</item>
         <item name="colorOnPrimary">@color/onPrimary_system</item>
@@ -52,6 +56,8 @@
         <item name="android:windowBackground">@color/background_system</item>
         <item name="android:textColorPrimary">@color/onBackground_system</item>
         <item name="android:textColorSecondary">@color/onSurface_system</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="Theme.CardTally" parent="Theme.CardTally.Light" />

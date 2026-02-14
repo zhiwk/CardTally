@@ -8,6 +8,12 @@
         android:checkable="true"
         android:checked="true" />
     <item
+        android:id="@+id/nav_asset"
+        android:icon="@drawable/ic_asset"
+        android:title="资产"
+        android:enabled="true"
+        android:checkable="true" />
+    <item
         android:id="@+id/nav_statistics"
         android:icon="@drawable/ic_statistics"
         android:title="统计"

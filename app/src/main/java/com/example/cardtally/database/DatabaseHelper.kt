@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
 import java.text.SimpleDateFormat
@@ -14,7 +15,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
-        private const val DATABASE_VERSION = 3
+        private const val DATABASE_VERSION = 5
 
         private const val TABLE_RECORDS = "records"
         private const val COLUMN_ID = "id"
@@ -23,11 +24,18 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val COLUMN_CATEGORY = "category"
         private const val COLUMN_TYPE = "type"
         private const val COLUMN_DESCRIPTION = "description"
+        private const val COLUMN_ASSET_SOURCE = "asset_source"
 
         private const val TABLE_CATEGORIES = "categories"
         private const val COLUMN_CATEGORY_ID = "id"
         private const val COLUMN_CATEGORY_NAME = "name"
         private const val COLUMN_CATEGORY_TYPE = "type"
+
+        private const val TABLE_ASSETS = "assets"
+        private const val COLUMN_ASSET_ID = "id"
+        private const val COLUMN_ASSET_NAME = "name"
+        private const val COLUMN_ASSET_AMOUNT = "amount"
+        private const val COLUMN_ASSET_TYPE = "type"
 
         private const val CREATE_TABLE_RECORDS =
             "CREATE TABLE $TABLE_RECORDS (" +
@@ -36,18 +44,27 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             "$COLUMN_AMOUNT REAL NOT NULL, " +
             "$COLUMN_CATEGORY TEXT NOT NULL, " +
             "$COLUMN_TYPE INTEGER NOT NULL, " +
-            "$COLUMN_DESCRIPTION TEXT)"
+            "$COLUMN_DESCRIPTION TEXT, " +
+            "$COLUMN_ASSET_SOURCE TEXT)"
 
         private const val CREATE_TABLE_CATEGORIES =
             "CREATE TABLE $TABLE_CATEGORIES (" +
             "$COLUMN_CATEGORY_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "$COLUMN_CATEGORY_NAME TEXT NOT NULL, " +
             "$COLUMN_CATEGORY_TYPE INTEGER NOT NULL)"
+
+        private const val CREATE_TABLE_ASSETS =
+            "CREATE TABLE $TABLE_ASSETS (" +
+            "$COLUMN_ASSET_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "$COLUMN_ASSET_NAME TEXT NOT NULL, " +
+            "$COLUMN_ASSET_AMOUNT REAL NOT NULL, " +
+            "$COLUMN_ASSET_TYPE INTEGER NOT NULL)"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(CREATE_TABLE_RECORDS)
         db.execSQL(CREATE_TABLE_CATEGORIES)
+        db.execSQL(CREATE_TABLE_ASSETS)
         insertDefaultCategories(db)
     }
 
@@ -58,6 +75,12 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
         if (oldVersion < 3) {
             db.execSQL("ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_DESCRIPTION TEXT")
+        }
+        if (oldVersion < 4) {
+            db.execSQL(CREATE_TABLE_ASSETS)
+        }
+        if (oldVersion < 5) {
+            db.execSQL("ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_ASSET_SOURCE TEXT")
         }
     }
 
@@ -90,6 +113,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put(COLUMN_CATEGORY, record.category)
             put(COLUMN_TYPE, record.type)
             put(COLUMN_DESCRIPTION, record.description)
+            put(COLUMN_ASSET_SOURCE, record.assetSource)
         }
 
         val id = db.insert(TABLE_RECORDS, null, values)
@@ -112,7 +136,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
                     category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
                     type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
-                    description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION))
+                    description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
+                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE))
                 )
                 records.add(record)
             } while (cursor.moveToNext())
@@ -131,6 +156,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put(COLUMN_CATEGORY, record.category)
             put(COLUMN_TYPE, record.type)
             put(COLUMN_DESCRIPTION, record.description)
+            put(COLUMN_ASSET_SOURCE, record.assetSource)
         }
 
         val rowsAffected = db.update(TABLE_RECORDS, values, "$COLUMN_ID = ?",
@@ -274,7 +300,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
                     category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
                     type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
-                    description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION))
+                    description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
+                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE))
                 )
                 records.add(record)
             } while (cursor.moveToNext())
@@ -343,5 +370,78 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         cursor.close()
         db.close()
         return monthlyStats
+    }
+
+    fun addAsset(asset: Asset): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_ASSET_NAME, asset.name)
+            put(COLUMN_ASSET_AMOUNT, asset.amount)
+            put(COLUMN_ASSET_TYPE, asset.type)
+        }
+
+        val id = db.insert(TABLE_ASSETS, null, values)
+        db.close()
+        return id
+    }
+
+    fun getAllAssets(): List<Asset> {
+        val assets = mutableListOf<Asset>()
+        val selectQuery = "SELECT * FROM $TABLE_ASSETS"
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(selectQuery, null)
+
+        if (cursor.moveToFirst()) {
+            do {
+                val asset = Asset(
+                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_ID)),
+                    name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_NAME)),
+                    amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT)),
+                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE))
+                )
+                assets.add(asset)
+            } while (cursor.moveToNext())
+        }
+
+        cursor.close()
+        db.close()
+        return assets
+    }
+
+    fun updateAsset(asset: Asset): Int {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_ASSET_NAME, asset.name)
+            put(COLUMN_ASSET_AMOUNT, asset.amount)
+            put(COLUMN_ASSET_TYPE, asset.type)
+        }
+
+        val rowsAffected = db.update(TABLE_ASSETS, values, "$COLUMN_ASSET_ID = ?",
+            arrayOf(asset.id.toString()))
+        db.close()
+        return rowsAffected
+    }
+
+    fun deleteAsset(id: Long) {
+        val db = writableDatabase
+        db.delete(TABLE_ASSETS, "$COLUMN_ASSET_ID = ?", arrayOf(id.toString()))
+        db.close()
+    }
+
+    fun getTotalAssets(): Double {
+        var total = 0.0
+        val selectQuery = "SELECT SUM($COLUMN_ASSET_AMOUNT) FROM $TABLE_ASSETS"
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(selectQuery, null)
+
+        if (cursor.moveToFirst()) {
+            total = cursor.getDouble(0)
+        }
+
+        cursor.close()
+        db.close()
+        return total
     }
 }
