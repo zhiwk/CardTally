@@ -15,7 +15,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
-        private const val DATABASE_VERSION = 5
+        private const val DATABASE_VERSION = 8
 
         private const val TABLE_RECORDS = "records"
         private const val COLUMN_ID = "id"
@@ -25,17 +25,20 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val COLUMN_TYPE = "type"
         private const val COLUMN_DESCRIPTION = "description"
         private const val COLUMN_ASSET_SOURCE = "asset_source"
+        private const val COLUMN_SORT_ORDER = "sort_order"
 
         private const val TABLE_CATEGORIES = "categories"
         private const val COLUMN_CATEGORY_ID = "id"
         private const val COLUMN_CATEGORY_NAME = "name"
         private const val COLUMN_CATEGORY_TYPE = "type"
+        private const val COLUMN_CATEGORY_ICON = "icon"
 
         private const val TABLE_ASSETS = "assets"
         private const val COLUMN_ASSET_ID = "id"
         private const val COLUMN_ASSET_NAME = "name"
         private const val COLUMN_ASSET_AMOUNT = "amount"
         private const val COLUMN_ASSET_TYPE = "type"
+        private const val COLUMN_ASSET_IS_ARCHIVED = "is_archived"
 
         private const val CREATE_TABLE_RECORDS =
             "CREATE TABLE $TABLE_RECORDS (" +
@@ -45,20 +48,23 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             "$COLUMN_CATEGORY TEXT NOT NULL, " +
             "$COLUMN_TYPE INTEGER NOT NULL, " +
             "$COLUMN_DESCRIPTION TEXT, " +
-            "$COLUMN_ASSET_SOURCE TEXT)"
+            "$COLUMN_ASSET_SOURCE TEXT, " +
+            "$COLUMN_SORT_ORDER INTEGER DEFAULT 0)"
 
         private const val CREATE_TABLE_CATEGORIES =
             "CREATE TABLE $TABLE_CATEGORIES (" +
             "$COLUMN_CATEGORY_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "$COLUMN_CATEGORY_NAME TEXT NOT NULL, " +
-            "$COLUMN_CATEGORY_TYPE INTEGER NOT NULL)"
+            "$COLUMN_CATEGORY_TYPE INTEGER NOT NULL, " +
+            "$COLUMN_CATEGORY_ICON TEXT)"
 
         private const val CREATE_TABLE_ASSETS =
             "CREATE TABLE $TABLE_ASSETS (" +
             "$COLUMN_ASSET_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "$COLUMN_ASSET_NAME TEXT NOT NULL, " +
             "$COLUMN_ASSET_AMOUNT REAL NOT NULL, " +
-            "$COLUMN_ASSET_TYPE INTEGER NOT NULL)"
+            "$COLUMN_ASSET_TYPE INTEGER NOT NULL, " +
+            "$COLUMN_ASSET_IS_ARCHIVED INTEGER DEFAULT 0)"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -82,31 +88,90 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         if (oldVersion < 5) {
             db.execSQL("ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_ASSET_SOURCE TEXT")
         }
+        if (oldVersion < 6) {
+            db.execSQL("ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_CATEGORY_ICON TEXT")
+            updateCategoriesWithIcons(db)
+        }
+        if (oldVersion < 7) {
+            db.execSQL("ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_SORT_ORDER INTEGER DEFAULT 0")
+        }
+        if (oldVersion < 8) {
+            db.execSQL("ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_IS_ARCHIVED INTEGER DEFAULT 0")
+        }
     }
 
     private fun insertDefaultCategories(db: SQLiteDatabase) {
-        val expenseCategories = arrayOf("餐饮", "交通", "购物", "娱乐", "医疗", "教育", "住房", "其他")
-        val incomeCategories = arrayOf("工资", "奖金", "投资", "兼职", "其他")
+        val expenseCategories = listOf(
+            Pair("餐饮", "ic_category_food"),
+            Pair("交通", "ic_category_transport"),
+            Pair("购物", "ic_category_shopping"),
+            Pair("娱乐", "ic_category_entertainment"),
+            Pair("医疗", "ic_category_medical"),
+            Pair("教育", "ic_category_education"),
+            Pair("住房", "ic_category_housing"),
+            Pair("其他", "ic_category_other")
+        )
+        
+        val incomeCategories = listOf(
+            Pair("工资", "ic_category_salary"),
+            Pair("奖金", "ic_category_bonus"),
+            Pair("投资", null),
+            Pair("兼职", null),
+            Pair("其他", "ic_category_other")
+        )
 
-        for (category in expenseCategories) {
+        for ((category, icon) in expenseCategories) {
             val values = ContentValues().apply {
                 put(COLUMN_CATEGORY_NAME, category)
                 put(COLUMN_CATEGORY_TYPE, 0)
+                put(COLUMN_CATEGORY_ICON, icon)
             }
             db.insert(TABLE_CATEGORIES, null, values)
         }
 
-        for (category in incomeCategories) {
+        for ((category, icon) in incomeCategories) {
             val values = ContentValues().apply {
                 put(COLUMN_CATEGORY_NAME, category)
                 put(COLUMN_CATEGORY_TYPE, 1)
+                put(COLUMN_CATEGORY_ICON, icon)
             }
             db.insert(TABLE_CATEGORIES, null, values)
+        }
+    }
+
+    private fun updateCategoriesWithIcons(db: SQLiteDatabase) {
+        val categoryIcons = mapOf(
+            "餐饮" to "ic_category_food",
+            "交通" to "ic_category_transport",
+            "购物" to "ic_category_shopping",
+            "娱乐" to "ic_category_entertainment",
+            "医疗" to "ic_category_medical",
+            "教育" to "ic_category_education",
+            "住房" to "ic_category_housing",
+            "工资" to "ic_category_salary",
+            "奖金" to "ic_category_bonus",
+            "其他" to "ic_category_other"
+        )
+        
+        for ((category, icon) in categoryIcons) {
+            val values = ContentValues().apply {
+                put(COLUMN_CATEGORY_ICON, icon)
+            }
+            db.update(TABLE_CATEGORIES, values, "$COLUMN_CATEGORY_NAME = ?", arrayOf(category))
         }
     }
 
     fun addRecord(record: Record): Long {
         val db = writableDatabase
+        
+        val maxSortOrderQuery = "SELECT MAX($COLUMN_SORT_ORDER) FROM $TABLE_RECORDS WHERE $COLUMN_DATE = ?"
+        val cursor = db.rawQuery(maxSortOrderQuery, arrayOf(record.date))
+        var maxSortOrder = 0
+        if (cursor.moveToFirst()) {
+            maxSortOrder = cursor.getInt(0)
+        }
+        cursor.close()
+        
         val values = ContentValues().apply {
             put(COLUMN_DATE, record.date)
             put(COLUMN_AMOUNT, record.amount)
@@ -114,6 +179,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put(COLUMN_TYPE, record.type)
             put(COLUMN_DESCRIPTION, record.description)
             put(COLUMN_ASSET_SOURCE, record.assetSource)
+            put(COLUMN_SORT_ORDER, maxSortOrder + 1)
         }
 
         val id = db.insert(TABLE_RECORDS, null, values)
@@ -123,7 +189,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun getAllRecords(): List<Record> {
         val records = mutableListOf<Record>()
-        val selectQuery = "SELECT * FROM $TABLE_RECORDS ORDER BY $COLUMN_DATE DESC"
+        val selectQuery = "SELECT * FROM $TABLE_RECORDS ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC"
 
         val db = readableDatabase
         val cursor = db.rawQuery(selectQuery, null)
@@ -137,7 +203,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
                     type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
                     description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
-                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE))
+                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE)),
+                    sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
                 )
                 records.add(record)
             } while (cursor.moveToNext())
@@ -171,6 +238,32 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         db.close()
     }
 
+    fun updateRecordSortOrder(recordId: Long, newSortOrder: Int) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_SORT_ORDER, newSortOrder)
+        }
+        db.update(TABLE_RECORDS, values, "$COLUMN_ID = ?", arrayOf(recordId.toString()))
+        db.close()
+    }
+
+    fun updateRecordsSortOrder(records: List<Record>) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            for (record in records) {
+                val values = ContentValues().apply {
+                    put(COLUMN_SORT_ORDER, record.sortOrder)
+                }
+                db.update(TABLE_RECORDS, values, "$COLUMN_ID = ?", arrayOf(record.id.toString()))
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        db.close()
+    }
+
     fun getCurrentDate(): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         return sdf.format(Date())
@@ -181,6 +274,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         val values = ContentValues().apply {
             put(COLUMN_CATEGORY_NAME, category.name)
             put(COLUMN_CATEGORY_TYPE, category.type)
+            put(COLUMN_CATEGORY_ICON, category.icon)
         }
 
         val id = db.insert(TABLE_CATEGORIES, null, values)
@@ -200,7 +294,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 val category = Category(
                     id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_ID)),
                     name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_NAME)),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE))
+                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE)),
+                    icon = cursor.getString(cursor.getColumnIndex(COLUMN_CATEGORY_ICON))
                 )
                 categories.add(category)
             } while (cursor.moveToNext())
@@ -223,7 +318,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 val category = Category(
                     id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_ID)),
                     name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_NAME)),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE))
+                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE)),
+                    icon = cursor.getString(cursor.getColumnIndex(COLUMN_CATEGORY_ICON))
                 )
                 categories.add(category)
             } while (cursor.moveToNext())
@@ -239,6 +335,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         val values = ContentValues().apply {
             put(COLUMN_CATEGORY_NAME, category.name)
             put(COLUMN_CATEGORY_TYPE, category.type)
+            put(COLUMN_CATEGORY_ICON, category.icon)
         }
 
         val rowsAffected = db.update(TABLE_CATEGORIES, values, "$COLUMN_CATEGORY_ID = ?",
@@ -287,7 +384,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun getRecordsByDateRange(startDate: String, endDate: String): List<Record> {
         val records = mutableListOf<Record>()
-        val selectQuery = "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_DATE BETWEEN ? AND ? ORDER BY $COLUMN_DATE DESC"
+        val selectQuery = "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_DATE BETWEEN ? AND ? ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC"
 
         val db = readableDatabase
         val cursor = db.rawQuery(selectQuery, arrayOf(startDate, endDate))
@@ -301,7 +398,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
                     type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
                     description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
-                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE))
+                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE)),
+                    sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
                 )
                 records.add(record)
             } while (cursor.moveToNext())
@@ -378,6 +476,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put(COLUMN_ASSET_NAME, asset.name)
             put(COLUMN_ASSET_AMOUNT, asset.amount)
             put(COLUMN_ASSET_TYPE, asset.type)
+            put(COLUMN_ASSET_IS_ARCHIVED, if (asset.isArchived) 1 else 0)
         }
 
         val id = db.insert(TABLE_ASSETS, null, values)
@@ -387,7 +486,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun getAllAssets(): List<Asset> {
         val assets = mutableListOf<Asset>()
-        val selectQuery = "SELECT * FROM $TABLE_ASSETS"
+        val selectQuery = "SELECT * FROM $TABLE_ASSETS WHERE $COLUMN_ASSET_IS_ARCHIVED = 0 ORDER BY $COLUMN_ASSET_NAME"
 
         val db = readableDatabase
         val cursor = db.rawQuery(selectQuery, null)
@@ -398,7 +497,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_ID)),
                     name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_NAME)),
                     amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT)),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE))
+                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE)),
+                    isArchived = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_IS_ARCHIVED)) == 1
                 )
                 assets.add(asset)
             } while (cursor.moveToNext())
@@ -409,12 +509,56 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return assets
     }
 
+    fun getArchivedAssets(): List<Asset> {
+        val assets = mutableListOf<Asset>()
+        val selectQuery = "SELECT * FROM $TABLE_ASSETS WHERE $COLUMN_ASSET_IS_ARCHIVED = 1 ORDER BY $COLUMN_ASSET_NAME"
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(selectQuery, null)
+
+        if (cursor.moveToFirst()) {
+            do {
+                val asset = Asset(
+                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_ID)),
+                    name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_NAME)),
+                    amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT)),
+                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE)),
+                    isArchived = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_IS_ARCHIVED)) == 1
+                )
+                assets.add(asset)
+            } while (cursor.moveToNext())
+        }
+
+        cursor.close()
+        db.close()
+        return assets
+    }
+
+    fun archiveAsset(id: Long) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_ASSET_IS_ARCHIVED, 1)
+        }
+        db.update(TABLE_ASSETS, values, "$COLUMN_ASSET_ID = ?", arrayOf(id.toString()))
+        db.close()
+    }
+
+    fun unarchiveAsset(id: Long) {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_ASSET_IS_ARCHIVED, 0)
+        }
+        db.update(TABLE_ASSETS, values, "$COLUMN_ASSET_ID = ?", arrayOf(id.toString()))
+        db.close()
+    }
+
     fun updateAsset(asset: Asset): Int {
         val db = writableDatabase
         val values = ContentValues().apply {
             put(COLUMN_ASSET_NAME, asset.name)
             put(COLUMN_ASSET_AMOUNT, asset.amount)
             put(COLUMN_ASSET_TYPE, asset.type)
+            put(COLUMN_ASSET_IS_ARCHIVED, if (asset.isArchived) 1 else 0)
         }
 
         val rowsAffected = db.update(TABLE_ASSETS, values, "$COLUMN_ASSET_ID = ?",
@@ -431,7 +575,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun getTotalAssets(): Double {
         var total = 0.0
-        val selectQuery = "SELECT SUM($COLUMN_ASSET_AMOUNT) FROM $TABLE_ASSETS"
+        val selectQuery = "SELECT SUM($COLUMN_ASSET_AMOUNT) FROM $TABLE_ASSETS WHERE $COLUMN_ASSET_IS_ARCHIVED = 0"
 
         val db = readableDatabase
         val cursor = db.rawQuery(selectQuery, null)

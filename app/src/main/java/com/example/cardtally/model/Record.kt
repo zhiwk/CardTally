@@ -7,5 +7,6 @@ data class Record(
     var category: String = "",
     var type: Int = 0,
     var description: String? = null,
-    var assetSource: String? = null
+    var assetSource: String? = null,
+    var sortOrder: Int = 0
 )

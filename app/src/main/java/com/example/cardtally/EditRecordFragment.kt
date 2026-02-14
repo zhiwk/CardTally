@@ -17,6 +17,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.util.Calendar
 
 class EditRecordFragment : Fragment() {
@@ -88,6 +89,16 @@ class EditRecordFragment : Fragment() {
         }
 
         return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideBottomNav()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        showBottomNav()
     }
 
     private fun loadRecord() {
@@ -204,6 +215,11 @@ class EditRecordFragment : Fragment() {
             return
         }
 
+        if (amount == 0.0) {
+            Toast.makeText(requireContext(), "金额不能为0", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val assetSource = if (assetSourceName == "无") null else assetSourceName
 
         record?.let { r ->
@@ -222,5 +238,15 @@ class EditRecordFragment : Fragment() {
                 Toast.makeText(requireContext(), "更新失败", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun hideBottomNav() {
+        val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav?.visibility = View.GONE
+    }
+
+    private fun showBottomNav() {
+        val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav?.visibility = View.VISIBLE
     }
 }

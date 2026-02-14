@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.AssetAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class AssetFragment : Fragment() {
@@ -23,8 +25,12 @@ class AssetFragment : Fragment() {
     private lateinit var textEmpty: TextView
     private lateinit var textTotalAmount: TextView
     private lateinit var fabAdd: FloatingActionButton
+    private lateinit var btnArchive: ImageButton
     private lateinit var databaseHelper: DatabaseHelper
     private var adapter: AssetAdapter? = null
+
+    private var isBottomNavVisible = true
+    private var isFabVisible = true
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,6 +43,7 @@ class AssetFragment : Fragment() {
         textEmpty = view.findViewById(R.id.text_empty)
         textTotalAmount = view.findViewById(R.id.text_total_amount)
         fabAdd = view.findViewById(R.id.fab_add)
+        btnArchive = view.findViewById(R.id.btn_archive)
 
         databaseHelper = DatabaseHelper(requireContext())
 
@@ -48,12 +55,35 @@ class AssetFragment : Fragment() {
             showAddDialog()
         }
 
+        btnArchive.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, ArchivedAssetsFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+
+        recyclerAssets.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                
+                if (dy > 0) {
+                    hideBottomNav()
+                    hideFab()
+                } else if (dy < 0) {
+                    showBottomNav()
+                    showFab()
+                }
+            }
+        })
+
         return view
     }
 
     override fun onResume() {
         super.onResume()
         loadAssets()
+        showBottomNav()
+        showFab()
     }
 
     private fun loadAssets() {
@@ -65,6 +95,8 @@ class AssetFragment : Fragment() {
         if (assets.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
             recyclerAssets.visibility = View.GONE
+            adapter = null
+            recyclerAssets.adapter = null
         } else {
             textEmpty.visibility = View.GONE
             recyclerAssets.visibility = View.VISIBLE
@@ -78,10 +110,19 @@ class AssetFragment : Fragment() {
                     override fun onDelete(asset: Asset) {
                         showDeleteDialog(asset)
                     }
+
+                    override fun onArchive(asset: Asset) {
+                        databaseHelper.archiveAsset(asset.id)
+                        Toast.makeText(requireContext(), "已归档", Toast.LENGTH_SHORT).show()
+                        loadAssets()
+                    }
                 })
                 recyclerAssets.adapter = adapter
             } else {
                 adapter?.updateAssets(assets)
+                if (recyclerAssets.adapter == null) {
+                    recyclerAssets.adapter = adapter
+                }
             }
         }
     }
@@ -219,5 +260,63 @@ class AssetFragment : Fragment() {
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    private fun hideBottomNav() {
+        if (isBottomNavVisible) {
+            val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
+            bottomNav?.animate()
+                ?.alpha(0f)
+                ?.translationY(bottomNav.height.toFloat())
+                ?.setDuration(200)
+                ?.withEndAction {
+                    bottomNav.visibility = View.GONE
+                }
+                ?.start()
+            isBottomNavVisible = false
+        }
+    }
+
+    private fun showBottomNav() {
+        if (!isBottomNavVisible) {
+            val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
+            bottomNav.visibility = View.VISIBLE
+            bottomNav.alpha = 0f
+            bottomNav.translationY = bottomNav.height.toFloat()
+            bottomNav.animate()
+                ?.alpha(1f)
+                ?.translationY(0f)
+                ?.setDuration(200)
+                ?.start()
+            isBottomNavVisible = true
+        }
+    }
+
+    private fun hideFab() {
+        if (isFabVisible) {
+            fabAdd.animate()
+                .alpha(0f)
+                .translationX(fabAdd.width.toFloat() * 2)
+                .setDuration(200)
+                .withEndAction {
+                    fabAdd.visibility = View.GONE
+                }
+                .start()
+            isFabVisible = false
+        }
+    }
+
+    private fun showFab() {
+        if (!isFabVisible) {
+            fabAdd.visibility = View.VISIBLE
+            fabAdd.alpha = 0f
+            fabAdd.translationX = fabAdd.width.toFloat() * 2
+            fabAdd.animate()
+                .alpha(1f)
+                .translationX(0f)
+                .setDuration(200)
+                .start()
+            isFabVisible = true
+        }
     }
 }

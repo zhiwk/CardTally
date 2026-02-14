@@ -3,11 +3,14 @@ package com.example.cardtally.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Category
+import com.example.cardtally.util.SwipeToEditDeleteHelper
 
 class CategoryAdapter(
     private var categories: List<Category>,
@@ -29,13 +32,28 @@ class CategoryAdapter(
         val category = categories[position]
         holder.textCategoryName.text = category.name
 
-        holder.btnEdit.setOnClickListener {
-            listener.onEdit(category)
+        if (!category.icon.isNullOrEmpty()) {
+            val resourceId = holder.itemView.context.resources.getIdentifier(
+                category.icon,
+                "drawable",
+                holder.itemView.context.packageName
+            )
+            if (resourceId != 0) {
+                holder.imageCategoryIcon.setImageResource(resourceId)
+                holder.imageCategoryIcon.visibility = View.VISIBLE
+            } else {
+                holder.imageCategoryIcon.visibility = View.GONE
+            }
+        } else {
+            holder.imageCategoryIcon.visibility = View.GONE
         }
 
-        holder.btnDelete.setOnClickListener {
-            listener.onDelete(category)
-        }
+        holder.swipeHelper = SwipeToEditDeleteHelper(
+            holder.cardContent,
+            holder.layoutActions,
+            onEdit = { listener.onEdit(category) },
+            onDelete = { listener.onDelete(category) }
+        )
     }
 
     override fun getItemCount(): Int = categories.size
@@ -46,8 +64,12 @@ class CategoryAdapter(
     }
 
     class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val cardContent: CardView = itemView.findViewById(R.id.card_content)
+        val layoutActions: View = itemView.findViewById(R.id.layout_actions)
+        val imageCategoryIcon: ImageView = itemView.findViewById(R.id.image_category_icon)
         val textCategoryName: TextView = itemView.findViewById(R.id.text_category_name)
-        val btnEdit: Button = itemView.findViewById(R.id.btn_edit)
-        val btnDelete: Button = itemView.findViewById(R.id.btn_delete)
+        val btnEdit: ImageButton = itemView.findViewById(R.id.btn_edit)
+        val btnDelete: ImageButton = itemView.findViewById(R.id.btn_delete)
+        var swipeHelper: SwipeToEditDeleteHelper? = null
     }
 }

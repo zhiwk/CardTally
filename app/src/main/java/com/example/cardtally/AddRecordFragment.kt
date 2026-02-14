@@ -17,6 +17,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.util.Calendar
 
 class AddRecordFragment : Fragment() {
@@ -28,6 +29,7 @@ class AddRecordFragment : Fragment() {
     private lateinit var radioGroupType: RadioGroup
     private lateinit var radioExpense: RadioButton
     private lateinit var radioIncome: RadioButton
+    private lateinit var btnSaveAndContinue: Button
     private lateinit var btnSave: Button
     private lateinit var databaseHelper: DatabaseHelper
 
@@ -49,6 +51,7 @@ class AddRecordFragment : Fragment() {
         radioGroupType = view.findViewById(R.id.radio_group_type)
         radioExpense = view.findViewById(R.id.radio_expense)
         radioIncome = view.findViewById(R.id.radio_income)
+        btnSaveAndContinue = view.findViewById(R.id.btn_save_and_continue)
         btnSave = view.findViewById(R.id.btn_save)
 
         databaseHelper = DatabaseHelper(requireContext())
@@ -67,11 +70,25 @@ class AddRecordFragment : Fragment() {
             loadCategories(isExpense)
         }
 
+        btnSaveAndContinue.setOnClickListener {
+            saveRecord(false)
+        }
+
         btnSave.setOnClickListener {
-            saveRecord()
+            saveRecord(true)
         }
 
         return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideBottomNav()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        showBottomNav()
     }
 
     private fun loadCategories(isExpense: Boolean) {
@@ -127,7 +144,7 @@ class AddRecordFragment : Fragment() {
         datePickerDialog.show()
     }
 
-    private fun saveRecord() {
+    private fun saveRecord(shouldReturn: Boolean) {
         val date = editDate.text.toString().trim()
         val amountStr = editAmount.text.toString().trim()
         val category = spinnerCategory.selectedItem.toString()
@@ -152,6 +169,11 @@ class AddRecordFragment : Fragment() {
             return
         }
 
+        if (amount == 0.0) {
+            Toast.makeText(requireContext(), "金额不能为0", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val assetSource = if (assetSourceName == "无") null else assetSourceName
 
         val record = Record(
@@ -166,7 +188,12 @@ class AddRecordFragment : Fragment() {
 
         if (id != -1L) {
             Toast.makeText(requireContext(), "保存成功", Toast.LENGTH_SHORT).show()
-            clearForm()
+            
+            if (shouldReturn) {
+                parentFragmentManager.popBackStack()
+            } else {
+                clearForm()
+            }
         } else {
             Toast.makeText(requireContext(), "保存失败", Toast.LENGTH_SHORT).show()
         }
@@ -179,5 +206,15 @@ class AddRecordFragment : Fragment() {
         radioExpense.isChecked = true
         spinnerCategory.setSelection(0)
         spinnerAssetSource.setSelection(0)
+    }
+
+    private fun hideBottomNav() {
+        val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav?.visibility = View.GONE
+    }
+
+    private fun showBottomNav() {
+        val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav?.visibility = View.VISIBLE
     }
 }

@@ -8,12 +8,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.CategoryAdapter
+import com.example.cardtally.adapter.IconPickerAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Category
 import com.google.android.material.tabs.TabLayout
@@ -25,7 +27,27 @@ class CategoryManageFragment : Fragment() {
     private lateinit var btnAdd: Button
     private lateinit var databaseHelper: DatabaseHelper
     private var adapter: CategoryAdapter? = null
-    private var currentType = 0 // 0: 支出, 1: 收入
+    private var currentType = 0
+
+    private val availableIcons = listOf(
+        "ic_category_food",
+        "ic_category_transport",
+        "ic_category_shopping",
+        "ic_category_entertainment",
+        "ic_category_medical",
+        "ic_category_education",
+        "ic_category_housing",
+        "ic_category_communication",
+        "ic_category_salary",
+        "ic_category_bonus",
+        "ic_category_other",
+        "ic_category_clothing",
+        "ic_category_beauty",
+        "ic_category_sports",
+        "ic_category_travel",
+        "ic_category_pet",
+        "ic_category_gift"
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -93,18 +115,38 @@ class CategoryManageFragment : Fragment() {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("添加分类")
 
-        val input = EditText(requireContext())
-        input.hint = "请输入分类名称"
-        builder.setView(input)
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_category, null)
+        builder.setView(view)
+
+        val editName = view.findViewById<EditText>(R.id.edit_category_name)
+        val imageIcon = view.findViewById<ImageView>(R.id.image_category_icon)
+        
+        var selectedIcon: String? = null
+        
+        imageIcon.setOnClickListener {
+            showIconPickerDialog { icon ->
+                selectedIcon = icon
+                if (icon != null) {
+                    val resourceId = requireContext().resources.getIdentifier(
+                        icon,
+                        "drawable",
+                        requireContext().packageName
+                    )
+                    if (resourceId != 0) {
+                        imageIcon.setImageResource(resourceId)
+                    }
+                }
+            }
+        }
 
         builder.setPositiveButton("确定") { _, _ ->
-            val name = input.text.toString().trim()
+            val name = editName.text.toString().trim()
             if (TextUtils.isEmpty(name)) {
                 Toast.makeText(requireContext(), "分类名称不能为空", Toast.LENGTH_SHORT).show()
                 return@setPositiveButton
             }
 
-            val category = Category(name = name, type = currentType)
+            val category = Category(name = name, type = currentType, icon = selectedIcon)
             val id = databaseHelper.addCategory(category)
             if (id != -1L) {
                 Toast.makeText(requireContext(), "添加成功", Toast.LENGTH_SHORT).show()
@@ -123,18 +165,52 @@ class CategoryManageFragment : Fragment() {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle("编辑分类")
 
-        val input = EditText(requireContext())
-        input.setText(category.name)
-        builder.setView(input)
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_category, null)
+        builder.setView(view)
+
+        val editName = view.findViewById<EditText>(R.id.edit_category_name)
+        val imageIcon = view.findViewById<ImageView>(R.id.image_category_icon)
+        
+        editName.setText(category.name)
+        
+        var selectedIcon = category.icon
+        
+        if (category.icon != null) {
+            val resourceId = requireContext().resources.getIdentifier(
+                category.icon,
+                "drawable",
+                requireContext().packageName
+            )
+            if (resourceId != 0) {
+                imageIcon.setImageResource(resourceId)
+            }
+        }
+        
+        imageIcon.setOnClickListener {
+            showIconPickerDialog { icon ->
+                selectedIcon = icon
+                if (icon != null) {
+                    val resourceId = requireContext().resources.getIdentifier(
+                        icon,
+                        "drawable",
+                        requireContext().packageName
+                    )
+                    if (resourceId != 0) {
+                        imageIcon.setImageResource(resourceId)
+                    }
+                }
+            }
+        }
 
         builder.setPositiveButton("确定") { _, _ ->
-            val name = input.text.toString().trim()
+            val name = editName.text.toString().trim()
             if (TextUtils.isEmpty(name)) {
                 Toast.makeText(requireContext(), "分类名称不能为空", Toast.LENGTH_SHORT).show()
                 return@setPositiveButton
             }
 
             category.name = name
+            category.icon = selectedIcon
             val rowsAffected = databaseHelper.updateCategory(category)
             if (rowsAffected > 0) {
                 Toast.makeText(requireContext(), "更新成功", Toast.LENGTH_SHORT).show()
@@ -147,6 +223,24 @@ class CategoryManageFragment : Fragment() {
         builder.setNegativeButton("取消", null)
 
         builder.show()
+    }
+
+    private fun showIconPickerDialog(onIconSelected: (String?) -> Unit) {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("选择图标")
+
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_icon_picker, null)
+        builder.setView(view)
+
+        val recyclerIcons = view.findViewById<RecyclerView>(R.id.recycler_icons)
+        
+        val iconAdapter = IconPickerAdapter(availableIcons, null) { icon ->
+            onIconSelected(icon)
+        }
+        recyclerIcons.adapter = iconAdapter
+
+        val dialog = builder.create()
+        dialog.show()
     }
 
     private fun showDeleteDialog(category: Category) {

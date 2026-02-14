@@ -5,23 +5,25 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.StatisticsAdapter
 import com.example.cardtally.database.DatabaseHelper
-import com.example.cardtally.util.ThemeHelper
-import com.google.android.material.tabs.TabLayout
 import java.util.Calendar
 
 class StatisticsFragment : Fragment() {
-    private lateinit var tabLayout: TabLayout
+    private lateinit var cardTabCategory: CardView
+    private lateinit var cardTabTime: CardView
     private lateinit var textExpenseTotal: TextView
     private lateinit var textIncomeTotal: TextView
     private lateinit var textEmpty: TextView
     private lateinit var recyclerStatistics: RecyclerView
     private lateinit var databaseHelper: DatabaseHelper
     private lateinit var adapter: StatisticsAdapter
+    
+    private var currentTab = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -30,7 +32,8 @@ class StatisticsFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_statistics, container, false)
 
-        tabLayout = view.findViewById(R.id.tab_layout)
+        cardTabCategory = view.findViewById(R.id.card_tab_category)
+        cardTabTime = view.findViewById(R.id.card_tab_time)
         textExpenseTotal = view.findViewById(R.id.text_expense_total)
         textIncomeTotal = view.findViewById(R.id.text_income_total)
         textEmpty = view.findViewById(R.id.text_empty)
@@ -44,21 +47,38 @@ class StatisticsFragment : Fragment() {
 
         loadStatistics(0)
 
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                tab?.let { loadStatistics(it.position) }
+        cardTabCategory.setOnClickListener {
+            if (currentTab != 0) {
+                currentTab = 0
+                updateTabStyle()
+                loadStatistics(0)
             }
+        }
 
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
-        })
+        cardTabTime.setOnClickListener {
+            if (currentTab != 1) {
+                currentTab = 1
+                updateTabStyle()
+                loadStatistics(1)
+            }
+        }
 
         return view
     }
 
     override fun onResume() {
         super.onResume()
-        loadStatistics(tabLayout.selectedTabPosition)
+        loadStatistics(currentTab)
+    }
+
+    private fun updateTabStyle() {
+        if (currentTab == 0) {
+            cardTabCategory.setCardBackgroundColor(0xFF2196F3.toInt())
+            cardTabTime.setCardBackgroundColor(0xFFE0E0E0.toInt())
+        } else {
+            cardTabCategory.setCardBackgroundColor(0xFFE0E0E0.toInt())
+            cardTabTime.setCardBackgroundColor(0xFF2196F3.toInt())
+        }
     }
 
     private fun loadStatistics(tabPosition: Int) {

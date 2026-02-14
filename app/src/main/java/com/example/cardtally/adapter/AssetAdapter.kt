@@ -3,11 +3,14 @@ package com.example.cardtally.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Asset
+import com.example.cardtally.util.SwipeToEditDeleteHelper
 
 class AssetAdapter(
     private var assets: List<Asset>,
@@ -17,6 +20,7 @@ class AssetAdapter(
     interface OnAssetActionListener {
         fun onEdit(asset: Asset)
         fun onDelete(asset: Asset)
+        fun onArchive(asset: Asset)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AssetViewHolder {
@@ -39,12 +43,16 @@ class AssetAdapter(
         }
         holder.textAssetType.text = typeText
 
-        holder.btnEdit.setOnClickListener {
-            listener.onEdit(asset)
-        }
-
-        holder.btnDelete.setOnClickListener {
-            listener.onDelete(asset)
+        holder.swipeHelper = SwipeToEditDeleteHelper(
+            holder.cardContent,
+            holder.layoutActions,
+            onEdit = { listener.onEdit(asset) },
+            onDelete = { listener.onDelete(asset) },
+            onArchive = { listener.onArchive(asset) }
+        )
+        
+        holder.btnArchive.setOnClickListener {
+            listener.onArchive(asset)
         }
     }
 
@@ -56,10 +64,15 @@ class AssetAdapter(
     }
 
     class AssetViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val cardContent: CardView = itemView.findViewById(R.id.card_content)
+        val layoutActions: View = itemView.findViewById(R.id.layout_actions)
+        val layoutAssetInfo: LinearLayout = itemView.findViewById(R.id.layout_asset_info)
         val textAssetName: TextView = itemView.findViewById(R.id.text_asset_name)
         val textAssetAmount: TextView = itemView.findViewById(R.id.text_asset_amount)
         val textAssetType: TextView = itemView.findViewById(R.id.text_asset_type)
-        val btnEdit: Button = itemView.findViewById(R.id.btn_edit)
-        val btnDelete: Button = itemView.findViewById(R.id.btn_delete)
+        val btnArchive: ImageButton = itemView.findViewById(R.id.btn_archive)
+        val btnEdit: ImageButton = itemView.findViewById(R.id.btn_edit)
+        val btnDelete: ImageButton = itemView.findViewById(R.id.btn_delete)
+        var swipeHelper: SwipeToEditDeleteHelper? = null
     }
 }

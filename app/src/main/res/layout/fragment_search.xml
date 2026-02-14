@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".AssetFragment">
+    tools:context=".SearchFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -14,7 +14,7 @@
             android:id="@+id/text_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="资产"
+            android:text="搜索结果"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginStart="16dp"
@@ -22,76 +22,41 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <ImageButton
-            android:id="@+id/btn_archive"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_archive"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="归档"
-            android:layout_marginEnd="16dp"
-            android:padding="8dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/text_title"
-            app:layout_constraintBottom_toBottomOf="@+id/text_title" />
-
         <TextView
-            android:id="@+id/text_total_label"
+            android:id="@+id/text_keyword"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="总资产"
-            android:textSize="16sp"
+            android:text="关键词："
+            android:textSize="14sp"
             android:textColor="@android:color/darker_gray"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/text_title" />
-
-        <TextView
-            android:id="@+id/text_total_amount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="¥0.00"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#4CAF50"
-            android:layout_marginStart="16dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_total_label" />
 
         <TextView
             android:id="@+id/text_empty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="暂无资产，点击右下角按钮添加资产"
+            android:text="未找到匹配的记录"
             android:textSize="16sp"
             android:textColor="@android:color/darker_gray"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_total_amount" />
+            app:layout_constraintTop_toBottomOf="@+id/text_keyword" />
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_assets"
+            android:id="@+id/recycler_records"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginTop="16dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_total_amount" />
+            app:layout_constraintTop_toBottomOf="@+id/text_keyword" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        android:src="@drawable/ic_add"
-        android:contentDescription="添加资产"
-        app:backgroundTint="@color/primary_light" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
