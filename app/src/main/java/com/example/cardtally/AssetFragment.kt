@@ -3,7 +3,9 @@ package com.example.cardtally
 import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageButton
@@ -49,19 +51,6 @@ class AssetFragment : Fragment() {
 
         recyclerAssets.layoutManager = LinearLayoutManager(requireContext())
 
-        loadAssets()
-
-        fabAdd.setOnClickListener {
-            showAddDialog()
-        }
-
-        btnArchive.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, ArchivedAssetsFragment())
-                .addToBackStack(null)
-                .commit()
-        }
-
         recyclerAssets.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
@@ -75,6 +64,46 @@ class AssetFragment : Fragment() {
                 }
             }
         })
+
+        recyclerAssets.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
+            private var initialY = 0f
+            private val touchSlop = ViewConfiguration.get(requireContext()).scaledTouchSlop
+            
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                when (e.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        initialY = e.rawY
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val deltaY = e.rawY - initialY
+                        if (deltaY > touchSlop) {
+                            showBottomNav()
+                            showFab()
+                        } else if (deltaY < -touchSlop) {
+                            hideBottomNav()
+                            hideFab()
+                        }
+                    }
+                }
+                return false
+            }
+            
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
+        })
+
+        loadAssets()
+
+        fabAdd.setOnClickListener {
+            showAddDialog()
+        }
+
+        btnArchive.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, ArchivedAssetsFragment())
+                .addToBackStack(null)
+                .commit()
+        }
 
         return view
     }

@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
+    android:background="#F5F5F5"
     tools:context=".EditRecordFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -22,157 +23,249 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/label_type"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="类型"
-            android:textSize="16sp"
-            android:layout_marginTop="24dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_title" />
-
-        <RadioGroup
-            android:id="@+id/radio_group_type"
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_category"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/label_type">
+            app:layout_constraintTop_toBottomOf="@+id/text_title">
 
-            <RadioButton
-                android:id="@+id/radio_expense"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="支出"
-                android:checked="true"
-                android:layout_marginEnd="32dp" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <RadioButton
-                android:id="@+id/radio_income"
-                android:layout_width="wrap_content"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="选择分类"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/darker_gray" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_categories"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:nestedScrollingEnabled="false" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_main"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/card_category">
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="收入" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        </RadioGroup>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/label_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="日期"
-            android:textSize="16sp"
-            android:layout_marginTop="24dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/radio_group_type" />
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/card_expense"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="#F44336">
 
-        <EditText
-            android:id="@+id/edit_date"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:hint="选择日期"
-            android:inputType="none"
-            android:focusable="false"
-            android:clickable="true"
-            android:layout_marginTop="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/label_date" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="支出"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/white"
+                            android:padding="12dp"
+                            android:gravity="center" />
 
-        <TextView
-            android:id="@+id/label_amount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="金额"
-            android:textSize="16sp"
-            android:layout_marginTop="24dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/edit_date" />
+                    </androidx.cardview.widget.CardView>
 
-        <EditText
-            android:id="@+id/edit_amount"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:hint="请输入金额（不能为0）"
-            android:inputType="numberDecimal|numberSigned"
-            android:layout_marginTop="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/label_amount" />
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/card_income"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="#E0E0E0">
 
-        <TextView
-            android:id="@+id/label_category"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="分类"
-            android:textSize="16sp"
-            android:layout_marginTop="24dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/edit_amount" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="收入"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/black"
+                            android:padding="12dp"
+                            android:gravity="center" />
 
-        <Spinner
-            android:id="@+id/spinner_category"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/label_category" />
+                    </androidx.cardview.widget.CardView>
 
-        <TextView
-            android:id="@+id/label_asset_source"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="资产来源"
-            android:textSize="16sp"
-            android:layout_marginTop="24dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/spinner_category" />
+                </LinearLayout>
 
-        <Spinner
-            android:id="@+id/spinner_asset_source"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/label_asset_source" />
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/card_form"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="#FAFAFA">
 
-        <TextView
-            android:id="@+id/label_description"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="描述"
-            android:textSize="16sp"
-            android:layout_marginTop="24dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/spinner_asset_source" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-        <EditText
-            android:id="@+id/edit_description"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:hint="请输入描述信息（可选）"
-            android:inputType="text"
-            android:maxLines="1"
-            android:layout_marginTop="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/label_description" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
 
-        <Button
-            android:id="@+id/btn_update"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="更新"
-            android:layout_marginTop="32dp"
-            android:layout_marginBottom="16dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/edit_description"
-            app:layout_constraintBottom_toBottomOf="parent" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="¥"
+                                android:textSize="32sp"
+                                android:textStyle="bold"
+                                android:textColor="#2196F3" />
+
+                            <EditText
+                                android:id="@+id/edit_amount"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:hint="0.00"
+                                android:textSize="32sp"
+                                android:textStyle="bold"
+                                android:inputType="numberDecimal|numberSigned"
+                                android:background="@android:color/transparent"
+                                android:layout_marginStart="8dp" />
+
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#E0E0E0"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="16dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="8dp">
+
+                            <TextView
+                                android:layout_width="80dp"
+                                android:layout_height="wrap_content"
+                                android:text="日期"
+                                android:textSize="14sp"
+                                android:textColor="@android:color/darker_gray" />
+
+                            <TextView
+                                android:id="@+id/text_date"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="选择日期"
+                                android:textSize="16sp"
+                                android:textColor="@android:color/black"
+                                android:padding="8dp"
+                                android:background="?attr/selectableItemBackground" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="8dp">
+
+                            <TextView
+                                android:layout_width="80dp"
+                                android:layout_height="wrap_content"
+                                android:text="资产来源"
+                                android:textSize="14sp"
+                                android:textColor="@android:color/darker_gray" />
+
+                            <Spinner
+                                android:id="@+id/spinner_asset_source"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="8dp">
+
+                            <TextView
+                                android:layout_width="80dp"
+                                android:layout_height="wrap_content"
+                                android:text="描述"
+                                android:textSize="14sp"
+                                android:textColor="@android:color/darker_gray" />
+
+                            <EditText
+                                android:id="@+id/edit_description"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:hint="添加备注（可选）"
+                                android:textSize="16sp"
+                                android:inputType="text"
+                                android:maxLines="1"
+                                android:background="@android:color/transparent" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+                <Button
+                    android:id="@+id/btn_update"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="更新"
+                    android:layout_marginTop="16dp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
