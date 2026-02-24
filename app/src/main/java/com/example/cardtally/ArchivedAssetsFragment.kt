@@ -71,6 +71,14 @@ class ArchivedAssetsFragment : Fragment() {
 
             if (adapter == null) {
                 adapter = AssetAdapter(assets, object : AssetAdapter.OnAssetActionListener {
+                    override fun onClick(asset: Asset) {
+                        val recordsFragment = AssetRecordsFragment.newInstance(asset.name, asset.amount, asset.type)
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, recordsFragment)
+                            .addToBackStack(null)
+                            .commit()
+                    }
+
                     override fun onEdit(asset: Asset) {
                         showEditDialog(asset)
                     }

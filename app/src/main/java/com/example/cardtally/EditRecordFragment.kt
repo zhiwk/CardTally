@@ -130,8 +130,7 @@ class EditRecordFragment : Fragment() {
     }
 
     private fun loadRecord() {
-        val records = databaseHelper.getAllRecords()
-        record = records.find { it.id == recordId }
+        record = databaseHelper.getRecordById(recordId)
 
         record?.let { r ->
             selectedDate = r.date
@@ -181,10 +180,10 @@ class EditRecordFragment : Fragment() {
 
         val adapter = ArrayAdapter(
             requireContext(),
-            android.R.layout.simple_spinner_item,
+            R.layout.spinner_item_small,
             assetNames
         )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         spinnerAssetSource.adapter = adapter
 
         if (selectedAssetSource != null) {

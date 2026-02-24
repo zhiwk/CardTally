@@ -18,6 +18,7 @@ class AssetAdapter(
 ) : RecyclerView.Adapter<AssetAdapter.AssetViewHolder>() {
 
     interface OnAssetActionListener {
+        fun onClick(asset: Asset)
         fun onEdit(asset: Asset)
         fun onDelete(asset: Asset)
         fun onArchive(asset: Asset)
@@ -48,7 +49,8 @@ class AssetAdapter(
             holder.layoutActions,
             onEdit = { listener.onEdit(asset) },
             onDelete = { listener.onDelete(asset) },
-            onArchive = { listener.onArchive(asset) }
+            onArchive = { listener.onArchive(asset) },
+            onClick = { listener.onClick(asset) }
         )
         
         holder.btnArchive.setOnClickListener {

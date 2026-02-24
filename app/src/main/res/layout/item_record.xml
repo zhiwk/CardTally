@@ -63,6 +63,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="72dp"
             android:padding="16dp">
 
             <LinearLayout
@@ -72,7 +73,7 @@
                 android:orientation="vertical"
                 android:gravity="center_vertical"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/text_amount"
+                app:layout_constraintEnd_toStartOf="@+id/layout_amount_info"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
@@ -97,6 +98,27 @@
                     android:ellipsize="end"
                     android:visibility="gone" />
 
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_amount_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="end"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <TextView
+                    android:id="@+id/text_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-100.00"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#F44336" />
+
                 <TextView
                     android:id="@+id/text_asset_source"
                     android:layout_width="wrap_content"
@@ -108,18 +130,6 @@
                     android:visibility="gone" />
 
             </LinearLayout>
-
-            <TextView
-                android:id="@+id/text_amount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-100.00"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#F44336"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

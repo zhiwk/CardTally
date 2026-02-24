@@ -15,19 +15,23 @@ class SwipeToEditDeleteHelper(
     private val layoutActions: View,
     private val onEdit: () -> Unit,
     private val onDelete: () -> Unit,
-    private val onArchive: (() -> Unit)? = null
+    private val onArchive: (() -> Unit)? = null,
+    private val onClick: (() -> Unit)? = null
 ) {
     private var initialTouchX = 0f
+    private var initialTouchY = 0f
     private var initialTranslationX = 0f
     private var lastTouchX = 0f
     private var lastTouchTime = 0L
     private var velocityX = 0f
     private var isSwiping = false
     private var isOpen = false
+    private var isTracking = false
     
     private val touchSlop: Int
     private val maxSwipeDistance: Int
     private val minVelocity: Float
+    private val edgeSlop: Int
     
     private val decelerateInterpolator = DecelerateInterpolator(1.5f)
     private val overshootInterpolator = OvershootInterpolator(0.5f)
@@ -38,6 +42,7 @@ class SwipeToEditDeleteHelper(
         val buttonCount = if (onArchive != null) 3 else 2
         maxSwipeDistance = (80 * buttonCount * cardContent.context.resources.displayMetrics.density).toInt()
         minVelocity = ViewConfiguration.get(cardContent.context).scaledMinimumFlingVelocity * 2f
+        edgeSlop = (20 * cardContent.context.resources.displayMetrics.density).toInt()
         
         cardContent.setOnTouchListener { v, event ->
             handleTouchEvent(v, event)
@@ -63,16 +68,21 @@ class SwipeToEditDeleteHelper(
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 initialTouchX = event.rawX
+                initialTouchY = event.rawY
                 initialTranslationX = cardContent.translationX
                 lastTouchX = event.rawX
                 lastTouchTime = System.currentTimeMillis()
                 velocityX = 0f
                 isSwiping = false
+                isTracking = true
                 return true
             }
             
             MotionEvent.ACTION_MOVE -> {
+                if (!isTracking) return false
+                
                 val deltaX = event.rawX - initialTouchX
+                val deltaY = event.rawY - initialTouchY
                 val currentDeltaX = event.rawX - lastTouchX
                 val currentTime = System.currentTimeMillis()
                 val timeDelta = currentTime - lastTouchTime
@@ -84,11 +94,27 @@ class SwipeToEditDeleteHelper(
                 lastTouchX = event.rawX
                 lastTouchTime = currentTime
                 
-                if (!isSwiping && abs(deltaX) > touchSlop) {
-                    isSwiping = true
-                    val parent = cardContent.parent
-                    if (parent is ViewGroup) {
-                        parent.requestDisallowInterceptTouchEvent(true)
+                if (!isSwiping && (abs(deltaX) > touchSlop || abs(deltaY) > touchSlop)) {
+                    val isHorizontalSwipe = abs(deltaX) > abs(deltaY)
+                    val isSwipeLeft = deltaX < 0
+                    val isFromEdge = initialTouchX < edgeSlop
+                    val isSwipeRight = deltaX > 0
+                    
+                    if (isHorizontalSwipe && isSwipeLeft) {
+                        isSwiping = true
+                        val parent = cardContent.parent
+                        if (parent is ViewGroup) {
+                            parent.requestDisallowInterceptTouchEvent(true)
+                        }
+                    } else if (isHorizontalSwipe && isSwipeRight && isFromEdge) {
+                        isTracking = false
+                        return false
+                    } else if (isHorizontalSwipe && isSwipeRight) {
+                        isTracking = false
+                        return false
+                    } else if (!isHorizontalSwipe) {
+                        isTracking = false
+                        return false
                     }
                 }
                 
@@ -107,6 +133,7 @@ class SwipeToEditDeleteHelper(
             }
             
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                isTracking = false
                 if (isSwiping) {
                     val currentX = cardContent.translationX
                     
@@ -130,9 +157,16 @@ class SwipeToEditDeleteHelper(
                     close(false)
                     return true
                 }
+                
+                val deltaX = abs(event.rawX - initialTouchX)
+                val deltaY = abs(event.rawY - initialTouchY)
+                if (deltaX < touchSlop && deltaY < touchSlop) {
+                    onClick?.invoke()
+                    return true
+                }
             }
         }
-        return false
+        return true
     }
 
     private fun open() {

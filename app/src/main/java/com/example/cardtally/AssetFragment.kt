@@ -95,7 +95,10 @@ class AssetFragment : Fragment() {
         loadAssets()
 
         fabAdd.setOnClickListener {
-            showAddDialog()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, AddAssetFragment())
+                .addToBackStack(null)
+                .commit()
         }
 
         btnArchive.setOnClickListener {
@@ -132,8 +135,20 @@ class AssetFragment : Fragment() {
 
             if (adapter == null) {
                 adapter = AssetAdapter(assets, object : AssetAdapter.OnAssetActionListener {
+                    override fun onClick(asset: Asset) {
+                        val recordsFragment = AssetRecordsFragment.newInstance(asset.name, asset.amount, asset.type)
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, recordsFragment)
+                            .addToBackStack(null)
+                            .commit()
+                    }
+
                     override fun onEdit(asset: Asset) {
-                        showEditDialog(asset)
+                        val editFragment = EditAssetFragment.newInstance(asset.id)
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, editFragment)
+                            .addToBackStack(null)
+                            .commit()
                     }
 
                     override fun onDelete(asset: Asset) {

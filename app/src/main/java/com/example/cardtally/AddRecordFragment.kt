@@ -147,10 +147,10 @@ class AddRecordFragment : Fragment() {
 
         val adapter = ArrayAdapter(
             requireContext(),
-            android.R.layout.simple_spinner_item,
+            R.layout.spinner_item_small,
             assetNames
         )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         spinnerAssetSource.adapter = adapter
     }
 

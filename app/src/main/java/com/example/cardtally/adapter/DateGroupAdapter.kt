@@ -301,15 +301,14 @@ class DateGroupAdapter(
                     cardContent,
                     layoutActions,
                     onEdit = { listener.onEdit(record) },
-                    onDelete = { listener.onDelete(record) }
+                    onDelete = { listener.onDelete(record) },
+                    onClick = { listener.onEdit(record) }
                 )
                 
                 itemView.setOnLongClickListener {
                     currentRecord?.let { listener.onEnterMultiSelectMode(it) }
                     true
                 }
-                
-                itemView.setOnClickListener(null)
             }
         }
     }

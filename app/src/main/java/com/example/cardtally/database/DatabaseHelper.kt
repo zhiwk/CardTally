@@ -183,6 +183,12 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
 
         val id = db.insert(TABLE_RECORDS, null, values)
+        
+        val assetSource = record.assetSource
+        if (id != -1L && !assetSource.isNullOrEmpty()) {
+            updateAssetAmount(db, assetSource, record.amount, record.type == 1)
+        }
+        
         db.close()
         return id
     }
@@ -217,6 +223,9 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun updateRecord(record: Record): Int {
         val db = writableDatabase
+        
+        val oldRecord = getRecordByIdInternal(db, record.id)
+        
         val values = ContentValues().apply {
             put(COLUMN_DATE, record.date)
             put(COLUMN_AMOUNT, record.amount)
@@ -228,14 +237,82 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
         val rowsAffected = db.update(TABLE_RECORDS, values, "$COLUMN_ID = ?",
             arrayOf(record.id.toString()))
+        
+        if (rowsAffected > 0 && oldRecord != null) {
+            val oldAssetSource = oldRecord.assetSource
+            val newAssetSource = record.assetSource
+            if (!oldAssetSource.isNullOrEmpty()) {
+                updateAssetAmount(db, oldAssetSource, oldRecord.amount, oldRecord.type != 1)
+            }
+            if (!newAssetSource.isNullOrEmpty()) {
+                updateAssetAmount(db, newAssetSource, record.amount, record.type == 1)
+            }
+        }
+        
         db.close()
         return rowsAffected
     }
 
+    fun getRecordById(id: Long): Record? {
+        val db = readableDatabase
+        val record = getRecordByIdInternal(db, id)
+        db.close()
+        return record
+    }
+
+    private fun getRecordByIdInternal(db: SQLiteDatabase, id: Long): Record? {
+        val selectQuery = "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_ID = ?"
+        
+        val cursor = db.rawQuery(selectQuery, arrayOf(id.toString()))
+        
+        var record: Record? = null
+        if (cursor.moveToFirst()) {
+            record = Record(
+                id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID)),
+                date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE)),
+                amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
+                category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
+                type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
+                description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
+                assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE)),
+                sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
+            )
+        }
+        
+        cursor.close()
+        return record
+    }
+
     fun deleteRecord(id: Long) {
         val db = writableDatabase
+        
+        val record = getRecordByIdInternal(db, id)
+        
         db.delete(TABLE_RECORDS, "$COLUMN_ID = ?", arrayOf(id.toString()))
+        
+        val assetSource = record?.assetSource
+        if (record != null && !assetSource.isNullOrEmpty()) {
+            updateAssetAmount(db, assetSource, record.amount, record.type != 1)
+        }
+        
         db.close()
+    }
+
+    private fun updateAssetAmount(db: SQLiteDatabase, assetName: String, amount: Double, isAdd: Boolean) {
+        val selectQuery = "SELECT $COLUMN_ASSET_AMOUNT FROM $TABLE_ASSETS WHERE $COLUMN_ASSET_NAME = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0"
+        val cursor = db.rawQuery(selectQuery, arrayOf(assetName))
+        
+        if (cursor.moveToFirst()) {
+            val currentAmount = cursor.getDouble(0)
+            val newAmount = if (isAdd) currentAmount + amount else currentAmount - amount
+            
+            val values = ContentValues().apply {
+                put(COLUMN_ASSET_AMOUNT, newAmount)
+            }
+            db.update(TABLE_ASSETS, values, "$COLUMN_ASSET_NAME = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0", arrayOf(assetName))
+        }
+        
+        cursor.close()
     }
 
     fun updateRecordSortOrder(recordId: Long, newSortOrder: Int) {
@@ -388,6 +465,34 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
         val db = readableDatabase
         val cursor = db.rawQuery(selectQuery, arrayOf(startDate, endDate))
+
+        if (cursor.moveToFirst()) {
+            do {
+                val record = Record(
+                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID)),
+                    date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE)),
+                    amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
+                    category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
+                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
+                    description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
+                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE)),
+                    sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
+                )
+                records.add(record)
+            } while (cursor.moveToNext())
+        }
+
+        cursor.close()
+        db.close()
+        return records
+    }
+
+    fun getRecordsByAssetSource(assetSource: String): List<Record> {
+        val records = mutableListOf<Record>()
+        val selectQuery = "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_ASSET_SOURCE = ? ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC"
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(selectQuery, arrayOf(assetSource))
 
         if (cursor.moveToFirst()) {
             do {
