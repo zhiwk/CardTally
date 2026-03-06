@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 橙色主题 -->
+    <color name="primary_orange">#FF9800</color>
+    <color name="primaryVariant_orange">#F57C00</color>
+    <color name="secondary_orange">#FFB74D</color>
+    <color name="background_orange">#FFF3E0</color>
+    <color name="surface_orange">#FFFFFF</color>
+    <color name="onPrimary_orange">#FFFFFF</color>
+    <color name="onSecondary_orange">#000000</color>
+    <color name="onBackground_orange">#000000</color>
+    <color name="onSurface_orange">#000000</color>
+</resources>

@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <!-- 排版基础样式 -->
+    <style name="TextAppearance.CardTally" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- H1 - 96sp -->
+    <style name="TextAppearance.CardTally.H1" parent="TextAppearance.MaterialComponents.Headline1">
+        <item name="android:textSize">@dimen/text_size_h1</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_tight</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- H2 - 60sp -->
+    <style name="TextAppearance.CardTally.H2" parent="TextAppearance.MaterialComponents.Headline2">
+        <item name="android:textSize">@dimen/text_size_h2</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_tight</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- H3 - 48sp -->
+    <style name="TextAppearance.CardTally.H3" parent="TextAppearance.MaterialComponents.Headline3">
+        <item name="android:textSize">@dimen/text_size_h3</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- H4 - 34sp -->
+    <style name="TextAppearance.CardTally.H4" parent="TextAppearance.MaterialComponents.Headline4">
+        <item name="android:textSize">@dimen/text_size_h4</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:lineSpacingExtra">@dimen/line_height_h4</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- H5 - 24sp -->
+    <style name="TextAppearance.CardTally.H5" parent="TextAppearance.MaterialComponents.Headline5">
+        <item name="android:textSize">@dimen/text_size_h5</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:lineSpacingExtra">@dimen/line_height_h5</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- H6 - 20sp -->
+    <style name="TextAppearance.CardTally.H6" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textSize">@dimen/text_size_h6</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:lineSpacingExtra">@dimen/line_height_h6</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- Body1 - 16sp -->
+    <style name="TextAppearance.CardTally.Body1" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textSize">@dimen/text_size_body1</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:lineSpacingExtra">@dimen/line_height_body1</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- Body2 - 14sp -->
+    <style name="TextAppearance.CardTally.Body2" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:textSize">@dimen/text_size_body2</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:lineSpacingExtra">@dimen/line_height_body2</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- Caption - 12sp -->
+    <style name="TextAppearance.CardTally.Caption" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">@dimen/text_size_caption</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:lineSpacingExtra">@dimen/line_height_caption</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+    
+    <!-- Overline - 10sp -->
+    <style name="TextAppearance.CardTally.Overline" parent="TextAppearance.MaterialComponents.Overline">
+        <item name="android:textSize">10sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_wider</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+    
+    <!-- Subtitle1 - 16sp Bold -->
+    <style name="TextAppearance.CardTally.Subtitle1" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="android:textSize">@dimen/text_size_body1</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:lineSpacingExtra">@dimen/line_height_body1</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- Subtitle2 - 14sp Bold -->
+    <style name="TextAppearance.CardTally.Subtitle2" parent="TextAppearance.MaterialComponents.Subtitle2">
+        <item name="android:textSize">@dimen/text_size_body2</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:lineSpacingExtra">@dimen/line_height_body2</item>
+        <item name="android:textColor">?attr/colorOnBackground</item>
+    </style>
+    
+    <!-- Button - 14sp Medium -->
+    <style name="TextAppearance.CardTally.Button" parent="TextAppearance.MaterialComponents.Button">
+        <item name="android:textSize">@dimen/text_size_body2</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">@dimen/letter_spacing_wide</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+    
+    <!-- 标题样式 -->
+    <style name="TextAppearance.CardTally.Title" parent="TextAppearance.CardTally.H6">
+        <item name="android:textSize">@dimen/text_size_h6</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- 页面标题 -->
+    <style name="TextAppearance.CardTally.PageTitle" parent="TextAppearance.CardTally.H5">
+        <item name="android:textSize">@dimen/text_size_h5</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- 卡片标题 -->
+    <style name="TextAppearance.CardTally.CardTitle" parent="TextAppearance.CardTally.Subtitle1">
+        <item name="android:textSize">@dimen/text_size_body1</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- 列表项标题 -->
+    <style name="TextAppearance.CardTally.ListTitle" parent="TextAppearance.CardTally.Body1">
+        <item name="android:textSize">@dimen/text_size_body1</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- 列表项副标题 -->
+    <style name="TextAppearance.CardTally.ListSubtitle" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textSize">@dimen/text_size_caption</item>
+    </style>
+    
+    <!-- 金额样式 -->
+    <style name="TextAppearance.CardTally.Amount" parent="TextAppearance.CardTally.H5">
+        <item name="android:textSize">@dimen/text_size_h5</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">monospace</item>
+    </style>
+    
+    <!-- 金额大 -->
+    <style name="TextAppearance.CardTally.AmountLarge" parent="TextAppearance.CardTally.H4">
+        <item name="android:textSize">@dimen/text_size_h4</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">monospace</item>
+    </style>
+    
+    <!-- 金额小 -->
+    <style name="TextAppearance.CardTally.AmountSmall" parent="TextAppearance.CardTally.Body1">
+        <item name="android:textSize">@dimen/text_size_body1</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">monospace</item>
+    </style>
+    
+    <!-- 收入金额 -->
+    <style name="TextAppearance.CardTally.Income" parent="TextAppearance.CardTally.Amount">
+        <item name="android:textColor">@color/income_primary</item>
+    </style>
+    
+    <!-- 支出金额 -->
+    <style name="TextAppearance.CardTally.Expense" parent="TextAppearance.CardTally.Amount">
+        <item name="android:textColor">@color/expense_primary</item>
+    </style>
+    
+    <!-- 结余金额 -->
+    <style name="TextAppearance.CardTally.Balance" parent="TextAppearance.CardTally.Amount">
+        <item name="android:textColor">@color/balance_primary</item>
+    </style>
+    
+    <!-- 占位符文本 -->
+    <style name="TextAppearance.CardTally.Placeholder" parent="TextAppearance.CardTally.Body2">
+        <item name="android:textColor">?attr/colorPlaceholder</item>
+        <item name="android:textStyle">italic</item>
+    </style>
+    
+    <!-- 辅助文本 -->
+    <style name="TextAppearance.CardTally.Helper" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+    
+    <!-- 错误文本 -->
+    <style name="TextAppearance.CardTally.Error" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textColor">@color/error_primary</item>
+    </style>
+    
+    <!-- 成功文本 -->
+    <style name="TextAppearance.CardTally.Success" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textColor">@color/success_primary</item>
+    </style>
+    
+    <!-- 警告文本 -->
+    <style name="TextAppearance.CardTally.Warning" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textColor">@color/warning_primary</item>
+    </style>
+    
+    <!-- 信息文本 -->
+    <style name="TextAppearance.CardTally.Info" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textColor">@color/info_primary</item>
+    </style>
+    
+    <!-- 链接文本 -->
+    <style name="TextAppearance.CardTally.Link" parent="TextAppearance.CardTally.Body2">
+        <item name="android:textColor">@color/primary_light</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- 工具提示文本 -->
+    <style name="TextAppearance.CardTally.Tooltip" parent="TextAppearance.CardTally.Body2">
+        <item name="android:textColor">@color/tooltipText_light</item>
+    </style>
+    
+    <!-- 徽章文本 -->
+    <style name="TextAppearance.CardTally.Badge" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textColor">@color/badgeText_light</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- 标签文本 -->
+    <style name="TextAppearance.CardTally.Chip" parent="TextAppearance.CardTally.Body2">
+        <item name="android:textColor">@color/chipText_light</item>
+    </style>
+    
+    <!-- 导航文本 -->
+    <style name="TextAppearance.CardTally.Nav" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textColor">@color/navUnselected_light</item>
+    </style>
+    
+    <!-- 导航文本 - 选中 -->
+    <style name="TextAppearance.CardTally.NavSelected" parent="TextAppearance.CardTally.Nav">
+        <item name="android:textColor">@color/navSelected_light</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- 统计标签 -->
+    <style name="TextAppearance.CardTally.StatLabel" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+    
+    <!-- 统计值 -->
+    <style name="TextAppearance.CardTally.StatValue" parent="TextAppearance.CardTally.H6">
+        <item name="android:textSize">@dimen/text_size_h6</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    
+    <!-- 设置项文本 -->
+    <style name="TextAppearance.CardTally.Setting" parent="TextAppearance.CardTally.Body1">
+        <item name="android:textSize">@dimen/text_size_body1</item>
+    </style>
+    
+    <!-- 设置项描述 -->
+    <style name="TextAppearance.CardTally.SettingDesc" parent="TextAppearance.CardTally.Caption">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+    
+</resources>

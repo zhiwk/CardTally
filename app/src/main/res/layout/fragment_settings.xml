@@ -21,46 +21,49 @@
         android:id="@+id/card_quick_add"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_title">
+        android:layout_margin="@dimen/card_margin_large"
+        style="@style/CardSettings">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="@dimen/card_padding_large">
 
             <LinearLayout
-                android:layout_width="match_parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="@dimen/icon_size_large"
+                android:layout_height="@dimen/icon_size_large"
+                android:src="@drawable/ic_quick_add"
+                android:layout_marginEnd="@dimen/spacing_m"
+                android:alpha="0.6" />
+
+            <TextView
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_weight="1"
+                android:text="是否快捷记账"
+                android:textSize="@dimen/text_size_body1" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="是否快捷记账"
-                    android:textSize="16sp" />
+            <Switch
+                android:id="@+id/switch_quick_add"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
 
-                <Switch
-                    android:id="@+id/switch_quick_add"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-
-            </LinearLayout>
+        </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="开启后，进入应用直接进入记账界面"
-                android:textSize="12sp"
-                android:textColor="@android:color/darker_gray"
-                android:layout_marginTop="4dp" />
+                android:textSize="@dimen/text_size_caption"
+                android:textColor="@color/onSurfaceVariant_light"
+                android:layout_marginTop="@dimen/spacing_xs" />
 
         </LinearLayout>
 
@@ -70,48 +73,51 @@
         android:id="@+id/card_show_asset"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/card_quick_add">
+        android:layout_marginStart="@dimen/card_margin_large"
+        android:layout_marginEnd="@dimen/card_margin_large"
+        android:layout_marginTop="@dimen/card_spacing_medium"
+        style="@style/CardSettings">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="@dimen/card_padding_large">
 
             <LinearLayout
-                android:layout_width="match_parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="@dimen/icon_size_large"
+                android:layout_height="@dimen/icon_size_large"
+                android:src="@drawable/ic_categories"
+                android:layout_marginEnd="@dimen/spacing_m"
+                android:alpha="0.6" />
+
+            <TextView
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_weight="1"
+                android:text="是否显示资产"
+                android:textSize="@dimen/text_size_body1" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="是否显示资产"
-                    android:textSize="16sp" />
+            <Switch
+                android:id="@+id/switch_show_asset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
 
-                <Switch
-                    android:id="@+id/switch_show_asset"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-
-            </LinearLayout>
+        </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="开启后，底部导航栏显示资产页面"
-                android:textSize="12sp"
-                android:textColor="@android:color/darker_gray"
-                android:layout_marginTop="4dp" />
+                android:textSize="@dimen/text_size_caption"
+                android:textColor="@color/onSurfaceVariant_light"
+                android:layout_marginTop="@dimen/spacing_xs" />
 
         </LinearLayout>
 
@@ -121,20 +127,16 @@
         android:id="@+id/card_category"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/card_show_asset">
+        android:layout_marginStart="@dimen/card_margin_large"
+        android:layout_marginEnd="@dimen/card_margin_large"
+        android:layout_marginTop="@dimen/card_spacing_medium"
+        style="@style/CardSettings">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="16dp"
+            android:padding="@dimen/card_padding_large"
             android:gravity="center_vertical">
 
             <TextView
@@ -142,14 +144,14 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="分类管理"
-                android:textSize="16sp" />
+                android:textSize="@dimen/text_size_body1" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=">"
-                android:textSize="18sp"
-                android:textColor="@android:color/darker_gray" />
+                android:textSize="@dimen/text_size_h6"
+                android:textColor="@color/onSurfaceVariant_light" />
 
         </LinearLayout>
 
@@ -159,20 +161,16 @@
         android:id="@+id/card_theme"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/card_category">
+        android:layout_marginStart="@dimen/card_margin_large"
+        android:layout_marginEnd="@dimen/card_margin_large"
+        android:layout_marginTop="@dimen/card_spacing_medium"
+        style="@style/CardSettings">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="16dp"
+            android:padding="@dimen/card_padding_large"
             android:gravity="center_vertical">
 
             <TextView
@@ -180,23 +178,23 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="主题设置"
-                android:textSize="16sp" />
+                android:textSize="@dimen/text_size_body1" />
 
             <TextView
                 android:id="@+id/text_current_theme"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="浅色主题"
-                android:textSize="14sp"
-                android:textColor="@android:color/darker_gray"
-                android:layout_marginEnd="8dp" />
+                android:textSize="@dimen/text_size_body2"
+                android:textColor="@color/onSurfaceVariant_light"
+                android:layout_marginEnd="@dimen/spacing_s" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=">"
-                android:textSize="18sp"
-                android:textColor="@android:color/darker_gray" />
+                android:textSize="@dimen/text_size_h6"
+                android:textColor="@color/onSurfaceVariant_light" />
 
         </LinearLayout>
 

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/card_margin_small"
+    style="@style/CardMedium">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/card_padding_medium">
+
+        <TextView
+            android:id="@+id/text_category"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="餐饮"
+            android:textSize="@dimen/text_size_body1"
+            android:textStyle="bold"
+            android:textColor="@color/onBackground_light"
+            android:textAppearance="@style/TextAppearance.CardTally.ListTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/text_budget_used" />
+
+        <TextView
+            android:id="@+id/text_budget_used"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="¥800.00"
+            android:textSize="@dimen/text_size_h6"
+            android:textStyle="bold"
+            android:textColor="@color/expense_primary"
+            android:textAppearance="@style/TextAppearance.CardTally.Amount"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:id="@+id/progress_background"
+            android:layout_width="0dp"
+            android:layout_height="8dp"
+            android:background="@color/neutral_200"
+            android:layout_marginTop="@dimen/spacing_s"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/text_category" />
+
+        <View
+            android:id="@+id/progress_bar"
+            android:layout_width="0dp"
+            android:layout_height="8dp"
+            android:background="@color/expense_primary"
+            android:layout_marginTop="@dimen/spacing_s"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/text_category" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/spacing_m"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/progress_bar">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="已用"
+                android:textSize="@dimen/text_size_caption"
+                android:textColor="@color/onSurfaceVariant_light" />
+
+            <TextView
+                android:id="@+id/text_budget_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="预算: ¥1000.00"
+                android:textSize="@dimen/text_size_caption"
+                android:textColor="@color/onSurfaceVariant_light" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="剩余"
+                android:textSize="@dimen/text_size_caption"
+                android:textColor="@color/onSurfaceVariant_light" />
+
+            <TextView
+                android:id="@+id/text_budget_remaining"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¥200.00"
+                android:textSize="@dimen/text_size_caption"
+                android:textColor="@color/income_primary"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

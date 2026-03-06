@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/card_margin_small"
+    style="@style/CardMedium">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/card_padding_medium"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="@dimen/icon_size_large"
+            android:layout_height="@dimen/icon_size_large"
+            android:src="@drawable/ic_export"
+            android:layout_marginEnd="@dimen/spacing_m"
+            android:alpha="0.6" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="导出数据"
+            android:textSize="@dimen/text_size_body1"
+            android:textAppearance="@style/TextAppearance.CardTally.Body1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=">"
+            android:textSize="@dimen/text_size_h6"
+            android:textColor="@color/onSurfaceVariant_light"
+            android:layout_marginStart="@dimen/spacing_s" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

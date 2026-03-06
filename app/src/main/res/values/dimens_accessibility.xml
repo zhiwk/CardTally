@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <!-- 触摸目标最小尺寸 - 48dp -->
+    <dimen name="touch_target_min">48dp</dimen>
+    
+    <!-- 触摸目标推荐尺寸 - 56dp -->
+    <dimen name="touch_target_recommended">56dp</dimen>
+    
+    <!-- 最小点击区域 - 44dp -->
+    <dimen name="min_click_area">44dp</dimen>
+    
+    <!-- 图标按钮最小尺寸 - 40dp -->
+    <dimen name="icon_button_min">40dp</dimen>
+    
+    <!-- FAB最小尺寸 - 56dp -->
+    <dimen name="fab_min_size">56dp</dimen>
+    
+</resources>

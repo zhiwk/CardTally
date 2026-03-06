@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:padding="@dimen/spacing_s"
+    android:layout_marginTop="@dimen/spacing_m">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="本月"
+        android:textSize="@dimen/text_size_caption"
+        android:textColor="@color/onSurfaceVariant_light"
+        android:layout_marginEnd="@dimen/spacing_xs" />
+
+    <TextView
+        android:id="@+id/text_month_expense"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="¥0.00"
+        android:textSize="@dimen/text_size_body2"
+        android:textStyle="bold"
+        android:textColor="@color/expense_primary"
+        android:layout_marginStart="@dimen/spacing_xs" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="vs"
+        android:textSize="@dimen/text_size_caption"
+        android:textColor="@color/onSurfaceVariant_light"
+        android:layout_marginStart="@dimen/spacing_xs"
+        android:layout_marginEnd="@dimen/spacing_xs" />
+
+    <TextView
+        android:id="@+id/text_last_expense"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="¥0.00"
+        android:textSize="@dimen/text_size_body2"
+        android:textStyle="bold"
+        android:textColor="@color/onSurfaceVariant_light"
+        android:layout_marginStart="@dimen/spacing_xs"
+        android:layout_marginEnd="@dimen/spacing_l" />
+
+    <TextView
+        android:id="@+id/text_expense_change"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="+0%"
+        android:textSize="@dimen/text_size_caption"
+        android:textColor="@color/income_primary"
+        android:layout_marginEnd="@dimen/spacing_l" />
+
+</LinearLayout>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 蓝色主题 -->
+    <color name="primary_blue">#2196F3</color>
+    <color name="primaryVariant_blue">#1565C0</color>
+    <color name="secondary_blue">#03A9F4</color>
+    <color name="background_blue">#F5F9FF</color>
+    <color name="surface_blue">#FFFFFF</color>
+    <color name="onPrimary_blue">#FFFFFF</color>
+    <color name="onSecondary_blue">#000000</color>
+    <color name="onBackground_blue">#000000</color>
+    <color name="onSurface_blue">#000000</color>
+</resources>

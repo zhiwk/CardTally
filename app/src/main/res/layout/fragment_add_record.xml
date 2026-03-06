@@ -42,26 +42,43 @@
                 android:fillViewport="true">
 
                 <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/card_padding_medium">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="选择分类"
+                    android:textSize="@dimen/text_size_body2"
+                    android:textColor="@color/onSurfaceVariant_light" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_categories"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:layout_marginTop="@dimen/spacing_m"
+                    android:nestedScrollingEnabled="false" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="选择分类"
-                        android:textSize="14sp"
-                        android:textColor="@android:color/darker_gray" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="快捷金额"
+                    android:textSize="@dimen/text_size_body2"
+                    android:textColor="@color/onSurfaceVariant_light"
+                    android:layout_marginTop="@dimen/spacing_l"
+                    android:visibility="gone" />
 
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/recycler_categories"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:nestedScrollingEnabled="false" />
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_quick_amounts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_s"
+                    android:nestedScrollingEnabled="false"
+                    android:visibility="gone" />
 
-                </LinearLayout>
+            </LinearLayout>
 
             </ScrollView>
 
@@ -98,7 +115,7 @@
                     android:layout_marginEnd="6dp"
                     app:cardCornerRadius="6dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="#F44336">
+                    app:cardBackgroundColor="@color/expense_primary">
 
                     <TextView
                         android:layout_width="match_parent"
@@ -106,7 +123,7 @@
                         android:text="支出"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="@android:color/white"
+                        android:textColor="@color/onError_light"
                         android:padding="8dp"
                         android:gravity="center" />
 
@@ -120,7 +137,7 @@
                     android:layout_marginStart="6dp"
                     app:cardCornerRadius="6dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="#E0E0E0">
+                    app:cardBackgroundColor="@color/onSurfaceVariant_light">
 
                     <TextView
                         android:layout_width="match_parent"
@@ -128,7 +145,7 @@
                         android:text="收入"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="@android:color/black"
+                        android:textColor="@color/onBackground_light"
                         android:padding="8dp"
                         android:gravity="center" />
 
@@ -143,7 +160,7 @@
                 android:layout_marginTop="10dp"
                 app:cardCornerRadius="6dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="#FAFAFA">
+                app:cardBackgroundColor="@color/inputBackground_light">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -163,7 +180,7 @@
                             android:text="¥"
                             android:textSize="24sp"
                             android:textStyle="bold"
-                            android:textColor="#2196F3" />
+                            android:textColor="@color/balance_primary" />
 
                         <EditText
                             android:id="@+id/edit_amount"
@@ -182,7 +199,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#E0E0E0"
+                        android:background="@color/divider_light"
                         android:layout_marginTop="6dp"
                         android:layout_marginBottom="6dp" />
 
@@ -198,14 +215,14 @@
                             android:layout_height="wrap_content"
                             android:text="2024-01-01"
                             android:textSize="12sp"
-                            android:textColor="@android:color/darker_gray"
+                            android:textColor="@color/onSurfaceVariant_light"
                             android:padding="4dp"
                             android:background="?attr/selectableItemBackground" />
 
                         <View
                             android:layout_width="1dp"
                             android:layout_height="12dp"
-                            android:background="#E0E0E0"
+                            android:background="@color/divider_light"
                             android:layout_marginStart="6dp"
                             android:layout_marginEnd="6dp" />
 
@@ -218,7 +235,7 @@
                         <View
                             android:layout_width="1dp"
                             android:layout_height="12dp"
-                            android:background="#E0E0E0"
+                            android:background="@color/divider_light"
                             android:layout_marginStart="6dp"
                             android:layout_marginEnd="6dp" />
 
@@ -244,26 +261,28 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="10dp">
+                android:layout_marginTop="@dimen/spacing_m">
 
                 <Button
                     android:id="@+id/btn_save_and_continue"
                     android:layout_width="0dp"
-                    android:layout_height="36dp"
+                    android:layout_height="@dimen/button_height"
                     android:text="再记"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_size_body2"
                     android:layout_weight="1"
-                    android:layout_marginEnd="6dp"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                    android:layout_marginEnd="@dimen/spacing_s"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:background="@drawable/ripple_primary" />
 
                 <Button
                     android:id="@+id/btn_save"
                     android:layout_width="0dp"
-                    android:layout_height="36dp"
+                    android:layout_height="@dimen/button_height"
                     android:text="保存"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_size_body2"
                     android:layout_weight="1"
-                    android:layout_marginStart="6dp" />
+                    android:layout_marginStart="@dimen/spacing_s"
+                    android:background="@drawable/shape_button_primary" />
 
             </LinearLayout>
 

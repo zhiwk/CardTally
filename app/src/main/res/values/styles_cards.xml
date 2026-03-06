@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <!-- 卡片基础样式 -->
+    <style name="CardBase" parent="Widget.MaterialComponents.CardView">
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_medium</item>
+    </style>
+    
+    <!-- 卡片 - 小尺寸 -->
+    <style name="CardSmall" parent="CardBase">
+        <item name="cardCornerRadius">@dimen/card_corner_radius_small</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 中等尺寸 -->
+    <style name="CardMedium" parent="CardBase">
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_medium</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 大尺寸 -->
+    <style name="CardLarge" parent="CardBase">
+        <item name="cardCornerRadius">@dimen/card_corner_radius_large</item>
+        <item name="cardElevation">@dimen/card_elevation_large</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 超大尺寸 -->
+    <style name="CardXLarge" parent="CardBase">
+        <item name="cardCornerRadius">@dimen/card_corner_radius_xlarge</item>
+        <item name="cardElevation">@dimen/card_elevation_xlarge</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 无阴影 -->
+    <style name="CardFlat" parent="CardBase">
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_none</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 浅色主题 -->
+    <style name="CardLight" parent="CardMedium">
+        <item name="cardBackgroundColor">@color/cardBackground_light</item>
+    </style>
+    
+    <!-- 卡片 - 深色主题 -->
+    <style name="CardDark" parent="CardMedium">
+        <item name="cardBackgroundColor">@color/cardBackground_dark</item>
+    </style>
+    
+    <!-- 卡片 - 收入 -->
+    <style name="CardIncome" parent="CardSmall">
+        <item name="cardBackgroundColor">@color/income_background</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+    </style>
+    
+    <!-- 卡片 - 支出 -->
+    <style name="CardExpense" parent="CardSmall">
+        <item name="cardBackgroundColor">@color/expense_background</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+    </style>
+    
+    <!-- 卡片 - 结余 -->
+    <style name="CardBalance" parent="CardSmall">
+        <item name="cardBackgroundColor">@color/balance_background</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+    </style>
+    
+    <!-- 卡片 - 成功 -->
+    <style name="CardSuccess" parent="CardSmall">
+        <item name="cardBackgroundColor">@color/success_container</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+    </style>
+    
+    <!-- 卡片 - 警告 -->
+    <style name="CardWarning" parent="CardSmall">
+        <item name="cardBackgroundColor">@color/warning_container</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+    </style>
+    
+    <!-- 卡片 - 错误 -->
+    <style name="CardError" parent="CardSmall">
+        <item name="cardBackgroundColor">@color/error_container</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+    </style>
+    
+    <!-- 卡片 - 信息 -->
+    <style name="CardInfo" parent="CardSmall">
+        <item name="cardBackgroundColor">@color/info_container</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+    </style>
+    
+    <!-- 卡片 - 可点击 -->
+    <style name="CardClickable" parent="CardMedium">
+        <item name="cardBackgroundColor">@color/cardBackground_light</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_medium</item>
+        <item name="cardUseCompatPadding">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    
+    <!-- 卡片 - 选中状态 -->
+    <style name="CardSelected" parent="CardMedium">
+        <item name="cardBackgroundColor">@color/primaryContainer_light</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_large</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 禁用状态 -->
+    <style name="CardDisabled" parent="CardFlat">
+        <item name="cardBackgroundColor">@color/disabledBackground_light</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_none</item>
+        <item name="cardUseCompatPadding">true</item>
+        <item name="alpha">0.6</item>
+    </style>
+    
+    <!-- 卡片 - 带边框 -->
+    <style name="CardBordered" parent="CardFlat">
+        <item name="cardBackgroundColor">@color/cardBackground_light</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_none</item>
+        <item name="strokeColor">@color/divider_light</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 渐变背景 -->
+    <style name="CardGradient" parent="CardMedium">
+        <item name="cardCornerRadius">@dimen/card_corner_radius_large</item>
+        <item name="cardElevation">@dimen/card_elevation_large</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 统计卡片 -->
+    <style name="CardStatistics" parent="CardMedium">
+        <item name="cardBackgroundColor">@color/cardBackground_light</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_medium</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 设置项 -->
+    <style name="CardSettings" parent="CardFlat">
+        <item name="cardBackgroundColor">@color/cardBackground_light</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+        <item name="cardUseCompatPadding">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    
+    <!-- 卡片 - 标签 -->
+    <style name="CardChip" parent="CardFlat">
+        <item name="cardBackgroundColor">@color/chipBackground_light</item>
+        <item name="cardCornerRadius">@dimen/button_corner_radius_large</item>
+        <item name="cardElevation">@dimen/card_elevation_none</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 标签选中 -->
+    <style name="CardChipSelected" parent="CardChip">
+        <item name="cardBackgroundColor">@color/chipSelected_light</item>
+    </style>
+    
+    <!-- 卡片 - 按钮 -->
+    <style name="CardButton" parent="CardFlat">
+        <item name="cardBackgroundColor">@color/buttonPrimary_light</item>
+        <item name="cardCornerRadius">@dimen/button_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_small</item>
+        <item name="cardUseCompatPadding">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    
+    <!-- 卡片 - 次要按钮 -->
+    <style name="CardButtonSecondary" parent="CardButton">
+        <item name="cardBackgroundColor">@color/buttonSecondary_light</item>
+    </style>
+    
+    <!-- 卡片 - 第三级按钮 -->
+    <style name="CardButtonTertiary" parent="CardButton">
+        <item name="cardBackgroundColor">@color/buttonTertiary_light</item>
+    </style>
+    
+    <!-- 卡片 - 输入框 -->
+    <style name="CardInput" parent="CardFlat">
+        <item name="cardBackgroundColor">@color/inputBackground_light</item>
+        <item name="cardCornerRadius">@dimen/input_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_none</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 对话框 -->
+    <style name="CardDialog" parent="CardLarge">
+        <item name="cardBackgroundColor">@color/dialogBackground_light</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius_large</item>
+        <item name="cardElevation">@dimen/card_elevation_xlarge</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - 菜单 -->
+    <style name="CardMenu" parent="CardMedium">
+        <item name="cardBackgroundColor">@color/menuBackground_light</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius_medium</item>
+        <item name="cardElevation">@dimen/card_elevation_large</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+    <!-- 卡片 - FAB容器 -->
+    <style name="CardFabContainer" parent="CardFlat">
+        <item name="cardBackgroundColor">@color/fabBackground_light</item>
+        <item name="cardCornerRadius">@dimen/fab_size_normal</item>
+        <item name="cardElevation">@dimen/card_elevation_large</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+    
+</resources>

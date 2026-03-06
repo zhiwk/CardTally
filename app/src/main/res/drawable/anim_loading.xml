@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-selector xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <item android:duration="500">
+        <shape android:shape="oval">
+            <solid android:color="@color/primary_light" />
+            <size
+                android:width="48dp"
+                android:height="48dp" />
+        </shape>
+    </item>
+    
+    <item android:duration="500">
+        <shape android:shape="oval">
+            <solid android:color="@color/primaryVariant_light" />
+            <size
+                android:width="48dp"
+                android:height="48dp" />
+        </shape>
+    </item>
+    
+</animated-selector>

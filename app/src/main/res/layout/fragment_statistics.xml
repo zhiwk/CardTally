@@ -23,9 +23,9 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginStart="@dimen/card_margin_large"
+        android:layout_marginEnd="@dimen/card_margin_large"
+        android:layout_marginTop="@dimen/card_margin_large"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/text_title">
@@ -34,33 +34,32 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginEnd="8dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
+            android:layout_marginEnd="@dimen/card_spacing_medium"
+            style="@style/CardExpense">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp"
+                android:padding="@dimen/card_padding_large"
                 android:gravity="center">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="总支出"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/darker_gray" />
+                    android:textSize="@dimen/text_size_body2"
+                    android:textColor="@color/onSurfaceVariant_light" />
 
                 <TextView
                     android:id="@+id/text_expense_total"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="¥0.00"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_size_h6"
                     android:textStyle="bold"
-                    android:textColor="#F44336"
-                    android:layout_marginTop="4dp" />
+                    android:textColor="@color/expense_primary"
+                    android:layout_marginTop="@dimen/spacing_xs" />
 
             </LinearLayout>
 
@@ -70,33 +69,32 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
+            android:layout_marginStart="@dimen/card_spacing_medium"
+            style="@style/CardIncome">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp"
+                android:padding="@dimen/card_padding_large"
                 android:gravity="center">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="总收入"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/darker_gray" />
+                    android:textSize="@dimen/text_size_body2"
+                    android:textColor="@color/onSurfaceVariant_light" />
 
                 <TextView
                     android:id="@+id/text_income_total"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="¥0.00"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_size_h6"
                     android:textStyle="bold"
-                    android:textColor="#4CAF50"
-                    android:layout_marginTop="4dp" />
+                    android:textColor="@color/income_primary"
+                    android:layout_marginTop="@dimen/spacing_xs" />
 
             </LinearLayout>
 
@@ -124,7 +122,7 @@
             android:layout_marginEnd="8dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
-            app:cardBackgroundColor="#2196F3">
+            app:cardBackgroundColor="@color/primary_light">
 
             <TextView
                 android:layout_width="match_parent"
@@ -132,7 +130,7 @@
                 android:text="按分类统计"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white"
+                android:textColor="@color/onPrimary_light"
                 android:padding="12dp"
                 android:gravity="center" />
 
@@ -146,7 +144,7 @@
             android:layout_marginStart="8dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
-            app:cardBackgroundColor="#E0E0E0">
+            app:cardBackgroundColor="@color/onSurfaceVariant_light">
 
             <TextView
                 android:layout_width="match_parent"
@@ -154,7 +152,7 @@
                 android:text="按时间统计"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/black"
+                android:textColor="@color/onBackground_light"
                 android:padding="12dp"
                 android:gravity="center" />
 

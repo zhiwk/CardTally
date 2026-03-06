@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 绿色主题 -->
+    <color name="primary_green">#4CAF50</color>
+    <color name="primaryVariant_green">#2E7D32</color>
+    <color name="secondary_green">#81C784</color>
+    <color name="background_green">#E8F5E9</color>
+    <color name="surface_green">#FFFFFF</color>
+    <color name="onPrimary_green">#FFFFFF</color>
+    <color name="onSecondary_green">#000000</color>
+    <color name="onBackground_green">#000000</color>
+    <color name="onSurface_green">#000000</color>
+</resources>

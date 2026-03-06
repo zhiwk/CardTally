@@ -18,9 +18,8 @@
         <androidx.cardview.widget.CardView
             android:layout_width="80dp"
             android:layout_height="match_parent"
-            app:cardBackgroundColor="#4CAF50"
-            app:cardCornerRadius="0dp"
-            app:cardElevation="0dp">
+            android:layout_marginEnd="@dimen/spacing_xs"
+            style="@style/CardSuccess">
 
             <ImageButton
                 android:id="@+id/btn_edit"
@@ -36,9 +35,8 @@
         <androidx.cardview.widget.CardView
             android:layout_width="80dp"
             android:layout_height="match_parent"
-            app:cardBackgroundColor="#F44336"
-            app:cardCornerRadius="0dp"
-            app:cardElevation="0dp">
+            android:layout_marginStart="@dimen/spacing_xs"
+            style="@style/CardError">
 
             <ImageButton
                 android:id="@+id/btn_delete"
@@ -57,8 +55,7 @@
         android:id="@+id/card_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp">
+        style="@style/CardMedium">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -82,21 +79,23 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="餐饮"
-                    android:textSize="16sp"
+                    android:textSize="@dimen/text_size_body1"
                     android:textStyle="bold"
-                    android:textColor="@android:color/black" />
+                    android:textColor="@color/onBackground_light"
+                    android:textAppearance="@style/TextAppearance.CardTally.ListTitle" />
 
                 <TextView
                     android:id="@+id/text_description"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="午餐"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray"
-                    android:layout_marginTop="2dp"
+                    android:textSize="@dimen/text_size_caption"
+                    android:textColor="@color/onSurfaceVariant_light"
+                    android:layout_marginTop="@dimen/spacing_xxs"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    android:visibility="gone" />
+                    android:visibility="gone"
+                    android:textAppearance="@style/TextAppearance.CardTally.ListSubtitle" />
 
             </LinearLayout>
 
@@ -115,9 +114,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="-100.00"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_size_h5"
                     android:textStyle="bold"
-                    android:textColor="#F44336" />
+                    android:textColor="@color/expense_primary"
+                    android:textAppearance="@style/TextAppearance.CardTally.Amount" />
 
                 <TextView
                     android:id="@+id/text_asset_source"
@@ -125,7 +125,7 @@
                     android:layout_height="wrap_content"
                     android:text="现金"
                     android:textSize="12sp"
-                    android:textColor="@android:color/darker_gray"
+                    android:textColor="@color/onSurfaceVariant_light"
                     android:layout_marginTop="2dp"
                     android:visibility="gone" />
 

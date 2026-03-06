@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <path
+        android:fillColor="@color/onSurfaceVariant_light"
+        android:pathData="M100,40 C60,40 40,60 40,100 C40,140 60,160 100,160 C140,160 160,140 160,100 C160,60 140,40 100,40 Z"
+        android:strokeWidth="2"
+        android:strokeColor="@color/onSurfaceVariant_light" />
+    
+    <circle
+        android:cx="100"
+        android:cy="80"
+        android:r="15"
+        android:fillColor="@color/primary_light" />
+    
+    <path
+        android:fillColor="@color/onSurfaceVariant_light"
+        android:pathData="M100,95 L100,125"
+        android:strokeWidth="3"
+        android:strokeColor="@color/onSurfaceVariant_light"
+        android:strokeLineCap="round" />
+    
+    <path
+        android:fillColor="@color/onSurfaceVariant_light"
+        android:pathData="M85,115 Q100,125 115,115"
+        android:strokeWidth="3"
+        android:strokeColor="@color/onSurfaceVariant_light"
+        android:strokeLineCap="round" />
+    
+    <path
+        android:fillColor="@color/onSurfaceVariant_light"
+        android:pathData="M115,115 Q100,125 85,115"
+        android:strokeWidth="3"
+        android:strokeColor="@color/onSurfaceVariant_light"
+        android:strokeLineCap="round" />
+    
+    <text
+        android:text="暂无记录"
+        android:fontFamily="sans-serif"
+        android:textSize="24sp"
+        android:fillColor="@color/onSurfaceVariant_light"
+        android:textAlign="center"
+        android:x="100"
+        android:y="150" />
+    
+</vector>

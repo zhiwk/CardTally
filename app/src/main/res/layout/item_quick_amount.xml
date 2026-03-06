@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.button.MaterialButton xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/btn_quick_amount"
+    android:layout_width="wrap_content"
+    android:layout_height="@dimen/button_height"
+    android:minWidth="@dimen/icon_size_xlarge"
+    android:layout_margin="@dimen/spacing_xs"
+    android:textSize="@dimen/text_size_body2"
+    android:textStyle="bold"
+    app:cornerRadius="@dimen/button_corner_radius_medium"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/divider_light"
+    app:backgroundTint="@color/chipBackground_light" />

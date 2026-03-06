@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 卡片圆角尺寸 -->
+    <dimen name="card_corner_radius_small">8dp</dimen>
+    <dimen name="card_corner_radius_medium">12dp</dimen>
+    <dimen name="card_corner_radius_large">16dp</dimen>
+    <dimen name="card_corner_radius_xlarge">24dp</dimen>
+    
+    <!-- 卡片阴影 -->
+    <dimen name="card_elevation_none">0dp</dimen>
+    <dimen name="card_elevation_small">2dp</dimen>
+    <dimen name="card_elevation_medium">4dp</dimen>
+    <dimen name="card_elevation_large">8dp</dimen>
+    <dimen name="card_elevation_xlarge">12dp</dimen>
+    
+    <!-- 卡片内边距 -->
+    <dimen name="card_padding_small">8dp</dimen>
+    <dimen name="card_padding_medium">12dp</dimen>
+    <dimen name="card_padding_large">16dp</dimen>
+    <dimen name="card_padding_xlarge">24dp</dimen>
+    
+    <!-- 卡片外边距 -->
+    <dimen name="card_margin_small">8dp</dimen>
+    <dimen name="card_margin_medium">12dp</dimen>
+    <dimen name="card_margin_large">16dp</dimen>
+    <dimen name="card_margin_xlarge">24dp</dimen>
+    
+    <!-- 卡片间距 -->
+    <dimen name="card_spacing_small">4dp</dimen>
+    <dimen name="card_spacing_medium">8dp</dimen>
+    <dimen name="card_spacing_large">12dp</dimen>
+    <dimen name="card_spacing_xlarge">16dp</dimen>
+    
+    <!-- 按钮圆角 -->
+    <dimen name="button_corner_radius_small">4dp</dimen>
+    <dimen name="button_corner_radius_medium">8dp</dimen>
+    <dimen name="button_corner_radius_large">12dp</dimen>
+    
+    <!-- 按钮高度 -->
+    <dimen name="button_height">48dp</dimen>
+    
+    <!-- 输入框圆角 -->
+    <dimen name="input_corner_radius_small">4dp</dimen>
+    <dimen name="input_corner_radius_medium">8dp</dimen>
+    <dimen name="input_corner_radius_large">12dp</dimen>
+    
+    <!-- FAB尺寸 -->
+    <dimen name="fab_size_mini">40dp</dimen>
+    <dimen name="fab_size_normal">56dp</dimen>
+    <dimen name="fab_size_large">64dp</dimen>
+    
+    <!-- 图标尺寸 -->
+    <dimen name="icon_size_small">16dp</dimen>
+    <dimen name="icon_size_medium">24dp</dimen>
+    <dimen name="icon_size_large">32dp</dimen>
+    <dimen name="icon_size_xlarge">48dp</dimen>
+    
+    <!-- 间距系统 -->
+    <dimen name="spacing_xxs">2dp</dimen>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_s">8dp</dimen>
+    <dimen name="spacing_m">12dp</dimen>
+    <dimen name="spacing_l">16dp</dimen>
+    <dimen name="spacing_xl">24dp</dimen>
+    <dimen name="spacing_xxl">32dp</dimen>
+    <dimen name="spacing_xxxl">48dp</dimen>
+    
+    <!-- 字体大小 -->
+    <dimen name="text_size_caption">12sp</dimen>
+    <dimen name="text_size_body2">14sp</dimen>
+    <dimen name="text_size_body1">16sp</dimen>
+    <dimen name="text_size_h6">20sp</dimen>
+    <dimen name="text_size_h5">24sp</dimen>
+    <dimen name="text_size_h4">34sp</dimen>
+    <dimen name="text_size_h3">48sp</dimen>
+    <dimen name="text_size_h2">60sp</dimen>
+    <dimen name="text_size_h1">96sp</dimen>
+    
+    <!-- 行高 -->
+    <dimen name="line_height_caption">16sp</dimen>
+    <dimen name="line_height_body2">20sp</dimen>
+    <dimen name="line_height_body1">24sp</dimen>
+    <dimen name="line_height_h6">28sp</dimen>
+    <dimen name="line_height_h5">32sp</dimen>
+    <dimen name="line_height_h4">40sp</dimen>
+    
+    <!-- 字母间距 -->
+    <dimen name="letter_spacing_tight">-0.5dp</dimen>
+    <dimen name="letter_spacing_normal">0dp</dimen>
+    <dimen name="letter_spacing_wide">0.5dp</dimen>
+    <dimen name="letter_spacing_wider">1dp</dimen>
+    
+</resources>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <!-- 性能优化样式 -->
+    
+    <!-- 禁用硬件加速（减少内存使用） -->
+    <style name="PerformanceOptimized">
+        <item name="android:hardwareAccelerated">false</item>
+    </style>
+    
+    <!-- 启用硬件加速（提升动画性能） -->
+    <style name="HardwareAccelerated">
+        <item name="android:hardwareAccelerated">true</item>
+    </style>
+    
+    <!-- 优化RecyclerView性能 -->
+    <style name="RecyclerViewPerformance">
+        <item name="android:scrollbars">none</item>
+        <item name="android:overScrollMode">never</item>
+        <item name="android:clipToPadding">false</item>
+        <item name="android:descendantFocusability">beforeDescendants</item>
+    </style>
+    
+    <!-- 优化图片加载 -->
+    <style name="ImageOptimized">
+        <item name="android:scaleType">centerCrop</item>
+        <item name="android:adjustViewBounds">true</item>
+    </style>
+    
+    <!-- 优化文本渲染 -->
+    <style name="TextOptimized">
+        <item name="android:includeFontPadding">false</item>
+    </style>
+    
+</resources>
