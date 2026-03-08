@@ -12,9 +12,9 @@
         android:strokeColor="@color/onSurfaceVariant_light" />
     
     <circle
-        android:cx="100"
-        android:cy="80"
-        android:r="15"
+        cx="100"
+        cy="80"
+        r="15"
         android:fillColor="@color/primary_light" />
     
     <path
@@ -43,8 +43,7 @@
         android:fontFamily="sans-serif"
         android:textSize="24sp"
         android:fillColor="@color/onSurfaceVariant_light"
-        android:textAlign="center"
-        android:x="100"
-        android:y="150" />
+        x="100"
+        y="150" />
     
 </vector>

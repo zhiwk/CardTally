@@ -10,7 +10,7 @@
     <style name="TextAppearance.CardTally.H1" parent="TextAppearance.MaterialComponents.Headline1">
         <item name="android:textSize">@dimen/text_size_h1</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_tight</item>
+        <item name="android:letterSpacing">-0.05</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
     
@@ -18,7 +18,7 @@
     <style name="TextAppearance.CardTally.H2" parent="TextAppearance.MaterialComponents.Headline2">
         <item name="android:textSize">@dimen/text_size_h2</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_tight</item>
+        <item name="android:letterSpacing">-0.05</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
     
@@ -26,7 +26,7 @@
     <style name="TextAppearance.CardTally.H3" parent="TextAppearance.MaterialComponents.Headline3">
         <item name="android:textSize">@dimen/text_size_h3</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
     
@@ -34,7 +34,7 @@
     <style name="TextAppearance.CardTally.H4" parent="TextAppearance.MaterialComponents.Headline4">
         <item name="android:textSize">@dimen/text_size_h4</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:lineSpacingExtra">@dimen/line_height_h4</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
@@ -43,7 +43,7 @@
     <style name="TextAppearance.CardTally.H5" parent="TextAppearance.MaterialComponents.Headline5">
         <item name="android:textSize">@dimen/text_size_h5</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:lineSpacingExtra">@dimen/line_height_h5</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
@@ -52,7 +52,7 @@
     <style name="TextAppearance.CardTally.H6" parent="TextAppearance.MaterialComponents.Headline6">
         <item name="android:textSize">@dimen/text_size_h6</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:lineSpacingExtra">@dimen/line_height_h6</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
@@ -60,7 +60,7 @@
     <!-- Body1 - 16sp -->
     <style name="TextAppearance.CardTally.Body1" parent="TextAppearance.MaterialComponents.Body1">
         <item name="android:textSize">@dimen/text_size_body1</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:lineSpacingExtra">@dimen/line_height_body1</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
@@ -68,7 +68,7 @@
     <!-- Body2 - 14sp -->
     <style name="TextAppearance.CardTally.Body2" parent="TextAppearance.MaterialComponents.Body2">
         <item name="android:textSize">@dimen/text_size_body2</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:lineSpacingExtra">@dimen/line_height_body2</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
@@ -76,7 +76,7 @@
     <!-- Caption - 12sp -->
     <style name="TextAppearance.CardTally.Caption" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:textSize">@dimen/text_size_caption</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:lineSpacingExtra">@dimen/line_height_caption</item>
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
@@ -85,7 +85,7 @@
     <style name="TextAppearance.CardTally.Overline" parent="TextAppearance.MaterialComponents.Overline">
         <item name="android:textSize">10sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_wider</item>
+        <item name="android:letterSpacing">0.1</item>
         <item name="android:textAllCaps">true</item>
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
@@ -94,7 +94,7 @@
     <style name="TextAppearance.CardTally.Subtitle1" parent="TextAppearance.MaterialComponents.Subtitle1">
         <item name="android:textSize">@dimen/text_size_body1</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:lineSpacingExtra">@dimen/line_height_body1</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
@@ -103,7 +103,7 @@
     <style name="TextAppearance.CardTally.Subtitle2" parent="TextAppearance.MaterialComponents.Subtitle2">
         <item name="android:textSize">@dimen/text_size_body2</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_normal</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:lineSpacingExtra">@dimen/line_height_body2</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
@@ -112,7 +112,7 @@
     <style name="TextAppearance.CardTally.Button" parent="TextAppearance.MaterialComponents.Button">
         <item name="android:textSize">@dimen/text_size_body2</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">@dimen/letter_spacing_wide</item>
+        <item name="android:letterSpacing">0.05</item>
         <item name="android:textAllCaps">true</item>
     </style>
     

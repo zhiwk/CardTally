@@ -155,3 +155,6 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Trae IDE
+.trae/

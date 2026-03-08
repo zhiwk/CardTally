@@ -19,4 +19,8 @@
     <color name="onBackground">#000000</color>
     <color name="onSurface">#000000</color>
     <color name="onError">#FFFFFF</color>
+    <color name="neutral_100">#F5F5F5</color>
+    <color name="neutral_200">#E0E0E0</color>
+    <color name="neutral_300">#C0C0C0</color>
+    <color name="accent_light">#FF6200EE</color>
 </resources>
