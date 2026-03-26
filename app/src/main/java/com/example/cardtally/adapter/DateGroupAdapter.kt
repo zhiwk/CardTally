@@ -1,13 +1,12 @@
 package com.example.cardtally.adapter
 
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.DateGroup
@@ -39,13 +38,9 @@ class DateGroupAdapter(
     override fun getItemViewType(position: Int): Int {
         var currentPosition = 0
         for (dateGroup in dateGroups) {
-            if (position == currentPosition) {
-                return TYPE_DATE_HEADER
-            }
+            if (position == currentPosition) return TYPE_DATE_HEADER
             currentPosition++
-            if (position < currentPosition + dateGroup.records.size) {
-                return TYPE_RECORD
-            }
+            if (position < currentPosition + dateGroup.records.size) return TYPE_RECORD
             currentPosition += dateGroup.records.size
         }
         return TYPE_RECORD
@@ -58,6 +53,7 @@ class DateGroupAdapter(
                     .inflate(R.layout.item_date_header, parent, false)
                 DateHeaderViewHolder(view)
             }
+
             else -> {
                 val view = LayoutInflater.from(parent.context)
                     .inflate(R.layout.item_record, parent, false)
@@ -77,7 +73,12 @@ class DateGroupAdapter(
             if (position < currentPosition + dateGroup.records.size) {
                 val recordIndex = position - currentPosition
                 val record = dateGroup.records[recordIndex]
-                (holder as RecordViewHolder).bind(record, listener, isMultiSelect, selectedRecords.contains(record))
+                (holder as RecordViewHolder).bind(
+                    record,
+                    listener,
+                    isMultiSelect,
+                    selectedRecords.contains(record)
+                )
                 return
             }
             currentPosition += dateGroup.records.size
@@ -103,11 +104,9 @@ class DateGroupAdapter(
         var fromCurrentPosition = 0
         var fromDateGroupIndex = -1
         var fromRecordIndex = -1
-        
+
         for (i in dateGroups.indices) {
-            if (fromPosition == fromCurrentPosition) {
-                return
-            }
+            if (fromPosition == fromCurrentPosition) return
             fromCurrentPosition++
             if (fromPosition < fromCurrentPosition + dateGroups[i].records.size) {
                 fromDateGroupIndex = i
@@ -116,15 +115,13 @@ class DateGroupAdapter(
             }
             fromCurrentPosition += dateGroups[i].records.size
         }
-        
+
         var toCurrentPosition = 0
         var toDateGroupIndex = -1
         var toRecordIndex = -1
-        
+
         for (i in dateGroups.indices) {
-            if (toPosition == toCurrentPosition) {
-                return
-            }
+            if (toPosition == toCurrentPosition) return
             toCurrentPosition++
             if (toPosition < toCurrentPosition + dateGroups[i].records.size) {
                 toDateGroupIndex = i
@@ -133,42 +130,33 @@ class DateGroupAdapter(
             }
             toCurrentPosition += dateGroups[i].records.size
         }
-        
-        if (fromDateGroupIndex == -1 || toDateGroupIndex == -1) {
-            return
-        }
-        
-        if (fromDateGroupIndex != toDateGroupIndex) {
-            return
-        }
-        
+
+        if (fromDateGroupIndex == -1 || toDateGroupIndex == -1) return
+        if (fromDateGroupIndex != toDateGroupIndex) return
+
         val dateGroup = dateGroups[fromDateGroupIndex]
         val records = dateGroup.records.toMutableList()
         val record = records.removeAt(fromRecordIndex)
         records.add(toRecordIndex, record)
-        
+
         for (i in records.indices) {
             records[i].sortOrder = i
         }
-        
+
         val newDateGroup = DateGroup(dateGroup.date, records)
         val newDateGroups = dateGroups.toMutableList()
         newDateGroups[fromDateGroupIndex] = newDateGroup
         dateGroups = newDateGroups
-        
+
         notifyItemMoved(fromPosition, toPosition)
     }
 
     fun getDateForPosition(position: Int): String? {
         var currentPosition = 0
         for (dateGroup in dateGroups) {
-            if (position == currentPosition) {
-                return null
-            }
+            if (position == currentPosition) return null
             currentPosition++
-            if (position < currentPosition + dateGroup.records.size) {
-                return dateGroup.date
-            }
+            if (position < currentPosition + dateGroup.records.size) return dateGroup.date
             currentPosition += dateGroup.records.size
         }
         return null
@@ -177,9 +165,7 @@ class DateGroupAdapter(
     fun getRecordAtPosition(position: Int): Record? {
         var currentPosition = 0
         for (dateGroup in dateGroups) {
-            if (position == currentPosition) {
-                return null
-            }
+            if (position == currentPosition) return null
             currentPosition++
             if (position < currentPosition + dateGroup.records.size) {
                 val recordIndex = position - currentPosition
@@ -198,11 +184,11 @@ class DateGroupAdapter(
         } else {
             selectedRecords.add(record)
         }
-        
+
         if (selectedRecords.isEmpty()) {
             isMultiSelect = false
         }
-        
+
         listener.onMultiSelectChanged(selectedRecords.size)
         notifyDataSetChanged()
     }
@@ -233,12 +219,12 @@ class DateGroupAdapter(
     }
 
     class RecordViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val cardContent: CardView = itemView.findViewById(R.id.card_content)
+        private val cardContent: LinearLayout = itemView.findViewById(R.id.card_content)
         private val layoutActions: View = itemView.findViewById(R.id.layout_actions)
-        private val layoutCategoryInfo: LinearLayout = itemView.findViewById(R.id.layout_category_info)
+        private val viewIcon: View = itemView.findViewById(R.id.view_icon)
         private val textCategory: TextView = itemView.findViewById(R.id.text_category)
+        private val textTime: TextView = itemView.findViewById(R.id.text_time)
         private val textDescription: TextView = itemView.findViewById(R.id.text_description)
-        private val textAssetSource: TextView = itemView.findViewById(R.id.text_asset_source)
         private val textAmount: TextView = itemView.findViewById(R.id.text_amount)
         private val btnEdit: ImageButton = itemView.findViewById(R.id.btn_edit)
         private val btnDelete: ImageButton = itemView.findViewById(R.id.btn_delete)
@@ -254,6 +240,7 @@ class DateGroupAdapter(
         ) {
             currentRecord = record
             textCategory.text = record.category
+            textTime.text = ""
 
             if (!record.description.isNullOrEmpty()) {
                 textDescription.text = record.description
@@ -262,41 +249,51 @@ class DateGroupAdapter(
                 textDescription.visibility = View.GONE
             }
 
-            if (!record.assetSource.isNullOrEmpty()) {
-                textAssetSource.text = record.assetSource
-                textAssetSource.visibility = View.VISIBLE
-            } else {
-                textAssetSource.visibility = View.GONE
-            }
+            val context = itemView.context
+            val categoryColors = mapOf(
+                "餐饮" to ContextCompat.getColor(context, R.color.warning_container),
+                "购物" to ContextCompat.getColor(context, R.color.secondaryContainer_light),
+                "工资" to ContextCompat.getColor(context, R.color.success_container),
+                "交通" to ContextCompat.getColor(context, R.color.error_container),
+                "住房" to ContextCompat.getColor(context, R.color.info_container),
+                "娱乐" to ContextCompat.getColor(context, R.color.editorial_surface_low)
+            )
+            viewIcon.setBackgroundColor(
+                categoryColors[record.category]
+                    ?: ContextCompat.getColor(context, R.color.editorial_surface_low)
+            )
 
             val amountText = if (record.type == 0) {
-                textAmount.setTextColor(0xFFF44336.toInt())
-                String.format("-%.2f", record.amount)
+                textAmount.setTextColor(ContextCompat.getColor(context, R.color.expense_primary))
+                String.format("-¥%.2f", record.amount)
             } else {
-                textAmount.setTextColor(0xFF4CAF50.toInt())
-                String.format("+%.2f", record.amount)
+                textAmount.setTextColor(ContextCompat.getColor(context, R.color.income_primary))
+                String.format("+¥%.2f", record.amount)
             }
             textAmount.text = amountText
 
             if (isMultiSelect) {
                 layoutActions.visibility = View.GONE
                 swipeHelper = null
-                
+
                 if (isSelected) {
-                    cardContent.setCardBackgroundColor(0xFFE3F2FD.toInt())
-                    cardContent.radius = 12f
+                    cardContent.setBackgroundColor(
+                        ContextCompat.getColor(context, R.color.secondaryContainer_light)
+                    )
                 } else {
-                    cardContent.setCardBackgroundColor(0xFFFFFFFF.toInt())
-                    cardContent.radius = 8f
+                    cardContent.setBackgroundColor(
+                        ContextCompat.getColor(context, R.color.surface_light)
+                    )
                 }
-                
+
                 itemView.setOnClickListener {
                     currentRecord?.let { listener.onToggleMultiSelect(it) }
                 }
             } else {
-                cardContent.setCardBackgroundColor(0xFFFFFFFF.toInt())
-                cardContent.radius = 8f
-                
+                cardContent.setBackgroundColor(
+                    ContextCompat.getColor(context, R.color.surface_light)
+                )
+
                 swipeHelper = SwipeToEditDeleteHelper(
                     cardContent,
                     layoutActions,
@@ -304,7 +301,7 @@ class DateGroupAdapter(
                     onDelete = { listener.onDelete(record) },
                     onClick = { listener.onEdit(record) }
                 )
-                
+
                 itemView.setOnLongClickListener {
                     currentRecord?.let { listener.onEnterMultiSelectMode(it) }
                     true

@@ -12,6 +12,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -68,10 +69,9 @@ class AddRecordFragment : Fragment() {
 
         loadCategories(0)
         loadAssets()
+        updateTypeStyle()
 
-        textDate.setOnClickListener {
-            showDatePicker()
-        }
+        textDate.setOnClickListener { showDatePicker() }
 
         cardExpense.setOnClickListener {
             if (currentType != 0) {
@@ -89,13 +89,8 @@ class AddRecordFragment : Fragment() {
             }
         }
 
-        btnSaveAndContinue.setOnClickListener {
-            saveRecord(false)
-        }
-
-        btnSave.setOnClickListener {
-            saveRecord(true)
-        }
+        btnSaveAndContinue.setOnClickListener { saveRecord(false) }
+        btnSave.setOnClickListener { saveRecord(true) }
 
         return view
     }
@@ -112,11 +107,19 @@ class AddRecordFragment : Fragment() {
 
     private fun updateTypeStyle() {
         if (currentType == 0) {
-            cardExpense.setCardBackgroundColor(0xFFF44336.toInt())
-            cardIncome.setCardBackgroundColor(0xFFE0E0E0.toInt())
+            cardExpense.setCardBackgroundColor(
+                ContextCompat.getColor(requireContext(), R.color.expense_primary)
+            )
+            cardIncome.setCardBackgroundColor(
+                ContextCompat.getColor(requireContext(), R.color.editorial_surface_low)
+            )
         } else {
-            cardExpense.setCardBackgroundColor(0xFFE0E0E0.toInt())
-            cardIncome.setCardBackgroundColor(0xFF4CAF50.toInt())
+            cardExpense.setCardBackgroundColor(
+                ContextCompat.getColor(requireContext(), R.color.editorial_surface_low)
+            )
+            cardIncome.setCardBackgroundColor(
+                ContextCompat.getColor(requireContext(), R.color.income_primary)
+            )
         }
     }
 
@@ -133,7 +136,9 @@ class AddRecordFragment : Fragment() {
             recyclerCategories.adapter = categoryAdapter
         } else {
             categoryAdapter?.updateCategories(currentCategories)
-            categoryAdapter?.setSelectedCategory(if (currentCategories.isNotEmpty()) currentCategories[0] else null)
+            categoryAdapter?.setSelectedCategory(
+                if (currentCategories.isNotEmpty()) currentCategories[0] else null
+            )
         }
 
         selectedCategory = if (currentCategories.isNotEmpty()) currentCategories[0] else null
@@ -155,11 +160,6 @@ class AddRecordFragment : Fragment() {
     }
 
     private fun showDatePicker() {
-        val calendar = Calendar.getInstance()
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH)
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-
         val parts = selectedDate.split("-")
         val datePickerDialog = DatePickerDialog(
             requireContext(),
@@ -199,12 +199,12 @@ class AddRecordFragment : Fragment() {
         val amount = try {
             amountStr.toDouble()
         } catch (e: NumberFormatException) {
-            Toast.makeText(requireContext(), "请输入有效的金额", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "请输入有效金额", Toast.LENGTH_SHORT).show()
             return
         }
 
         if (amount == 0.0) {
-            Toast.makeText(requireContext(), "金额不能为0", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "金额不能为 0", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -227,7 +227,7 @@ class AddRecordFragment : Fragment() {
 
         if (id != -1L) {
             Toast.makeText(requireContext(), "保存成功", Toast.LENGTH_SHORT).show()
-            
+
             if (shouldReturn) {
                 parentFragmentManager.popBackStack()
             } else {

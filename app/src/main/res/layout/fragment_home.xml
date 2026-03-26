@@ -4,207 +4,239 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background_light"
     tools:context=".HomeFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/text_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="记账记录"
-            android:textSize="@dimen/text_size_h6"
-            android:textStyle="bold"
-            android:layout_marginStart="@dimen/card_margin_large"
-            android:layout_marginTop="@dimen/card_margin_large"
-            android:textAppearance="@style/TextAppearance.CardTally.H6"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageButton
-            android:id="@+id/btn_search"
-            android:layout_width="@dimen/icon_size_xlarge"
-            android:layout_height="@dimen/icon_size_xlarge"
-            android:src="@drawable/ic_search"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="搜索"
-            android:padding="@dimen/spacing_s"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/text_title"
-            app:layout_constraintBottom_toBottomOf="@+id/text_title" />
-
         <LinearLayout
-            android:id="@+id/layout_month_selector"
+            android:id="@+id/home_header"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:padding="@dimen/card_padding_medium"
-            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
+            android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_title">
-
-            <Button
-                android:id="@+id/btn_prev_month"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/button_height"
-                android:text="&lt;"
-                android:textSize="@dimen/text_size_h5"
-                android:minWidth="@dimen/icon_size_xlarge"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:background="?attr/selectableItemBackgroundBorderless" />
-
-            <TextView
-                android:id="@+id/text_month"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="2024年01月"
-                android:textSize="@dimen/text_size_h6"
-                android:textStyle="bold"
-                android:layout_marginStart="@dimen/spacing_l"
-                android:layout_marginEnd="@dimen/spacing_l"
-                android:textAppearance="@style/TextAppearance.CardTally.H6" />
-
-            <Button
-                android:id="@+id/btn_next_month"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/button_height"
-                android:text="&gt;"
-                android:textSize="@dimen/text_size_h5"
-                android:minWidth="@dimen/icon_size_xlarge"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:background="?attr/selectableItemBackgroundBorderless" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_summary"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:padding="@dimen/card_padding_medium"
-            android:layout_marginStart="@dimen/card_margin_large"
-            android:layout_marginEnd="@dimen/card_margin_large"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/layout_month_selector">
+            app:layout_constraintTop_toTopOf="parent">
 
-            <androidx.cardview.widget.CardView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="@dimen/card_spacing_medium"
-                style="@style/CardIncome">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="@dimen/card_padding_medium">
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="收入"
-                        android:textSize="@dimen/text_size_caption"
-                        android:textColor="@color/onSurfaceVariant_light" />
+                        android:letterSpacing="0.18"
+                        android:text="OVERVIEW"
+                        android:textColor="@color/editorial_text_muted"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/text_income"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="¥0.00"
-                        android:textSize="@dimen/text_size_body2"
-                        android:textStyle="bold"
-                        android:textColor="@color/income_primary"
-                        android:layout_marginTop="@dimen/spacing_xs" />
+                        android:layout_marginTop="8dp"
+                        android:text="账目总览"
+                        android:textColor="@color/onBackground_light"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+                <Button
+                    android:id="@+id/btn_filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="42dp"
+                    android:background="@drawable/selector_button_primary"
+                    android:minWidth="0dp"
+                    android:paddingHorizontal="16dp"
+                    android:text="筛选"
+                    android:textColor="@color/onBackground_light"
+                    android:textSize="13sp" />
 
-            <androidx.cardview.widget.CardView
-                android:layout_width="0dp"
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="@dimen/spacing_s"
-                android:layout_marginEnd="@dimen/spacing_s"
-                style="@style/CardExpense">
+                android:layout_marginTop="20dp"
+                app:cardBackgroundColor="@color/primary_light"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="@dimen/card_padding_medium">
+                    android:padding="24dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="支出"
-                        android:textSize="@dimen/text_size_caption"
-                        android:textColor="@color/onSurfaceVariant_light" />
-
-                    <TextView
-                        android:id="@+id/text_expense"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="¥0.00"
-                        android:textSize="@dimen/text_size_body2"
-                        android:textStyle="bold"
-                        android:textColor="@color/expense_primary"
-                        android:layout_marginTop="@dimen/spacing_xs" />
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="@dimen/card_spacing_medium"
-                style="@style/CardBalance">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="@dimen/card_padding_medium">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="结余"
-                        android:textSize="@dimen/text_size_caption"
-                        android:textColor="@color/onSurfaceVariant_light" />
+                        android:alpha="0.7"
+                        android:letterSpacing="0.15"
+                        android:text="TOTAL BALANCE"
+                        android:textColor="@color/onPrimary_light"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/text_balance"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
                         android:text="¥0.00"
-                        android:textSize="@dimen/text_size_body2"
-                        android:textStyle="bold"
-                        android:textColor="@color/balance_primary"
-                        android:layout_marginTop="@dimen/spacing_xs"
-                        android:textAppearance="@style/TextAppearance.CardTally.Amount" />
+                        android:textColor="@color/onPrimary_light"
+                        android:textSize="34sp"
+                        android:textStyle="bold" />
 
-                    <include
-                        layout="@layout/item_trend_bar"
+                    <LinearLayout
+                        android:id="@+id/layout_date_selector"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/spacing_m"
-                        android:visibility="gone" />
+                        android:layout_marginTop="18dp"
+                        android:background="@drawable/selector_button_primary"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:padding="4dp">
+
+                        <Button
+                            android:id="@+id/btn_week"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/selector_button_primary"
+                            android:minWidth="0dp"
+                            android:text="周"
+                            android:textColor="@color/onBackground_light"
+                            android:textSize="13sp" />
+
+                        <Button
+                            android:id="@+id/btn_month"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="4dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/selector_button_primary"
+                            android:minWidth="0dp"
+                            android:text="月"
+                            android:textColor="@color/onBackground_light"
+                            android:textSize="13sp" />
+
+                        <Button
+                            android:id="@+id/btn_year"
+                            android:layout_width="0dp"
+                            android:layout_height="40dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/selector_button_primary"
+                            android:minWidth="0dp"
+                            android:text="年"
+                            android:textColor="@color/onBackground_light"
+                            android:textSize="13sp" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
+
+            <LinearLayout
+                android:id="@+id/layout_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.12"
+                            android:text="EXPENSE"
+                            android:textColor="@color/editorial_text_muted"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/text_expense"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="¥0.00"
+                            android:textColor="@color/expense_primary"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/editorial_surface_low"
+                    app:cardCornerRadius="24dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.12"
+                            android:text="INCOME"
+                            android:textColor="@color/editorial_text_muted"
+                            android:textSize="10sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/text_income"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="¥0.00"
+                            android:textColor="@color/income_primary"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
 
         </LinearLayout>
 
@@ -212,36 +244,43 @@
             android:id="@+id/text_empty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="暂无记录，点击右下角按钮添加记录"
-            android:textSize="@dimen/text_size_body2"
-            android:textColor="@color/onSurfaceVariant_light"
+            android:gravity="center"
+            android:paddingHorizontal="32dp"
+            android:text="暂无记录，点击右下角按钮开始添加"
+            android:textColor="@color/emptyText_light"
+            android:textSize="15sp"
             android:visibility="gone"
-            android:textAppearance="@style/TextAppearance.CardTally.Body2"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/layout_summary" />
+            app:layout_constraintTop_toBottomOf="@+id/home_header" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_records"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            android:clipToPadding="false"
+            android:paddingTop="12dp"
+            android:paddingBottom="108dp"
             android:scrollbars="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/layout_summary" />
+            app:layout_constraintTop_toBottomOf="@+id/home_header" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        android:src="@drawable/ic_add"
+        android:layout_marginEnd="28dp"
+        android:layout_marginBottom="92dp"
         android:contentDescription="添加记录"
-        app:backgroundTint="@color/primary_light" />
+        android:src="@drawable/ic_add"
+        app:backgroundTint="@color/secondary_light"
+        app:elevation="6dp"
+        app:tint="@color/onPrimary_light" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Category
@@ -42,13 +43,25 @@ class CategorySelectorAdapter(
         }
 
         if (selectedCategory?.id == category.id) {
-            holder.cardCategory.setCardBackgroundColor(0xFF2196F3.toInt())
-            holder.imageIcon.setColorFilter(0xFFFFFFFF.toInt())
-            holder.textName.setTextColor(0xFF2196F3.toInt())
+            holder.cardCategory.setCardBackgroundColor(
+                ContextCompat.getColor(holder.itemView.context, R.color.secondaryContainer_light)
+            )
+            holder.imageIcon.setColorFilter(
+                ContextCompat.getColor(holder.itemView.context, R.color.secondaryVariant_light)
+            )
+            holder.textName.setTextColor(
+                ContextCompat.getColor(holder.itemView.context, R.color.secondaryVariant_light)
+            )
         } else {
-            holder.cardCategory.setCardBackgroundColor(0xFFF5F5F5.toInt())
-            holder.imageIcon.setColorFilter(0xFF757575.toInt())
-            holder.textName.setTextColor(0xFF000000.toInt())
+            holder.cardCategory.setCardBackgroundColor(
+                ContextCompat.getColor(holder.itemView.context, R.color.editorial_surface_lowest)
+            )
+            holder.imageIcon.setColorFilter(
+                ContextCompat.getColor(holder.itemView.context, R.color.primary_light)
+            )
+            holder.textName.setTextColor(
+                ContextCompat.getColor(holder.itemView.context, R.color.onBackground_light)
+            )
         }
 
         holder.itemView.setOnClickListener {

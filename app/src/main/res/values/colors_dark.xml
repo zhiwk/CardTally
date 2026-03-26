@@ -1,125 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 深色主题 - 优化对比度 -->
-    
-    <!-- 主色系 - 浅紫色 -->
-    <color name="primary_dark">#D0BCFF</color>
-    <color name="primaryVariant_dark">#4F378B</color>
-    <color name="primaryContainer_dark">#4F378B</color>
-    <color name="onPrimaryContainer_dark">#EADDFF</color>
-    
-    <!-- 辅助色系 - 青色 -->
-    <color name="secondary_dark">#CCF2EA</color>
-    <color name="secondaryVariant_dark">#03DAC6</color>
-    <color name="secondaryContainer_dark">#03DAC6</color>
-    <color name="onSecondaryContainer_dark">#CCF2EA</color>
-    
-    <!-- 背景色系 -->
-    <color name="background_dark">#1C1B1F</color>
-    <color name="onBackground_dark">#E6E1E5</color>
-    
-    <!-- 表面色系 -->
-    <color name="surface_dark">#1C1B1F</color>
-    <color name="onSurface_dark">#E6E1E5</color>
-    <color name="surfaceVariant_dark">#49454F</color>
-    <color name="onSurfaceVariant_dark">#CAC4D0</color>
-    
-    <!-- 错误色系 -->
-    <color name="error_dark">#F2B8B5</color>
-    <color name="errorContainer_dark">#8C1D18</color>
-    <color name="onErrorContainer_dark">#F9DEDC</color>
-    
-    <!-- 文本颜色 -->
-    <color name="onPrimary_dark">#381E72</color>
-    <color name="onSecondary_dark">#001F1E</color>
-    <color name="onError_dark">#601410</color>
-    
-    <!-- 输入框颜色 -->
-    <color name="inputBackground_dark">#2C2C2C</color>
-    <color name="inputStroke_dark">#424242</color>
-    <color name="inputStrokeFocused_dark">#D0BCFF</color>
-    
-    <!-- 卡片颜色 -->
-    <color name="cardBackground_dark">#2C2C2C</color>
-    <color name="cardElevation_dark">#3D000000</color>
-    
-    <!-- 按钮颜色 -->
-    <color name="buttonPrimary_dark">#D0BCFF</color>
-    <color name="buttonSecondary_dark">#03DAC6</color>
-    <color name="buttonTertiary_dark">#49454F</color>
-    <color name="onButtonTertiary_dark">#E6E1E5</color>
-    
-    <!-- FAB颜色 -->
-    <color name="fabBackground_dark">#D0BCFF</color>
-    <color name="fabIcon_dark">#381E72</color>
-    
-    <!-- 导航栏颜色 -->
-    <color name="navBackground_dark">#1C1B1F</color>
-    <color name="navSelected_dark">#D0BCFF</color>
-    <color name="navUnselected_dark">#9E9E9E</color>
-    <color name="navIndicator_dark">#D0BCFF</color>
-    
-    <!-- 分割线 -->
-    <color name="divider_dark">#424242</color>
-    
-    <!-- 阴影 -->
-    <color name="shadow_dark">#3D000000</color>
-    
-    <!-- 遮罩 -->
-    <color name="overlay_dark">#80FFFFFF</color>
-    
-    <!-- 占位符 -->
-    <color name="placeholder_dark">#757575</color>
-    
-    <!-- 禁用状态 -->
-    <color name="disabled_dark">#616161</color>
-    <color name="disabledBackground_dark">#2C2C2C</color>
-    
-    <!-- 标签颜色 -->
-    <color name="chipBackground_dark">#49454F</color>
-    <color name="chipSelected_dark">#4F378B</color>
-    <color name="chipText_dark">#E6E1E5</color>
-    
-    <!-- 开关颜色 -->
-    <color name="switchTrackOn_dark">#4F378B</color>
-    <color name="switchTrackOff_dark">#49454F</color>
-    <color name="switchThumbOn_dark">#D0BCFF</color>
-    <color name="switchThumbOff_dark">#BDBDBD</color>
-    
-    <!-- 滑块颜色 -->
-    <color name="sliderActive_dark">#D0BCFF</color>
-    <color name="sliderInactive_dark">#49454F</color>
-    <color name="sliderThumb_dark">#D0BCFF</color>
-    
-    <!-- 进度条颜色 -->
-    <color name="progressPrimary_dark">#D0BCFF</color>
-    <color name="progressBackground_dark">#49454F</color>
-    
-    <!-- 徽章颜色 -->
-    <color name="badgeBackground_dark">#D0BCFF</color>
-    <color name="badgeText_dark">#381E72</color>
-    
-    <!-- 提示颜色 -->
-    <color name="tooltipBackground_dark">#E0E0E0</color>
-    <color name="tooltipText_dark">#1C1B1F</color>
-    
-    <!-- 对话框颜色 -->
-    <color name="dialogBackground_dark">#2C2C2C</color>
-    <color name="dialogOverlay_dark">#80000000</color>
-    
-    <!-- 菜单颜色 -->
-    <color name="menuBackground_dark">#2C2C2C</color>
-    <color name="menuDivider_dark">#424242</color>
-    
-    <!-- 滚动条颜色 -->
-    <color name="scrollbarThumb_dark">#424242</color>
-    <color name="scrollbarTrack_dark">#1C1B1F</color>
-    
-    <!-- 下拉刷新颜色 -->
-    <color name="swipeRefresh_dark">#D0BCFF</color>
-    
-    <!-- 空状态颜色 -->
-    <color name="emptyIcon_dark">#424242</color>
-    <color name="emptyText_dark">#757575</color>
-    
+    <color name="primary_dark">#B8C8D9</color>
+    <color name="primaryVariant_dark">#8CA0B3</color>
+    <color name="primaryContainer_dark">#2C3944</color>
+    <color name="onPrimaryContainer_dark">#DDE8F2</color>
+    <color name="secondary_dark">#E0C68F</color>
+    <color name="secondaryVariant_dark">#C7A353</color>
+    <color name="secondaryContainer_dark">#45371A</color>
+    <color name="onSecondaryContainer_dark">#F6E1B9</color>
+    <color name="background_dark">#101518</color>
+    <color name="onBackground_dark">#ECF0F2</color>
+    <color name="surface_dark">#151C20</color>
+    <color name="onSurface_dark">#ECF0F2</color>
+    <color name="surfaceVariant_dark">#273239</color>
+    <color name="onSurfaceVariant_dark">#AEB8BD</color>
+    <color name="error_dark">#E3A5A1</color>
+    <color name="errorContainer_dark">#4B2422</color>
+    <color name="onErrorContainer_dark">#F7D5D2</color>
+    <color name="onPrimary_dark">#13202A</color>
+    <color name="onSecondary_dark">#201708</color>
+    <color name="onError_dark">#2C0909</color>
+    <color name="inputBackground_dark">#1C252A</color>
+    <color name="inputStroke_dark">#334046</color>
+    <color name="inputStrokeFocused_dark">#E0C68F</color>
+    <color name="cardBackground_dark">#1B2429</color>
+    <color name="cardElevation_dark">#33000000</color>
+    <color name="buttonPrimary_dark">#B8C8D9</color>
+    <color name="buttonSecondary_dark">#45371A</color>
+    <color name="buttonTertiary_dark">#243036</color>
+    <color name="onButtonTertiary_dark">#ECF0F2</color>
+    <color name="fabBackground_dark">#C7A353</color>
+    <color name="fabIcon_dark">#101518</color>
+    <color name="navBackground_dark">#1B2328</color>
+    <color name="navSelected_dark">#F0D39B</color>
+    <color name="navUnselected_dark">#93A0A6</color>
+    <color name="navIndicator_dark">#3D3220</color>
+    <color name="divider_dark">#2F3A40</color>
+    <color name="shadow_dark">#66000000</color>
+    <color name="overlay_dark">#80101518</color>
+    <color name="placeholder_dark">#79868B</color>
+    <color name="disabled_dark">#566369</color>
+    <color name="disabledBackground_dark">#212B30</color>
+    <color name="chipBackground_dark">#243036</color>
+    <color name="chipSelected_dark">#3D3220</color>
+    <color name="chipText_dark">#ECF0F2</color>
+    <color name="switchTrackOn_dark">#685638</color>
+    <color name="switchTrackOff_dark">#374247</color>
+    <color name="switchThumbOn_dark">#F0D39B</color>
+    <color name="switchThumbOff_dark">#D7DDE0</color>
+    <color name="sliderActive_dark">#B8C8D9</color>
+    <color name="sliderInactive_dark">#374247</color>
+    <color name="sliderThumb_dark">#B8C8D9</color>
+    <color name="progressPrimary_dark">#B8C8D9</color>
+    <color name="progressBackground_dark">#2C3940</color>
+    <color name="badgeBackground_dark">#B8C8D9</color>
+    <color name="badgeText_dark">#101518</color>
+    <color name="tooltipBackground_dark">#ECF0F2</color>
+    <color name="tooltipText_dark">#101518</color>
+    <color name="dialogBackground_dark">#1B2429</color>
+    <color name="dialogOverlay_dark">#80101518</color>
+    <color name="menuBackground_dark">#1B2429</color>
+    <color name="menuDivider_dark">#2F3A40</color>
+    <color name="scrollbarThumb_dark">#314046</color>
+    <color name="scrollbarTrack_dark">#151C20</color>
+    <color name="swipeRefresh_dark">#B8C8D9</color>
+    <color name="emptyIcon_dark">#2C3940</color>
+    <color name="emptyText_dark">#7E8B91</color>
 </resources>

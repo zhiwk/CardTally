@@ -1,145 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 浅色主题 - 优化对比度 -->
-    
-    <!-- 主色系 - 紫色 -->
-    <color name="primary_light">#6200EE</color>
-    <color name="primaryVariant_light">#3700B3</color>
-    <color name="primaryContainer_light">#EADDFF</color>
-    <color name="onPrimaryContainer_light">#21005D</color>
-    
-    <!-- 辅助色系 - 青色 -->
-    <color name="secondary_light">#03DAC6</color>
-    <color name="secondaryVariant_light">#018786</color>
-    <color name="secondaryContainer_light">#CCF2EA</color>
-    <color name="onSecondaryContainer_light">#001F1E</color>
-    
-    <!-- 背景色系 -->
-    <color name="background_light">#FFFBFE</color>
-    <color name="onBackground_light">#1C1B1F</color>
-    
-    <!-- 表面色系 -->
-    <color name="surface_light">#FFFBFE</color>
-    <color name="onSurface_light">#1C1B1F</color>
-    <color name="surfaceVariant_light">#E7E0EC</color>
-    <color name="onSurfaceVariant_light">#49454F</color>
-    
-    <!-- 错误色系 -->
-    <color name="error_light">#B3261E</color>
-    <color name="errorContainer_light">#F9DEDC</color>
-    <color name="onErrorContainer_light">#601410</color>
-    
-    <!-- 文本颜色 -->
-    <color name="onPrimary_light">#FFFFFF</color>
-    <color name="onSecondary_light">#000000</color>
-    <color name="onError_light">#FFFFFF</color>
-    
-    <!-- 输入框颜色 -->
-    <color name="inputBackground_light">#F5F5F5</color>
-    <color name="inputStroke_light">#E0E0E0</color>
-    <color name="inputStrokeFocused_light">#6200EE</color>
-    
-    <!-- 卡片颜色 -->
+    <color name="primary_light">#4E6073</color>
+    <color name="primary_light_transparent">#CCF8F9FA</color>
+    <color name="primaryVariant_light">#425467</color>
+    <color name="primaryContainer_light">#D1E4FB</color>
+    <color name="onPrimaryContainer_light">#415366</color>
+    <color name="secondary_light">#C8A760</color>
+    <color name="secondaryVariant_light">#785A1A</color>
+    <color name="secondaryContainer_light">#FFDEA5</color>
+    <color name="onSecondaryContainer_light">#694D0C</color>
+    <color name="background_light">#F8F9FA</color>
+    <color name="onBackground_light">#2B3437</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="onSurface_light">#2B3437</color>
+    <color name="surfaceVariant_light">#DBE4E7</color>
+    <color name="onSurfaceVariant_light">#586064</color>
+    <color name="error_light">#9F403D</color>
+    <color name="errorContainer_light">#F8E1DE</color>
+    <color name="onErrorContainer_light">#752121</color>
+    <color name="onPrimary_light">#F4F8FF</color>
+    <color name="onSecondary_light">#FFF8F1</color>
+    <color name="onError_light">#FFF7F6</color>
+    <color name="inputBackground_light">#F1F4F6</color>
+    <color name="inputStroke_light">#E1E7EA</color>
+    <color name="inputStrokeFocused_light">#C8A760</color>
     <color name="cardBackground_light">#FFFFFF</color>
-    <color name="cardElevation_light">#0D000000</color>
-    
-    <!-- 按钮颜色 -->
-    <color name="buttonPrimary_light">#6200EE</color>
-    <color name="buttonSecondary_light">#03DAC6</color>
-    <color name="buttonTertiary_light">#E7E0EC</color>
-    <color name="onButtonTertiary_light">#1C1B1F</color>
-    
-    <!-- FAB颜色 -->
-    <color name="fabBackground_light">#6200EE</color>
+    <color name="cardElevation_light">#0A2B3437</color>
+    <color name="buttonPrimary_light">#4E6073</color>
+    <color name="buttonSecondary_light">#FFDEA5</color>
+    <color name="buttonTertiary_light">#F1F4F6</color>
+    <color name="onButtonTertiary_light">#2B3437</color>
+    <color name="fabBackground_light">#C8A760</color>
     <color name="fabIcon_light">#FFFFFF</color>
-    
-    <!-- 导航栏颜色 -->
-    <color name="navBackground_light">#FFFFFF</color>
-    <color name="navSelected_light">#6200EE</color>
-    <color name="navUnselected_light">#757575</color>
-    <color name="navIndicator_light">#6200EE</color>
-    
-    <!-- 分割线 -->
-    <color name="divider_light">#E0E0E0</color>
-    
-    <!-- 阴影 -->
-    <color name="shadow_light">#1A000000</color>
-    
-    <!-- 遮罩 -->
-    <color name="overlay_light">#80000000</color>
-    
-    <!-- 占位符 -->
-    <color name="placeholder_light">#9E9E9E</color>
-    
-    <!-- 禁用状态 -->
-    <color name="disabled_light">#BDBDBD</color>
-    <color name="disabledBackground_light">#F5F5F5</color>
-    
-    <!-- 标签颜色 -->
-    <color name="chipBackground_light">#E7E0EC</color>
-    <color name="chipSelected_light">#EADDFF</color>
-    <color name="chipText_light">#1C1B1F</color>
-    
-    <!-- 开关颜色 -->
-    <color name="switchTrackOn_light">#EADDFF</color>
-    <color name="switchTrackOff_light">#E7E0EC</color>
-    <color name="switchThumbOn_light">#6200EE</color>
+    <color name="navBackground_light">#EDEFF1</color>
+    <color name="navSelected_light">#785A1A</color>
+    <color name="navUnselected_light">#7C878C</color>
+    <color name="navIndicator_light">#F8D79A</color>
+    <color name="divider_light">#D7DFE2</color>
+    <color name="shadow_light">#0F2B3437</color>
+    <color name="overlay_light">#662B3437</color>
+    <color name="placeholder_light">#8D989D</color>
+    <color name="disabled_light">#B5BEC2</color>
+    <color name="disabledBackground_light">#EEF1F3</color>
+    <color name="chipBackground_light">#F1F4F6</color>
+    <color name="chipSelected_light">#FFF3DE</color>
+    <color name="chipText_light">#2B3437</color>
+    <color name="switchTrackOn_light">#E8D3A9</color>
+    <color name="switchTrackOff_light">#DCE3E6</color>
+    <color name="switchThumbOn_light">#785A1A</color>
     <color name="switchThumbOff_light">#FFFFFF</color>
-    
-    <!-- 滑块颜色 -->
-    <color name="sliderActive_light">#6200EE</color>
-    <color name="sliderInactive_light">#E7E0EC</color>
-    <color name="sliderThumb_light">#6200EE</color>
-    
-    <!-- 进度条颜色 -->
-    <color name="progressPrimary_light">#6200EE</color>
-    <color name="progressBackground_light">#E7E0EC</color>
-    
-    <!-- 徽章颜色 -->
-    <color name="badgeBackground_light">#6200EE</color>
+    <color name="sliderActive_light">#4E6073</color>
+    <color name="sliderInactive_light">#DCE3E6</color>
+    <color name="sliderThumb_light">#4E6073</color>
+    <color name="progressPrimary_light">#4E6073</color>
+    <color name="progressBackground_light">#E7ECEF</color>
+    <color name="badgeBackground_light">#4E6073</color>
     <color name="badgeText_light">#FFFFFF</color>
-    
-    <!-- 提示颜色 -->
-    <color name="tooltipBackground_light">#323232</color>
-    <color name="tooltipText_light">#FFFFFF</color>
-    
-    <!-- 对话框颜色 -->
+    <color name="tooltipBackground_light">#2B3437</color>
+    <color name="tooltipText_light">#F8F9FA</color>
     <color name="dialogBackground_light">#FFFFFF</color>
-    <color name="dialogOverlay_light">#80000000</color>
-    
-    <!-- 菜单颜色 -->
+    <color name="dialogOverlay_light">#662B3437</color>
     <color name="menuBackground_light">#FFFFFF</color>
-    <color name="menuDivider_light">#E0E0E0</color>
-    
-    <!-- 滚动条颜色 -->
-    <color name="scrollbarThumb_light">#E0E0E0</color>
-    <color name="scrollbarTrack_light">#F5F5F5</color>
-    
-    <!-- 下拉刷新颜色 -->
-    <color name="swipeRefresh_light">#6200EE</color>
-    
-    <!-- 空状态颜色 -->
-    <color name="emptyIcon_light">#E0E0E0</color>
-    <color name="emptyText_light">#9E9E9E</color>
-
-    <!-- 收入支出结余背景色 -->
-    <color name="income_background">#E8F5E9</color>
-    <color name="expense_background">#FFEBEE</color>
-    <color name="balance_background">#E3F2FD</color>
-
-    <!-- 语义化容器色 -->
-    <color name="success_container">#E8F5E9</color>
-    <color name="warning_container">#FFF3E0</color>
-    <color name="error_container">#FFEBEE</color>
-    <color name="info_container">#E3F2FD</color>
-
-    <!-- 语义化主色 -->
-    <color name="balance_primary">#2196F3</color>
-    <color name="error_primary">#F44336</color>
-    <color name="expense_primary">#F44336</color>
-    <color name="income_primary">#4CAF50</color>
-    <color name="info_primary">#2196F3</color>
-    <color name="success_primary">#4CAF50</color>
-    <color name="warning_primary">#FF9800</color>
-
+    <color name="menuDivider_light">#E1E7EA</color>
+    <color name="scrollbarThumb_light">#CDD5D9</color>
+    <color name="scrollbarTrack_light">#F1F4F6</color>
+    <color name="swipeRefresh_light">#4E6073</color>
+    <color name="emptyIcon_light">#D2D9DD</color>
+    <color name="emptyText_light">#8B9499</color>
+    <color name="income_background">#EDF7EF</color>
+    <color name="expense_background">#F9ECEA</color>
+    <color name="balance_background">#EEF3F7</color>
+    <color name="success_container">#E6F4EA</color>
+    <color name="warning_container">#FFF4DF</color>
+    <color name="error_container">#F9ECEA</color>
+    <color name="info_container">#EEF3F7</color>
+    <color name="balance_primary">#4E6073</color>
+    <color name="error_primary">#9F403D</color>
+    <color name="expense_primary">#A3544C</color>
+    <color name="income_primary">#2B6B3F</color>
+    <color name="info_primary">#4E6073</color>
+    <color name="success_primary">#2B6B3F</color>
+    <color name="warning_primary">#9A7424</color>
+    <color name="editorial_surface_low">#F1F4F6</color>
+    <color name="editorial_surface_lowest">#FFFFFF</color>
+    <color name="editorial_outline">#AEB7BC</color>
+    <color name="editorial_text_muted">#7B8589</color>
 </resources>

@@ -30,10 +30,10 @@ class HomeFragment : Fragment() {
     private lateinit var recyclerRecords: RecyclerView
     private lateinit var textEmpty: TextView
     private lateinit var fabAdd: FloatingActionButton
-    private lateinit var btnPrevMonth: Button
-    private lateinit var btnNextMonth: Button
-    private lateinit var textMonth: TextView
-    private lateinit var btnSearch: ImageButton
+    private lateinit var btnFilter: Button
+    private lateinit var btnWeek: Button
+    private lateinit var btnMonth: Button
+    private lateinit var btnYear: Button
     private lateinit var textIncome: TextView
     private lateinit var textExpense: TextView
     private lateinit var textBalance: TextView
@@ -43,6 +43,7 @@ class HomeFragment : Fragment() {
 
     private var currentYear: Int = 0
     private var currentMonth: Int = 0
+    private var currentPeriod: String = "week" // week, month, year
 
     private var isBottomNavVisible = true
     private var isFabVisible = true
@@ -59,10 +60,10 @@ class HomeFragment : Fragment() {
         recyclerRecords = view.findViewById(R.id.recycler_records)
         textEmpty = view.findViewById(R.id.text_empty)
         fabAdd = view.findViewById(R.id.fab_add)
-        btnPrevMonth = view.findViewById(R.id.btn_prev_month)
-        btnNextMonth = view.findViewById(R.id.btn_next_month)
-        textMonth = view.findViewById(R.id.text_month)
-        btnSearch = view.findViewById(R.id.btn_search)
+        btnFilter = view.findViewById(R.id.btn_filter)
+        btnWeek = view.findViewById(R.id.btn_week)
+        btnMonth = view.findViewById(R.id.btn_month)
+        btnYear = view.findViewById(R.id.btn_year)
         textIncome = view.findViewById(R.id.text_income)
         textExpense = view.findViewById(R.id.text_expense)
         textBalance = view.findViewById(R.id.text_balance)
@@ -75,34 +76,28 @@ class HomeFragment : Fragment() {
         currentYear = calendar.get(Calendar.YEAR)
         currentMonth = calendar.get(Calendar.MONTH) + 1
 
-        updateMonthDisplay()
+        updatePeriodButtons()
 
-        btnPrevMonth.setOnClickListener {
-            currentMonth--
-            if (currentMonth < 1) {
-                currentMonth = 12
-                currentYear--
-            }
-            updateMonthDisplay()
+        btnFilter.setOnClickListener {
+            showFilterDialog()
+        }
+
+        btnWeek.setOnClickListener {
+            currentPeriod = "week"
+            updatePeriodButtons()
             loadRecords()
         }
 
-        btnNextMonth.setOnClickListener {
-            currentMonth++
-            if (currentMonth > 12) {
-                currentMonth = 1
-                currentYear++
-            }
-            updateMonthDisplay()
+        btnMonth.setOnClickListener {
+            currentPeriod = "month"
+            updatePeriodButtons()
             loadRecords()
         }
 
-        textMonth.setOnClickListener {
-            showMonthPicker()
-        }
-
-        btnSearch.setOnClickListener {
-            showSearchDialog()
+        btnYear.setOnClickListener {
+            currentPeriod = "year"
+            updatePeriodButtons()
+            loadRecords()
         }
 
         fabAdd.setOnClickListener {
@@ -163,33 +158,48 @@ class HomeFragment : Fragment() {
         showFab()
     }
 
-    private fun updateMonthDisplay() {
-        textMonth.text = String.format("%d年%02d月", currentYear, currentMonth)
+    private fun updatePeriodButtons() {
+        // 重置所有按钮状态
+        btnWeek.setBackgroundResource(R.drawable.selector_button_primary)
+        btnMonth.setBackgroundResource(R.drawable.selector_button_primary)
+        btnYear.setBackgroundResource(R.drawable.selector_button_primary)
+        
+        // 设置当前选中的按钮状态
+        when (currentPeriod) {
+            "week" -> btnWeek.setBackgroundResource(R.drawable.shape_button_primary)
+            "month" -> btnMonth.setBackgroundResource(R.drawable.shape_button_primary)
+            "year" -> btnYear.setBackgroundResource(R.drawable.shape_button_primary)
+        }
     }
 
-    private fun showMonthPicker() {
-        val calendar = Calendar.getInstance()
-        val year = currentYear
-        val month = currentMonth - 1
+    private fun showFilterDialog() {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("筛选记录")
 
-        val datePickerDialog = DatePickerDialog(
-            requireContext(),
-            { _, selectedYear, selectedMonth, _ ->
-                currentYear = selectedYear
-                currentMonth = selectedMonth + 1
-                updateMonthDisplay()
-                loadRecords()
-            },
-            year,
-            month,
-            1
-        )
-        
-        datePickerDialog.datePicker.findViewById<View>(
-            resources.getIdentifier("day", "id", "android")
-        )?.visibility = View.GONE
-        
-        datePickerDialog.show()
+        // 这里可以添加筛选选项，如分类、金额范围等
+        val categories = databaseHelper.getAllCategories()
+        val categoryNames = categories.map { it.name }.toTypedArray()
+        val checkedItems = BooleanArray(categoryNames.size) { false }
+
+        builder.setMultiChoiceItems(categoryNames, checkedItems) { _, which, isChecked ->
+            checkedItems[which] = isChecked
+        }
+
+        builder.setPositiveButton("确定") { _, _ ->
+            // 处理筛选逻辑
+            val selectedCategories = mutableListOf<String>()
+            for (i in checkedItems.indices) {
+                if (checkedItems[i]) {
+                    selectedCategories.add(categoryNames[i])
+                }
+            }
+            // 根据筛选条件加载记录
+            loadRecords(selectedCategories)
+        }
+
+        builder.setNegativeButton("取消", null)
+
+        builder.show()
     }
 
     private fun showSearchDialog() {
@@ -216,14 +226,8 @@ class HomeFragment : Fragment() {
         builder.show()
     }
 
-    private fun loadRecords() {
-        val startDate = String.format("%04d-%02d-01", currentYear, currentMonth)
-        val lastDay = when (currentMonth) {
-            2 -> if (currentYear % 4 == 0 && (currentYear % 100 != 0 || currentYear % 400 == 0)) 29 else 28
-            4, 6, 9, 11 -> 30
-            else -> 31
-        }
-        val endDate = String.format("%04d-%02d-%02d", currentYear, currentMonth, lastDay)
+    private fun loadRecords(selectedCategories: List<String> = emptyList()) {
+        val (startDate, endDate) = getDateRangeByPeriod()
 
         allRecords = databaseHelper.getRecordsByDateRange(startDate, endDate)
 
@@ -340,6 +344,80 @@ class HomeFragment : Fragment() {
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    private fun getDateRangeByPeriod(): Pair<String, String> {
+        val calendar = Calendar.getInstance()
+        val year = currentYear
+        val month = currentMonth - 1
+        
+        calendar.set(Calendar.YEAR, year)
+        calendar.set(Calendar.MONTH, month)
+        
+        return when (currentPeriod) {
+            "week" -> {
+                // 计算本周的开始和结束日期
+                val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+                val daysToMonday = (dayOfWeek - Calendar.MONDAY + 7) % 7
+                calendar.add(Calendar.DAY_OF_YEAR, -daysToMonday)
+                val startDate = String.format("%04d-%02d-%02d", 
+                    calendar.get(Calendar.YEAR), 
+                    calendar.get(Calendar.MONTH) + 1, 
+                    calendar.get(Calendar.DAY_OF_MONTH))
+                calendar.add(Calendar.DAY_OF_YEAR, 6)
+                val endDate = String.format("%04d-%02d-%02d", 
+                    calendar.get(Calendar.YEAR), 
+                    calendar.get(Calendar.MONTH) + 1, 
+                    calendar.get(Calendar.DAY_OF_MONTH))
+                Pair(startDate, endDate)
+            }
+            "month" -> {
+                // 计算本月的开始和结束日期
+                calendar.set(Calendar.DAY_OF_MONTH, 1)
+                val startDate = String.format("%04d-%02d-%02d", 
+                    calendar.get(Calendar.YEAR), 
+                    calendar.get(Calendar.MONTH) + 1, 
+                    calendar.get(Calendar.DAY_OF_MONTH))
+                calendar.add(Calendar.MONTH, 1)
+                calendar.add(Calendar.DAY_OF_MONTH, -1)
+                val endDate = String.format("%04d-%02d-%02d", 
+                    calendar.get(Calendar.YEAR), 
+                    calendar.get(Calendar.MONTH) + 1, 
+                    calendar.get(Calendar.DAY_OF_MONTH))
+                Pair(startDate, endDate)
+            }
+            "year" -> {
+                // 计算本年的开始和结束日期
+                calendar.set(Calendar.MONTH, 0)
+                calendar.set(Calendar.DAY_OF_MONTH, 1)
+                val startDate = String.format("%04d-%02d-%02d", 
+                    calendar.get(Calendar.YEAR), 
+                    calendar.get(Calendar.MONTH) + 1, 
+                    calendar.get(Calendar.DAY_OF_MONTH))
+                calendar.set(Calendar.MONTH, 11)
+                calendar.set(Calendar.DAY_OF_MONTH, 31)
+                val endDate = String.format("%04d-%02d-%02d", 
+                    calendar.get(Calendar.YEAR), 
+                    calendar.get(Calendar.MONTH) + 1, 
+                    calendar.get(Calendar.DAY_OF_MONTH))
+                Pair(startDate, endDate)
+            }
+            else -> {
+                // 默认返回本月
+                calendar.set(Calendar.DAY_OF_MONTH, 1)
+                val startDate = String.format("%04d-%02d-%02d", 
+                    calendar.get(Calendar.YEAR), 
+                    calendar.get(Calendar.MONTH) + 1, 
+                    calendar.get(Calendar.DAY_OF_MONTH))
+                calendar.add(Calendar.MONTH, 1)
+                calendar.add(Calendar.DAY_OF_MONTH, -1)
+                val endDate = String.format("%04d-%02d-%02d", 
+                    calendar.get(Calendar.YEAR), 
+                    calendar.get(Calendar.MONTH) + 1, 
+                    calendar.get(Calendar.DAY_OF_MONTH))
+                Pair(startDate, endDate)
+            }
+        }
     }
 
     private fun showDeleteSelectedDialog() {

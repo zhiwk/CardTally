@@ -4,95 +4,151 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background_light"
     tools:context=".AssetFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/text_title"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/asset_header"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="资产"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageButton
-            android:id="@+id/btn_archive"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_archive"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="归档"
-            android:layout_marginEnd="16dp"
-            android:padding="8dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="20dp"
+            android:orientation="vertical"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/text_title"
-            app:layout_constraintBottom_toBottomOf="@+id/text_title" />
-
-        <TextView
-            android:id="@+id/text_total_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="总资产"
-            android:textSize="16sp"
-            android:textColor="@android:color/darker_gray"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_title" />
+            app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/text_total_amount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="¥0.00"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#4CAF50"
-            android:layout_marginStart="16dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_total_label" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/text_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.16"
+                        android:text="ASSET MANAGEMENT"
+                        android:textColor="@color/editorial_text_muted"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="我的资产"
+                        android:textColor="@color/onBackground_light"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/btn_archive"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/selector_button_primary"
+                    android:contentDescription="归档"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_archive"
+                    app:tint="@color/onBackground_light" />
+
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                app:cardBackgroundColor="@color/primary_light"
+                app:cardCornerRadius="28dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <TextView
+                        android:id="@+id/text_total_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:alpha="0.72"
+                        android:letterSpacing="0.15"
+                        android:text="TOTAL NET WORTH"
+                        android:textColor="@color/onPrimary_light"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/text_total_amount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="¥0.00"
+                        android:textColor="@color/onPrimary_light"
+                        android:textSize="34sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/text_empty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="暂无资产，点击右下角按钮添加资产"
-            android:textSize="16sp"
-            android:textColor="@android:color/darker_gray"
+            android:gravity="center"
+            android:paddingHorizontal="32dp"
+            android:text="暂无资产，点击右下角按钮添加"
+            android:textColor="@color/emptyText_light"
+            android:textSize="15sp"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_total_amount" />
+            app:layout_constraintTop_toBottomOf="@+id/asset_header" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_assets"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:layout_marginTop="16dp"
+            android:clipToPadding="false"
+            android:paddingTop="12dp"
+            android:paddingBottom="108dp"
             android:scrollbars="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_total_amount" />
+            app:layout_constraintTop_toBottomOf="@+id/asset_header" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        android:src="@drawable/ic_add"
+        android:layout_marginEnd="28dp"
+        android:layout_marginBottom="92dp"
         android:contentDescription="添加资产"
-        app:backgroundTint="@color/primary_light" />
+        android:src="@drawable/ic_add"
+        app:backgroundTint="@color/secondary_light"
+        app:tint="@color/onPrimary_light" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

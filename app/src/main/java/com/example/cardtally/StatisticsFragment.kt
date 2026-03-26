@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,7 +23,7 @@ class StatisticsFragment : Fragment() {
     private lateinit var recyclerStatistics: RecyclerView
     private lateinit var databaseHelper: DatabaseHelper
     private lateinit var adapter: StatisticsAdapter
-    
+
     private var currentTab = 0
 
     override fun onCreateView(
@@ -46,6 +47,7 @@ class StatisticsFragment : Fragment() {
         recyclerStatistics.adapter = adapter
 
         loadStatistics(0)
+        updateTabStyle()
 
         cardTabCategory.setOnClickListener {
             if (currentTab != 0) {
@@ -69,15 +71,24 @@ class StatisticsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         loadStatistics(currentTab)
+        updateTabStyle()
     }
 
     private fun updateTabStyle() {
         if (currentTab == 0) {
-            cardTabCategory.setCardBackgroundColor(0xFF2196F3.toInt())
-            cardTabTime.setCardBackgroundColor(0xFFE0E0E0.toInt())
+            cardTabCategory.setCardBackgroundColor(
+                ContextCompat.getColor(requireContext(), R.color.primary_light)
+            )
+            cardTabTime.setCardBackgroundColor(
+                ContextCompat.getColor(requireContext(), R.color.editorial_surface_low)
+            )
         } else {
-            cardTabCategory.setCardBackgroundColor(0xFFE0E0E0.toInt())
-            cardTabTime.setCardBackgroundColor(0xFF2196F3.toInt())
+            cardTabCategory.setCardBackgroundColor(
+                ContextCompat.getColor(requireContext(), R.color.editorial_surface_low)
+            )
+            cardTabTime.setCardBackgroundColor(
+                ContextCompat.getColor(requireContext(), R.color.primary_light)
+            )
         }
     }
 

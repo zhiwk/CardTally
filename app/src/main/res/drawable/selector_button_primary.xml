@@ -1,28 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
-            <solid android:color="@color/primaryVariant_light" />
-            <corners android:radius="@dimen/button_corner_radius_medium" />
+            <solid android:color="@color/editorial_surface_low" />
+            <corners android:radius="18dp" />
         </shape>
     </item>
-    
     <item android:state_focused="true">
         <shape android:shape="rectangle">
-            <solid android:color="@color/primary_light" />
-            <corners android:radius="@dimen/button_corner_radius_medium" />
+            <solid android:color="@color/editorial_surface_lowest" />
+            <corners android:radius="18dp" />
             <stroke
-                android:width="2dp"
-                android:color="@color/primaryVariant_light" />
+                android:width="1dp"
+                android:color="@color/secondary_light" />
         </shape>
     </item>
-    
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/primary_light" />
-            <corners android:radius="@dimen/button_corner_radius_medium" />
+            <solid android:color="@color/editorial_surface_low" />
+            <corners android:radius="18dp" />
         </shape>
     </item>
-    
 </selector>

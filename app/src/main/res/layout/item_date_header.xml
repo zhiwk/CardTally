@@ -2,17 +2,19 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp"
-    android:background="#F5F5F5">
+    android:paddingStart="20dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="8dp">
 
     <TextView
         android:id="@+id/text_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="2024年01月01日"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/black" />
+        android:letterSpacing="0.14"
+        android:text="2024-01-01"
+        android:textColor="@color/editorial_text_muted"
+        android:textSize="11sp"
+        android:textStyle="bold" />
 
 </LinearLayout>
