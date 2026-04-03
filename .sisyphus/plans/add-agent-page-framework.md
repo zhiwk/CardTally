@@ -1,12 +1,14 @@
 # Add And Agent Page Framework Redesign
 
+> **History note:** This is a historical execution plan. The current settled rule is: `记一笔` remains a Home/Records FAB entry, and Agent writes do **not** require pre-execution confirmation; they require auditability, result feedback, and safe correction paths.
+
 ## TL;DR
-> **Summary**: Rebuild `记一笔` around the existing record form flow with a single primary save action, then introduce a greenfield `Agent` tab that uses a shared capability layer, explicit confirmation, idempotent execution, and auditable local persistence for full business writes.
+> **Summary**: Rebuild `记一笔` around the existing record form flow with a single primary save action, then introduce a greenfield `Agent` tab that uses a shared capability layer, idempotent execution, and auditable local persistence for full business writes.
 > **Deliverables**:
 > - Rebuilt `记一笔` page with single-save flow and retained asset linkage
 > - Fixed bottom-nav `Agent` tab replacing deferred `统计`
 > - Shared capability layer for UI and Agent across records/assets/categories
-> - Agent conversation UI, confirmation flow, audit log, and local history persistence
+> - Agent conversation UI, execution/result flow, audit log, and local history persistence
 > - Safety hardening for full-write Agent operations and regression coverage
 > **Effort**: XL
 > **Parallel**: YES - 2 waves
@@ -22,7 +24,7 @@
 - `记一笔` keeps the asset-source field visible and removes the dual primary action pattern in favor of one primary save action.
 - `Agent` becomes a fixed bottom-navigation tab replacing deferred `统计`.
 - `Agent` lands as a pure conversation screen.
-- `Agent` v1 is allowed to perform business-wide writes, not just suggestions, but must use explicit confirmation and traceable source metadata.
+- `Agent` v1 is allowed to perform business-wide writes, not just suggestions, and must use traceable source metadata plus full audit logging.
 
 ### Metis Review (gaps addressed)
 - This plan does not assume prior test/bootstrap work is already landed; it includes the minimum extension or bootstrap required for add/agent coverage.
@@ -33,7 +35,7 @@
 ### Oracle Review (architecture constraints addressed)
 - Full-write Agent scope is unsafe with the current name-keyed `Record.category` and `Record.assetSource` model; this plan hardens references before enabling broad Agent writes.
 - All Agent writes must execute through a thin shared capability layer above `DatabaseHelper`, never by calling fragments or UI handlers.
-- Agent execution requires an append-only audit trail (`requested -> confirmed -> executed/failed`) plus idempotent operation IDs.
+- Agent execution requires an append-only audit trail (`requested -> executed/failed`) plus idempotent operation IDs.
 - Provider failure must degrade gracefully: the Agent tab remains reachable but non-destructive paths and manual app flows still work without AI availability.
 
 ## Work Objectives
@@ -43,17 +45,17 @@
 ### Deliverables
 - Shared record form/capability layer used by `AddRecordFragment`, `EditRecordFragment`, and Agent-triggered record writes.
 - Data-reference hardening and execution safeguards needed for business-wide Agent writes.
-- `AgentFragment` with chat history, confirmation cards, provider adapter, and action execution pipeline.
+- `AgentFragment` with chat history, result/audit feedback, provider adapter, and action execution pipeline.
 - Bottom-navigation update from `首页 / 记录 / 资产 / 统计 / 我的`-in-transition to `首页 / 记录 / 资产 / Agent / 我的` as the v1 shell.
 - Instrumentation/unit coverage for add-page flow, Agent confirmation/execution flow, and nav safety.
 
 ### Definition of Done (verifiable conditions with commands)
 - `./gradlew.bat assembleDebug` succeeds after add/agent refactor.
 - `./gradlew.bat testDebugUnitTest` succeeds for shared capability, audit, and idempotency tests.
-- `./gradlew.bat connectedDebugAndroidTest` succeeds for add-page flow, Agent chat/confirmation flow, and bottom-nav routing.
+- `./gradlew.bat connectedDebugAndroidTest` succeeds for add-page flow, Agent chat/execution flow, and bottom-nav routing.
 - The app bottom nav shows `Agent` and no longer shows `统计`.
 - `记一笔` exposes one primary save action and still supports asset-linked records.
-- Agent write actions always require explicit confirmation and always generate a persisted audit entry.
+- Agent write actions do not require pre-execution confirmation and always generate a persisted audit entry.
 
 ### Must Have
 - Keep `记一笔` as a page-internal task flow entered from Home/Records, not a bottom tab.
@@ -67,7 +69,7 @@
 - No direct Agent calls into fragments, adapters, XML state, button handlers, or raw ad-hoc SQL.
 - No cloud sync, voice input, deep personalization memory, or multi-step autonomous workflow engine in v1.
 - No reintroduction of dual primary save buttons on `记一笔`.
-- No unconfirmed destructive writes from Agent.
+- No unaudited Agent writes.
 
 ## Verification Strategy
 > ZERO HUMAN INTERVENTION - all verification is agent-executed.
@@ -107,7 +109,7 @@ Wave 2: Agent shell, provider/audit pipeline, bottom-nav integration, regression
 
 - [ ] 1. Bootstrap or extend minimal test support for add-page and Agent flows
 
-  **What to do**: Make this plan self-sufficient for testing. If Android test/unit test support already exists from prior work, extend it; otherwise add the minimum Gradle dependencies, source-set directories, and smoke helpers required to run add-page, bottom-nav, and Agent confirmation tests. Create smoke classes for one manual add-page launch and one Agent-tab launch so later tasks have a stable verification baseline.
+  **What to do**: Make this plan self-sufficient for testing. If Android test/unit test support already exists from prior work, extend it; otherwise add the minimum Gradle dependencies, source-set directories, and smoke helpers required to run add-page, bottom-nav, and Agent execution tests. Create smoke classes for one manual add-page launch and one Agent-tab launch so later tasks have a stable verification baseline.
   **Must NOT do**: Do not assume prior records/assets/my test plans were already executed; do not add cloud CI or broad coverage automation in this task; do not introduce JUnit 5.
 
   **Recommended Agent Profile**:
@@ -316,14 +318,14 @@ Wave 2: Agent shell, provider/audit pipeline, bottom-nav integration, regression
 
   **Commit**: YES | Message: `feat(agent): add agent shell and conversation persistence` | Files: `app/src/main/java/com/example/cardtally/AgentFragment.kt`, `app/src/main/java/com/example/cardtally/agent/...`, `app/src/main/res/layout/fragment_agent.xml`, `app/src/androidTest/java/com/example/cardtally/AgentFragmentTest.kt`
 
-- [ ] 6. Implement Agent confirmation, audit, and execution pipeline for full writes
+- [ ] 6. Implement Agent audit and execution pipeline for full writes
 
-  **What to do**: Build the core Agent action pipeline on top of the shared capability layer. Convert provider outputs into structured action proposals, render a human-readable confirmation card/message for each proposal, require explicit user confirmation before execution, execute through the shared services with an `operationId`, and persist an append-only audit trail (`requested -> confirmed -> executed/failed`) including source = `Agent`. Support records/assets/categories actions in scope, including destructive operations, but only through the normalized stable-reference layer from task 3.
-  **Must NOT do**: Do not let freeform model text execute directly, do not bypass confirmation for deletes or updates, and do not write without audit persistence.
+  **What to do**: Build the core Agent action pipeline on top of the shared capability layer. Convert provider outputs into structured action requests, execute through the shared services with an `operationId`, surface clear result feedback to the user, and persist an append-only audit trail (`requested -> executed/failed`) including source = `Agent`. Support records/assets/categories actions in scope, including destructive operations, but only through the normalized stable-reference layer from task 3.
+  **Must NOT do**: Do not let freeform model text execute directly, do not write without audit persistence, and do not bypass the shared service boundary.
 
   **Recommended Agent Profile**:
   - Category: `deep` - Reason: this is the highest-risk architecture task and the heart of full-write Agent v1.
-  - Skills: [`systematic-debugging`] - Reason: confirmation, retries, and execution safety are easy to get subtly wrong.
+  - Skills: [`systematic-debugging`] - Reason: execution, retries, and audit safety are easy to get subtly wrong.
   - Omitted: [`brainstorming`] - Reason: the write scope and guardrails are already fixed.
 
   **Parallelization**: Can Parallel: NO | Wave 2 | Blocks: 7, 8 | Blocked By: 1, 2, 3, 5
@@ -331,33 +333,33 @@ Wave 2: Agent shell, provider/audit pipeline, bottom-nav integration, regression
   **References** (executor has NO interview context - be exhaustive):
   - Pattern: `app/src/main/java/com/example/cardtally/...service...` - Shared capability layer from task 2 is the only execution boundary.
   - Pattern: `app/src/main/java/com/example/cardtally/...operation store...` - Idempotent audit persistence from task 3.
-  - External: `docs/plans/2026-03-26-cardtally-agent-integration-principles.md:100` - Write operations must be explicit, auditable, traceable, and confirmable.
-  - External: `docs/plans/2026-03-26-cardtally-agent-integration-principles.md:132` - Confirmation rules for high-risk writes.
+  - External: `docs/plans/2026-03-26-cardtally-agent-integration-principles.md:100` - Write operations must be explicit, auditable, traceable, and correctable.
+  - External: `docs/plans/2026-03-26-cardtally-agent-integration-principles.md:132` - High-risk writes do not require pre-execution confirmation, but do require audit and correction safety.
   - External: `docs/plans/2026-03-26-cardtally-ia-navigation-spec.md:131` - Agent writes must be marked as Agent-originated for audit.
 
   **Acceptance Criteria** (agent-executable only):
-  - [ ] Agent-generated write proposals are structured and non-executable until confirmed.
-  - [ ] Confirming a proposal executes exactly one service-layer action with a persisted `operationId`.
-  - [ ] Cancelling a proposal performs no mutation and still records the cancellation/audit state.
-  - [ ] Duplicate confirmation/execution attempts do not create duplicate domain rows.
-  - [ ] `./gradlew.bat testDebugUnitTest --tests "com.example.cardtally.AgentExecutionPipelineTest"` and `./gradlew.bat connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.cardtally.AgentConfirmationTest` both pass.
+  - [ ] Agent-generated write requests are structured and executed only through the service-layer action boundary.
+  - [ ] A single request executes exactly one service-layer action with a persisted `operationId`.
+  - [ ] Duplicate execution attempts do not create duplicate domain rows.
+  - [ ] Failed destructive actions leave domain data unchanged and still record the failure/audit state.
+  - [ ] `./gradlew.bat testDebugUnitTest --tests "com.example.cardtally.AgentExecutionPipelineTest"` and `./gradlew.bat connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.cardtally.AgentExecutionTest` both pass.
 
   **QA Scenarios** (MANDATORY - task incomplete without these):
   ```
-  Scenario: Confirmed Agent record creation writes once and logs audit state
+  Scenario: Agent record creation writes once and logs audit state
     Tool: Bash
     Steps: Run `./gradlew.bat testDebugUnitTest --tests "com.example.cardtally.AgentExecutionPipelineTest.confirmedRecordCreateWritesOnce"`
-    Expected: BUILD SUCCESSFUL and tests prove the shared service executes once with persisted requested/confirmed/executed states
-    Evidence: .sisyphus/evidence/task-6-agent-confirmed-write.txt
+    Expected: BUILD SUCCESSFUL and tests prove the shared service executes once with persisted requested/executed states
+    Evidence: .sisyphus/evidence/task-6-agent-write.txt
 
-  Scenario: Cancelled Agent destructive action performs no mutation
+  Scenario: Failed Agent destructive action performs no mutation
     Tool: Bash
-    Steps: Run `./gradlew.bat connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.cardtally.AgentConfirmationTest#cancelledDeleteDoesNotMutateData`; inside the test send a delete prompt via fake provider, tap cancel on the confirmation card, and assert the target row still exists.
-    Expected: BUILD SUCCESSFUL and Espresso proves destructive actions cannot bypass confirmation
-    Evidence: .sisyphus/evidence/task-6-agent-cancel.txt
+    Steps: Run `./gradlew.bat connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.cardtally.AgentExecutionTest#failedDeleteDoesNotMutateData`; inside the test send a delete prompt via fake provider, force failure in the execution boundary, and assert the target row still exists.
+    Expected: BUILD SUCCESSFUL and Espresso proves destructive actions are auditable and fail safely
+    Evidence: .sisyphus/evidence/task-6-agent-failed-delete.txt
   ```
 
-  **Commit**: YES | Message: `feat(agent): add confirmation and execution pipeline` | Files: `app/src/main/java/com/example/cardtally/agent/...`, `app/src/test/java/com/example/cardtally/AgentExecutionPipelineTest.kt`, `app/src/androidTest/java/com/example/cardtally/AgentConfirmationTest.kt`
+  **Commit**: YES | Message: `feat(agent): add audit and execution pipeline` | Files: `app/src/main/java/com/example/cardtally/agent/...`, `app/src/test/java/com/example/cardtally/AgentExecutionPipelineTest.kt`, `app/src/androidTest/java/com/example/cardtally/AgentExecutionTest.kt`
 
 - [ ] 7. Replace Statistics with Agent in the app shell and wire cross-entry navigation
 
@@ -404,7 +406,7 @@ Wave 2: Agent shell, provider/audit pipeline, bottom-nav integration, regression
 
 - [ ] 8. Harden add/agent regressions, failure states, and manual fallback guarantees
 
-  **What to do**: Finish the combined redesign with regression hardening across the full manual+Agent chain: no-category state on `记一笔`, no-asset state, provider failure on Agent, cancelled confirmations, repeated confirmations, and destructive write rollback/failure paths. Add any compatibility fixes needed so manual pages, existing edit flows, and Agent coexist safely, but do not expand the feature set.
+  **What to do**: Finish the combined redesign with regression hardening across the full manual+Agent chain: no-category state on `记一笔`, no-asset state, provider failure on Agent, repeated execution attempts, and destructive write rollback/failure paths. Add any compatibility fixes needed so manual pages, existing edit flows, and Agent coexist safely, but do not expand the feature set.
   **Must NOT do**: Do not add provider-specific production polish, do not broaden Agent into analytics/reminders beyond the chosen conversation scope, and do not re-open product decisions.
 
   **Recommended Agent Profile**:
@@ -418,7 +420,7 @@ Wave 2: Agent shell, provider/audit pipeline, bottom-nav integration, regression
   - Pattern: `app/src/main/java/com/example/cardtally/AddRecordFragment.kt:126` - Category loading and empty-state risk surface.
   - Pattern: `app/src/main/java/com/example/cardtally/AddRecordFragment.kt:147` - Asset loading and empty-state risk surface.
   - Pattern: `app/src/main/java/com/example/cardtally/EditRecordFragment.kt:148` - Existing edit flow must remain compatible with add/agent hardening.
-  - Pattern: `app/src/main/java/com/example/cardtally/agent/...` - Provider unavailable, confirmation canceled, and retry/idempotency paths from tasks 5-6.
+  - Pattern: `app/src/main/java/com/example/cardtally/agent/...` - Provider unavailable, execution failure, and retry/idempotency paths from tasks 5-6.
   - External: `docs/plans/2026-03-26-cardtally-agent-capabilities.md:35` - Agent is enhancement-layer only; manual product must still stand on its own.
 
   **Acceptance Criteria** (agent-executable only):
@@ -426,7 +428,7 @@ Wave 2: Agent shell, provider/audit pipeline, bottom-nav integration, regression
   - [ ] Agent provider failure leaves manual pages fully usable and does not corrupt local history/audit state.
   - [ ] Re-confirming the same Agent proposal does not duplicate mutations.
   - [ ] Failed destructive Agent writes leave domain data unchanged and record a failed audit state.
-  - [ ] `./gradlew.bat connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.cardtally.AddRecordFragmentTest,com.example.cardtally.AgentFragmentTest,com.example.cardtally.AgentConfirmationTest,com.example.cardtally.AgentBottomNavTest` passes.
+  - [ ] `./gradlew.bat connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.cardtally.AddRecordFragmentTest,com.example.cardtally.AgentFragmentTest,com.example.cardtally.AgentExecutionTest,com.example.cardtally.AgentBottomNavTest` passes.
 
   **QA Scenarios** (MANDATORY - task incomplete without these):
   ```
@@ -436,14 +438,14 @@ Wave 2: Agent shell, provider/audit pipeline, bottom-nav integration, regression
     Expected: BUILD SUCCESSFUL and Espresso proves the enhancement layer cannot break the base product
     Evidence: .sisyphus/evidence/task-8-agent-failure-manual-fallback.txt
 
-  Scenario: Repeated confirmation does not create duplicate mutations
+  Scenario: Repeated execution attempt does not create duplicate mutations
     Tool: Bash
     Steps: Run `./gradlew.bat testDebugUnitTest --tests "com.example.cardtally.AgentExecutionPipelineTest.reconfirmDoesNotDuplicateMutation"`
     Expected: BUILD SUCCESSFUL and tests prove idempotency holds even on retry or duplicate confirm actions
     Evidence: .sisyphus/evidence/task-8-agent-reconfirm.txt
   ```
 
-  **Commit**: YES | Message: `test(add-agent): harden regressions and failure handling` | Files: `app/src/androidTest/java/com/example/cardtally/AddRecordFragmentTest.kt`, `app/src/androidTest/java/com/example/cardtally/AgentFragmentTest.kt`, `app/src/androidTest/java/com/example/cardtally/AgentConfirmationTest.kt`, `app/src/androidTest/java/com/example/cardtally/AgentBottomNavTest.kt`, `app/src/test/java/com/example/cardtally/AgentExecutionPipelineTest.kt`, related implementation files as needed
+  **Commit**: YES | Message: `test(add-agent): harden regressions and failure handling` | Files: `app/src/androidTest/java/com/example/cardtally/AddRecordFragmentTest.kt`, `app/src/androidTest/java/com/example/cardtally/AgentFragmentTest.kt`, `app/src/androidTest/java/com/example/cardtally/AgentExecutionTest.kt`, `app/src/androidTest/java/com/example/cardtally/AgentBottomNavTest.kt`, `app/src/test/java/com/example/cardtally/AgentExecutionPipelineTest.kt`, related implementation files as needed
 
 ## Final Verification Wave (MANDATORY - after ALL implementation tasks)
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.
@@ -467,6 +469,6 @@ Wave 2: Agent shell, provider/audit pipeline, bottom-nav integration, regression
 ## Success Criteria
 - `记一笔` remains a fast manual-entry flow with one clear primary action.
 - Agent exists as an independent tab without swallowing the manual product chain.
-- Full-write Agent actions are auditable, confirmable, idempotent, and do not leave partial ledger state.
+- Full-write Agent actions are auditable, idempotent, and do not leave partial ledger state.
 - Manual and Agent-triggered mutations share the same business capability layer.
 - The app remains functional when the Agent provider is unavailable.

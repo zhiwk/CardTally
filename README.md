@@ -17,11 +17,10 @@
 
 - **开发语言**：Kotlin
 - **最低 SDK**：Android 7.0 (API 24)
-- **目标 SDK**：Android 14 (API 34)
-- **UI 框架**：Material Design Components
-- **架构组件**：Fragment, ViewModel
-- **数据库**：SQLite
-- **构建工具**：Gradle 9.0.0
+- **目标 / 编译 SDK**：Android 14 (API 34)
+- **UI 框架**：XML 布局 + Material Components + Fragment
+- **数据层**：SQLite（`DatabaseHelper.kt`）
+- **构建工具**：Android Gradle Plugin 8.3.0 + Gradle Wrapper 8.13
 
 ## 📦 安装步骤
 
@@ -47,7 +46,7 @@ cd CardTally
 将生成的 APK 文件安装到 Android 设备：
 
 ```
-app/build/outputs/apk/debug/app-debug.apk
+app/build/outputs/apk/debug/CardTally-debug.apk
 ```
 
 ## 📁 项目结构
@@ -63,22 +62,28 @@ CardTally/
 │           │   ├── model/            # 数据模型类
 │           │   ├── util/             # 工具类
 │           │   ├── MainActivity.kt   # 主活动
-│           │   ├── HomeFragment.kt   # 首页
-│           │   ├── AddRecordFragment.kt    # 添加记录
-│           │   ├── EditRecordFragment.kt   # 编辑记录
-│           │   ├── StatisticsFragment.kt   # 统计分析
-│           │   ├── SettingsFragment.kt     # 设置页面
-│           │   ├── CategoryManageFragment.kt  # 分类管理
-│           │   └── ThemeSettingsFragment.kt   # 主题设置
+│           │   └── *Fragment.kt      # 页面级逻辑，如 Home / AddRecord / Asset / Settings / Search 等
 │           ├── res/
 │           │   ├── layout/           # 布局文件
 │           │   ├── values/           # 字符串、颜色等资源
 │           │   ├── drawable/         # 图标资源
 │           │   └── menu/             # 菜单资源
 │           └── AndroidManifest.xml
+├── docs/                             # 产品规划与视觉指导文档
+├── .sisyphus/                        # 业务决策与历史执行计划
+├── AGENTS.md                         # 仓库协作入口
 ├── build.gradle                      # 项目级构建配置
 └── README.md                         # 项目说明
 ```
+
+## 📚 文档入口
+
+- `AGENTS.md`：仓库协作入口，说明先读什么、文档可信度和修改约束
+- `docs/plans/`：产品重开、信息架构、页面职责、实现规划
+- `docs/stitch-guidance/`：Stitch / 视觉设计输入文档
+- `.sisyphus/decisions/`：业务规则与关键决策
+- `.sisyphus/plans/`：历史执行计划与一次性实现方案
+- `design/stitch_extracted/`：Stitch 产出的设计结果参考，不作为当前规范
 
 ## 🚀 使用指南
 
