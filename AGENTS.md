@@ -87,6 +87,42 @@ CardTally 是一个 **原生 Android 记账应用**，当前技术栈与工程�
 - README 和规划文档里出现的目标架构，不等于当前代码已经实现。
 - 若只是在修 bug 或补局部功能，优先沿用现有模式，避免顺手做大规模架构迁移。
 
+## 4.1 2026-04-06 当日变更快照
+
+以下内容用于帮助后续 AI 快速识别今天已经发生的代码与设计变更，避免把今天的实现再次误判为“规划中”。
+
+### 今日已提交到 Git 的改动（2026-04-06）
+
+- 主题资源已更新为 **The Curated Chronicle / 静奢理财日记** 风格，涉及：
+  - `app/src/main/res/values/colors_light.xml`
+  - `app/src/main/res/values/styles.xml`
+  - `app/src/main/res/drawable/bg_circle_primary_container.xml`
+  - `app/src/main/res/drawable/bg_summary_item.xml`
+- 底部导航已加入 **AI Agent** 入口，并新增 `AgentFragment.kt` 与 `fragment_agent.xml`。
+- 以下页面已在今天完成一轮明显的 UI / 信息层重设计：
+  - `HomeFragment` / `fragment_home.xml`
+  - `AddRecordFragment` / `fragment_add_record.xml`
+  - `AssetFragment` / `fragment_asset.xml` / `item_asset.xml`
+  - `StatisticsFragment` / `fragment_statistics.xml` / `item_statistics.xml`
+  - `SettingsFragment` / `fragment_settings.xml`
+- `design/stitch_extracted/` 今日新增了多组 Stitch 导出产物，覆盖以下页面：
+  - `add record`
+  - `agent`
+  - `assets`
+  - `bottom navigation`
+  - `home`
+  - `me`
+  - `records`
+
+### 今日最后一次本地修复（尚未进入今日已推送提交）
+
+- 为恢复 `assembleDebug`，额外做了两类最小修复：
+  - 修正 `app/src/main/res/values/colors_light.xml` 中的非法颜色值 `#Transparent`，并补齐新布局实际引用到的兼容颜色别名。
+  - 修正 `app/src/main/res/layout/fragment_asset.xml` 中非法的 `android:gravity="baseline"`。
+- 在以上修复后，已实际验证：
+  - `./gradlew assembleDebug` / `\.\gradlew.bat assembleDebug` **可以通过**。
+- `local.properties` 属于本机环境文件；当前构建依赖其中的 `sdk.dir` 或等效的 Android SDK 环境变量，**不要提交该文件**。
+
 ## 5. 修改原则
 
 ### 通用原则
