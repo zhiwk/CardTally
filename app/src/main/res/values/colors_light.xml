@@ -1,88 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary_light">#4E6073</color>
-    <color name="primary_light_transparent">#CCF8F9FA</color>
-    <color name="primaryVariant_light">#425467</color>
-    <color name="primaryContainer_light">#D1E4FB</color>
-    <color name="onPrimaryContainer_light">#415366</color>
-    <color name="secondary_light">#C8A760</color>
-    <color name="secondaryVariant_light">#785A1A</color>
-    <color name="secondaryContainer_light">#FFDEA5</color>
-    <color name="onSecondaryContainer_light">#694D0C</color>
-    <color name="background_light">#F8F9FA</color>
-    <color name="onBackground_light">#2B3437</color>
-    <color name="surface_light">#FFFFFF</color>
-    <color name="onSurface_light">#2B3437</color>
-    <color name="surfaceVariant_light">#DBE4E7</color>
-    <color name="onSurfaceVariant_light">#586064</color>
-    <color name="error_light">#9F403D</color>
-    <color name="errorContainer_light">#F8E1DE</color>
-    <color name="onErrorContainer_light">#752121</color>
-    <color name="onPrimary_light">#F4F8FF</color>
-    <color name="onSecondary_light">#FFF8F1</color>
-    <color name="onError_light">#FFF7F6</color>
-    <color name="inputBackground_light">#F1F4F6</color>
-    <color name="inputStroke_light">#E1E7EA</color>
-    <color name="inputStrokeFocused_light">#C8A760</color>
-    <color name="cardBackground_light">#FFFFFF</color>
-    <color name="cardElevation_light">#0A2B3437</color>
-    <color name="buttonPrimary_light">#4E6073</color>
-    <color name="buttonSecondary_light">#FFDEA5</color>
-    <color name="buttonTertiary_light">#F1F4F6</color>
-    <color name="onButtonTertiary_light">#2B3437</color>
-    <color name="fabBackground_light">#C8A760</color>
-    <color name="fabIcon_light">#FFFFFF</color>
-    <color name="navBackground_light">#EDEFF1</color>
-    <color name="navSelected_light">#785A1A</color>
-    <color name="navUnselected_light">#7C878C</color>
-    <color name="navIndicator_light">#F8D79A</color>
-    <color name="divider_light">#D7DFE2</color>
-    <color name="shadow_light">#0F2B3437</color>
+    <!-- Stitch UI "The Curated Chronicle" Tokens for Light Theme -->
+    <color name="primary_light">#615d66</color>
+    <color name="primary_light_transparent">#CC615d66</color>
+    <color name="primaryVariant_light">#55515A</color>
+    <color name="primaryContainer_light">#e7e0eb</color>
+    <color name="onPrimaryContainer_light">#545059</color>
+    
+    <color name="secondary_light">#56695a</color>
+    <color name="secondaryVariant_light">#4a5d4e</color>
+    <color name="secondaryContainer_light">#d3e8d5</color>
+    <color name="onSecondaryContainer_light">#435647</color>
+    
+    <color name="background_light">#fffcf7</color>
+    <color name="onBackground_light">#383831</color>
+    
+    <color name="surface_light">#fffcf7</color>
+    <color name="onSurface_light">#383831</color>
+    
+    <color name="surfaceVariant_light">#eae8de</color>
+    <color name="onSurfaceVariant_light">#65655c</color>
+    
+    <color name="error_light">#a54453</color>
+    <color name="errorContainer_light">#ff8b9a</color>
+    <color name="onErrorContainer_light">#782232</color>
+    
+    <color name="onPrimary_light">#fcf5ff</color>
+    <color name="onSecondary_light">#ffffff</color>
+    <color name="onError_light">#ffffff</color>
+    
+    <!-- Surface Container Tiers (Critical for the no-line rule) -->
+    <color name="surface_container_lowest">#ffffff</color>
+    <color name="surface_container_low">#fcf9f3</color>
+    <color name="surface_container">#f6f4ec</color>
+    <color name="surface_container_high">#f0eee5</color>
+    <color name="surface_container_highest">#eae8de</color>
+    
+    <!-- UI Element Colors -->
+    <color name="inputBackground_light">#ffffff</color>
+    <color name="inputStroke_light">#babab0</color>
+    <color name="inputStrokeFocused_light">#615d66</color>
+    
+    <color name="cardBackground_light">#fcf9f3</color>
+    <color name="cardElevation_light">#06383831</color> <!-- Approx 4-6% of on-surface -->
+    
+    <color name="buttonPrimary_light">#615d66</color>
+    <color name="buttonSecondary_light">#d3e8d5</color>
+    <color name="buttonTertiary_light">#ffffff</color>
+    <color name="onButtonTertiary_light">#383831</color>
+    
+    <color name="fabBackground_light">#615d66</color>
+    <color name="fabIcon_light">#fcf5ff</color>
+    
+    <color name="navBackground_light">#D9fffcf7</color> <!-- 85% opacity surface -->
+    <color name="navSelected_light">#615d66</color>
+    <color name="navUnselected_light">#babab0</color>
+    <color name="navIndicator_light">#Transparent</color> <!-- No high contrast blocks -->
+    
+    <!-- Shadows & Outlines -->
+    <color name="divider_light">#00FFFFFF</color> <!-- Explicitly disabled/invisible -->
+    <color name="shadow_light">#0F383831</color>
     <color name="overlay_light">#662B3437</color>
-    <color name="placeholder_light">#8D989D</color>
-    <color name="disabled_light">#B5BEC2</color>
-    <color name="disabledBackground_light">#EEF1F3</color>
-    <color name="chipBackground_light">#F1F4F6</color>
-    <color name="chipSelected_light">#FFF3DE</color>
-    <color name="chipText_light">#2B3437</color>
-    <color name="switchTrackOn_light">#E8D3A9</color>
-    <color name="switchTrackOff_light">#DCE3E6</color>
-    <color name="switchThumbOn_light">#785A1A</color>
-    <color name="switchThumbOff_light">#FFFFFF</color>
-    <color name="sliderActive_light">#4E6073</color>
-    <color name="sliderInactive_light">#DCE3E6</color>
-    <color name="sliderThumb_light">#4E6073</color>
-    <color name="progressPrimary_light">#4E6073</color>
-    <color name="progressBackground_light">#E7ECEF</color>
-    <color name="badgeBackground_light">#4E6073</color>
-    <color name="badgeText_light">#FFFFFF</color>
-    <color name="tooltipBackground_light">#2B3437</color>
-    <color name="tooltipText_light">#F8F9FA</color>
-    <color name="dialogBackground_light">#FFFFFF</color>
-    <color name="dialogOverlay_light">#662B3437</color>
-    <color name="menuBackground_light">#FFFFFF</color>
-    <color name="menuDivider_light">#E1E7EA</color>
-    <color name="scrollbarThumb_light">#CDD5D9</color>
-    <color name="scrollbarTrack_light">#F1F4F6</color>
-    <color name="swipeRefresh_light">#4E6073</color>
-    <color name="emptyIcon_light">#D2D9DD</color>
-    <color name="emptyText_light">#8B9499</color>
-    <color name="income_background">#EDF7EF</color>
-    <color name="expense_background">#F9ECEA</color>
-    <color name="balance_background">#EEF3F7</color>
-    <color name="success_container">#E6F4EA</color>
-    <color name="warning_container">#FFF4DF</color>
-    <color name="error_container">#F9ECEA</color>
-    <color name="info_container">#EEF3F7</color>
-    <color name="balance_primary">#4E6073</color>
-    <color name="error_primary">#9F403D</color>
-    <color name="expense_primary">#A3544C</color>
-    <color name="income_primary">#2B6B3F</color>
-    <color name="info_primary">#4E6073</color>
-    <color name="success_primary">#2B6B3F</color>
-    <color name="warning_primary">#9A7424</color>
-    <color name="editorial_surface_low">#F1F4F6</color>
-    <color name="editorial_surface_lowest">#FFFFFF</color>
-    <color name="editorial_outline">#AEB7BC</color>
-    <color name="editorial_text_muted">#7B8589</color>
+    
+    <!-- States & Interaction -->
+    <color name="placeholder_light">#babab0</color>
+    <color name="disabled_light">#eae8de</color>
+    <color name="disabledBackground_light">#f6f4ec</color>
+    <color name="chipBackground_light">#c5dac7</color> <!-- secondary-fixed-dim -->
+    <color name="chipSelected_light">#615d66</color>
+    <color name="chipText_light">#383831</color>
+    
+    <color name="switchTrackOn_light">#d3e8d5</color>
+    <color name="switchTrackOff_light">#eae8de</color>
+    <color name="switchThumbOn_light">#56695a</color>
+    <color name="switchThumbOff_light">#fcf9f3</color>
+    
+    <color name="sliderActive_light">#615d66</color>
+    <color name="sliderInactive_light">#eae8de</color>
+    <color name="sliderThumb_light">#615d66</color>
+    <color name="progressPrimary_light">#615d66</color>
+    <color name="progressBackground_light">#eae8de</color>
+    
+    <color name="badgeBackground_light">#a54453</color>
+    <color name="badgeText_light">#ffffff</color>
+    <color name="tooltipBackground_light">#383831</color>
+    <color name="tooltipText_light">#fcf9f3</color>
+    
+    <color name="dialogBackground_light">#fffcf7</color>
+    <color name="dialogOverlay_light">#66383831</color>
+    
+    <color name="menuBackground_light">#ffffff</color>
+    <color name="menuDivider_light">#eae8de</color>
+    
+    <color name="scrollbarThumb_light">#babab0</color>
+    <color name="scrollbarTrack_light">#f6f4ec</color>
+    <color name="swipeRefresh_light">#615d66</color>
+    
+    <color name="emptyIcon_light">#babab0</color>
+    <color name="emptyText_light">#65655c</color>
+    
+    <!-- Semantic Colors (Redefined) -->
+    <color name="income_background">#d3e8d5</color>
+    <color name="expense_background">#ff8b9a</color>
+    <color name="balance_background">#e7e0eb</color>
+    <color name="success_container">#d3e8d5</color>
+    <color name="warning_container">#f4e3ce</color>
+    <color name="error_container">#ff8b9a</color>
+    <color name="info_container">#e7e0eb</color>
+    
+    <color name="balance_primary">#615d66</color>
+    <color name="error_primary">#a54453</color>
+    <color name="expense_primary">#a54453</color> <!-- Muted old rose -->
+    <color name="income_primary">#56695a</color> <!-- Soft green -->
+    <color name="info_primary">#545059</color>
+    <color name="success_primary">#435647</color>
+    <color name="warning_primary">#685b4c</color>
+    
+    <!-- Editorial specifics -->
+    <color name="editorial_surface_low">#fcf9f3</color>
+    <color name="editorial_surface_lowest">#ffffff</color>
+    <color name="editorial_outline">#babab0</color>
+    <color name="editorial_text_muted">#65655c</color>
 </resources>
