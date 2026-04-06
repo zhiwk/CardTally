@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_light"
+    tools:context=".AgentFragment">
+
+    <!-- Top Navigation -->
+    <LinearLayout
+        android:id="@+id/appbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="16dp"
+        android:gravity="center_vertical"
+        android:elevation="0dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="AI Assistant"
+            android:textColor="@color/onBackground_light"
+            android:textSize="24sp"
+            android:textStyle="italic"
+            android:fontFamily="serif"/>
+
+        <FrameLayout
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_circle_primary_container"
+            android:backgroundTint="@color/surfaceContainerHigh_light"
+            android:clipToOutline="true"
+            android:outlineProvider="background">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_person"
+                app:tint="@color/primary_light" />
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="80dp"
+        android:clipToPadding="false"
+        android:paddingBottom="120dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="32dp">
+
+            <!-- Welcome Message Section -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_summary_item"
+                android:backgroundTint="@color/surface_container_low"
+                android:padding="24dp"
+                android:layout_marginEnd="48dp"
+                android:layout_marginBottom="24dp">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="你好！有什么我可以帮助你的吗？"
+                    android:textColor="@color/onSurface_light"
+                    android:textSize="18sp"
+                    android:fontFamily="serif"/>
+            </LinearLayout>
+
+            <!-- The Chronicle Insight Report -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_summary_item"
+                android:backgroundTint="@color/surface_container_lowest"
+                android:padding="24dp"
+                android:layout_marginBottom="32dp">
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="THE CHRONICLE"
+                        android:textColor="@color/outline_light"
+                        android:textSize="10sp"
+                        android:textStyle="italic"
+                        android:fontFamily="serif"
+                        android:letterSpacing="0.2"/>
+                        
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1"
+                        android:background="@color/outlineVariant_light"
+                        android:layout_marginStart="8dp"
+                        android:alpha="0.2"/>
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Insight: 慢生活中的财务呼吸"
+                    android:textColor="@color/primary_light"
+                    android:textSize="22sp"
+                    android:fontFamily="serif"
+                    android:layout_marginBottom="16dp"/>
+                    
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="本周，你的“悦己”消费占比有所提升。在繁忙的都市节奏中，适度的财务投入为生活带来了质感。目前的支出流向依然健康，建议保持这一份优雅的节制。"
+                    android:textColor="@color/onSurfaceVariant_light"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="4dp"/>
+            </LinearLayout>
+
+            <!-- Suggestion Cards -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:baselineAligned="false"
+                android:layout_marginBottom="16dp">
+                
+                <!-- Card 1 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_summary_item"
+                    android:backgroundTint="@color/secondaryContainer_light"
+                    android:layout_marginEnd="8dp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="16dp"
+                    android:paddingHorizontal="16dp">
+                    
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_statistics"
+                        app:tint="@color/secondary_light"
+                        android:layout_marginBottom="16dp"/>
+                        
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="今日超支风险"
+                        android:textColor="@color/onSecondaryContainer_light"
+                        android:textSize="16sp"
+                        android:fontFamily="serif"/>
+                        
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="基于您最近三天的消费模式"
+                        android:textColor="@color/onSecondaryContainer_light"
+                        android:textSize="10sp"
+                        android:alpha="0.7"
+                        android:layout_marginTop="4dp"/>
+                </LinearLayout>
+
+                <!-- Card 2 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_summary_item"
+                    android:backgroundTint="#f4e3ce"
+                    android:layout_marginStart="8dp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="16dp"
+                    android:paddingHorizontal="16dp">
+                    
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_book"
+                        app:tint="#6f6252"
+                        android:layout_marginBottom="16dp"/>
+                        
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="查看本周回顾"
+                        android:textColor="#5d5242"
+                        android:textSize="16sp"
+                        android:fontFamily="serif"/>
+                        
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="沉淀每一份生活的美好"
+                        android:textColor="#5d5242"
+                        android:textSize="10sp"
+                        android:alpha="0.7"
+                        android:layout_marginTop="4dp"/>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Card 3 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_summary_item"
+                android:backgroundTint="@color/surfaceContainerHigh_light"
+                android:padding="24dp">
+                
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_circle_primary_container"
+                    android:backgroundTint="#ffffff">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_restaurant"
+                        app:tint="@color/primary_light"/>
+                </FrameLayout>
+                
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="记录一笔晚餐"
+                    android:textColor="@color/onSurface_light"
+                    android:textSize="18sp"
+                    android:fontFamily="serif"
+                    android:layout_marginStart="16dp"/>
+                    
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_right"
+                    app:tint="@color/outline_light"
+                    android:alpha="0.4"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Input Area -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:paddingHorizontal="24dp"
+        android:paddingBottom="42dp"
+        android:paddingTop="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_summary_item"
+            android:backgroundTint="@color/surfaceContainerHigh_light"
+            android:paddingStart="24dp"
+            android:paddingEnd="8dp"
+            android:paddingVertical="8dp">
+
+            <EditText
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="对话您的私人财务管家..."
+                android:textColorHint="@color/outline_light"
+                android:textColor="@color/onSurface_light"
+                android:textSize="16sp"/>
+
+            <ImageButton
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_mic"
+                app:tint="@color/outline_light"/>
+
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_circle_primary_container"
+                android:backgroundTint="@color/primary_light">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_send"
+                    app:tint="@color/onPrimary_light"/>
+            </FrameLayout>
+
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
