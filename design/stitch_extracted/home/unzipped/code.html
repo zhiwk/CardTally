@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CardTally - The Curated Chronicle</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#c5dac7",
+                    "on-secondary": "#ffffff",
+                    "error-dim": "#4f0116",
+                    "secondary-fixed": "#d3e8d5",
+                    "on-surface-variant": "#65655c",
+                    "outline": "#818178",
+                    "secondary": "#56695a",
+                    "on-secondary-fixed-variant": "#4d6051",
+                    "tertiary-dim": "#635647",
+                    "on-primary-fixed": "#413e46",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#f0eee5",
+                    "inverse-primary": "#f2ebf6",
+                    "on-background": "#383831",
+                    "on-surface": "#383831",
+                    "tertiary-fixed": "#f4e3ce",
+                    "on-tertiary-container": "#5d5242",
+                    "surface-container-highest": "#eae8de",
+                    "surface": "#fffcf7",
+                    "surface-tint": "#615d66",
+                    "primary-fixed": "#e7e0eb",
+                    "on-secondary-container": "#435647",
+                    "on-primary-fixed-variant": "#5e5a63",
+                    "surface-dim": "#e4e3d7",
+                    "error-container": "#ff8b9a",
+                    "on-secondary-fixed": "#314436",
+                    "error": "#a54453",
+                    "surface-container": "#f6f4ec",
+                    "tertiary-container": "#f4e3ce",
+                    "on-tertiary-fixed": "#4a3f31",
+                    "primary-dim": "#55515a",
+                    "surface-variant": "#eae8de",
+                    "on-tertiary-fixed-variant": "#685b4c",
+                    "on-error-container": "#782232",
+                    "tertiary-fixed-dim": "#e6d5c1",
+                    "background": "#fffcf7",
+                    "surface-bright": "#fffcf7",
+                    "tertiary": "#6f6252",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#d9d2dd",
+                    "on-error": "#ffffff",
+                    "on-primary": "#fcf5ff",
+                    "secondary-container": "#d3e8d5",
+                    "primary": "#615d66",
+                    "on-primary-container": "#545059",
+                    "secondary-dim": "#4a5d4e",
+                    "inverse-surface": "#0e0e0c",
+                    "inverse-on-surface": "#9e9d98",
+                    "surface-container-low": "#fcf9f3",
+                    "primary-container": "#e7e0eb",
+                    "outline-variant": "#babab0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "1.25rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "newsreader": ["Newsreader", "serif"],
+                    "manrope": ["Manrope", "sans-serif"],
+                    "headline": ["Newsreader", "serif"],
+                    "body": ["Manrope", "sans-serif"],
+                    "label": ["Manrope", "sans-serif"]
+            }
+          },
+        },
+      }
+    </script>
+<style>body {
+    font-family: "Manrope", sans-serif;
+    background-color: #fffcf7;
+    color: #383831
+    }
+.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 24
+    }
+.paper-texture {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuDEjEHolGHWg-ffi2FErEUW_dd66FFuJ3SGIPfz8YP9kb0bAew22xPCd36Zs2MCbXCH7750C7XxuoJosNxFo8sFeXYxO0Phj8OBTKJZJfJM7E-PSXU31KnSBdlJ5qmQDoYYZm1XN-kAWOgbhSLqh7hwM7Li7Oy64WdVV0mgUJ4WiykNiumnDZ9cLVX2OiuFT6xmg_Ls6V5ovz5KJZehOSr95wVDsLAMmiFJIdcY7O-vZGJG1sUjcnyeu8LaATZxvrblBQqZQsNFKPY)
+    }
+.text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05)
+    }</style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface min-h-screen pb-24">
+<!-- Top Navigation Bar (Shared Component Anchor) -->
+<nav class="fixed top-0 w-full z-50 bg-[#fffcf7] dark:bg-stone-950 opacity-85 backdrop-blur-3xl flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#615d66] dark:text-stone-300 cursor-pointer hover:opacity-80 transition-opacity">menu</span>
+<span class="font-newsreader italic text-2xl text-[#2D2A32] dark:text-stone-100">The Chronicle</span>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30">
+<img alt="Julianne" class="w-full h-full object-cover" data-alt="Soft-lit portrait of a professional woman with a calm expression, neutral cream background, high-end editorial photography style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdI9McDSP_pLYJvwM3U5B3G8KER2_vUsDDV5x_DNL79RdDl6KqT6TbBLuwnzeeJMRR8rzaiVsZSwogmiLuAqXS9pWO0OiZS_-Ot1tyGkgcWlj_g2qWQ8yasei4Rm6DPpoxCf8CEMtVjWAj7pMewikz_ZupVLTPTwMGRXp4ggco4APmAhDzI4U4Qqs9xd8OQ-FFJtOlthXIfeZRADwM8mVL06SfH3aMeBE5he-27Fhfg6rssu2OP6l2PHgxy2DReT4m3DdoLr7Dl6M"/>
+</div>
+</nav>
+<main class="pt-24 px-6 max-w-2xl mx-auto space-y-10">
+<!-- 1. Large Date Header -->
+<header class="space-y-1">
+<h1 class="font-newsreader text-5xl font-light text-on-surface tracking-tight">3月27日  周四</h1>
+<p class="font-manrope text-sm uppercase tracking-[0.2em] text-on-surface-variant opacity-60 px-1">Curated Daily Log</p>
+</header>
+<!-- 2. Monthly Summary Card -->
+<section class="relative">
+<div class="paper-texture bg-surface-container-low rounded-2xl p-8 shadow-[0_10px_40px_-15px_rgba(56,56,49,0.08)] border border-outline-variant/10 overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary-fixed/20 blur-3xl -mr-10 -mt-10 rounded-full"></div>
+<div class="relative z-10 space-y-8">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<span class="font-manrope text-[10px] uppercase tracking-widest text-on-surface-variant/70">Current Balance</span>
+<div class="font-newsreader text-5xl font-medium text-primary tracking-tighter">¥28,490.00</div>
+</div>
+<span class="material-symbols-outlined text-outline/40">auto_stories</span>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-4">
+<div class="bg-surface-container-highest/40 p-4 rounded-xl border border-white/50">
+<span class="font-manrope text-[10px] uppercase tracking-widest text-on-surface-variant/70 block mb-1">Monthly Income</span>
+<span class="font-newsreader text-2xl text-secondary">¥14,200</span>
+</div>
+<div class="bg-surface-container-highest/40 p-4 rounded-xl border border-white/50">
+<span class="font-manrope text-[10px] uppercase tracking-widest text-on-surface-variant/70 block mb-1">Monthly Expense</span>
+<span class="font-newsreader text-2xl text-error/80">¥5,710</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Agent Note Card -->
+<section>
+<div class="group bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-5 flex items-center justify-between hover:bg-white transition-all duration-500 cursor-pointer shadow-sm">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl">smart_toy</span>
+</div>
+<div>
+<h4 class="font-manrope text-sm font-semibold text-on-surface">您的专属财务管家</h4>
+<p class="font-manrope text-xs text-on-surface-variant/80">账本已就位，随时待命。</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline/40 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</div>
+</section>
+<!-- 4. Recent Records Module -->
+<section class="space-y-6">
+<div class="flex justify-between items-end px-1">
+<h3 class="font-newsreader text-2xl italic text-primary">Recent Entries</h3>
+<span class="font-manrope text-[10px] uppercase tracking-[0.1em] text-on-surface-variant/50 cursor-pointer hover:text-primary transition-colors">View Archive</span>
+</div>
+<div class="space-y-2">
+<!-- Transaction Item 1 -->
+<div class="flex items-center gap-5 p-4 rounded-2xl hover:bg-surface-container-low transition-colors group">
+<div class="w-12 h-12 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant group-hover:bg-white transition-all">
+<span class="material-symbols-outlined" data-icon="local_cafe">local_cafe</span>
+</div>
+<div class="flex-grow">
+<div class="font-manrope text-sm font-medium text-on-surface">Blue Bottle Coffee</div>
+<div class="font-manrope text-[10px] text-on-surface-variant/60">10:24 AM • Food &amp; Drink</div>
+</div>
+<div class="font-newsreader text-xl text-on-surface">- ¥42.00</div>
+</div>
+<!-- Transaction Item 2 -->
+<div class="flex items-center gap-5 p-4 rounded-2xl hover:bg-surface-container-low transition-colors group">
+<div class="w-12 h-12 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant group-hover:bg-white transition-all">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+</div>
+<div class="flex-grow">
+<div class="font-manrope text-sm font-medium text-on-surface">Muji Lifestyle</div>
+<div class="font-manrope text-[10px] text-on-surface-variant/60">Yesterday • Shopping</div>
+</div>
+<div class="font-newsreader text-xl text-on-surface">- ¥156.00</div>
+</div>
+<!-- Transaction Item 3 -->
+<div class="flex items-center gap-5 p-4 rounded-2xl hover:bg-surface-container-low transition-colors group">
+<div class="w-12 h-12 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant group-hover:bg-white transition-all">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+</div>
+<div class="flex-grow">
+<div class="font-manrope text-sm font-medium text-on-surface">Freelance Dividend</div>
+<div class="font-manrope text-[10px] text-on-surface-variant/60">Mar 25 • Income</div>
+</div>
+<div class="font-newsreader text-xl text-secondary">+ ¥3,500.00</div>
+</div>
+</div>
+</section>
+</main>
+<!-- 5. Floating Action Button -->
+<div class="fixed bottom-8 right-8 z-[100]">
+<button class="w-16 h-16 rounded-full bg-primary text-on-primary shadow-[0_8px_32px_rgba(97,93,102,0.3)] flex items-center justify-center active:scale-95 transition-all duration-300">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'wght' 300;">edit_note</span>
+</button>
+</div>
+<!-- Decorative Bottom Gradient for Depth -->
+<div class="fixed bottom-0 left-0 w-full h-32 bg-gradient-to-t from-surface to-transparent pointer-events-none"></div>
+</body></html>
