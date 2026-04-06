@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_home -> HomeFragment()
                 R.id.nav_asset -> AssetFragment()
                 R.id.nav_statistics -> StatisticsFragment()
+                R.id.nav_agent -> AgentFragment()
                 R.id.nav_settings -> SettingsFragment()
                 else -> null
             }
