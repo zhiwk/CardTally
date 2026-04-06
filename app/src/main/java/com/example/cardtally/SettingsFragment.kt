@@ -13,12 +13,12 @@ import com.example.cardtally.util.QuickAddHelper
 import com.example.cardtally.util.ThemeHelper
 
 class SettingsFragment : Fragment() {
-    private lateinit var cardQuickAdd: CardView
+    private lateinit var cardQuickAdd: View
     private lateinit var switchQuickAdd: Switch
-    private lateinit var cardShowAsset: CardView
+    private lateinit var cardShowAsset: View
     private lateinit var switchShowAsset: Switch
-    private lateinit var cardCategory: CardView
-    private lateinit var cardTheme: CardView
+    private lateinit var cardCategory: View
+    private lateinit var cardTheme: View
     private lateinit var textCurrentTheme: TextView
 
     override fun onCreateView(
