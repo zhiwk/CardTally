@@ -29,11 +29,12 @@ class AddRecordFragment : Fragment() {
     private lateinit var editAmount: EditText
     private lateinit var editDescription: EditText
     private lateinit var spinnerAssetSource: Spinner
-    private lateinit var cardExpense: CardView
-    private lateinit var cardIncome: CardView
+    private lateinit var btnExpense: Button
+    private lateinit var btnIncome: Button
     private lateinit var recyclerCategories: RecyclerView
-    private lateinit var btnSaveAndContinue: Button
-    private lateinit var btnSave: Button
+    private lateinit var btnClose: View
+    private lateinit var btnCancel: View
+    private lateinit var btnSave: View
     private lateinit var databaseHelper: DatabaseHelper
 
     private var categoryAdapter: CategorySelectorAdapter? = null
@@ -54,10 +55,11 @@ class AddRecordFragment : Fragment() {
         editAmount = view.findViewById(R.id.edit_amount)
         editDescription = view.findViewById(R.id.edit_description)
         spinnerAssetSource = view.findViewById(R.id.spinner_asset_source)
-        cardExpense = view.findViewById(R.id.card_expense)
-        cardIncome = view.findViewById(R.id.card_income)
+        btnExpense = view.findViewById(R.id.btn_expense)
+        btnIncome = view.findViewById(R.id.btn_income)
         recyclerCategories = view.findViewById(R.id.recycler_categories)
-        btnSaveAndContinue = view.findViewById(R.id.btn_save_and_continue)
+        btnClose = view.findViewById(R.id.btn_close)
+        btnCancel = view.findViewById(R.id.btn_cancel)
         btnSave = view.findViewById(R.id.btn_save)
 
         databaseHelper = DatabaseHelper(requireContext())
@@ -73,7 +75,7 @@ class AddRecordFragment : Fragment() {
 
         textDate.setOnClickListener { showDatePicker() }
 
-        cardExpense.setOnClickListener {
+        btnExpense.setOnClickListener {
             if (currentType != 0) {
                 currentType = 0
                 updateTypeStyle()
@@ -81,7 +83,7 @@ class AddRecordFragment : Fragment() {
             }
         }
 
-        cardIncome.setOnClickListener {
+        btnIncome.setOnClickListener {
             if (currentType != 1) {
                 currentType = 1
                 updateTypeStyle()
@@ -89,7 +91,8 @@ class AddRecordFragment : Fragment() {
             }
         }
 
-        btnSaveAndContinue.setOnClickListener { saveRecord(false) }
+        btnClose.setOnClickListener { parentFragmentManager.popBackStack() }
+        btnCancel.setOnClickListener { parentFragmentManager.popBackStack() }
         btnSave.setOnClickListener { saveRecord(true) }
 
         return view
@@ -107,19 +110,17 @@ class AddRecordFragment : Fragment() {
 
     private fun updateTypeStyle() {
         if (currentType == 0) {
-            cardExpense.setCardBackgroundColor(
-                ContextCompat.getColor(requireContext(), R.color.expense_primary)
-            )
-            cardIncome.setCardBackgroundColor(
-                ContextCompat.getColor(requireContext(), R.color.editorial_surface_low)
-            )
+            btnExpense.setBackgroundResource(R.drawable.shape_button_primary)
+            btnExpense.setTextColor(ContextCompat.getColor(requireContext(), R.color.onPrimary_light))
+            
+            btnIncome.setBackgroundResource(android.R.color.transparent)
+            btnIncome.setTextColor(ContextCompat.getColor(requireContext(), R.color.onSurfaceVariant_light))
         } else {
-            cardExpense.setCardBackgroundColor(
-                ContextCompat.getColor(requireContext(), R.color.editorial_surface_low)
-            )
-            cardIncome.setCardBackgroundColor(
-                ContextCompat.getColor(requireContext(), R.color.income_primary)
-            )
+            btnExpense.setBackgroundResource(android.R.color.transparent)
+            btnExpense.setTextColor(ContextCompat.getColor(requireContext(), R.color.onSurfaceVariant_light))
+            
+            btnIncome.setBackgroundResource(R.drawable.shape_button_primary)
+            btnIncome.setTextColor(ContextCompat.getColor(requireContext(), R.color.onPrimary_light))
         }
     }
 
