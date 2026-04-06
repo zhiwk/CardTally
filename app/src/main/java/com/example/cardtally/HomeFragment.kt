@@ -30,10 +30,8 @@ class HomeFragment : Fragment() {
     private lateinit var recyclerRecords: RecyclerView
     private lateinit var textEmpty: TextView
     private lateinit var fabAdd: FloatingActionButton
-    private lateinit var btnFilter: Button
-    private lateinit var btnWeek: Button
-    private lateinit var btnMonth: Button
-    private lateinit var btnYear: Button
+
+    private lateinit var textDate: TextView
     private lateinit var textIncome: TextView
     private lateinit var textExpense: TextView
     private lateinit var textBalance: TextView
@@ -43,7 +41,7 @@ class HomeFragment : Fragment() {
 
     private var currentYear: Int = 0
     private var currentMonth: Int = 0
-    private var currentPeriod: String = "week" // week, month, year
+    private var currentPeriod: String = "month" // fixed to monthly view matching new UI
 
     private var isBottomNavVisible = true
     private var isFabVisible = true
@@ -60,10 +58,8 @@ class HomeFragment : Fragment() {
         recyclerRecords = view.findViewById(R.id.recycler_records)
         textEmpty = view.findViewById(R.id.text_empty)
         fabAdd = view.findViewById(R.id.fab_add)
-        btnFilter = view.findViewById(R.id.btn_filter)
-        btnWeek = view.findViewById(R.id.btn_week)
-        btnMonth = view.findViewById(R.id.btn_month)
-        btnYear = view.findViewById(R.id.btn_year)
+
+        textDate = view.findViewById(R.id.text_date)
         textIncome = view.findViewById(R.id.text_income)
         textExpense = view.findViewById(R.id.text_expense)
         textBalance = view.findViewById(R.id.text_balance)
@@ -76,29 +72,9 @@ class HomeFragment : Fragment() {
         currentYear = calendar.get(Calendar.YEAR)
         currentMonth = calendar.get(Calendar.MONTH) + 1
 
-        updatePeriodButtons()
-
-        btnFilter.setOnClickListener {
-            showFilterDialog()
-        }
-
-        btnWeek.setOnClickListener {
-            currentPeriod = "week"
-            updatePeriodButtons()
-            loadRecords()
-        }
-
-        btnMonth.setOnClickListener {
-            currentPeriod = "month"
-            updatePeriodButtons()
-            loadRecords()
-        }
-
-        btnYear.setOnClickListener {
-            currentPeriod = "year"
-            updatePeriodButtons()
-            loadRecords()
-        }
+        // Date header logic
+        val sdf = java.text.SimpleDateFormat("M月dd日 E", java.util.Locale.CHINESE)
+        textDate.text = sdf.format(calendar.time)
 
         fabAdd.setOnClickListener {
             parentFragmentManager.beginTransaction()
@@ -158,19 +134,7 @@ class HomeFragment : Fragment() {
         showFab()
     }
 
-    private fun updatePeriodButtons() {
-        // 重置所有按钮状态
-        btnWeek.setBackgroundResource(R.drawable.selector_button_primary)
-        btnMonth.setBackgroundResource(R.drawable.selector_button_primary)
-        btnYear.setBackgroundResource(R.drawable.selector_button_primary)
-        
-        // 设置当前选中的按钮状态
-        when (currentPeriod) {
-            "week" -> btnWeek.setBackgroundResource(R.drawable.shape_button_primary)
-            "month" -> btnMonth.setBackgroundResource(R.drawable.shape_button_primary)
-            "year" -> btnYear.setBackgroundResource(R.drawable.shape_button_primary)
-        }
-    }
+
 
     private fun showFilterDialog() {
         val builder = AlertDialog.Builder(requireContext())
