@@ -55,7 +55,7 @@
     <color name="navBackground_light">#D9fffcf7</color> <!-- 85% opacity surface -->
     <color name="navSelected_light">#615d66</color>
     <color name="navUnselected_light">#babab0</color>
-    <color name="navIndicator_light">#Transparent</color> <!-- No high contrast blocks -->
+    <color name="navIndicator_light">#00000000</color> <!-- No high contrast blocks -->
     
     <!-- Shadows & Outlines -->
     <color name="divider_light">#00FFFFFF</color> <!-- Explicitly disabled/invisible -->
@@ -121,4 +121,9 @@
     <color name="editorial_surface_lowest">#ffffff</color>
     <color name="editorial_outline">#babab0</color>
     <color name="editorial_text_muted">#65655c</color>
+
+    <!-- Compatibility aliases used by newer layouts -->
+    <color name="surfaceContainerHigh_light">@color/surface_container_high</color>
+    <color name="outline_light">@color/editorial_outline</color>
+    <color name="outlineVariant_light">@color/editorial_outline</color>
 </resources>
