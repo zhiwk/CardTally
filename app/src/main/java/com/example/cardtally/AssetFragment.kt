@@ -27,6 +27,7 @@ class AssetFragment : Fragment() {
     private lateinit var textEmpty: TextView
     private lateinit var textTotalAmount: TextView
     private lateinit var fabAdd: FloatingActionButton
+    private lateinit var btnAddAssetInline: View
     private lateinit var btnArchive: ImageButton
     private lateinit var databaseHelper: DatabaseHelper
     private var adapter: AssetAdapter? = null
@@ -46,6 +47,7 @@ class AssetFragment : Fragment() {
         textTotalAmount = view.findViewById(R.id.text_total_amount)
         fabAdd = view.findViewById(R.id.fab_add)
         btnArchive = view.findViewById(R.id.btn_archive)
+        btnAddAssetInline = view.findViewById(R.id.btn_add_asset_inline)
 
         databaseHelper = DatabaseHelper(requireContext())
 
@@ -95,6 +97,13 @@ class AssetFragment : Fragment() {
         loadAssets()
 
         fabAdd.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, AddAssetFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+        
+        btnAddAssetInline.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, AddAssetFragment())
                 .addToBackStack(null)
