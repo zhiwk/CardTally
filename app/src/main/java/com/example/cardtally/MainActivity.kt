@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.example.cardtally.util.AiAssistantSettingsHelper
 import com.example.cardtally.util.AssetDisplayHelper
 import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.QuickAddHelper
@@ -21,8 +22,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         bottomNavigationView = findViewById(R.id.bottom_navigation)
-        
-        updateAssetVisibility()
+
+        updateBottomNavigationVisibility()
         
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -71,10 +72,13 @@ class MainActivity : AppCompatActivity() {
         setTheme(themeResId)
     }
 
-    private fun updateAssetVisibility() {
+    private fun updateBottomNavigationVisibility() {
+        val showAiAssistant = AiAssistantSettingsHelper.getAiAssistantEnabled(this)
         val showAsset = AssetDisplayHelper.getShowAsset(this)
         val menu = bottomNavigationView.menu
+        val aiItem = menu.findItem(R.id.nav_agent)
         val assetItem = menu.findItem(R.id.nav_asset)
+        aiItem.isVisible = showAiAssistant
         assetItem.isVisible = showAsset
     }
 }

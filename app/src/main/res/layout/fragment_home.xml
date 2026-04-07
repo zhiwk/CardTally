@@ -170,9 +170,13 @@
 
             <!-- 3. Agent Note Card -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_agent_note"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="32dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:cardBackgroundColor="@color/surface_container_lowest"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="2dp"

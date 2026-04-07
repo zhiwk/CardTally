@@ -1,16 +1,13 @@
 package com.example.cardtally
 
 import android.app.AlertDialog
-import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -21,6 +18,7 @@ import com.example.cardtally.adapter.DateGroupAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
+import com.example.cardtally.util.AiAssistantSettingsHelper
 import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.RecordDragCallback
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -32,6 +30,7 @@ class HomeFragment : Fragment() {
     private lateinit var recyclerRecords: RecyclerView
     private lateinit var textEmpty: TextView
     private lateinit var fabAdd: FloatingActionButton
+    private lateinit var cardAgentNote: View
 
     private lateinit var textDate: TextView
     private lateinit var textIncome: TextView
@@ -60,6 +59,7 @@ class HomeFragment : Fragment() {
         recyclerRecords = view.findViewById(R.id.recycler_records)
         textEmpty = view.findViewById(R.id.text_empty)
         fabAdd = view.findViewById(R.id.fab_add)
+        cardAgentNote = view.findViewById(R.id.card_agent_note)
 
         textDate = view.findViewById(R.id.text_date)
         textIncome = view.findViewById(R.id.text_income)
@@ -80,6 +80,15 @@ class HomeFragment : Fragment() {
             LanguageHelper.getCurrentLocale(requireContext())
         )
         textDate.text = sdf.format(calendar.time)
+        updateAiAssistantVisibility()
+
+        cardAgentNote.setOnClickListener {
+            if (!AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext())) {
+                return@setOnClickListener
+            }
+
+            requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId = R.id.nav_agent
+        }
 
         fabAdd.setOnClickListener {
             parentFragmentManager.beginTransaction()
@@ -134,9 +143,18 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        updateAiAssistantVisibility()
         loadRecords()
         showBottomNav()
         showFab()
+    }
+
+    private fun updateAiAssistantVisibility() {
+        cardAgentNote.visibility = if (AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext())) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
     }
 
 
