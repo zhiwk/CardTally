@@ -45,6 +45,9 @@
 - 应用已接入应用级中英文国际化，当前支持 `中文 / English`
 - 语言切换入口位于“我的”页，并在切换后立即全局生效
 - 国际化基础设施集中在 `LanguageHelper.kt`、`values/strings.xml`、`values-en/strings.xml` 和 `locale_config.xml`
+- “我的”页已新增 `AI 助理` 分组，包含 AI 入口显示开关与 `AI API Key` 二级设置页
+- AI 显示开关当前会控制首页 Agent 卡片与底部 `AI 助手` tab 的可见性，并在关闭时阻止继续停留在 Agent 页面
+- AI 设置状态当前使用 `AiAssistantSettingsHelper.kt` 持久化到本地 `SharedPreferences`，API Key 仅保存在当前设备
 
 ## 环境注意事项
 
