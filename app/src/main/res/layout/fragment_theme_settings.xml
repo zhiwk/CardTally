@@ -11,7 +11,7 @@
         android:id="@+id/text_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="主题设置"
+        android:text="@string/theme_settings_title"
         android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -21,7 +21,7 @@
         android:id="@+id/label_theme"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="选择主题"
+        android:text="@string/theme_select_label"
         android:textSize="16sp"
         android:layout_marginTop="24dp"
         app:layout_constraintStart_toStartOf="parent"
@@ -40,7 +40,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="基础主题"
+            android:text="@string/theme_basic_label"
             android:textSize="@dimen/text_size_body2"
             android:textColor="@color/onSurfaceVariant_light"
             android:layout_marginTop="@dimen/spacing_l" />
@@ -49,27 +49,27 @@
             android:id="@+id/radio_light"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="浅色主题"
+            android:text="@string/theme_light"
             android:padding="@dimen/spacing_s" />
 
         <RadioButton
             android:id="@+id/radio_dark"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="深色主题"
+            android:text="@string/theme_dark"
             android:padding="@dimen/spacing_s" />
 
         <RadioButton
             android:id="@+id/radio_system"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="跟随系统"
+            android:text="@string/theme_system"
             android:padding="@dimen/spacing_s" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="彩色主题"
+            android:text="@string/theme_color_label"
             android:textSize="@dimen/text_size_body2"
             android:textColor="@color/onSurfaceVariant_light"
             android:layout_marginTop="@dimen/spacing_l" />
@@ -78,21 +78,21 @@
             android:id="@+id/radio_blue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="蓝色主题"
+            android:text="@string/theme_blue"
             android:padding="@dimen/spacing_s" />
 
         <RadioButton
             android:id="@+id/radio_green"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="绿色主题"
+            android:text="@string/theme_green"
             android:padding="@dimen/spacing_s" />
 
         <RadioButton
             android:id="@+id/radio_orange"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="橙色主题"
+            android:text="@string/theme_orange"
             android:padding="@dimen/spacing_s" />
 
     </RadioGroup>
@@ -101,7 +101,7 @@
         android:id="@+id/text_hint"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="提示：更改主题后需要重启应用才能生效"
+        android:text="@string/theme_hint"
         android:textSize="14sp"
         android:textColor="@android:color/darker_gray"
         android:layout_marginTop="16dp"

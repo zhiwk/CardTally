@@ -1,8 +1,10 @@
 package com.example.cardtally.adapter
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -222,6 +224,7 @@ class DateGroupAdapter(
         private val cardContent: LinearLayout = itemView.findViewById(R.id.card_content)
         private val layoutActions: View = itemView.findViewById(R.id.layout_actions)
         private val viewIcon: View = itemView.findViewById(R.id.view_icon)
+        private val imageIcon: ImageView = itemView.findViewById(R.id.image_icon)
         private val textCategory: TextView = itemView.findViewById(R.id.text_category)
         private val textTime: TextView = itemView.findViewById(R.id.text_time)
         private val textDescription: TextView = itemView.findViewById(R.id.text_description)
@@ -231,6 +234,18 @@ class DateGroupAdapter(
 
         private var swipeHelper: SwipeToEditDeleteHelper? = null
         private var currentRecord: Record? = null
+        private val categoryIcons = mapOf(
+            "餐饮" to R.drawable.ic_category_food,
+            "交通" to R.drawable.ic_category_transport,
+            "购物" to R.drawable.ic_category_shopping,
+            "娱乐" to R.drawable.ic_category_entertainment,
+            "医疗" to R.drawable.ic_category_medical,
+            "教育" to R.drawable.ic_category_education,
+            "住房" to R.drawable.ic_category_housing,
+            "工资" to R.drawable.ic_category_salary,
+            "奖金" to R.drawable.ic_category_bonus,
+            "其他" to R.drawable.ic_category_other
+        )
 
         fun bind(
             record: Record,
@@ -240,7 +255,8 @@ class DateGroupAdapter(
         ) {
             currentRecord = record
             textCategory.text = record.category
-            textTime.text = ""
+            textTime.text = record.assetSource?.uppercase().orEmpty().ifEmpty { "CURATED ENTRY" }
+            imageIcon.setImageResource(categoryIcons[record.category] ?: R.drawable.ic_category_other)
 
             if (!record.description.isNullOrEmpty()) {
                 textDescription.text = record.description
@@ -258,7 +274,7 @@ class DateGroupAdapter(
                 "住房" to ContextCompat.getColor(context, R.color.info_container),
                 "娱乐" to ContextCompat.getColor(context, R.color.editorial_surface_low)
             )
-            viewIcon.setBackgroundColor(
+            viewIcon.backgroundTintList = ColorStateList.valueOf(
                 categoryColors[record.category]
                     ?: ContextCompat.getColor(context, R.color.editorial_surface_low)
             )

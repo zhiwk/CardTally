@@ -65,9 +65,9 @@
         android:layout_height="match_parent"
         android:layout_marginTop="80dp"
         android:clipToPadding="false"
-        android:paddingTop="12dp"
+        android:paddingTop="8dp"
         android:paddingHorizontal="24dp"
-        android:paddingBottom="120dp" />
+        android:paddingBottom="168dp" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add"
@@ -75,7 +75,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="28dp"
-        android:layout_marginBottom="28dp"
+        android:layout_marginBottom="112dp"
         android:contentDescription="New entry"
         android:src="@drawable/ic_edit"
         app:backgroundTint="@color/primary_light"

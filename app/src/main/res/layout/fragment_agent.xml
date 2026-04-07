@@ -23,7 +23,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="AI Assistant"
+            android:text="@string/agent_title"
             android:textColor="@color/onBackground_light"
             android:textSize="24sp"
             android:textStyle="italic"
@@ -51,7 +51,7 @@
         android:layout_height="match_parent"
         android:layout_marginTop="80dp"
         android:clipToPadding="false"
-        android:paddingBottom="120dp">
+        android:paddingBottom="210dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -73,7 +73,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="你好！有什么我可以帮助你的吗？"
+                    android:text="@string/agent_greeting"
                     android:textColor="@color/onSurface_light"
                     android:textSize="18sp"
                     android:fontFamily="serif"/>
@@ -99,7 +99,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="THE CHRONICLE"
+                        android:text="@string/agent_chronicle"
                         android:textColor="@color/outline_light"
                         android:textSize="10sp"
                         android:textStyle="italic"
@@ -118,7 +118,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Insight: 慢生活中的财务呼吸"
+                    android:text="@string/agent_insight_title"
                     android:textColor="@color/primary_light"
                     android:textSize="22sp"
                     android:fontFamily="serif"
@@ -127,7 +127,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="本周，你的“悦己”消费占比有所提升。在繁忙的都市节奏中，适度的财务投入为生活带来了质感。目前的支出流向依然健康，建议保持这一份优雅的节制。"
+                    android:text="@string/agent_insight_body"
                     android:textColor="@color/onSurfaceVariant_light"
                     android:textSize="14sp"
                     android:lineSpacingExtra="4dp"/>
@@ -164,7 +164,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="今日超支风险"
+                        android:text="@string/agent_risk_title"
                         android:textColor="@color/onSecondaryContainer_light"
                         android:textSize="16sp"
                         android:fontFamily="serif"/>
@@ -172,7 +172,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="基于您最近三天的消费模式"
+                        android:text="@string/agent_risk_body"
                         android:textColor="@color/onSecondaryContainer_light"
                         android:textSize="10sp"
                         android:alpha="0.7"
@@ -202,7 +202,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="查看本周回顾"
+                        android:text="@string/agent_weekly_review_title"
                         android:textColor="#5d5242"
                         android:textSize="16sp"
                         android:fontFamily="serif"/>
@@ -210,7 +210,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="沉淀每一份生活的美好"
+                        android:text="@string/agent_weekly_review_body"
                         android:textColor="#5d5242"
                         android:textSize="10sp"
                         android:alpha="0.7"
@@ -246,7 +246,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="记录一笔晚餐"
+                    android:text="@string/agent_record_dinner"
                     android:textColor="@color/onSurface_light"
                     android:textSize="18sp"
                     android:fontFamily="serif"
@@ -270,7 +270,7 @@
         android:layout_gravity="bottom"
         android:orientation="horizontal"
         android:paddingHorizontal="24dp"
-        android:paddingBottom="42dp"
+        android:paddingBottom="106dp"
         android:paddingTop="12dp">
 
         <LinearLayout
@@ -289,7 +289,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@null"
-                android:hint="对话您的私人财务管家..."
+                android:hint="@string/agent_input_hint"
                 android:textColorHint="@color/outline_light"
                 android:textColor="@color/onSurface_light"
                 android:textSize="16sp"/>

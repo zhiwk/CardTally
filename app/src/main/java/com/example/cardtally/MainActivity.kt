@@ -5,6 +5,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.cardtally.util.AssetDisplayHelper
+import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.QuickAddHelper
 import com.example.cardtally.util.ThemeHelper
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -14,6 +15,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bottomNavigationView: BottomNavigationView
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        LanguageHelper.applySavedLanguage(this)
         applyTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)

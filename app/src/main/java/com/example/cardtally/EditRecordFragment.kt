@@ -8,10 +8,11 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,17 +22,21 @@ import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import java.util.Calendar
 
 class EditRecordFragment : Fragment() {
+    private lateinit var textTitle: TextView
     private lateinit var textDate: TextView
     private lateinit var editAmount: EditText
     private lateinit var editDescription: EditText
     private lateinit var spinnerAssetSource: Spinner
-    private lateinit var cardExpense: CardView
-    private lateinit var cardIncome: CardView
+    private lateinit var btnExpense: Button
+    private lateinit var btnIncome: Button
     private lateinit var recyclerCategories: RecyclerView
-    private lateinit var btnUpdate: Button
+    private lateinit var btnClose: View
+    private lateinit var btnCancel: View
+    private lateinit var btnSave: View
+    private lateinit var textSaveLabel: TextView
+    private lateinit var imageSaveIcon: ImageView
     private lateinit var databaseHelper: DatabaseHelper
     
     private var record: Record? = null
@@ -65,28 +70,35 @@ class EditRecordFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_edit_record, container, false)
+        val view = inflater.inflate(R.layout.fragment_add_record, container, false)
 
+        textTitle = view.findViewById(R.id.text_title)
         textDate = view.findViewById(R.id.text_date)
         editAmount = view.findViewById(R.id.edit_amount)
         editDescription = view.findViewById(R.id.edit_description)
         spinnerAssetSource = view.findViewById(R.id.spinner_asset_source)
-        cardExpense = view.findViewById(R.id.card_expense)
-        cardIncome = view.findViewById(R.id.card_income)
+        btnExpense = view.findViewById(R.id.btn_expense)
+        btnIncome = view.findViewById(R.id.btn_income)
         recyclerCategories = view.findViewById(R.id.recycler_categories)
-        btnUpdate = view.findViewById(R.id.btn_update)
+        btnClose = view.findViewById(R.id.btn_close)
+        btnCancel = view.findViewById(R.id.btn_cancel)
+        btnSave = view.findViewById(R.id.btn_save)
+        textSaveLabel = view.findViewById(R.id.text_save_label)
+        imageSaveIcon = view.findViewById(R.id.image_save_icon)
 
         databaseHelper = DatabaseHelper(requireContext())
+
+        textTitle.text = getString(R.string.record_title_edit)
+        textSaveLabel.text = getString(R.string.record_update)
+        imageSaveIcon.setImageResource(R.drawable.ic_check)
 
         recyclerCategories.layoutManager = GridLayoutManager(requireContext(), 4)
 
         loadRecord()
 
-        textDate.setOnClickListener {
-            showDatePicker()
-        }
+        textDate.setOnClickListener { showDatePicker() }
 
-        cardExpense.setOnClickListener {
+        btnExpense.setOnClickListener {
             if (currentType != 0) {
                 currentType = 0
                 updateTypeStyle()
@@ -94,7 +106,7 @@ class EditRecordFragment : Fragment() {
             }
         }
 
-        cardIncome.setOnClickListener {
+        btnIncome.setOnClickListener {
             if (currentType != 1) {
                 currentType = 1
                 updateTypeStyle()
@@ -102,9 +114,9 @@ class EditRecordFragment : Fragment() {
             }
         }
 
-        btnUpdate.setOnClickListener {
-            updateRecord()
-        }
+        btnClose.setOnClickListener { parentFragmentManager.popBackStack() }
+        btnCancel.setOnClickListener { parentFragmentManager.popBackStack() }
+        btnSave.setOnClickListener { updateRecord() }
 
         return view
     }
@@ -121,11 +133,17 @@ class EditRecordFragment : Fragment() {
 
     private fun updateTypeStyle() {
         if (currentType == 0) {
-            cardExpense.setCardBackgroundColor(0xFFF44336.toInt())
-            cardIncome.setCardBackgroundColor(0xFFE0E0E0.toInt())
+            btnExpense.setBackgroundResource(R.drawable.shape_button_primary)
+            btnExpense.setTextColor(ContextCompat.getColor(requireContext(), R.color.onPrimary_light))
+
+            btnIncome.setBackgroundResource(android.R.color.transparent)
+            btnIncome.setTextColor(ContextCompat.getColor(requireContext(), R.color.onSurfaceVariant_light))
         } else {
-            cardExpense.setCardBackgroundColor(0xFFE0E0E0.toInt())
-            cardIncome.setCardBackgroundColor(0xFF4CAF50.toInt())
+            btnExpense.setBackgroundResource(android.R.color.transparent)
+            btnExpense.setTextColor(ContextCompat.getColor(requireContext(), R.color.onSurfaceVariant_light))
+
+            btnIncome.setBackgroundResource(R.drawable.shape_button_primary)
+            btnIncome.setTextColor(ContextCompat.getColor(requireContext(), R.color.onPrimary_light))
         }
     }
 
@@ -175,7 +193,7 @@ class EditRecordFragment : Fragment() {
     private fun loadAssets(selectedAssetSource: String?) {
         currentAssets = databaseHelper.getAllAssets().toMutableList()
 
-        val assetNames = mutableListOf("无")
+        val assetNames = mutableListOf(getString(R.string.record_asset_none))
         currentAssets.forEach { assetNames.add(it.name) }
 
         val adapter = ArrayAdapter(
@@ -222,33 +240,33 @@ class EditRecordFragment : Fragment() {
         val description = editDescription.text.toString().trim()
 
         if (date.isEmpty()) {
-            Toast.makeText(requireContext(), "请选择日期", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_select_date), Toast.LENGTH_SHORT).show()
             return
         }
 
         if (amountStr.isEmpty()) {
-            Toast.makeText(requireContext(), "请输入金额", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_enter_amount), Toast.LENGTH_SHORT).show()
             return
         }
 
         val amount = try {
             amountStr.toDouble()
         } catch (e: NumberFormatException) {
-            Toast.makeText(requireContext(), "请输入有效的金额", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_enter_valid_amount_edit), Toast.LENGTH_SHORT).show()
             return
         }
 
         if (amount == 0.0) {
-            Toast.makeText(requireContext(), "金额不能为0", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_zero_amount_edit), Toast.LENGTH_SHORT).show()
             return
         }
 
         if (category == null) {
-            Toast.makeText(requireContext(), "请选择分类", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_select_category), Toast.LENGTH_SHORT).show()
             return
         }
 
-        val assetSource = if (assetSourceName == "无") null else assetSourceName
+        val assetSource = if (assetSourceName == getString(R.string.record_asset_none)) null else assetSourceName
 
         record?.let { r ->
             r.date = date
@@ -260,10 +278,10 @@ class EditRecordFragment : Fragment() {
 
             val rowsAffected = databaseHelper.updateRecord(r)
             if (rowsAffected > 0) {
-                Toast.makeText(requireContext(), "更新成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.toast_update_success), Toast.LENGTH_SHORT).show()
                 parentFragmentManager.popBackStack()
             } else {
-                Toast.makeText(requireContext(), "更新失败", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.toast_update_failed), Toast.LENGTH_SHORT).show()
             }
         }
     }

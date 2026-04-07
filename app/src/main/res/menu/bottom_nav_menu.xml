@@ -3,32 +3,32 @@
     <item
         android:id="@+id/nav_home"
         android:icon="@drawable/ic_home"
-        android:title="Home"
+        android:title="@string/nav_home"
         android:enabled="true"
         android:checkable="true"
         android:checked="true" />
     <item
         android:id="@+id/nav_statistics"
         android:icon="@drawable/ic_statistics"
-        android:title="Ledger"
+        android:title="@string/nav_ledger"
         android:enabled="true"
         android:checkable="true" />
     <item
         android:id="@+id/nav_asset"
         android:icon="@drawable/ic_asset"
-        android:title="Assets"
+        android:title="@string/nav_assets"
         android:enabled="true"
         android:checkable="true" />
     <item
         android:id="@+id/nav_agent"
         android:icon="@drawable/ic_agent"
-        android:title="AI Agent"
+        android:title="@string/nav_agent"
         android:enabled="true"
         android:checkable="true" />
     <item
         android:id="@+id/nav_settings"
         android:icon="@drawable/ic_settings"
-        android:title="Profile"
+        android:title="@string/nav_me"
         android:enabled="true"
         android:checkable="true" />
 </menu>

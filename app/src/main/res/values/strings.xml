@@ -1,16 +1,133 @@
 <resources>
     <string name="app_name">卡片记账</string>
     <string name="app_name_en">CardTally</string>
-    <string name="hello_world">Hello World!</string>
+    <string name="hello_world">你好</string>
+
+    <string name="nav_home">首页</string>
+    <string name="nav_ledger">账本</string>
+    <string name="nav_assets">资产</string>
+    <string name="nav_agent">AI 助手</string>
+    <string name="nav_me">我的</string>
+
     <string name="add_record">添加记录</string>
     <string name="statistics">统计分析</string>
     <string name="categories">分类管理</string>
     <string name="budget">预算管理</string>
     <string name="settings">设置</string>
-    
+
+    <string name="currency_amount">¥%.2f</string>
+    <string name="currency_amount_placeholder">¥0.00</string>
+    <string name="amount_default">0.00</string>
+
+    <string name="record_title_new">记一笔</string>
+    <string name="record_title_edit">编辑记录</string>
+    <string name="record_amount_label">金额</string>
+    <string name="record_type_expense">支出</string>
+    <string name="record_type_income">收入</string>
+    <string name="record_when_label">时间</string>
+    <string name="record_date_placeholder">2026-04-07</string>
+    <string name="record_asset_label">资产</string>
+    <string name="record_asset_none">无</string>
+    <string name="record_detail_label">备注</string>
+    <string name="record_detail_hint">添加备注...</string>
+    <string name="record_category_label">分类</string>
+    <string name="record_cancel">取消</string>
+    <string name="record_save_entry">保存记录</string>
+    <string name="record_update">更新</string>
+
+    <string name="validation_select_date">请选择日期</string>
+    <string name="validation_enter_amount">请输入金额</string>
+    <string name="validation_enter_valid_amount">请输入有效金额</string>
+    <string name="validation_enter_valid_amount_edit">请输入有效的金额</string>
+    <string name="validation_zero_amount">金额不能为 0</string>
+    <string name="validation_zero_amount_edit">金额不能为0</string>
+    <string name="validation_select_category">请选择分类</string>
+    <string name="toast_save_success">保存成功</string>
+    <string name="toast_save_failed">保存失败</string>
+    <string name="toast_update_success">更新成功</string>
+    <string name="toast_update_failed">更新失败</string>
+    <string name="toast_delete_success">删除成功</string>
+    <string name="toast_theme_changed">主题已更改</string>
+
+    <string name="dialog_cancel">取消</string>
+    <string name="dialog_confirm">确定</string>
+    <string name="filter_dialog_title">筛选记录</string>
+    <string name="search_dialog_title">搜索记录</string>
+    <string name="search_dialog_hint">输入分类、描述或金额</string>
+    <string name="search_dialog_confirm">搜索</string>
+    <string name="delete_record_title">删除记录</string>
+    <string name="delete_record_message">确定要删除这条记录吗？</string>
+    <string name="delete_selected_records_message">确定要删除选中的 %1$d 条记录吗？</string>
+
+    <string name="home_date_pattern">M月dd日 E</string>
+    <string name="home_date_placeholder">3月27日 周四</string>
+    <string name="home_daily_log">静奢理财日记</string>
+    <string name="home_current_balance">当前结余</string>
+    <string name="home_monthly_income">本月收入</string>
+    <string name="home_monthly_expense">本月支出</string>
+    <string name="home_agent_title">您的专属财务管家</string>
+    <string name="home_agent_subtitle">账本已就位，随时待命。</string>
+    <string name="home_recent_entries">最近记录</string>
+    <string name="home_view_archive">查看归档</string>
+    <string name="home_empty">就像空无一字的首页
+等待您的第一笔记录</string>
+    <string name="home_empty_records_hint">暂无记录，点击右下角按钮添加记录</string>
+
+    <string name="agent_title">AI 助手</string>
+    <string name="agent_greeting">你好！有什么我可以帮助你的吗？</string>
+    <string name="agent_chronicle">财务纪事</string>
+    <string name="agent_insight_title">洞察：慢生活中的财务呼吸</string>
+    <string name="agent_insight_body">本周，你的“悦己”消费占比有所提升。在繁忙的都市节奏中，适度的财务投入为生活带来了质感。目前的支出流向依然健康，建议保持这一份优雅的节制。</string>
+    <string name="agent_risk_title">今日超支风险</string>
+    <string name="agent_risk_body">基于您最近三天的消费模式</string>
+    <string name="agent_weekly_review_title">查看本周回顾</string>
+    <string name="agent_weekly_review_body">沉淀每一份生活的美好</string>
+    <string name="agent_record_dinner">记录一笔晚餐</string>
+    <string name="agent_input_hint">对话您的私人财务管家...</string>
+
+    <string name="settings_header_title">Curated Chronicle</string>
+    <string name="settings_profile_title">我的档案</string>
+    <string name="settings_profile_tier">静奢记账用户</string>
+    <string name="settings_aesthetic_preferences">偏好设置</string>
+    <string name="settings_theme_preferences">主题偏好</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_journal_shortcut">快捷记账</string>
+    <string name="settings_journal_shortcut_hint">直接进入记一笔</string>
+    <string name="settings_management">管理</string>
+    <string name="settings_category_organization">分类管理</string>
+    <string name="settings_account_assets">账户资产</string>
+    <string name="settings_about_section">The Chronicle</string>
+    <string name="settings_story_title">The Chronicle Story</string>
+    <string name="settings_story_body">了解你的理财日记背后的理念，以及我们对静奢体验与数据主权的坚持。</string>
+    <string name="settings_member_footer">MEMBER SINCE 2026 • CARDTALLY V4.2.1</string>
+
+    <string name="language_dialog_title">选择语言</string>
+    <string name="language_option_chinese">中文</string>
+    <string name="language_option_english">English</string>
+    <string-array name="supported_language_entries">
+        <item>@string/language_option_chinese</item>
+        <item>@string/language_option_english</item>
+    </string-array>
+    <string-array name="supported_language_values">
+        <item>zh-CN</item>
+        <item>en</item>
+    </string-array>
+
+    <string name="theme_settings_title">主题设置</string>
+    <string name="theme_select_label">选择主题</string>
+    <string name="theme_basic_label">基础主题</string>
+    <string name="theme_color_label">彩色主题</string>
+    <string name="theme_light">浅色主题</string>
+    <string name="theme_dark">深色主题</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_blue">蓝色主题</string>
+    <string name="theme_green">绿色主题</string>
+    <string name="theme_orange">橙色主题</string>
+    <string name="theme_hint">提示：更改主题后需要重启应用才能生效</string>
+
     <string-array name="theme_names">
-        <item>浅色主题</item>
-        <item>深色主题</item>
-        <item>跟随系统</item>
+        <item>@string/theme_light</item>
+        <item>@string/theme_dark</item>
+        <item>@string/theme_system</item>
     </string-array>
 </resources>

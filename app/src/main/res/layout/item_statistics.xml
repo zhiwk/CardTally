@@ -5,16 +5,18 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="16dp"
+    android:paddingVertical="18dp"
     android:background="?attr/selectableItemBackground">
 
     <FrameLayout
+        android:id="@+id/icon_container"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:background="@drawable/bg_circle_primary_container"
         android:backgroundTint="@color/surface_container_low"
         android:clipToOutline="true">
         <ImageView
+            android:id="@+id/image_icon"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_gravity="center"
@@ -39,13 +41,15 @@
             android:fontFamily="sans-serif-medium"/>
 
         <TextView
+            android:id="@+id/text_meta"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="RECORD"
+            android:text="SUMMARY ENTRY"
             android:textColor="@color/onSurfaceVariant_light"
-            android:textSize="12sp"
-            android:letterSpacing="0.05"
-            android:layout_marginTop="2dp"/>
+            android:textSize="11sp"
+            android:letterSpacing="0.08"
+            android:layout_marginTop="2dp"
+            android:textStyle="bold"/>
     </LinearLayout>
 
     <TextView
@@ -54,7 +58,7 @@
         android:layout_height="wrap_content"
         android:text="¥100.00"
         android:textColor="@color/primary_light"
-        android:textSize="20sp"
+        android:textSize="22sp"
         android:fontFamily="serif"/>
 
 </LinearLayout>

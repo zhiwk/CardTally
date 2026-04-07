@@ -7,7 +7,6 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
       tailwind.config = {
         darkMode: "class",
@@ -97,15 +96,18 @@
     }
 .text-shadow-sm {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05)
-    }</style>
+    }
+.active-icon {
+    font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}</style>
 <style>
     body {
       min-height: max(884px, 100dvh);
     }
   </style>
-  </head>
-<body class="bg-surface min-h-screen pb-24">
-<!-- Top Navigation Bar (Shared Component Anchor) -->
+</head>
+<body class="bg-surface min-h-screen pb-32">
+<!-- Top Navigation Bar -->
 <nav class="fixed top-0 w-full z-50 bg-[#fffcf7] dark:bg-stone-950 opacity-85 backdrop-blur-3xl flex justify-between items-center px-6 h-16 w-full">
 <div class="flex items-center gap-4">
 <span class="material-symbols-outlined text-[#615d66] dark:text-stone-300 cursor-pointer hover:opacity-80 transition-opacity">menu</span>
@@ -205,11 +207,39 @@
 </section>
 </main>
 <!-- 5. Floating Action Button -->
-<div class="fixed bottom-8 right-8 z-[100]">
+<div class="fixed bottom-28 right-8 z-[60]">
 <button class="w-16 h-16 rounded-full bg-primary text-on-primary shadow-[0_8px_32px_rgba(97,93,102,0.3)] flex items-center justify-center active:scale-95 transition-all duration-300">
 <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'wght' 300;">edit_note</span>
 </button>
 </div>
+<!-- Bottom Navigation Bar (Floating Pill) -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50 flex justify-around items-center rounded-full px-2 py-3 bg-surface-container/85 dark:bg-stone-800/85 backdrop-blur-2xl shadow-2xl shadow-neutral-900/5 transition-all">
+<!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center bg-stone-200/50 dark:bg-stone-700/50 text-neutral-900 dark:text-white rounded-full px-4 py-1.5 transition-all hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined active-icon" data-icon="home_max" style="font-variation-settings: 'FILL' 1;">home_max</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">首页</span>
+</a>
+<!-- Ledger -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">账本</span>
+</a>
+<!-- Assets -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">资产</span>
+</a>
+<!-- AI Agent -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5 text-center">AI 助手</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">我的</span>
+</a>
+</nav>
 <!-- Decorative Bottom Gradient for Depth -->
-<div class="fixed bottom-0 left-0 w-full h-32 bg-gradient-to-t from-surface to-transparent pointer-events-none"></div>
+<div class="fixed bottom-0 left-0 w-full h-32 bg-gradient-to-t from-surface to-transparent pointer-events-none z-10"></div>
 </body></html>

@@ -7,7 +7,6 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -98,12 +97,12 @@
         }
     </style>
 <style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style>
-  </head>
-<body class="bg-surface text-on-surface min-h-screen pb-20">
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
 <!-- Top Navigation Bar -->
 <header class="bg-[#fffcf7] dark:bg-stone-950/85 backdrop-blur-3xl w-full top-0 sticky z-50">
 <div class="flex items-center justify-between px-8 py-6 w-full max-w-screen-xl mx-auto">
@@ -210,5 +209,32 @@
 <p class="font-body text-[10px] uppercase tracking-[0.3em]">Member since 2023 • CardTally v4.2.1</p>
 </footer>
 </main>
-<!-- Suppressed Bottom Navigation as per focus journey requirement -->
+<!-- Bottom Navigation Bar (Floating Pill) -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md rounded-full px-2 py-3 bg-surface-container/85 dark:bg-stone-800/85 backdrop-blur-2xl shadow-2xl shadow-neutral-900/5 z-50 flex justify-around items-center">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="home_max">home_max</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">Home</span>
+</a>
+<!-- Ledger -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">Ledger</span>
+</a>
+<!-- Assets -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">Assets</span>
+</a>
+<!-- AI Agent -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5 text-center">AI Agent</span>
+</a>
+<!-- Profile (Active) -->
+<a class="flex flex-col items-center justify-center bg-stone-200/50 dark:bg-stone-700/50 text-neutral-900 dark:text-white rounded-full px-4 py-1.5 transition-all hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="person" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">Profile</span>
+</a>
+</nav>
 </body></html>

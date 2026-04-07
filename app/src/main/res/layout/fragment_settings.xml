@@ -23,7 +23,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Curated Chronicle"
+                android:text="@string/settings_header_title"
             android:textColor="@color/onBackground_light"
             android:textSize="24sp"
             android:textStyle="italic"
@@ -52,7 +52,7 @@
         android:layout_height="match_parent"
         android:layout_marginTop="80dp"
         android:clipToPadding="false"
-        android:paddingBottom="120dp">
+        android:paddingBottom="152dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -67,7 +67,7 @@
                 android:orientation="vertical"
                 android:gravity="center"
                 android:layout_marginBottom="32dp"
-                android:layout_marginTop="16dp">
+                android:layout_marginTop="8dp">
 
                 <FrameLayout
                     android:layout_width="80dp"
@@ -85,7 +85,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="My Profile"
+                    android:text="@string/settings_profile_title"
                     android:textColor="@color/onSurface_light"
                     android:textSize="32sp"
                     android:fontFamily="serif"
@@ -94,7 +94,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="THE CONNOISSEUR TIER"
+                    android:text="@string/settings_profile_tier"
                     android:textColor="@color/onSurfaceVariant_light"
                     android:textSize="10sp"
                     android:letterSpacing="0.2"
@@ -106,7 +106,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Aesthetic Preferences"
+                android:text="@string/settings_aesthetic_preferences"
                 android:textColor="@color/onBackground_light"
                 android:textSize="18sp"
                 android:textStyle="italic"
@@ -142,7 +142,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Theme Preferences"
+                            android:text="@string/settings_theme_preferences"
                             android:textColor="@color/onSurface_light"
                             android:textSize="16sp" />
                             
@@ -150,13 +150,52 @@
                             android:id="@+id/text_current_theme"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Paper White / Midnight Ink"
                             android:textColor="@color/onSurfaceVariant_light"
                             android:textSize="12sp"
                             android:alpha="0.6"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
                     
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_arrow_right"
+                        app:tint="@color/primary_light" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/card_language"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="24dp"
+                    android:background="?attr/selectableItemBackground">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_language"
+                            android:textColor="@color/onSurface_light"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/text_current_language"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_option_chinese"
+                            android:textColor="@color/onSurfaceVariant_light"
+                            android:textSize="12sp"
+                            android:alpha="0.6"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
@@ -181,14 +220,14 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Journal Shortcut"
+                            android:text="@string/settings_journal_shortcut"
                             android:textColor="@color/onSurface_light"
                             android:textSize="16sp" />
                             
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Direct access to entries"
+                            android:text="@string/settings_journal_shortcut_hint"
                             android:textColor="@color/onSurfaceVariant_light"
                             android:textSize="12sp"
                             android:alpha="0.6"
@@ -207,7 +246,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Management"
+                android:text="@string/settings_management"
                 android:textColor="@color/onBackground_light"
                 android:textSize="18sp"
                 android:textStyle="italic"
@@ -253,7 +292,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="16dp"
-                        android:text="Category Organization"
+                        android:text="@string/settings_category_organization"
                         android:textColor="@color/onSurface_light"
                         android:textSize="18sp" />
 
@@ -294,7 +333,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="16dp"
-                        android:text="Account Assets"
+                        android:text="@string/settings_account_assets"
                         android:textColor="@color/onSurface_light"
                         android:textSize="18sp" />
 
@@ -309,7 +348,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="The Chronicle"
+                android:text="@string/settings_about_section"
                 android:textColor="@color/onBackground_light"
                 android:textSize="18sp"
                 android:textStyle="italic"
@@ -328,7 +367,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="The Chronicle Story"
+                    android:text="@string/settings_story_title"
                     android:textColor="@color/onSurface_light"
                     android:textSize="18sp"
                     android:layout_marginBottom="8dp"/>
@@ -336,7 +375,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Discover the philosophy behind your financial diary and our commitment to quiet luxury and data sovereignty."
+                    android:text="@string/settings_story_body"
                     android:textColor="@color/onSurfaceVariant_light"
                     android:textSize="14sp"
                     android:lineSpacingExtra="4dp"
@@ -349,7 +388,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
                 android:gravity="center"
-                android:text="MEMBER SINCE 2026 • CARDTALLY V4.2.1"
+                android:text="@string/settings_member_footer"
                 android:textColor="@color/onSurfaceVariant_light"
                 android:textSize="10sp"
                 android:letterSpacing="0.3"

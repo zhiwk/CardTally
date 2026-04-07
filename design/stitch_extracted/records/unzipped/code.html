@@ -10,7 +10,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400;1,6..72,600&amp;display=swap" rel="stylesheet"/>
 <!-- Icons -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script id="tailwind-config">
@@ -105,11 +104,14 @@
         ::-webkit-scrollbar-thumb { background: #eae8de; border-radius: 10px; }
     </style>
 <style>
-    body {
-      min-height: max(884px, 100dvh);
-    }
-  </style>
-  </head>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
 <body class="bg-surface text-on-surface antialiased min-h-screen">
 <!-- TopAppBar -->
 <header class="bg-[#fffcf7] dark:bg-stone-900 sticky top-0 z-50 flex justify-between items-center w-full px-6 py-4 max-w-full">
@@ -128,7 +130,7 @@
 </div>
 </header>
 <!-- Content Canvas -->
-<main class="max-w-2xl mx-auto px-6 pt-8 pb-32">
+<main class="max-w-2xl mx-auto px-6 pt-8 pb-48">
 <!-- Date Group: Today -->
 <section class="mb-12">
 <h2 class="font-headline italic text-lg text-on-surface-variant mb-8 tracking-wide">March 27, Thursday</h2>
@@ -254,13 +256,41 @@
 </section>
 </main>
 <!-- FAB -->
-<div class="fixed bottom-8 right-8">
+<div class="fixed bottom-28 right-8 z-40">
 <button class="w-16 h-16 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-xl hover:bg-primary-dim transition-all active:scale-95 group">
 <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;">edit_note</span>
 </button>
 </div>
 <!-- Empty/End of Journal State -->
-<footer class="pb-24 text-center">
+<footer class="pb-32 text-center">
 <p class="font-headline italic text-on-surface-variant/40 text-sm">The chronicle of your wealth, recorded with care.</p>
 </footer>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md rounded-full px-2 py-3 bg-surface-container/85 dark:bg-stone-800/85 backdrop-blur-2xl shadow-2xl z-50 flex justify-around items-center">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="home_max">home_max</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">Home</span>
+</a>
+<!-- Ledger (Active) -->
+<a class="flex flex-col items-center justify-center bg-stone-200/50 dark:bg-stone-700/50 text-neutral-900 dark:text-white rounded-full px-4 py-1.5 transition-all hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined active-icon" data-icon="auto_stories" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">Ledger</span>
+</a>
+<!-- Assets -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">Assets</span>
+</a>
+<!-- AI Agent -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5 text-center">AI Agent</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">Profile</span>
+</a>
+</nav>
 </body></html>

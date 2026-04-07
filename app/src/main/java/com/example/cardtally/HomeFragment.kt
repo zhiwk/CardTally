@@ -21,9 +21,11 @@ import com.example.cardtally.adapter.DateGroupAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
+import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.RecordDragCallback
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.text.SimpleDateFormat
 import java.util.Calendar
 
 class HomeFragment : Fragment() {
@@ -73,7 +75,10 @@ class HomeFragment : Fragment() {
         currentMonth = calendar.get(Calendar.MONTH) + 1
 
         // Date header logic
-        val sdf = java.text.SimpleDateFormat("M月dd日 E", java.util.Locale.CHINESE)
+        val sdf = SimpleDateFormat(
+            getString(R.string.home_date_pattern),
+            LanguageHelper.getCurrentLocale(requireContext())
+        )
         textDate.text = sdf.format(calendar.time)
 
         fabAdd.setOnClickListener {
@@ -138,7 +143,7 @@ class HomeFragment : Fragment() {
 
     private fun showFilterDialog() {
         val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("筛选记录")
+        builder.setTitle(R.string.filter_dialog_title)
 
         // 这里可以添加筛选选项，如分类、金额范围等
         val categories = databaseHelper.getAllCategories()
@@ -149,7 +154,7 @@ class HomeFragment : Fragment() {
             checkedItems[which] = isChecked
         }
 
-        builder.setPositiveButton("确定") { _, _ ->
+        builder.setPositiveButton(R.string.dialog_confirm) { _, _ ->
             // 处理筛选逻辑
             val selectedCategories = mutableListOf<String>()
             for (i in checkedItems.indices) {
@@ -161,20 +166,20 @@ class HomeFragment : Fragment() {
             loadRecords(selectedCategories)
         }
 
-        builder.setNegativeButton("取消", null)
+        builder.setNegativeButton(R.string.dialog_cancel, null)
 
         builder.show()
     }
 
     private fun showSearchDialog() {
         val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("搜索记录")
+        builder.setTitle(R.string.search_dialog_title)
 
         val input = EditText(requireContext())
-        input.hint = "输入分类、描述或金额"
+        input.hint = getString(R.string.search_dialog_hint)
         builder.setView(input)
 
-        builder.setPositiveButton("搜索") { _, _ ->
+        builder.setPositiveButton(R.string.search_dialog_confirm) { _, _ ->
             val keyword = input.text.toString().trim()
             if (keyword.isNotEmpty()) {
                 val searchFragment = SearchFragment.newInstance(keyword)
@@ -185,7 +190,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        builder.setNegativeButton("取消", null)
+        builder.setNegativeButton(R.string.dialog_cancel, null)
 
         builder.show()
     }
@@ -199,12 +204,12 @@ class HomeFragment : Fragment() {
         val expense = databaseHelper.getTotalByTypeAndDateRange(0, startDate, endDate)
         val balance = income - expense
 
-        textIncome.text = String.format("¥%.2f", income)
-        textExpense.text = String.format("¥%.2f", expense)
-        textBalance.text = String.format("¥%.2f", balance)
+        textIncome.text = getString(R.string.currency_amount, income)
+        textExpense.text = getString(R.string.currency_amount, expense)
+        textBalance.text = getString(R.string.currency_amount, balance)
 
         if (allRecords.isEmpty()) {
-            textEmpty.text = "暂无记录，点击右下角按钮添加记录"
+            textEmpty.text = getString(R.string.home_empty_records_hint)
             textEmpty.visibility = View.VISIBLE
             recyclerRecords.visibility = View.GONE
         } else {
@@ -234,7 +239,7 @@ class HomeFragment : Fragment() {
                                 showDeleteSelectedDialog()
                             }
                         } else {
-                            fabAdd.setImageResource(R.drawable.ic_add)
+                            fabAdd.setImageResource(R.drawable.ic_edit)
                             fabAdd.setOnClickListener {
                                 parentFragmentManager.beginTransaction()
                                     .replace(R.id.fragment_container, AddRecordFragment())
@@ -299,14 +304,14 @@ class HomeFragment : Fragment() {
 
     private fun showDeleteDialog(record: Record) {
         AlertDialog.Builder(requireContext())
-            .setTitle("删除记录")
-            .setMessage("确定要删除这条记录吗？")
-            .setPositiveButton("确定") { _, _ ->
+            .setTitle(R.string.delete_record_title)
+            .setMessage(R.string.delete_record_message)
+            .setPositiveButton(R.string.dialog_confirm) { _, _ ->
                 databaseHelper.deleteRecord(record.id)
-                Toast.makeText(requireContext(), "删除成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.toast_delete_success), Toast.LENGTH_SHORT).show()
                 loadRecords()
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton(R.string.dialog_cancel, null)
             .show()
     }
 
@@ -389,15 +394,15 @@ class HomeFragment : Fragment() {
         if (selectedRecords.isEmpty()) return
         
         AlertDialog.Builder(requireContext())
-            .setTitle("删除记录")
-            .setMessage("确定要删除选中的 ${selectedRecords.size} 条记录吗？")
-            .setPositiveButton("确定") { _, _ ->
+            .setTitle(R.string.delete_record_title)
+            .setMessage(getString(R.string.delete_selected_records_message, selectedRecords.size))
+            .setPositiveButton(R.string.dialog_confirm) { _, _ ->
                 for (record in selectedRecords) {
                     databaseHelper.deleteRecord(record.id)
                 }
-                Toast.makeText(requireContext(), "删除成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.toast_delete_success), Toast.LENGTH_SHORT).show()
                 adapter?.exitMultiSelectMode()
-                fabAdd.setImageResource(R.drawable.ic_add)
+                fabAdd.setImageResource(R.drawable.ic_edit)
                 fabAdd.setOnClickListener {
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.fragment_container, AddRecordFragment())
@@ -406,7 +411,7 @@ class HomeFragment : Fragment() {
                 }
                 loadRecords()
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton(R.string.dialog_cancel, null)
             .show()
     }
 

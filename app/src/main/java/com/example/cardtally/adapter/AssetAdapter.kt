@@ -1,12 +1,15 @@
 package com.example.cardtally.adapter
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Asset
@@ -32,17 +35,23 @@ class AssetAdapter(
 
     override fun onBindViewHolder(holder: AssetViewHolder, position: Int) {
         val asset = assets[position]
+        val context = holder.itemView.context
         holder.textAssetName.text = asset.name
         holder.textAssetAmount.text = String.format("¥%.2f", asset.amount)
 
-        val typeText = when (asset.type) {
-            0 -> "现金"
-            1 -> "银行卡"
-            2 -> "支付宝"
-            3 -> "微信"
-            else -> "其他"
+        val presentation = when (asset.type) {
+            0 -> AssetPresentation("现金", R.drawable.ic_asset, R.color.warning_primary, R.color.warning_container)
+            1 -> AssetPresentation("银行卡", R.drawable.ic_asset, R.color.primary_light, R.color.surface_container_lowest)
+            2 -> AssetPresentation("支付宝", R.drawable.ic_asset, R.color.secondary_light, R.color.surface_container_lowest)
+            3 -> AssetPresentation("微信", R.drawable.ic_asset, R.color.secondary_light, R.color.surface_container_lowest)
+            else -> AssetPresentation("其他", R.drawable.ic_asset, R.color.primary_light, R.color.surface_container_lowest)
         }
-        holder.textAssetType.text = typeText
+        holder.textAssetType.text = presentation.label
+        holder.imageAssetIcon.setImageResource(presentation.iconRes)
+        holder.imageAssetIcon.setColorFilter(ContextCompat.getColor(context, presentation.iconTint))
+        holder.iconContainer.backgroundTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(context, presentation.iconBackground)
+        )
 
         holder.swipeHelper = SwipeToEditDeleteHelper(
             holder.cardContent,
@@ -65,10 +74,19 @@ class AssetAdapter(
         notifyDataSetChanged()
     }
 
+    private data class AssetPresentation(
+        val label: String,
+        val iconRes: Int,
+        val iconTint: Int,
+        val iconBackground: Int
+    )
+
     class AssetViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val cardContent: CardView = itemView.findViewById(R.id.card_content)
         val layoutActions: View = itemView.findViewById(R.id.layout_actions)
         val layoutAssetInfo: LinearLayout = itemView.findViewById(R.id.layout_asset_info)
+        val iconContainer: View = itemView.findViewById(R.id.icon_container)
+        val imageAssetIcon: ImageView = itemView.findViewById(R.id.image_asset_icon)
         val textAssetName: TextView = itemView.findViewById(R.id.text_asset_name)
         val textAssetAmount: TextView = itemView.findViewById(R.id.text_asset_amount)
         val textAssetType: TextView = itemView.findViewById(R.id.text_asset_type)

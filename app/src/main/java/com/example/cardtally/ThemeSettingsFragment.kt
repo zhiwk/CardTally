@@ -38,7 +38,7 @@ class ThemeSettingsFragment : Fragment() {
             }
 
             ThemeHelper.saveTheme(requireContext(), themeMode)
-            Toast.makeText(requireContext(), "主题已更改", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.toast_theme_changed), Toast.LENGTH_SHORT).show()
             requireActivity().recreate()
         }
 

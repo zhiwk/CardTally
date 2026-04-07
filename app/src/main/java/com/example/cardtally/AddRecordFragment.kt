@@ -148,7 +148,7 @@ class AddRecordFragment : Fragment() {
     private fun loadAssets() {
         currentAssets = databaseHelper.getAllAssets().toMutableList()
 
-        val assetNames = mutableListOf("无")
+        val assetNames = mutableListOf(getString(R.string.record_asset_none))
         currentAssets.forEach { assetNames.add(it.name) }
 
         val adapter = ArrayAdapter(
@@ -188,33 +188,33 @@ class AddRecordFragment : Fragment() {
         val description = editDescription.text.toString().trim()
 
         if (date.isEmpty()) {
-            Toast.makeText(requireContext(), "请选择日期", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_select_date), Toast.LENGTH_SHORT).show()
             return
         }
 
         if (amountStr.isEmpty()) {
-            Toast.makeText(requireContext(), "请输入金额", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_enter_amount), Toast.LENGTH_SHORT).show()
             return
         }
 
         val amount = try {
             amountStr.toDouble()
         } catch (e: NumberFormatException) {
-            Toast.makeText(requireContext(), "请输入有效金额", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_enter_valid_amount), Toast.LENGTH_SHORT).show()
             return
         }
 
         if (amount == 0.0) {
-            Toast.makeText(requireContext(), "金额不能为 0", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_zero_amount), Toast.LENGTH_SHORT).show()
             return
         }
 
         if (category == null) {
-            Toast.makeText(requireContext(), "请选择分类", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_select_category), Toast.LENGTH_SHORT).show()
             return
         }
 
-        val assetSource = if (assetSourceName == "无") null else assetSourceName
+        val assetSource = if (assetSourceName == getString(R.string.record_asset_none)) null else assetSourceName
 
         val record = Record(
             date = date,
@@ -227,7 +227,7 @@ class AddRecordFragment : Fragment() {
         val id = databaseHelper.addRecord(record)
 
         if (id != -1L) {
-            Toast.makeText(requireContext(), "保存成功", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.toast_save_success), Toast.LENGTH_SHORT).show()
 
             if (shouldReturn) {
                 parentFragmentManager.popBackStack()
@@ -235,7 +235,7 @@ class AddRecordFragment : Fragment() {
                 clearAmountAndDescription()
             }
         } else {
-            Toast.makeText(requireContext(), "保存失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
