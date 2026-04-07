@@ -93,6 +93,12 @@
     <string name="settings_language">语言</string>
     <string name="settings_journal_shortcut">快捷记账</string>
     <string name="settings_journal_shortcut_hint">直接进入记一笔</string>
+    <string name="settings_ai_assistant_group">AI 助理</string>
+    <string name="settings_ai_assistant_toggle">显示 AI 入口</string>
+    <string name="settings_ai_assistant_toggle_hint">控制首页卡片与底部 AI 标签</string>
+    <string name="settings_ai_api_key">AI API Key</string>
+    <string name="settings_ai_api_key_status_not_set">尚未配置</string>
+    <string name="settings_ai_api_key_status_saved">已保存</string>
     <string name="settings_management">管理</string>
     <string name="settings_category_organization">分类管理</string>
     <string name="settings_account_assets">账户资产</string>
@@ -124,6 +130,14 @@
     <string name="theme_green">绿色主题</string>
     <string name="theme_orange">橙色主题</string>
     <string name="theme_hint">提示：更改主题后需要重启应用才能生效</string>
+
+    <string name="ai_settings_title">AI 助理设置</string>
+    <string name="ai_settings_api_key_group">API Key</string>
+    <string name="ai_settings_api_key_description">在此保存本机使用的 AI API Key。该值仅保存在当前设备，用于后续 AI 服务接入。</string>
+    <string name="ai_settings_api_key_label">AI API Key</string>
+    <string name="ai_settings_api_key_hint">请输入 API Key</string>
+    <string name="ai_settings_save">保存</string>
+    <string name="toast_ai_api_key_saved">AI API Key 已保存</string>
 
     <string-array name="theme_names">
         <item>@string/theme_light</item>

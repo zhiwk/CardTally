@@ -93,6 +93,12 @@ waiting for your first entry.</string>
     <string name="settings_language">Language</string>
     <string name="settings_journal_shortcut">Journal Shortcut</string>
     <string name="settings_journal_shortcut_hint">Direct access to new entries</string>
+    <string name="settings_ai_assistant_group">AI Assistant</string>
+    <string name="settings_ai_assistant_toggle">Show AI surfaces</string>
+    <string name="settings_ai_assistant_toggle_hint">Controls the Home card and bottom AI tab</string>
+    <string name="settings_ai_api_key">AI API Key</string>
+    <string name="settings_ai_api_key_status_not_set">Not configured</string>
+    <string name="settings_ai_api_key_status_saved">Saved</string>
     <string name="settings_management">Management</string>
     <string name="settings_category_organization">Category Organization</string>
     <string name="settings_account_assets">Account Assets</string>
@@ -124,6 +130,14 @@ waiting for your first entry.</string>
     <string name="theme_green">Green Theme</string>
     <string name="theme_orange">Orange Theme</string>
     <string name="theme_hint">Note: Restart the app after changing the theme for full effect.</string>
+
+    <string name="ai_settings_title">AI Assistant Settings</string>
+    <string name="ai_settings_api_key_group">API Key</string>
+    <string name="ai_settings_api_key_description">Save the local AI API key used on this device. The value stays on-device for future AI service integration.</string>
+    <string name="ai_settings_api_key_label">AI API Key</string>
+    <string name="ai_settings_api_key_hint">Enter API Key</string>
+    <string name="ai_settings_save">Save</string>
+    <string name="toast_ai_api_key_saved">AI API key saved</string>
 
     <string-array name="theme_names">
         <item>@string/theme_light</item>
