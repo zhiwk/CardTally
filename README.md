@@ -69,8 +69,7 @@ CardTally/
 │           │   ├── drawable/         # 图标资源
 │           │   └── menu/             # 菜单资源
 │           └── AndroidManifest.xml
-├── docs/                             # 产品规划与视觉指导文档
-├── .sisyphus/                        # 业务决策与历史执行计划
+├── docs/                             # 文档目录（见下文）
 ├── AGENTS.md                         # 仓库协作入口
 ├── build.gradle                      # 项目级构建配置
 └── README.md                         # 项目说明
@@ -78,12 +77,19 @@ CardTally/
 
 ## 📚 文档入口
 
-- `AGENTS.md`：仓库协作入口，说明先读什么、文档可信度和修改约束
-- `docs/plans/`：产品重开、信息架构、页面职责、实现规划
-- `docs/stitch-guidance/`：Stitch / 视觉设计输入文档
-- `.sisyphus/decisions/`：业务规则与关键决策
-- `.sisyphus/plans/`：历史执行计划与一次性实现方案
-- `design/stitch_extracted/`：Stitch 产出的设计结果参考，不作为当前规范
+```
+docs/
+├── requirements/      # 需求文档
+│   ├── plans/       # 实施计划
+│   └── decisions/   # 业务决策
+├── design/          # 设计文档
+│   ├── guidelines/  # 设计指南
+│   └── assets/      # 设计产出物
+├── collaboration/    # AI协作指南
+└── archive/         # 历史归档
+```
+
+- `AGENTS.md`：仓库协作入口
 
 ## 🚀 使用指南
 
