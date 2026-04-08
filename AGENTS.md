@@ -22,7 +22,7 @@ CardTally 仓库的 AI 协作入口文件。开始任何修改前，先读本文
 - 先基于源码和 Gradle 配置工作，再参考 README、规划文档和设计文档。
 - 当前仓库现实是 `Fragment + XML + SQLite(DatabaseHelper)`，不要默认已经接入 Room 或 Navigation Component。
 - 当前录入页复用现实：`AddRecordFragment` / `EditRecordFragment` 共享 `fragment_add_record.xml`；`AddAssetFragment` / `EditAssetFragment` 共享 `fragment_add_asset.xml`。
-- 当前 AI 助手现实：`AgentFragment` 已接入 MiniMax BYOK 只读文本聊天；`AiAssistantSettingsFragment` / `AiAssistantSettingsHelper` 负责本机保存 API Key、模型与完整请求 URL。
+- 当前 AI 助手现实：`AgentFragment` 已接入 MiniMax BYOK 流式文本聊天，请求默认携带 `stream=true`，并会按实际响应内容识别流式 / 非流式返回；当前已支持增量渲染回复，以及区分 `TIMEOUT / CANCELLED / INTERRUPTED / NETWORK` 等失败态并在已有内容时保留部分回复。`AiAssistantSettingsFragment` / `AiAssistantSettingsHelper` 负责本机保存 API Key、模型与完整请求 URL。
 - 当前仓库已接入应用级中英文国际化；涉及文案、语言切换或字符串资源时，先检查 `LanguageHelper` 和 `res/values*/strings*.xml`。
 - 修改优先做最小必要改动，尤其是 bugfix 和局部功能补全。
 - 涉及业务规则时，必须先对照 `docs/requirements/decisions/business_rules.md`。
