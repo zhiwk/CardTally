@@ -1,4 +1,4 @@
-# `design/stitch_extracted` 说明
+# `docs/design/assets` 说明
 
 本目录保存 **Stitch 产出的设计结果与过程产物**，用于回看外部设计探索的结果。
 
@@ -8,7 +8,7 @@
 
 - 可用于理解某次 Stitch 产出的视觉方向
 - 可用于回看外部设计工具给出的结构或措辞
-- 必须结合 `docs/stitch-guidance/*.md` 与当前源码一起判断
+- 必须结合 `docs/design/guidelines/*.md` 与当前源码一起判断
 
 ## 文档优先级
 
@@ -16,11 +16,11 @@
 
 1. 当前源码与 Gradle 配置
 2. `AGENTS.md`
-3. `docs/stitch-guidance/*.md`
+3. `docs/design/guidelines/*.md`
 4. 本目录内容
 
 ## 注意
 
 - 本目录中的设计稿/说明不代表“已经实现”
 - 本目录中的设计语言不自动等同于当前正式视觉规范
-- 若需要当前视觉约束，请先读 `docs/stitch-guidance/README.md`
+- 若需要当前视觉约束，请先读 `docs/design/guidelines/README.md`
