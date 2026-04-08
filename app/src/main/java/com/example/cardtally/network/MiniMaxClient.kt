@@ -7,10 +7,19 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.io.InterruptedIOException
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
+import okio.BufferedSource
 
 class MiniMaxClient(
-    private val okHttpClient: OkHttpClient = OkHttpClient()
+    private val okHttpClient: OkHttpClient = DEFAULT_CLIENT
 ) {
+
+    private val activeCall = AtomicReference<okhttp3.Call?>(null)
+    private val isCancelled = AtomicBoolean(false)
 
     fun sendChat(
         config: MiniMaxConfig,
@@ -23,6 +32,8 @@ class MiniMaxClient(
             return
         }
 
+        isCancelled.set(false)
+
         val requestBody = MiniMaxPayloadParser.buildRequestBody(
             model = normalizedConfig.model,
             messages = messages
@@ -32,7 +43,7 @@ class MiniMaxClient(
             Request.Builder()
                 .url(normalizedConfig.requestUrl)
                 .addHeader("Authorization", "Bearer ${normalizedConfig.apiKey}")
-                .addHeader("Accept", "application/json")
+                .addHeader("Accept", "text/event-stream, application/json")
                 .post(requestBody)
                 .build()
         } catch (_: IllegalArgumentException) {
@@ -40,43 +51,260 @@ class MiniMaxClient(
             return
         }
 
-        okHttpClient.newCall(request).enqueue(object : okhttp3.Callback {
+        val call = okHttpClient.newCall(request)
+        activeCall.set(call)
+
+        call.enqueue(object : okhttp3.Callback {
             override fun onFailure(call: okhttp3.Call, e: IOException) {
+                activeCall.compareAndSet(call, null)
+
+                if (isCancelled.get()) {
+                    callback(MiniMaxChatResult.Failure(MiniMaxErrorType.CANCELLED))
+                    return
+                }
+
+                val errorType = when (e) {
+                    is SocketTimeoutException -> MiniMaxErrorType.TIMEOUT
+                    is InterruptedIOException -> {
+                        if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.INTERRUPTED
+                    }
+                    else -> MiniMaxErrorType.NETWORK
+                }
+
                 Log.e(TAG, "MiniMax network failure", e)
                 callback(
                     MiniMaxChatResult.Failure(
-                        type = MiniMaxErrorType.NETWORK,
+                        type = errorType,
                         detail = e.localizedMessage
                     )
                 )
             }
 
             override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
-                response.use {
-                    val body = it.body?.string().orEmpty()
-                    if (!it.isSuccessful) {
-                        Log.w(
-                            TAG,
-                            "MiniMax HTTP ${it.code} ${it.message}. Response body: ${body.truncateForLog()}"
-                        )
-                        callback(
-                            MiniMaxPayloadParser.parseHttpFailure(
-                                statusCode = it.code,
-                                responseBody = body
-                            )
-                        )
+                activeCall.compareAndSet(call, null)
+
+                if (isCancelled.get()) {
+                    callback(MiniMaxChatResult.Failure(MiniMaxErrorType.CANCELLED))
+                    response.close()
+                    return
+                }
+
+                response.use { resp ->
+                    if (!resp.isSuccessful) {
+                        handleHttpError(resp, callback)
                         return
                     }
 
-                    callback(MiniMaxPayloadParser.parseAssistantReply(body))
+                    val body = resp.body
+                    if (body == null) {
+                        callback(MiniMaxChatResult.Failure(MiniMaxErrorType.EMPTY_REPLY))
+                        return
+                    }
+
+                    handleSuccessBody(body.source(), callback)
                 }
             }
         })
     }
 
+    fun cancel() {
+        isCancelled.set(true)
+        activeCall.getAndSet(null)?.cancel()
+    }
+
+    private fun handleHttpError(response: okhttp3.Response, callback: (MiniMaxChatResult) -> Unit) {
+        val body = response.body?.string().orEmpty()
+        Log.w(
+            TAG,
+            "MiniMax HTTP ${response.code} ${response.message}. Response body: ${body.truncateForLog()}"
+        )
+        callback(
+            MiniMaxPayloadParser.parseHttpFailure(
+                statusCode = response.code,
+                responseBody = body
+            )
+        )
+    }
+
+    private fun handleSuccessBody(
+        source: BufferedSource,
+        callback: (MiniMaxChatResult) -> Unit
+    ) {
+        try {
+            source.use { bufferedSource ->
+                val bufferedLines = mutableListOf<String>()
+
+                while (true) {
+                    if (isCancelled.get()) {
+                        callback(MiniMaxChatResult.Failure(MiniMaxErrorType.CANCELLED))
+                        return
+                    }
+
+                    val line = bufferedSource.readUtf8Line()
+                    if (line == null) {
+                        val fullBody = bufferedLines.joinToString("\n")
+                        if (fullBody.isBlank()) {
+                            callback(MiniMaxChatResult.Failure(MiniMaxErrorType.EMPTY_REPLY))
+                        } else {
+                            callback(MiniMaxPayloadParser.parseAssistantReply(fullBody))
+                        }
+                        return
+                    }
+
+                    bufferedLines.add(line)
+
+                    if (line.isBlank()) {
+                        continue
+                    }
+
+                    val parsedChunk = MiniMaxPayloadParser.parseStreamingChunk(line)
+                    val trimmed = line.trim()
+                    val looksLikeStreamingFrame = parsedChunk !is MiniMaxPayloadParser.StreamingParseResult.Empty ||
+                        trimmed.startsWith("data:") ||
+                        trimmed.startsWith("event:") ||
+                        trimmed.startsWith("id:") ||
+                        trimmed.startsWith(":")
+
+                    if (looksLikeStreamingFrame) {
+                        processStreamingSource(
+                            source = bufferedSource,
+                            firstChunk = parsedChunk,
+                            callback = callback
+                        )
+                        return
+                    }
+
+                    val remainder = bufferedSource.readUtf8()
+                    val fullBody = buildString {
+                        append(bufferedLines.joinToString("\n"))
+                        if (remainder.isNotEmpty()) {
+                            append("\n")
+                            append(remainder)
+                        }
+                    }
+
+                    if (isCancelled.get()) {
+                        callback(MiniMaxChatResult.Failure(MiniMaxErrorType.CANCELLED))
+                    } else {
+                        callback(MiniMaxPayloadParser.parseAssistantReply(fullBody))
+                    }
+                    return
+                }
+            }
+        } catch (e: SocketTimeoutException) {
+            callback(MiniMaxChatResult.Failure(MiniMaxErrorType.TIMEOUT, e.localizedMessage))
+        } catch (e: InterruptedIOException) {
+            callback(
+                MiniMaxChatResult.Failure(
+                    if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.INTERRUPTED,
+                    e.localizedMessage
+                )
+            )
+        } catch (e: IOException) {
+            callback(
+                MiniMaxChatResult.Failure(
+                    if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.NETWORK,
+                    e.localizedMessage
+                )
+            )
+        }
+    }
+
+    private fun processStreamingSource(
+        source: BufferedSource,
+        firstChunk: MiniMaxPayloadParser.StreamingParseResult,
+        callback: (MiniMaxChatResult) -> Unit
+    ) {
+        val accumulatedContent = StringBuilder()
+
+        fun emitChunkResult(result: MiniMaxPayloadParser.StreamingParseResult): Boolean {
+            return when (result) {
+                is MiniMaxPayloadParser.StreamingParseResult.Content -> {
+                    accumulatedContent.append(result.text)
+                    callback(MiniMaxChatResult.StreamingChunk(accumulatedContent.toString()))
+                    false
+                }
+                is MiniMaxPayloadParser.StreamingParseResult.Done -> {
+                    val finalContent = accumulatedContent.toString()
+                    if (finalContent.isNotBlank()) {
+                        callback(MiniMaxChatResult.StreamingDone(finalContent))
+                    } else {
+                        callback(MiniMaxChatResult.Failure(MiniMaxErrorType.EMPTY_REPLY))
+                    }
+                    true
+                }
+                is MiniMaxPayloadParser.StreamingParseResult.Empty -> false
+            }
+        }
+
+        try {
+            if (emitChunkResult(firstChunk)) {
+                return
+            }
+
+            while (true) {
+                if (isCancelled.get()) {
+                    val partial = accumulatedContent.toString()
+                    callback(
+                        MiniMaxChatResult.Failure(
+                            type = MiniMaxErrorType.CANCELLED,
+                            detail = partial.ifBlank { null }
+                        )
+                    )
+                    return
+                }
+
+                val line = source.readUtf8Line()
+                if (line == null) {
+                    val finalContent = accumulatedContent.toString()
+                    if (finalContent.isNotBlank()) {
+                        callback(MiniMaxChatResult.StreamingDone(finalContent))
+                    } else {
+                        callback(MiniMaxChatResult.Failure(MiniMaxErrorType.EMPTY_REPLY))
+                    }
+                    return
+                }
+
+                if (emitChunkResult(MiniMaxPayloadParser.parseStreamingChunk(line))) {
+                    return
+                }
+            }
+        } catch (e: SocketTimeoutException) {
+            val partial = accumulatedContent.toString()
+            callback(
+                MiniMaxChatResult.Failure(
+                    type = MiniMaxErrorType.TIMEOUT,
+                    detail = partial.ifBlank { e.localizedMessage }
+                )
+            )
+        } catch (e: InterruptedIOException) {
+            val partial = accumulatedContent.toString()
+            callback(
+                MiniMaxChatResult.Failure(
+                    type = if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.INTERRUPTED,
+                    detail = partial.ifBlank { e.localizedMessage }
+                )
+            )
+        } catch (e: IOException) {
+            val partial = accumulatedContent.toString()
+            callback(
+                MiniMaxChatResult.Failure(
+                    type = if (partial.isNotBlank()) MiniMaxErrorType.INTERRUPTED else if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.NETWORK,
+                    detail = partial.ifBlank { e.localizedMessage }
+                )
+            )
+        }
+    }
+
     private companion object {
         private const val TAG = "MiniMaxClient"
         val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+
+        val DEFAULT_CLIENT = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
     }
 
     private fun String.truncateForLog(maxLength: Int = 2000): String {
