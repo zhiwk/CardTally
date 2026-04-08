@@ -4,316 +4,224 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
+    android:background="?android:attr/colorBackground"
     tools:context=".AgentFragment">
 
-    <!-- Top Navigation -->
     <LinearLayout
         android:id="@+id/appbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="24dp"
-        android:paddingTop="32dp"
-        android:paddingBottom="16dp"
+        android:background="?android:attr/colorBackground"
         android:gravity="center_vertical"
-        android:elevation="0dp">
+        android:orientation="horizontal"
+        android:paddingStart="24dp"
+        android:paddingTop="28dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="16dp">
+
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="false"
+            android:focusable="false"
+            android:foregroundGravity="center">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/agent_menu_content_description"
+                android:src="@drawable/ic_menu"
+                app:tint="?attr/colorPrimary" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
             android:layout_weight="1"
             android:text="@string/agent_title"
-            android:textColor="@color/onBackground_light"
-            android:textSize="24sp"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="26sp"
             android:textStyle="italic"
-            android:fontFamily="serif"/>
+            android:fontFamily="serif" />
 
         <FrameLayout
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="@drawable/bg_circle_primary_container"
-            android:backgroundTint="@color/surfaceContainerHigh_light"
-            android:clipToOutline="true"
-            android:outlineProvider="background">
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+            android:contentDescription="@string/agent_avatar_content_description">
+
+            <FrameLayout
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_person"
-                app:tint="@color/primary_light" />
+                android:background="@drawable/bg_circle_primary_container"
+                android:backgroundTint="?attr/colorSurfaceContainerLowest">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_person"
+                    app:tint="?attr/colorPrimary" />
+            </FrameLayout>
         </FrameLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="84dp"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="192dp">
+
+        <TextView
+            android:id="@+id/text_agent_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="@string/agent_status_configuration_required"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="12sp"
+            android:lineSpacingExtra="4dp"
+            android:fontFamily="serif"
+            android:textStyle="italic" />
+
+        <LinearLayout
+            android:id="@+id/layout_agent_config_missing"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_summary_item"
+            android:backgroundTint="?attr/colorSurfaceContainerLow"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/agent_config_missing_title"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="20sp"
+                android:textStyle="italic"
+                android:fontFamily="serif" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/agent_config_missing_body"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp" />
+
+            <LinearLayout
+                android:id="@+id/button_open_ai_settings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/shape_button_primary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="28dp"
+                android:paddingVertical="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/agent_config_missing_cta"
+                    android:textColor="@color/onPrimary_light"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_agent_messages"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingBottom="24dp"
+            tools:listitem="@layout/item_agent_message" />
 
     </LinearLayout>
 
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="80dp"
-        android:clipToPadding="false"
-        android:paddingBottom="210dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="24dp"
-            android:paddingTop="32dp">
-
-            <!-- Welcome Message Section -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_summary_item"
-                android:backgroundTint="@color/surface_container_low"
-                android:padding="24dp"
-                android:layout_marginEnd="48dp"
-                android:layout_marginBottom="24dp">
-                
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/agent_greeting"
-                    android:textColor="@color/onSurface_light"
-                    android:textSize="18sp"
-                    android:fontFamily="serif"/>
-            </LinearLayout>
-
-            <!-- The Chronicle Insight Report -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_summary_item"
-                android:backgroundTint="@color/surface_container_lowest"
-                android:padding="24dp"
-                android:layout_marginBottom="32dp">
-                
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="16dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_chronicle"
-                        android:textColor="@color/outline_light"
-                        android:textSize="10sp"
-                        android:textStyle="italic"
-                        android:fontFamily="serif"
-                        android:letterSpacing="0.2"/>
-                        
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="1dp"
-                        android:layout_weight="1"
-                        android:background="@color/outlineVariant_light"
-                        android:layout_marginStart="8dp"
-                        android:alpha="0.2"/>
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/agent_insight_title"
-                    android:textColor="@color/primary_light"
-                    android:textSize="22sp"
-                    android:fontFamily="serif"
-                    android:layout_marginBottom="16dp"/>
-                    
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/agent_insight_body"
-                    android:textColor="@color/onSurfaceVariant_light"
-                    android:textSize="14sp"
-                    android:lineSpacingExtra="4dp"/>
-            </LinearLayout>
-
-            <!-- Suggestion Cards -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:baselineAligned="false"
-                android:layout_marginBottom="16dp">
-                
-                <!-- Card 1 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_summary_item"
-                    android:backgroundTint="@color/secondaryContainer_light"
-                    android:layout_marginEnd="8dp"
-                    android:paddingTop="16dp"
-                    android:paddingBottom="16dp"
-                    android:paddingHorizontal="16dp">
-                    
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_statistics"
-                        app:tint="@color/secondary_light"
-                        android:layout_marginBottom="16dp"/>
-                        
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_risk_title"
-                        android:textColor="@color/onSecondaryContainer_light"
-                        android:textSize="16sp"
-                        android:fontFamily="serif"/>
-                        
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_risk_body"
-                        android:textColor="@color/onSecondaryContainer_light"
-                        android:textSize="10sp"
-                        android:alpha="0.7"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
-
-                <!-- Card 2 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:background="@drawable/bg_summary_item"
-                    android:backgroundTint="#f4e3ce"
-                    android:layout_marginStart="8dp"
-                    android:paddingTop="16dp"
-                    android:paddingBottom="16dp"
-                    android:paddingHorizontal="16dp">
-                    
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_book"
-                        app:tint="#6f6252"
-                        android:layout_marginBottom="16dp"/>
-                        
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_weekly_review_title"
-                        android:textColor="#5d5242"
-                        android:textSize="16sp"
-                        android:fontFamily="serif"/>
-                        
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_weekly_review_body"
-                        android:textColor="#5d5242"
-                        android:textSize="10sp"
-                        android:alpha="0.7"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- Card 3 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/bg_summary_item"
-                android:backgroundTint="@color/surfaceContainerHigh_light"
-                android:padding="24dp">
-                
-                <FrameLayout
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/bg_circle_primary_container"
-                    android:backgroundTint="#ffffff">
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_restaurant"
-                        app:tint="@color/primary_light"/>
-                </FrameLayout>
-                
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/agent_record_dinner"
-                    android:textColor="@color/onSurface_light"
-                    android:textSize="18sp"
-                    android:fontFamily="serif"
-                    android:layout_marginStart="16dp"/>
-                    
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_arrow_right"
-                    app:tint="@color/outline_light"
-                    android:alpha="0.4"/>
-            </LinearLayout>
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <!-- Bottom Input Area -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:orientation="horizontal"
-        android:paddingHorizontal="24dp"
-        android:paddingBottom="106dp"
-        android:paddingTop="12dp">
+        android:paddingStart="24dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="118dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:background="@drawable/bg_agent_composer_shell"
+            android:elevation="10dp"
             android:gravity="center_vertical"
-            android:background="@drawable/bg_summary_item"
-            android:backgroundTint="@color/surfaceContainerHigh_light"
-            android:paddingStart="24dp"
+            android:minHeight="64dp"
+            android:outlineProvider="background"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingTop="8dp"
             android:paddingEnd="8dp"
-            android:paddingVertical="8dp">
+            android:paddingBottom="8dp">
 
             <EditText
+                android:id="@+id/edit_agent_message"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@null"
+                android:background="@android:color/transparent"
                 android:hint="@string/agent_input_hint"
-                android:textColorHint="@color/outline_light"
-                android:textColor="@color/onSurface_light"
-                android:textSize="16sp"/>
+                android:imeOptions="actionSend"
+                android:inputType="textCapSentences|textMultiLine|textNoSuggestions"
+                android:maxLines="5"
+                android:minHeight="48dp"
+                android:paddingEnd="12dp"
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
+                android:textSize="16sp" />
 
-            <ImageButton
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_mic"
-                app:tint="@color/outline_light"/>
+            <ProgressBar
+                android:id="@+id/progress_agent_sending"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone" />
 
             <FrameLayout
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:id="@+id/button_agent_send"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
                 android:background="@drawable/bg_circle_primary_container"
-                android:backgroundTint="@color/primary_light">
+                android:clickable="true"
+                android:contentDescription="@string/agent_send_content_description"
+                android:focusable="true">
+
                 <ImageView
+                    android:id="@+id/image_agent_send"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_gravity="center"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_send"
-                    app:tint="@color/onPrimary_light"/>
+                    app:tint="?attr/colorPrimary" />
             </FrameLayout>
-
         </LinearLayout>
     </LinearLayout>
 
