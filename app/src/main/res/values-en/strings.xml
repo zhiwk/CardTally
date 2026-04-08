@@ -113,6 +113,7 @@ waiting for your first entry.</string>
     <string name="agent_send_content_description">Send message</string>
     <string name="agent_status_ready">MiniMax ready · model %1$s</string>
     <string name="agent_status_sending">Waiting for MiniMax to reply…</string>
+    <string name="agent_status_receiving">Receiving response…</string>
     <string name="agent_status_configuration_required">One more step: save your MiniMax key to start chatting.</string>
     <string name="agent_config_missing_title">Connect MiniMax first</string>
     <string name="agent_config_missing_body">The Agent page currently supports configured MiniMax text chat only. Add your API key in settings; model and URL can keep their defaults.</string>
@@ -129,6 +130,10 @@ waiting for your first entry.</string>
     <string name="agent_error_http_with_detail">MiniMax returned an error: %1$s</string>
     <string name="agent_error_parse">The AI response format could not be understood. Please try again.</string>
     <string name="agent_error_empty_reply">MiniMax returned an empty reply. Please try again.</string>
+    <string name="agent_error_timeout">Request timed out. Please try again.</string>
+    <string name="agent_error_cancelled">Request was cancelled.</string>
+    <string name="agent_error_interrupted">Response was interrupted.</string>
+    <string name="agent_error_with_partial_content">%1$s\n\n[System: %2$s]</string>
 
     <string name="settings_header_title">Curated Chronicle</string>
     <string name="settings_profile_title">My Profile</string>

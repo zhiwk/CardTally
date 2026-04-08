@@ -36,6 +36,7 @@ class AgentFragment : Fragment() {
     private val chatMessages = mutableListOf<AiChatMessage>()
     private lateinit var chatAdapter: AgentChatAdapter
     private var isSending = false
+    private var hasActiveStream = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -94,6 +95,15 @@ class AgentFragment : Fragment() {
         refreshChatUi()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Cancel any active request when fragment is destroyed
+        if (hasActiveStream) {
+            miniMaxClient.cancel()
+            // The callback will handle preserving partial content
+        }
+    }
+
     private fun refreshChatUi() {
         val configComplete = AiAssistantSettingsHelper.isMiniMaxConfigComplete(requireContext())
         layoutConfigMissing.visibility = if (configComplete) View.GONE else View.VISIBLE
@@ -118,11 +128,15 @@ class AgentFragment : Fragment() {
             getString(R.string.agent_status_configuration_required)
         }
 
-        updateSendingState(isSending)
+        updateSendingState(isSending, hasActiveStream)
     }
 
     private fun sendCurrentMessage() {
         if (isSending) {
+            // If already sending, treat as cancel - let the callback handle cleanup
+            if (hasActiveStream) {
+                miniMaxClient.cancel()
+            }
             return
         }
 
@@ -141,57 +155,142 @@ class AgentFragment : Fragment() {
         editMessage.error = null
         editMessage.setText("")
 
-        chatMessages.add(AiChatMessage(role = AiChatRole.USER, content = content))
-        renderMessages()
-        updateSendingState(true)
+        // Add user message to both list and adapter
+        val userMessage = AiChatMessage(role = AiChatRole.USER, content = content)
+        chatMessages.add(userMessage)
+        chatAdapter.appendMessage(userMessage)
+        scrollToBottom()
+
+        // Start streaming message placeholder in both list and adapter
+        val placeholderMessage = AiChatMessage(role = AiChatRole.ASSISTANT, content = "")
+        chatMessages.add(placeholderMessage)
+        chatAdapter.startStreamingMessage()
+
+        isSending = true
+        hasActiveStream = true
+        updateSendingState(isSending, hasActiveStream)
 
         miniMaxClient.sendChat(
             config = AiAssistantSettingsHelper.getMiniMaxConfig(requireContext()),
-            messages = chatMessages.toList()
+            messages = chatMessages.filter { !it.isError && it.content.isNotBlank() }.toList()
         ) { result ->
             activity?.runOnUiThread {
                 if (!isAdded) {
                     return@runOnUiThread
                 }
 
-                updateSendingState(false)
-
                 when (result) {
-                    is MiniMaxChatResult.Success -> {
-                        chatMessages.add(
-                            AiChatMessage(
+                    is MiniMaxChatResult.StreamingChunk -> {
+                        // Update both adapter and chatMessages with partial content
+                        val partialContent = result.partialContent
+                        chatAdapter.updateStreamingContent(partialContent)
+                        // Update chatMessages to keep it in sync
+                        val lastIndex = chatMessages.size - 1
+                        if (lastIndex >= 0 && chatMessages[lastIndex].role == AiChatRole.ASSISTANT) {
+                            chatMessages[lastIndex] = AiChatMessage(
                                 role = AiChatRole.ASSISTANT,
-                                content = result.reply
+                                content = partialContent
                             )
+                        }
+                        scrollToBottom()
+                    }
+
+                    is MiniMaxChatResult.StreamingDone -> {
+                        hasActiveStream = false
+                        isSending = false
+                        // Finalize with complete content
+                        val finalMessage = AiChatMessage(
+                            role = AiChatRole.ASSISTANT,
+                            content = result.finalContent
                         )
+                        chatMessages[chatMessages.size - 1] = finalMessage
+                        chatAdapter.finalizeStreamingMessage(result.finalContent, isError = false)
+                        updateSendingState(isSending, hasActiveStream)
+                    }
+
+                    is MiniMaxChatResult.Success -> {
+                        // Non-streaming success
+                        hasActiveStream = false
+                        isSending = false
+                        val finalMessage = AiChatMessage(
+                            role = AiChatRole.ASSISTANT,
+                            content = result.reply
+                        )
+                        chatMessages[chatMessages.size - 1] = finalMessage
+                        chatAdapter.finalizeStreamingMessage(result.reply, isError = false)
+                        updateSendingState(isSending, hasActiveStream)
                     }
 
                     is MiniMaxChatResult.Failure -> {
-                        chatMessages.add(
-                            AiChatMessage(
-                                role = AiChatRole.ASSISTANT,
-                                content = getErrorMessage(result),
-                                isError = true
-                            )
-                        )
+                        hasActiveStream = false
+                        isSending = false
+                        handleErrorResult(result)
+                        updateSendingState(isSending, hasActiveStream)
                     }
                 }
-
-                renderMessages()
             }
         }
     }
 
-    private fun updateSendingState(sending: Boolean) {
+    private fun handleErrorResult(result: MiniMaxChatResult.Failure) {
+        // Check if there's partial content to preserve (from cancellation/interruption/timeout)
+        val partialContent = result.detail?.takeIf {
+            (result.type == MiniMaxErrorType.CANCELLED ||
+             result.type == MiniMaxErrorType.INTERRUPTED ||
+             result.type == MiniMaxErrorType.TIMEOUT) &&
+            it.isNotBlank() &&
+            !it.contains("java.net") &&
+            !it.contains("IOException")
+        }
+
+        if (partialContent != null) {
+            // Preserve the partial content as the assistant message
+            // The error context is implicit in the isError flag
+            val errorTypeString = when (result.type) {
+                MiniMaxErrorType.CANCELLED -> getString(R.string.agent_error_cancelled)
+                MiniMaxErrorType.INTERRUPTED -> getString(R.string.agent_error_interrupted)
+                MiniMaxErrorType.TIMEOUT -> getString(R.string.agent_error_timeout)
+                else -> ""
+            }
+            // Combine partial content with error indicator
+            val contentWithContext = getString(
+                R.string.agent_error_with_partial_content,
+                partialContent,
+                errorTypeString
+            )
+            val finalMessage = AiChatMessage(
+                role = AiChatRole.ASSISTANT,
+                content = contentWithContext,
+                isError = true
+            )
+            chatMessages[chatMessages.size - 1] = finalMessage
+            chatAdapter.finalizeStreamingMessage(contentWithContext, isError = true)
+        } else {
+            // No partial content, show error message
+            val errorContent = getErrorMessage(result)
+            val errorMessage = AiChatMessage(
+                role = AiChatRole.ASSISTANT,
+                content = errorContent,
+                isError = true
+            )
+            chatMessages[chatMessages.size - 1] = errorMessage
+            chatAdapter.finalizeStreamingMessage(errorContent, isError = true)
+        }
+
+        scrollToBottom()
+    }
+
+    private fun updateSendingState(sending: Boolean, streaming: Boolean) {
         isSending = sending
         val configComplete = AiAssistantSettingsHelper.isMiniMaxConfigComplete(requireContext())
         editMessage.isEnabled = configComplete && !sending
-        buttonSend.isEnabled = configComplete && !sending
-        progressSending.visibility = if (sending) View.VISIBLE else View.GONE
-        imageSend.visibility = if (sending) View.INVISIBLE else View.VISIBLE
+        buttonSend.isEnabled = configComplete
+        progressSending.visibility = if (streaming) View.VISIBLE else View.GONE
+        imageSend.visibility = if (streaming) View.INVISIBLE else View.VISIBLE
 
         textStatus.text = when {
             !configComplete -> getString(R.string.agent_status_configuration_required)
+            streaming -> getString(R.string.agent_status_receiving)
             sending -> getString(R.string.agent_status_sending)
             else -> getString(
                 R.string.agent_status_ready,
@@ -200,13 +299,17 @@ class AgentFragment : Fragment() {
         }
     }
 
-    private fun renderMessages() {
-        chatAdapter.submitMessages(chatMessages)
+    private fun scrollToBottom() {
         recyclerMessages.post {
             if (chatAdapter.itemCount > 0) {
                 recyclerMessages.scrollToPosition(chatAdapter.itemCount - 1)
             }
         }
+    }
+
+    private fun renderMessages() {
+        chatAdapter.submitMessages(chatMessages)
+        scrollToBottom()
     }
 
     private fun getErrorMessage(result: MiniMaxChatResult.Failure): String {
@@ -225,9 +328,11 @@ class AgentFragment : Fragment() {
                     getString(R.string.agent_error_http_with_detail, result.detail)
                 }
             }
-
             MiniMaxErrorType.PARSE -> getString(R.string.agent_error_parse)
             MiniMaxErrorType.EMPTY_REPLY -> getString(R.string.agent_error_empty_reply)
+            MiniMaxErrorType.TIMEOUT -> getString(R.string.agent_error_timeout)
+            MiniMaxErrorType.CANCELLED -> getString(R.string.agent_error_cancelled)
+            MiniMaxErrorType.INTERRUPTED -> getString(R.string.agent_error_interrupted)
         }
     }
 

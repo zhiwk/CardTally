@@ -16,11 +16,65 @@ import kotlin.math.roundToInt
 class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHolder>() {
 
     private val messages = mutableListOf<AiChatMessage>()
+    private var streamingMessageIndex: Int = -1
 
+    /**
+     * Replaces all messages (used for initial load or complete refresh).
+     */
     fun submitMessages(newMessages: List<AiChatMessage>) {
         messages.clear()
         messages.addAll(newMessages)
+        streamingMessageIndex = -1
         notifyDataSetChanged()
+    }
+
+    /**
+     * Appends a new message to the list.
+     */
+    fun appendMessage(message: AiChatMessage) {
+        messages.add(message)
+        notifyItemInserted(messages.size - 1)
+    }
+
+    /**
+     * Sets up a streaming message placeholder. Returns the index of the streaming message.
+     */
+    fun startStreamingMessage(): Int {
+        val message = AiChatMessage(
+            role = AiChatRole.ASSISTANT,
+            content = ""
+        )
+        messages.add(message)
+        streamingMessageIndex = messages.size - 1
+        notifyItemInserted(streamingMessageIndex)
+        return streamingMessageIndex
+    }
+
+    /**
+     * Updates the content of the currently streaming message.
+     */
+    fun updateStreamingContent(content: String) {
+        if (streamingMessageIndex >= 0 && streamingMessageIndex < messages.size) {
+            val updatedMessage = messages[streamingMessageIndex].copy(content = content)
+            messages[streamingMessageIndex] = updatedMessage
+            notifyItemChanged(streamingMessageIndex, PAYLOAD_STREAMING_CONTENT)
+        }
+    }
+
+    /**
+     * Finalizes the streaming message with final content.
+     * If isError is true, marks it as an error message.
+     */
+    fun finalizeStreamingMessage(finalContent: String, isError: Boolean = false) {
+        if (streamingMessageIndex >= 0 && streamingMessageIndex < messages.size) {
+            val finalMessage = messages[streamingMessageIndex].copy(
+                content = finalContent,
+                isError = isError
+            )
+            messages[streamingMessageIndex] = finalMessage
+            notifyItemChanged(streamingMessageIndex)
+            streamingMessageIndex = -1
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AgentChatViewHolder {
@@ -30,6 +84,24 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
     }
 
     override fun onBindViewHolder(holder: AgentChatViewHolder, position: Int) {
+        bindViewHolder(holder, position, false)
+    }
+
+    override fun onBindViewHolder(
+        holder: AgentChatViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (payloads.contains(PAYLOAD_STREAMING_CONTENT)) {
+            // Partial update - only update text content
+            val message = messages[position]
+            holder.textMessage.text = message.content
+        } else {
+            bindViewHolder(holder, position, false)
+        }
+    }
+
+    private fun bindViewHolder(holder: AgentChatViewHolder, position: Int, isPartial: Boolean) {
         val message = messages[position]
         val context = holder.itemView.context
         val bubbleLayoutParams = holder.textMessage.layoutParams as LinearLayout.LayoutParams
@@ -81,5 +153,9 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
 
     private fun Int.dp(viewContext: android.content.Context): Int {
         return (this * viewContext.resources.displayMetrics.density).roundToInt()
+    }
+
+    companion object {
+        private const val PAYLOAD_STREAMING_CONTENT = "streaming_content"
     }
 }
