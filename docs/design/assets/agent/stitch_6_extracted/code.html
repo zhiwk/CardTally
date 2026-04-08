@@ -71,6 +71,8 @@
                     "DEFAULT": "0.25rem",
                     "lg": "0.5rem",
                     "xl": "0.75rem",
+                    "2xl": "1rem",
+                    "3xl": "1.5rem",
                     "full": "9999px"
             },
             "fontFamily": {
@@ -96,16 +98,18 @@
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
         }
-    </style>
-<style>
-        body {
-            min-height: max(884px, 100dvh);
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
 <body class="bg-background text-on-surface min-h-screen flex flex-col items-center">
 <!-- TopAppBar -->
-<header class="fixed top-0 w-full z-50 bg-[#fffcf7] dark:bg-stone-950/85 glass-nav flex items-center justify-between px-6 h-16 w-full no-border tonal-transition">
+<header class="fixed top-0 w-full z-50 bg-[#fffcf7]/95 dark:bg-stone-950/85 glass-nav flex items-center justify-between px-6 h-16 no-border tonal-transition">
 <div class="flex items-center gap-4">
 <button class="text-[#615d66] hover:opacity-80 transition-opacity">
 <span class="material-symbols-outlined" data-icon="menu">menu</span>
@@ -113,77 +117,54 @@
 <h1 class="font-newsreader text-2xl tracking-tight italic font-semibold text-[#2D2A32] dark:text-stone-100">AI Assistant</h1>
 </div>
 <div class="flex items-center">
-<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-white/20">
 <img alt="User profile portrait" class="w-full h-full object-cover" data-alt="softly lit studio portrait of a woman with a gentle expression, elegant editorial lighting and warm skin tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArPLTtzq39dG5pYvqhkSy5BgMujTODkomL4xXhQ0GibqDrk1CVBynIxDPCwj0krixrBvJhdahGIA_-iXRzsDPjWbTz9vYeFMbP64wKLHb5aUP6AFjlB-9UTbAma_eIYr8ZD871iTyJ0Bk8WX1yi3EQswem75xScWQbDTeFRpXTYtWqtUVavH9KiN8mTdbhEJVHE2XQdbbksYwR4O481R5oAe9fL3Uk86PSIM7MaEjrWqAcqDdtBCtMxicz9xnOTbFYIS4qkKLKy2M"/>
 </div>
 </div>
 </header>
-<!-- Content Canvas -->
-<main class="flex-1 w-full max-w-2xl px-6 pt-24 pb-48 flex flex-col gap-10">
-<!-- Welcome Message Section -->
-<section class="flex flex-col gap-6">
-<div class="max-w-[85%] self-start">
-<div class="bg-surface-container-low p-6 rounded-2xl rounded-bl-none shadow-[0_8px_32px_rgba(56,56,49,0.04)]">
-<p class="font-headline text-xl leading-relaxed text-on-surface">你好！有什么我可以帮助你的吗？</p>
+<!-- Content Canvas (Chat Interface) -->
+<main class="flex-1 w-full max-w-2xl px-4 pt-24 pb-48 flex flex-col gap-8">
+<!-- AI Message -->
+<div class="flex flex-col items-start max-w-[85%] self-start">
+<span class="font-newsreader italic text-xs mb-1.5 ml-2 text-outline">Assistant</span>
+<div class="bg-surface-container-low p-5 rounded-3xl rounded-bl-none shadow-sm">
+<p class="font-body text-[15px] leading-relaxed text-on-surface">你好！有什么我可以帮助你的吗？</p>
 </div>
 </div>
-<!-- The Chronicle Insight Report -->
-<div class="bg-surface-container-lowest border-l-2 border-secondary-fixed-dim p-8 rounded-xl flex flex-col gap-4">
-<div class="flex items-center gap-2">
-<span class="font-newsreader italic text-sm tracking-widest uppercase text-outline">The Chronicle</span>
-<div class="h-px flex-1 bg-outline-variant opacity-20"></div>
+<!-- User Message -->
+<div class="flex flex-col items-end max-w-[85%] self-end">
+<span class="font-manrope font-medium text-[10px] mb-1.5 mr-2 text-outline uppercase tracking-wider">You</span>
+<div class="bg-primary text-on-primary p-5 rounded-3xl rounded-br-none shadow-sm">
+<p class="font-body text-[15px] leading-relaxed">帮我记录一笔晚餐，35元</p>
 </div>
-<h2 class="font-headline text-2xl text-primary leading-tight">Insight: 慢生活中的财务呼吸</h2>
-<p class="font-body text-on-surface-variant leading-relaxed">
-                    本周，你的“悦己”消费占比有所提升。在繁忙的都市节奏中，适度的财务投入为生活带来了质感。目前的支出流向依然健康，建议保持这一份优雅的节制。
-                </p>
 </div>
-</section>
-<!-- Suggestion Cards (Asymmetric Grid) -->
-<section class="grid grid-cols-1 md:grid-cols-2 gap-4">
-<button class="group bg-secondary-container/30 hover:bg-secondary-container/50 transition-all p-6 rounded-3xl flex flex-col items-start gap-4 text-left border-none">
-<span class="material-symbols-outlined text-secondary" data-icon="querying_stats">query_stats</span>
-<div>
-<p class="font-headline text-lg text-on-secondary-container">今日超支风险</p>
-<p class="font-label text-xs text-on-secondary-container opacity-70">基于您最近三天的消费模式</p>
+<!-- AI Message (Confirmation) -->
+<div class="flex flex-col items-start max-w-[85%] self-start">
+<span class="font-newsreader italic text-xs mb-1.5 ml-2 text-outline">Assistant</span>
+<div class="bg-surface-container-low p-5 rounded-3xl rounded-bl-none shadow-sm">
+<p class="font-body text-[15px] leading-relaxed text-on-surface">好的，已为你识别到支出 **35元**。这笔费用是属于 **餐饮美食** 类别吗？</p>
 </div>
-</button>
-<button class="group bg-tertiary-container/30 hover:bg-tertiary-container/50 transition-all p-6 rounded-3xl flex flex-col items-start gap-4 text-left border-none">
-<span class="material-symbols-outlined text-tertiary" data-icon="auto_stories">auto_stories</span>
-<div>
-<p class="font-headline text-lg text-on-tertiary-container">查看本周回顾</p>
-<p class="font-label text-xs text-on-tertiary-container opacity-70">沉淀每一份生活的美好</p>
 </div>
-</button>
-<button class="md:col-span-2 group bg-surface-container-high hover:bg-surface-container-highest transition-all p-6 rounded-3xl flex items-center justify-between border-none">
-<div class="flex items-center gap-4">
-<div class="w-10 h-10 rounded-full bg-white flex items-center justify-center">
-<span class="material-symbols-outlined text-primary" data-icon="restaurant">restaurant</span>
-</div>
-<p class="font-headline text-lg text-on-surface">记录一笔晚餐</p>
-</div>
-<span class="material-symbols-outlined text-outline opacity-40" data-icon="arrow_forward">arrow_forward</span>
-</button>
-</section>
 </main>
 <!-- Bottom Input Area and Navigation -->
-<div class="fixed bottom-0 w-full flex flex-col items-center gap-4 pb-6 px-6 z-40 pointer-events-none">
+<div class="fixed bottom-0 w-full flex flex-col items-center z-40 pointer-events-none">
+<div class="w-full max-w-2xl px-6 pb-6 space-y-6">
 <!-- Input Field (Pill Shape) -->
-<footer class="w-full max-w-2xl pointer-events-auto">
-<div class="bg-surface-container-high/90 glass-nav p-2 pl-6 rounded-full flex items-center shadow-[0_12px_48px_rgba(0,0,0,0.06)] border border-white/20">
-<input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface font-body placeholder:text-outline/60 text-base" placeholder="对话您的私人财务管家..." type="text"/>
+<footer class="w-full pointer-events-auto">
+<div class="bg-surface-container-high/90 glass-nav p-1.5 pl-6 rounded-full flex items-center shadow-[0_12px_48px_rgba(0,0,0,0.08)] border border-white/40">
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface font-body placeholder:text-outline/60 text-[15px]" placeholder="对话您的私人财务管家..." type="text"/>
 <div class="flex items-center gap-1">
-<button class="w-12 h-12 flex items-center justify-center rounded-full text-outline hover:text-primary transition-colors">
+<button class="w-11 h-11 flex items-center justify-center rounded-full text-outline hover:text-primary transition-colors">
 <span class="material-symbols-outlined" data-icon="mic">mic</span>
 </button>
-<button class="w-12 h-12 bg-primary text-on-primary flex items-center justify-center rounded-full shadow-lg hover:opacity-90 transition-opacity active:scale-95 duration-200">
-<span class="material-symbols-outlined" data-icon="send">send</span>
+<button class="w-11 h-11 bg-primary text-on-primary flex items-center justify-center rounded-full shadow-md hover:opacity-90 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[20px]" data-icon="send">send</span>
 </button>
 </div>
 </div>
 </footer>
 <!-- Bottom Navigation Bar -->
-<nav class="w-full max-w-md rounded-full px-2 py-3 bg-surface-container/85 dark:bg-stone-800/85 backdrop-blur-2xl shadow-2xl pointer-events-auto flex justify-around items-center">
+<nav class="w-full max-w-md mx-auto rounded-full px-2 py-3 bg-surface-container/85 dark:bg-stone-800/85 backdrop-blur-2xl shadow-2xl pointer-events-auto flex justify-around items-center">
 <!-- Home -->
 <a class="flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 px-4 py-1.5 hover:text-neutral-800 dark:hover:text-neutral-100 transition-opacity" href="#">
 <span class="material-symbols-outlined" data-icon="home_max">home_max</span>
@@ -210,6 +191,7 @@
 <span class="font-sans text-[10px] font-medium tracking-wide uppercase mt-0.5">Profile</span>
 </a>
 </nav>
+</div>
 </div>
 <!-- Decorative Canvas Background -->
 <div class="fixed inset-0 -z-10 bg-background pointer-events-none opacity-50 overflow-hidden">
