@@ -93,7 +93,11 @@ waiting for your first entry.</string>
     <string name="home_empty_records_hint">No records yet. Tap the bottom-right button to add one.</string>
 
     <string name="agent_title">AI Assistant</string>
-    <string name="agent_greeting">Hello. How can I help you today?</string>
+    <string name="agent_role_assistant">Assistant</string>
+    <string name="agent_role_you">You</string>
+    <string name="agent_greeting">Hello. MiniMax text chat is ready here. Ask for budget thinking, spending reflections, or help structuring a financial thought.</string>
+    <string name="agent_sample_user_message">Help me log a dinner expense for ¥35</string>
+    <string name="agent_assistant_follow_up">Certainly. I detected an expense of <b>¥35</b>. Should I place it under <b>Dining</b>?</string>
     <string name="agent_chronicle">THE CHRONICLE</string>
     <string name="agent_insight_title">Insight: The rhythm of slow living</string>
     <string name="agent_insight_body">This week, your personal indulgence spending has risen slightly. In a busy urban rhythm, measured spending can still enhance the quality of life. Your overall cash flow remains healthy, so a restrained and elegant pace is still recommended.</string>
@@ -103,6 +107,28 @@ waiting for your first entry.</string>
     <string name="agent_weekly_review_body">Preserve each beautiful moment of life</string>
     <string name="agent_record_dinner">Record a dinner expense</string>
     <string name="agent_input_hint">Chat with your personal financial concierge...</string>
+    <string name="agent_menu_content_description">Menu</string>
+    <string name="agent_avatar_content_description">Profile avatar</string>
+    <string name="agent_mic_content_description">Voice input</string>
+    <string name="agent_send_content_description">Send message</string>
+    <string name="agent_status_ready">MiniMax ready · model %1$s</string>
+    <string name="agent_status_sending">Waiting for MiniMax to reply…</string>
+    <string name="agent_status_configuration_required">One more step: save your MiniMax key to start chatting.</string>
+    <string name="agent_config_missing_title">Connect MiniMax first</string>
+    <string name="agent_config_missing_body">The Agent page currently supports configured MiniMax text chat only. Add your API key in settings; model and URL can keep their defaults.</string>
+    <string name="agent_config_missing_cta">Open AI settings</string>
+    <string name="agent_error_empty_message">Enter a message first</string>
+    <string name="agent_error_config_missing">MiniMax configuration is incomplete. Please review AI settings first.</string>
+    <string name="agent_error_invalid_url">The MiniMax request URL is invalid. Please check it in settings.</string>
+    <string name="agent_error_network">Network connection failed. Please try again shortly.</string>
+    <string name="agent_error_auth">MiniMax authentication failed. Please verify that your API key is correct and still active.</string>
+    <string name="agent_error_rate_limit">MiniMax rate limit reached. Please wait a moment and try again.</string>
+    <string name="agent_error_insufficient_balance">MiniMax account balance appears insufficient. Please recharge or verify account balance.</string>
+    <string name="agent_error_invalid_request">MiniMax rejected the request. Please check the model, request URL, or request configuration.</string>
+    <string name="agent_error_http">MiniMax is temporarily unavailable. Please try again later.</string>
+    <string name="agent_error_http_with_detail">MiniMax returned an error: %1$s</string>
+    <string name="agent_error_parse">The AI response format could not be understood. Please try again.</string>
+    <string name="agent_error_empty_reply">MiniMax returned an empty reply. Please try again.</string>
 
     <string name="settings_header_title">Curated Chronicle</string>
     <string name="settings_profile_title">My Profile</string>
@@ -115,9 +141,9 @@ waiting for your first entry.</string>
     <string name="settings_ai_assistant_group">AI Assistant</string>
     <string name="settings_ai_assistant_toggle">Show AI surfaces</string>
     <string name="settings_ai_assistant_toggle_hint">Controls the Home card and bottom AI tab</string>
-    <string name="settings_ai_api_key">AI API Key</string>
-    <string name="settings_ai_api_key_status_not_set">Not configured</string>
-    <string name="settings_ai_api_key_status_saved">Saved</string>
+    <string name="settings_ai_api_key">MiniMax settings</string>
+    <string name="settings_ai_api_key_status_not_set">Needs setup</string>
+    <string name="settings_ai_api_key_status_saved">Ready</string>
     <string name="settings_management">Management</string>
     <string name="settings_category_organization">Category Organization</string>
     <string name="settings_account_assets">Account Assets</string>
@@ -151,12 +177,20 @@ waiting for your first entry.</string>
     <string name="theme_hint">Note: Restart the app after changing the theme for full effect.</string>
 
     <string name="ai_settings_title">AI Assistant Settings</string>
-    <string name="ai_settings_api_key_group">API Key</string>
-    <string name="ai_settings_api_key_description">Save the local AI API key used on this device. The value stays on-device for future AI service integration.</string>
-    <string name="ai_settings_api_key_label">AI API Key</string>
+    <string name="ai_settings_api_key_group">MiniMax BYOK</string>
+    <string name="ai_settings_api_key_description">Save the MiniMax text chat configuration used on this device. The API key stays on-device, while the model and full request URL remain editable.</string>
+    <string name="ai_settings_api_key_label">MiniMax API Key</string>
     <string name="ai_settings_api_key_hint">Enter API Key</string>
+    <string name="ai_settings_model_label">Model</string>
+    <string name="ai_settings_model_hint">Example: M2-her</string>
+    <string name="ai_settings_base_url_label">Request URL</string>
+    <string name="ai_settings_base_url_hint">Example: https://api.minimax.io/v1/text/chatcompletion_v2</string>
+    <string name="ai_settings_defaults_status">Default model: %1$s
+Default request URL: %2$s</string>
+    <string name="ai_settings_defaults_status_fallback">Default model: M2-her
+Default request URL: https://api.minimax.io/v1/text/chatcompletion_v2</string>
     <string name="ai_settings_save">Save</string>
-    <string name="toast_ai_api_key_saved">AI API key saved</string>
+    <string name="toast_ai_api_key_saved">MiniMax settings saved</string>
 
     <string-array name="theme_names">
         <item>@string/theme_light</item>

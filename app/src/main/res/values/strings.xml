@@ -93,7 +93,11 @@
     <string name="home_empty_records_hint">暂无记录，点击右下角按钮添加记录</string>
 
     <string name="agent_title">AI 助手</string>
-    <string name="agent_greeting">你好！有什么我可以帮助你的吗？</string>
+    <string name="agent_role_assistant">Assistant</string>
+    <string name="agent_role_you">YOU</string>
+    <string name="agent_greeting">你好，我已接入 MiniMax 文本对话。你可以先问我预算思路、消费复盘，或让我们一起梳理一段财务想法。</string>
+    <string name="agent_sample_user_message">帮我记录一笔晚餐，35元</string>
+    <string name="agent_assistant_follow_up">好的，已为你识别到支出 <b>35元</b>。这笔费用是属于 <b>餐饮美食</b> 类别吗？</string>
     <string name="agent_chronicle">财务纪事</string>
     <string name="agent_insight_title">洞察：慢生活中的财务呼吸</string>
     <string name="agent_insight_body">本周，你的“悦己”消费占比有所提升。在繁忙的都市节奏中，适度的财务投入为生活带来了质感。目前的支出流向依然健康，建议保持这一份优雅的节制。</string>
@@ -103,6 +107,28 @@
     <string name="agent_weekly_review_body">沉淀每一份生活的美好</string>
     <string name="agent_record_dinner">记录一笔晚餐</string>
     <string name="agent_input_hint">对话您的私人财务管家...</string>
+    <string name="agent_menu_content_description">菜单</string>
+    <string name="agent_avatar_content_description">个人头像</string>
+    <string name="agent_mic_content_description">语音输入</string>
+    <string name="agent_send_content_description">发送消息</string>
+    <string name="agent_status_ready">MiniMax 已就绪 · 模型 %1$s</string>
+    <string name="agent_status_sending">正在等待 MiniMax 回复…</string>
+    <string name="agent_status_configuration_required">还差一步配置，保存 MiniMax Key 后即可开始对话。</string>
+    <string name="agent_config_missing_title">先连接你的 MiniMax</string>
+    <string name="agent_config_missing_body">当前 Agent 仅支持已配置的 MiniMax 文本对话。请先在设置中填写 API Key，模型和地址可继续使用默认值。</string>
+    <string name="agent_config_missing_cta">前往 AI 设置</string>
+    <string name="agent_error_empty_message">请输入想发送的内容</string>
+    <string name="agent_error_config_missing">当前 MiniMax 配置未完成，请先检查设置。</string>
+    <string name="agent_error_invalid_url">MiniMax 请求地址不可用，请返回设置检查请求 URL。</string>
+    <string name="agent_error_network">网络连接失败，请稍后重试。</string>
+    <string name="agent_error_auth">MiniMax 鉴权失败，请检查 API Key 是否正确且仍然有效。</string>
+    <string name="agent_error_rate_limit">MiniMax 请求过于频繁，请稍后再试。</string>
+    <string name="agent_error_insufficient_balance">MiniMax 账户余额不足，请先检查余额或充值后再试。</string>
+    <string name="agent_error_invalid_request">MiniMax 请求无效，请检查模型、请求 URL 或请求参数配置。</string>
+    <string name="agent_error_http">MiniMax 服务暂时不可用，请稍后再试。</string>
+    <string name="agent_error_http_with_detail">MiniMax 返回错误：%1$s</string>
+    <string name="agent_error_parse">收到的 AI 回复格式无法识别，请稍后重试。</string>
+    <string name="agent_error_empty_reply">MiniMax 返回了空内容，请稍后重试。</string>
 
     <string name="settings_header_title">Curated Chronicle</string>
     <string name="settings_profile_title">我的档案</string>
@@ -115,9 +141,9 @@
     <string name="settings_ai_assistant_group">AI 助理</string>
     <string name="settings_ai_assistant_toggle">显示 AI 入口</string>
     <string name="settings_ai_assistant_toggle_hint">控制首页卡片与底部 AI 标签</string>
-    <string name="settings_ai_api_key">AI API Key</string>
-    <string name="settings_ai_api_key_status_not_set">尚未配置</string>
-    <string name="settings_ai_api_key_status_saved">已保存</string>
+    <string name="settings_ai_api_key">MiniMax 配置</string>
+    <string name="settings_ai_api_key_status_not_set">待配置</string>
+    <string name="settings_ai_api_key_status_saved">已就绪</string>
     <string name="settings_management">管理</string>
     <string name="settings_category_organization">分类管理</string>
     <string name="settings_account_assets">账户资产</string>
@@ -151,12 +177,20 @@
     <string name="theme_hint">提示：更改主题后需要重启应用才能生效</string>
 
     <string name="ai_settings_title">AI 助理设置</string>
-    <string name="ai_settings_api_key_group">API Key</string>
-    <string name="ai_settings_api_key_description">在此保存本机使用的 AI API Key。该值仅保存在当前设备，用于后续 AI 服务接入。</string>
-    <string name="ai_settings_api_key_label">AI API Key</string>
+    <string name="ai_settings_api_key_group">MiniMax BYOK</string>
+    <string name="ai_settings_api_key_description">在此保存当前设备使用的 MiniMax 文本对话配置。API Key 仅保存在本机，模型与完整请求 URL 可按需调整。</string>
+    <string name="ai_settings_api_key_label">MiniMax API Key</string>
     <string name="ai_settings_api_key_hint">请输入 API Key</string>
+    <string name="ai_settings_model_label">模型</string>
+    <string name="ai_settings_model_hint">例如：M2-her</string>
+    <string name="ai_settings_base_url_label">请求 URL</string>
+    <string name="ai_settings_base_url_hint">例如：https://api.minimax.io/v1/text/chatcompletion_v2</string>
+    <string name="ai_settings_defaults_status">默认模型：%1$s
+默认请求 URL：%2$s</string>
+    <string name="ai_settings_defaults_status_fallback">默认模型：M2-her
+默认请求 URL：https://api.minimax.io/v1/text/chatcompletion_v2</string>
     <string name="ai_settings_save">保存</string>
-    <string name="toast_ai_api_key_saved">AI API Key 已保存</string>
+    <string name="toast_ai_api_key_saved">MiniMax 设置已保存</string>
 
     <string-array name="theme_names">
         <item>@string/theme_light</item>

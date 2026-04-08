@@ -118,7 +118,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun updateAiApiKeyStatus() {
-        textAiApiKeyStatus.text = if (AiAssistantSettingsHelper.hasApiKey(requireContext())) {
+        textAiApiKeyStatus.text = if (AiAssistantSettingsHelper.isMiniMaxConfigComplete(requireContext())) {
             getString(R.string.settings_ai_api_key_status_saved)
         } else {
             getString(R.string.settings_ai_api_key_status_not_set)

@@ -104,7 +104,66 @@
                     android:background="@drawable/bg_summary_item"
                     android:backgroundTint="@color/surface_container_lowest"
                     android:hint="@string/ai_settings_api_key_hint"
-                    android:inputType="textVisiblePassword|textNoSuggestions"
+                    android:inputType="textPassword|textNoSuggestions"
+                    android:minHeight="56dp"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp"
+                    android:textColor="@color/onSurface_light"
+                    android:textColorHint="@color/onSurfaceVariant_light"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/text_ai_settings_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/ai_settings_defaults_status_fallback"
+                    android:textColor="@color/onSurfaceVariant_light"
+                    android:textSize="12sp"
+                    android:lineSpacingExtra="4dp"
+                    android:alpha="0.75" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/ai_settings_model_label"
+                    android:textColor="@color/onSurface_light"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/edit_ai_model"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_summary_item"
+                    android:backgroundTint="@color/surface_container_lowest"
+                    android:hint="@string/ai_settings_model_hint"
+                    android:inputType="textNoSuggestions"
+                    android:minHeight="56dp"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp"
+                    android:textColor="@color/onSurface_light"
+                    android:textColorHint="@color/onSurfaceVariant_light"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="@string/ai_settings_base_url_label"
+                    android:textColor="@color/onSurface_light"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/edit_ai_base_url"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_summary_item"
+                    android:backgroundTint="@color/surface_container_lowest"
+                    android:hint="@string/ai_settings_base_url_hint"
+                    android:inputType="textUri|textNoSuggestions"
                     android:minHeight="56dp"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="12dp"
