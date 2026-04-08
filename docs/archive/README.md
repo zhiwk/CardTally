@@ -1,4 +1,4 @@
-# `.sisyphus/plans` 说明
+# `docs/archive` 说明
 
 本目录存放 **历史执行计划、一次性实现方案、阶段性工作草案**。
 
@@ -10,8 +10,8 @@
 
 1. 当前源码与 Gradle 配置
 2. `AGENTS.md`
-3. `.sisyphus/decisions/*.md`
-4. `docs/plans/*.md`
+3. `docs/requirements/decisions/*.md`
+4. `docs/requirements/plans/*.md`
 5. 本目录文档
 
 ## 适合来这里找什么

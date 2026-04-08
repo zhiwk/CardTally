@@ -8,14 +8,14 @@
 
 1. `README.md`
 2. `AGENTS.md`
-3. 本文件 `docs/agent-guide/README.md`
+3. 本文件 `docs/collaboration/README.md`
 
 然后按任务继续读：
 
-- 项目事实 / 仓库地图：`docs/agent-guide/project-overview.md`
-- 任务入口 / 先读什么：`docs/agent-guide/task-entrypoints.md`
-- 工程约束 / UI 气质 / 提交前检查：`docs/agent-guide/engineering-constraints.md`
-- 最近代码现实 / 当日快照：`docs/agent-guide/current-snapshot.md`
+- 项目事实 / 仓库地图：`docs/collaboration/project-overview.md`
+- 任务入口 / 先读什么：`docs/collaboration/task-entrypoints.md`
+- 工程约束 / UI 气质 / 提交前检查：`docs/collaboration/engineering-constraints.md`
+- 最近代码现实 / 当日快照：`docs/collaboration/current-snapshot.md`
 
 ## 文档目标
 

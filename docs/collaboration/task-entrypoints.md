@@ -4,33 +4,33 @@
 
 1. `README.md`
 2. `AGENTS.md`
-3. `docs/agent-guide/README.md`
+3. `docs/collaboration/README.md`
 
 ## 涉及业务规则 / 数据逻辑时再读
 
-1. `.sisyphus/decisions/business_rules.md`
+1. `docs/requirements/decisions/business_rules.md`
 2. `app/src/main/java/com/example/cardtally/database/DatabaseHelper.kt`
 3. 受影响页面对应的 Fragment / Adapter / Model
 
 ## 涉及页面重构 / 信息架构 / 首版产品方向时再读
 
-1. `docs/plans/2026-03-26-cardtally-implementation-plan.md`
-2. `docs/plans/2026-03-26-cardtally-product-restart-design.md`
-3. `docs/plans/*.md`
+1. `docs/requirements/plans/2026-03-26-cardtally-implementation-plan.md`
+2. `docs/requirements/plans/2026-03-26-cardtally-product-restart-design.md`
+3. `docs/requirements/plans/*.md`
 
 ## 涉及视觉设计 / UI 风格 / Stitch 设计稿时再读
 
-1. `docs/stitch-guidance/README.md`
-2. `docs/stitch-guidance/brand-design-guide.md`
-3. `docs/stitch-guidance/visual-design-guide.md`
-4. `docs/stitch-guidance/page-design-guide.md`
-5. `docs/stitch-guidance/home-page-spec.md`
-6. 必要时查看 `design/stitch_extracted/`
+1. `docs/design/guidelines/README.md`
+2. `docs/design/guidelines/brand-design-guide.md`
+3. `docs/design/guidelines/visual-design-guide.md`
+4. `docs/design/guidelines/page-design-guide.md`
+5. `docs/design/guidelines/home-page-spec.md`
+6. 必要时查看 `docs/design/assets/stitch/`
 
 ## 涉及历史计划 / 过程文档时再读
 
-- `.sisyphus/plans/*.md`
-- `design/stitch_extracted/`
+- `docs/requirements/plans/*.md`
+- `docs/design/assets/stitch/`
 
 这些文件可用于理解历史执行意图、阶段性方案或外部设计产物，但不能直接当成当前代码现状的权威来源，必须回到代码与高可信文档验证。
 
@@ -55,7 +55,7 @@
 1. `util/ThemeHelper.kt`
 2. `res/values/*.xml`
 3. 受影响页面布局
-4. `docs/stitch-guidance/*`
+4. `docs/design/guidelines/*`
 
 ### 改文案 / 国际化 / 语言切换
 
@@ -71,7 +71,7 @@
 
 先读：
 
-1. `docs/plans/2026-03-26-cardtally-implementation-plan.md`
+1. `docs/requirements/plans/2026-03-26-cardtally-implementation-plan.md`
 2. 相关页面职责和 IA 文档
 3. 当前旧页面实现
 
