@@ -34,8 +34,8 @@ cd CardTally
 ### 2. 构建项目
 
 ```bash
-# Windows
-./gradlew.bat assembleDebug
+# Windows (PowerShell)
+.\gradlew.bat assembleDebug
 
 # Mac/Linux
 ./gradlew assembleDebug
@@ -62,12 +62,15 @@ CardTally/
 │           │   ├── model/            # 数据模型类
 │           │   ├── util/             # 工具类
 │           │   ├── MainActivity.kt   # 主活动
-│           │   └── *Fragment.kt      # 页面级逻辑，如 Home / AddRecord / Asset / Settings / Search 等
+│           │   └── *Fragment.kt      # 页面级逻辑，如 Home / AddRecord / EditRecord / AddAsset / EditAsset / Asset / Statistics / Settings / Search / Agent 等
 │           ├── res/
 │           │   ├── layout/           # 布局文件
-│           │   ├── values/           # 字符串、颜色等资源
+│           │   ├── values/           # 中文字符串、颜色、尺寸、样式等资源
+│           │   ├── values-en/        # 英文字符串资源
+│           │   ├── color/            # selector 等颜色状态资源
 │           │   ├── drawable/         # 图标资源
-│           │   └── menu/             # 菜单资源
+│           │   ├── menu/             # 菜单资源
+│           │   └── xml/              # locale_config 等 XML 配置
 │           └── AndroidManifest.xml
 ├── docs/                             # 文档目录（见下文）
 ├── AGENTS.md                         # 仓库协作入口
@@ -136,16 +139,16 @@ docs/
 ## 🎨 主题预览
 
 ### 浅色主题
-- 主色：紫色 (#6200EE)
-- 背景：浅灰色 (#FAFAFA)
+- 主色：静奢灰紫 (#615d66)
+- 背景：暖白 (#fffcf7)
 
 ### 深色主题
-- 主色：浅紫色 (#BB86FC)
-- 背景：深灰色 (#121212)
+- 主色：雾蓝灰 (#B8C8D9)
+- 背景：深夜蓝黑 (#101518)
 
 ### 跟随系统
-- 主色：蓝色 (#1976D2)
-- 根据系统设置自动切换明暗模式
+- 跟随系统设置自动切换明暗模式
+- 保持当前应用的「静奢理财日记」主题配色体系
 
 ## 📊 默认分类
 

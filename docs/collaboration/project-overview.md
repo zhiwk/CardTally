@@ -23,7 +23,7 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 
 - `app/src/main/java/com/example/cardtally/`
 - `MainActivity.kt`：主 Activity
-- `*Fragment.kt`：页面级逻辑，例如 `HomeFragment`、`AddRecordFragment`、`EditRecordFragment`、`StatisticsFragment`、`SettingsFragment`、`AssetFragment`
+- `*Fragment.kt`：页面级逻辑，例如 `HomeFragment`、`AddRecordFragment`、`EditRecordFragment`、`AddAssetFragment`、`EditAssetFragment`、`StatisticsFragment`、`SettingsFragment`、`SearchFragment`、`AgentFragment`、`AssetFragment`
 - `adapter/`：RecyclerView 相关适配器
 - `database/`：SQLite 数据访问，核心在 `DatabaseHelper.kt`
 - `model/`：数据模型
@@ -38,11 +38,11 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 
 ### 文档与规划
 
-- `docs/plans/`：产品重开、信息架构、实现计划
-- `docs/stitch-guidance/`：视觉和 Stitch 设计约束
-- `.sisyphus/decisions/`：业务规则决策文档
-- `.sisyphus/plans/`：历史执行计划
-- `design/stitch_extracted/`：Stitch 导出参考
+- `docs/requirements/plans/`：产品重开、信息架构、实现计划
+- `docs/design/guidelines/`：视觉和 Stitch 设计约束
+- `docs/requirements/decisions/`：业务规则决策文档
+- `docs/archive/`：历史执行计划与归档草案
+- `docs/design/assets/stitch/`：Stitch 导出参考
 
 ## 当前架构现实
 
