@@ -6,23 +6,23 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
-import android.widget.RadioButton
-import android.widget.RadioGroup
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
-import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.chip.ChipGroup
 
 class EditAssetFragment : Fragment() {
+    private lateinit var btnBack: ImageButton
     private lateinit var textTitle: TextView
     private lateinit var editAmount: EditText
     private lateinit var editName: EditText
-    private lateinit var radioGroupType: RadioGroup
+    private lateinit var chipGroupType: ChipGroup
     private lateinit var btnDelete: Button
-    private lateinit var btnUpdate: Button
+    private lateinit var btnSave: Button
     private lateinit var databaseHelper: DatabaseHelper
 
     private var assetId: Long = 0
@@ -50,20 +50,29 @@ class EditAssetFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_edit_asset, container, false)
+        val view = inflater.inflate(R.layout.fragment_add_asset, container, false)
 
+        btnBack = view.findViewById(R.id.btn_back)
         textTitle = view.findViewById(R.id.text_title)
         editAmount = view.findViewById(R.id.edit_amount)
         editName = view.findViewById(R.id.edit_name)
-        radioGroupType = view.findViewById(R.id.radio_group_type)
+        chipGroupType = view.findViewById(R.id.chip_group_type)
         btnDelete = view.findViewById(R.id.btn_delete)
-        btnUpdate = view.findViewById(R.id.btn_update)
+        btnSave = view.findViewById(R.id.btn_save)
 
         databaseHelper = DatabaseHelper(requireContext())
 
+        textTitle.text = getString(R.string.asset_title_edit)
+        btnSave.text = getString(R.string.asset_update_cta)
+        btnDelete.visibility = View.VISIBLE
+
+        btnBack.setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
+
         loadAsset()
 
-        btnUpdate.setOnClickListener {
+        btnSave.setOnClickListener {
             updateAsset()
         }
 
@@ -85,48 +94,40 @@ class EditAssetFragment : Fragment() {
     }
 
     private fun loadAsset() {
-        val assets = databaseHelper.getAllAssets()
-        asset = assets.find { it.id == assetId }
+        asset = databaseHelper.getAllAssets().find { it.id == assetId }
 
         asset?.let { a ->
             editName.setText(a.name)
             editAmount.setText(a.amount.toString())
-
-            when (a.type) {
-                0 -> view?.findViewById<RadioButton>(R.id.radio_cash)?.isChecked = true
-                1 -> view?.findViewById<RadioButton>(R.id.radio_bank)?.isChecked = true
-                2 -> view?.findViewById<RadioButton>(R.id.radio_alipay)?.isChecked = true
-                3 -> view?.findViewById<RadioButton>(R.id.radio_wechat)?.isChecked = true
-                else -> view?.findViewById<RadioButton>(R.id.radio_other)?.isChecked = true
-            }
+            chipGroupType.check(getChipIdForType(a.type))
         }
     }
 
     private fun updateAsset() {
         val name = editName.text.toString().trim()
         val amountStr = editAmount.text.toString().trim()
-        val type = when (radioGroupType.checkedRadioButtonId) {
-            R.id.radio_cash -> 0
-            R.id.radio_bank -> 1
-            R.id.radio_alipay -> 2
-            R.id.radio_wechat -> 3
-            else -> 4
+        val type = when (chipGroupType.checkedChipId) {
+            R.id.chip_cash -> 0
+            R.id.chip_bank -> 1
+            R.id.chip_alipay -> 2
+            R.id.chip_wechat -> 3
+            else -> 0
         }
 
         if (name.isEmpty()) {
-            Toast.makeText(requireContext(), "请输入资产名称", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_enter_asset_name), Toast.LENGTH_SHORT).show()
             return
         }
 
         if (amountStr.isEmpty()) {
-            Toast.makeText(requireContext(), "请输入金额", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_enter_amount), Toast.LENGTH_SHORT).show()
             return
         }
 
         val amount = try {
             amountStr.toDouble()
         } catch (e: NumberFormatException) {
-            Toast.makeText(requireContext(), "请输入有效的金额", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.validation_enter_valid_amount_edit), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -137,18 +138,27 @@ class EditAssetFragment : Fragment() {
 
             val rowsAffected = databaseHelper.updateAsset(a)
             if (rowsAffected > 0) {
-                Toast.makeText(requireContext(), "更新成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.toast_update_success), Toast.LENGTH_SHORT).show()
                 parentFragmentManager.popBackStack()
             } else {
-                Toast.makeText(requireContext(), "更新失败", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.toast_update_failed), Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun deleteAsset() {
         databaseHelper.deleteAsset(assetId)
-        Toast.makeText(requireContext(), "删除成功", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), getString(R.string.toast_delete_success), Toast.LENGTH_SHORT).show()
         parentFragmentManager.popBackStack()
+    }
+
+    private fun getChipIdForType(type: Int): Int {
+        return when (type) {
+            1 -> R.id.chip_bank
+            2 -> R.id.chip_alipay
+            3 -> R.id.chip_wechat
+            else -> R.id.chip_cash
+        }
     }
 
     private fun hideBottomNav() {
