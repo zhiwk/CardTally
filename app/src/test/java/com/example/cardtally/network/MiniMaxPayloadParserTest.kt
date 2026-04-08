@@ -4,6 +4,7 @@ import com.example.cardtally.model.AiChatMessage
 import com.example.cardtally.model.AiChatRole
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -28,6 +29,17 @@ class MiniMaxPayloadParserTest {
         assertEquals("user", messages.getJSONObject(0).getString("role"))
         assertEquals("你好", messages.getJSONObject(0).getString("content"))
         assertEquals("assistant", messages.getJSONObject(1).getString("role"))
+    }
+
+    @Test
+    fun buildRequestBody_includesStreamTrue() {
+        val requestBody = MiniMaxPayloadParser.buildRequestBody(
+            model = "M2-her",
+            messages = listOf(AiChatMessage(role = AiChatRole.USER, content = "Hello"))
+        )
+
+        val json = JSONObject(requestBody)
+        assertTrue("Request body should include stream=true", json.getBoolean("stream"))
     }
 
     @Test
@@ -70,6 +82,117 @@ class MiniMaxPayloadParserTest {
 
         assertTrue(result is MiniMaxChatResult.Failure)
         assertEquals(MiniMaxErrorType.EMPTY_REPLY, (result as MiniMaxChatResult.Failure).type)
+    }
+
+    @Test
+    fun parseStreamingChunk_extractsContentFromDelta() {
+        val chunk = "data: {\"choices\": [{\"delta\": {\"content\": \"Hello\"}}]}"
+        
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+        
+        assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Content)
+        assertEquals("Hello", (result as MiniMaxPayloadParser.StreamingParseResult.Content).text)
+    }
+
+    @Test
+    fun parseStreamingChunk_handlesDoneMarker() {
+        val chunk = "data: [DONE]"
+        
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+        
+        assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Done)
+    }
+
+    @Test
+    fun parseStreamingChunk_handlesEmptyData() {
+        val chunk = "data: "
+        
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+        
+        assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Empty)
+    }
+
+    @Test
+    fun parseStreamingChunk_ignoresNonDataLines() {
+        val eventLine = "event: message"
+        val idLine = "id: 123"
+        val commentLine = ": this is a comment"
+        
+        assertTrue(MiniMaxPayloadParser.parseStreamingChunk(eventLine) is MiniMaxPayloadParser.StreamingParseResult.Empty)
+        assertTrue(MiniMaxPayloadParser.parseStreamingChunk(idLine) is MiniMaxPayloadParser.StreamingParseResult.Empty)
+        assertTrue(MiniMaxPayloadParser.parseStreamingChunk(commentLine) is MiniMaxPayloadParser.StreamingParseResult.Empty)
+    }
+
+    @Test
+    fun parseStreamingChunk_handlesPlainJsonWithoutDataPrefix() {
+        val chunk = "{\"choices\": [{\"delta\": {\"content\": \"World\"}}]}"
+        
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+        
+        assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Content)
+        assertEquals("World", (result as MiniMaxPayloadParser.StreamingParseResult.Content).text)
+    }
+
+    @Test
+    fun parseStreamingChunk_returnsEmptyForInvalidJson() {
+        val chunk = "data: {invalid json"
+        
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+        
+        assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Empty)
+    }
+
+    @Test
+    fun parseStreamingChunk_returnsEmptyWhenNoContent() {
+        val chunk = "data: {\"choices\": [{\"delta\": {}}]}"
+        
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+        
+        assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Empty)
+    }
+
+    @Test
+    fun isStreamingResponse_detectsSseFormat() {
+        val sseResponse = "data: {\"choices\": [{\"delta\": {\"content\": \"Hello\"}}]}\n\ndata: [DONE]"
+        
+        assertTrue(MiniMaxPayloadParser.isStreamingResponse(sseResponse))
+    }
+
+    @Test
+    fun isStreamingResponse_detectsLineDelimitedJson() {
+        val lineDelimited = "{\"choices\": [{\"delta\": {\"content\": \"A\"}}]}\n{\"choices\": [{\"delta\": {\"content\": \"B\"}}]}"
+        
+        assertTrue(MiniMaxPayloadParser.isStreamingResponse(lineDelimited))
+    }
+
+    @Test
+    fun isStreamingResponse_returnsFalseForCompleteJson() {
+        val completeJson = """
+            {
+              "choices": [
+                {
+                  "message": {
+                    "role": "assistant",
+                    "content": "Complete response"
+                  }
+                }
+              ]
+            }
+        """.trimIndent()
+        
+        assertFalse(MiniMaxPayloadParser.isStreamingResponse(completeJson))
+    }
+
+    @Test
+    fun isStreamingResponse_returnsFalseForEmptyString() {
+        assertFalse(MiniMaxPayloadParser.isStreamingResponse(""))
+    }
+
+    @Test
+    fun isStreamingResponse_detectsDeltaFormat() {
+        val deltaFormat = "{\"choices\": [{\"delta\": {\"content\": \"Partial\"}}]}"
+        
+        assertTrue(MiniMaxPayloadParser.isStreamingResponse(deltaFormat))
     }
 
     @Test
@@ -171,5 +294,39 @@ class MiniMaxPayloadParserTest {
         assertEquals(MiniMaxErrorType.HTTP, result.type)
         assertEquals(500, result.statusCode)
         assertNull(result.detail)
+    }
+
+    @Test
+    fun buildRequestBody_filtersErrorMessages() {
+        val requestBody = MiniMaxPayloadParser.buildRequestBody(
+            model = "M2-her",
+            messages = listOf(
+                AiChatMessage(role = AiChatRole.USER, content = "User question"),
+                AiChatMessage(role = AiChatRole.ASSISTANT, content = "Normal reply", isError = false),
+                AiChatMessage(role = AiChatRole.ASSISTANT, content = "Error message", isError = true),
+                AiChatMessage(role = AiChatRole.USER, content = "  ", isError = false), // blank content
+                AiChatMessage(role = AiChatRole.USER, content = "Follow-up question")
+            )
+        )
+
+        val json = JSONObject(requestBody)
+        val messages = json.getJSONArray("messages")
+
+        // Should only include non-error, non-blank messages
+        assertEquals(3, messages.length())
+        assertEquals("User question", messages.getJSONObject(0).getString("content"))
+        assertEquals("Normal reply", messages.getJSONObject(1).getString("content"))
+        assertEquals("Follow-up question", messages.getJSONObject(2).getString("content"))
+    }
+
+    @Test
+    fun buildRequestBody_usesDefaultModelWhenBlank() {
+        val requestBody = MiniMaxPayloadParser.buildRequestBody(
+            model = "   ",
+            messages = listOf(AiChatMessage(role = AiChatRole.USER, content = "Hello"))
+        )
+
+        val json = JSONObject(requestBody)
+        assertEquals(MiniMaxConfig.DEFAULT_MODEL, json.getString("model"))
     }
 }
