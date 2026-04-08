@@ -35,10 +35,28 @@
     <string name="record_save_entry">SAVE ENTRY</string>
     <string name="record_update">UPDATE</string>
 
+    <string name="asset_title_add">Add Asset</string>
+    <string name="asset_title_edit">Edit Asset</string>
+    <string name="asset_helper_copy">Record the balance I hold now</string>
+    <string name="asset_name_label">Asset Name</string>
+    <string name="asset_name_hint">e.g., CMB Savings Card</string>
+    <string name="asset_type_label">Asset Type</string>
+    <string name="asset_type_cash">Cash</string>
+    <string name="asset_type_bank">Bank Card</string>
+    <string name="asset_type_alipay">Alipay</string>
+    <string name="asset_type_wechat">WeChat</string>
+    <string name="asset_save_cta">Save Asset</string>
+    <string name="asset_update_cta">Update Asset</string>
+    <string name="asset_delete_cta">Delete Asset</string>
+    <string name="asset_footer_note">CURATED DAILY LOG</string>
+    <string name="asset_toast_add_success">Added successfully</string>
+    <string name="asset_toast_add_failed">Add failed</string>
+
     <string name="validation_select_date">Please select a date</string>
     <string name="validation_enter_amount">Please enter an amount</string>
     <string name="validation_enter_valid_amount">Please enter a valid amount</string>
     <string name="validation_enter_valid_amount_edit">Please enter a valid amount</string>
+    <string name="validation_enter_asset_name">Please enter an asset name</string>
     <string name="validation_zero_amount">Amount cannot be 0</string>
     <string name="validation_zero_amount_edit">Amount cannot be 0</string>
     <string name="validation_select_category">Please select a category</string>
@@ -51,6 +69,7 @@
 
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_confirm">Confirm</string>
+    <string name="content_description_back">Go back</string>
     <string name="filter_dialog_title">Filter Records</string>
     <string name="search_dialog_title">Search Records</string>
     <string name="search_dialog_hint">Enter category, note, or amount</string>

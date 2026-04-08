@@ -35,10 +35,28 @@
     <string name="record_save_entry">保存记录</string>
     <string name="record_update">更新</string>
 
+    <string name="asset_title_add">添加资产</string>
+    <string name="asset_title_edit">编辑资产</string>
+    <string name="asset_helper_copy">记下此刻我持有的余额</string>
+    <string name="asset_name_label">资产名称</string>
+    <string name="asset_name_hint">例如：招商银行储蓄卡</string>
+    <string name="asset_type_label">资产类型</string>
+    <string name="asset_type_cash">现金</string>
+    <string name="asset_type_bank">银行卡</string>
+    <string name="asset_type_alipay">支付宝</string>
+    <string name="asset_type_wechat">微信</string>
+    <string name="asset_save_cta">保存资产</string>
+    <string name="asset_update_cta">更新资产</string>
+    <string name="asset_delete_cta">删除资产</string>
+    <string name="asset_footer_note">静奢理财日记</string>
+    <string name="asset_toast_add_success">添加成功</string>
+    <string name="asset_toast_add_failed">添加失败</string>
+
     <string name="validation_select_date">请选择日期</string>
     <string name="validation_enter_amount">请输入金额</string>
     <string name="validation_enter_valid_amount">请输入有效金额</string>
     <string name="validation_enter_valid_amount_edit">请输入有效的金额</string>
+    <string name="validation_enter_asset_name">请输入资产名称</string>
     <string name="validation_zero_amount">金额不能为 0</string>
     <string name="validation_zero_amount_edit">金额不能为0</string>
     <string name="validation_select_category">请选择分类</string>
@@ -51,6 +69,7 @@
 
     <string name="dialog_cancel">取消</string>
     <string name="dialog_confirm">确定</string>
+    <string name="content_description_back">返回上一页</string>
     <string name="filter_dialog_title">筛选记录</string>
     <string name="search_dialog_title">搜索记录</string>
     <string name="search_dialog_hint">输入分类、描述或金额</string>
