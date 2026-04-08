@@ -47,9 +47,11 @@
 - 应用已接入应用级中英文国际化，当前支持 `中文 / English`
 - 语言切换入口位于“我的”页，并在切换后立即全局生效
 - 国际化基础设施集中在 `LanguageHelper.kt`、`app/src/main/res/values/strings.xml`、`app/src/main/res/values-en/strings.xml` 和 `app/src/main/res/xml/locale_config.xml`
-- “我的”页已新增 `AI 助理` 分组，包含 AI 入口显示开关与 `AI API Key` 二级设置页
+- “我的”页已新增 `AI 助理` 分组，包含 AI 入口显示开关与 `MiniMax 配置` 二级设置页
 - AI 显示开关当前会控制首页 Agent 卡片与底部 `AI 助手` tab 的可见性，并在关闭时阻止继续停留在 Agent 页面
-- AI 设置状态当前使用 `AiAssistantSettingsHelper.kt` 持久化到本地 `SharedPreferences`，API Key 仅保存在当前设备
+- `AgentFragment` 已从静态示例页切换为 MiniMax BYOK 文本聊天页，当前支持发送纯文本消息并展示模型回复
+- AI 设置状态当前使用 `AiAssistantSettingsHelper.kt` 持久化到本地 `SharedPreferences`，并保存 `API Key / 模型 / 完整请求 URL`
+- AI 设置中的 URL 语义已改为“完整请求 URL”，客户端不再自动拼接固定 MiniMax endpoint
 
 ## 环境注意事项
 

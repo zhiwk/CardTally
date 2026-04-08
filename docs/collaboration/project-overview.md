@@ -27,6 +27,7 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 - `adapter/`：RecyclerView 相关适配器
 - `database/`：SQLite 数据访问，核心在 `DatabaseHelper.kt`
 - `model/`：数据模型
+- `network/`：网络请求与 MiniMax BYOK 聊天相关客户端逻辑
 - `util/`：工具类，例如主题、快捷记账、列表交互辅助
 
 ### 资源

@@ -12,6 +12,7 @@
 - **快捷记账**：可选择启动时直接进入记账界面
 - **记录管理**：支持编辑和删除已有记录
 - **数据安全**：本地 SQLite 数据库存储，保护个人财务隐私
+- **AI 助手**：支持用户自填 MiniMax 配置（API Key / 模型 / 请求 URL），并在 AI 助手页进行本地发起的文本对话
 
 ## 🛠️ 技术栈
 
@@ -20,6 +21,7 @@
 - **目标 / 编译 SDK**：Android 14 (API 34)
 - **UI 框架**：XML 布局 + Material Components + Fragment
 - **数据层**：SQLite（`DatabaseHelper.kt`）
+- **网络层**：OkHttp（用于 MiniMax BYOK 文本聊天）
 - **构建工具**：Android Gradle Plugin 8.3.0 + Gradle Wrapper 8.13
 
 ## 📦 安装步骤
@@ -128,7 +130,7 @@ docs/
 ### 配置 AI 助理
 1. 进入「我的」页面
 2. 在「AI 助理」分组中打开「显示 AI 入口」开关
-3. 点击「AI API Key」进入二级页面并保存本机 API Key
+3. 点击「MiniMax 配置」进入二级页面并保存本机 `API Key / 模型 / 请求 URL`
 4. 关闭该开关后，首页 AI 卡片和底部「AI 助手」标签会隐藏
 
 ### 编辑/删除记录
