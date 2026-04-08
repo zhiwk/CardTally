@@ -18,7 +18,7 @@
   - `AssetFragment` / `fragment_asset.xml` / `item_asset.xml`
   - `StatisticsFragment` / `fragment_statistics.xml` / `item_statistics.xml`
   - `SettingsFragment` / `fragment_settings.xml`
-- `design/stitch_extracted/` 中已有以下页面的 Stitch 导出参考：
+- `docs/design/assets/stitch/` 中已有以下页面的 Stitch 导出参考：
   - `add record`
   - `agent`
   - `assets`
@@ -42,9 +42,11 @@
 - `Agent` 页底部输入区已上移，避免与活动级底部导航重叠
 - `EditRecordFragment` 已不再维护独立 UX 布局，而是直接复用 `fragment_add_record.xml`
 - `fragment_edit_record.xml` 已移除，新增记录与编辑记录现在共享同一套录入 UX 基准
+- `EditAssetFragment` 已切换为复用 `fragment_add_asset.xml`
+- `fragment_edit_asset.xml` 已移除，新增资产与编辑资产现在共享同一套录入 UX 基准
 - 应用已接入应用级中英文国际化，当前支持 `中文 / English`
 - 语言切换入口位于“我的”页，并在切换后立即全局生效
-- 国际化基础设施集中在 `LanguageHelper.kt`、`values/strings.xml`、`values-en/strings.xml` 和 `locale_config.xml`
+- 国际化基础设施集中在 `LanguageHelper.kt`、`app/src/main/res/values/strings.xml`、`app/src/main/res/values-en/strings.xml` 和 `app/src/main/res/xml/locale_config.xml`
 - “我的”页已新增 `AI 助理` 分组，包含 AI 入口显示开关与 `AI API Key` 二级设置页
 - AI 显示开关当前会控制首页 Agent 卡片与底部 `AI 助手` tab 的可见性，并在关闭时阻止继续停留在 Agent 页面
 - AI 设置状态当前使用 `AiAssistantSettingsHelper.kt` 持久化到本地 `SharedPreferences`，API Key 仅保存在当前设备

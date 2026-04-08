@@ -112,9 +112,9 @@ Agent可直接执行业务操作，无需用户二次确认，但必须生成完
 | 转账 | 高 | ✅ |
 
 ### 影响范围
-- `AgentFragment.kt` - 对话处理
-- `DatabaseHelper.kt` - 日志写入
-- `AuditLog.kt` - 日志模型
+- `AgentFragment.kt` - 对话处理入口
+- `DatabaseHelper.kt` - 如后续落地审计日志，可作为持久化扩展点
+- `model/` - 如需独立日志模型，应在当前模型目录下新增
 
 ---
 
@@ -155,8 +155,8 @@ LIMIT 200;
 
 ### 影响范围
 - `DatabaseHelper.kt` - 查询方法
-- `RecordsFragment.kt` - 列表加载
 - `HomeFragment.kt` - 首页最近记录
+- `SearchFragment.kt` - 记录检索与结果展示
 
 ---
 
