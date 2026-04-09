@@ -109,8 +109,17 @@
     <string name="agent_input_hint">对话您的私人财务管家...</string>
     <string name="agent_menu_content_description">菜单</string>
     <string name="agent_avatar_content_description">个人头像</string>
+    <string name="agent_new_session_content_description">新建对话</string>
     <string name="agent_mic_content_description">语音输入</string>
     <string name="agent_send_content_description">发送消息</string>
+    <string name="agent_sessions_title">对话</string>
+    <string name="agent_session_create_title">新建会话</string>
+    <string name="agent_session_rename_title">重命名会话</string>
+    <string name="agent_session_name_hint">输入会话名称</string>
+    <string name="agent_session_create_confirm">创建</string>
+    <string name="agent_session_rename_confirm">保存</string>
+    <string name="agent_session_name_empty">请输入会话名称</string>
+    <string name="agent_session_empty_state">还没有对话内容</string>
     <string name="agent_status_ready">MiniMax 已就绪 · 模型 %1$s</string>
     <string name="agent_status_sending">正在等待 MiniMax 回复…</string>
     <string name="agent_status_receiving">正在接收回复…</string>

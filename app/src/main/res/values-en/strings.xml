@@ -109,8 +109,17 @@ waiting for your first entry.</string>
     <string name="agent_input_hint">Chat with your personal financial concierge...</string>
     <string name="agent_menu_content_description">Menu</string>
     <string name="agent_avatar_content_description">Profile avatar</string>
+    <string name="agent_new_session_content_description">Start a new session</string>
     <string name="agent_mic_content_description">Voice input</string>
     <string name="agent_send_content_description">Send message</string>
+    <string name="agent_sessions_title">Sessions</string>
+    <string name="agent_session_create_title">New session</string>
+    <string name="agent_session_rename_title">Rename session</string>
+    <string name="agent_session_name_hint">Enter a session name</string>
+    <string name="agent_session_create_confirm">Create</string>
+    <string name="agent_session_rename_confirm">Save</string>
+    <string name="agent_session_name_empty">Enter a session name</string>
+    <string name="agent_session_empty_state">No messages yet</string>
     <string name="agent_status_ready">MiniMax ready · model %1$s</string>
     <string name="agent_status_sending">Waiting for MiniMax to reply…</string>
     <string name="agent_status_receiving">Receiving response…</string>
