@@ -16,6 +16,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var navShell: View
+    private var isBottomNavigationTemporarilyHidden = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         LanguageHelper.applySavedLanguage(this)
@@ -104,8 +105,19 @@ class MainActivity : AppCompatActivity() {
             fragment is AgentFragment ||
             fragment is SettingsFragment
 
-        val visibility = if (isTopLevel) View.VISIBLE else View.GONE
+        val visibility = if (isTopLevel && !isBottomNavigationTemporarilyHidden) View.VISIBLE else View.GONE
         navShell.visibility = visibility
         bottomNavigationView.visibility = visibility
+    }
+
+    fun setBottomNavigationTemporarilyHidden(hidden: Boolean) {
+        if (isBottomNavigationTemporarilyHidden == hidden) {
+            return
+        }
+
+        isBottomNavigationTemporarilyHidden = hidden
+        supportFragmentManager.findFragmentById(R.id.fragment_container)?.let {
+            updateBottomNavigationForFragment(it)
+        }
     }
 }

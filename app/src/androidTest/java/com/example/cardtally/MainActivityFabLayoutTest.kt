@@ -90,6 +90,46 @@ class MainActivityFabLayoutTest {
         }
     }
 
+    @Test
+    fun agentSessionDrawer_hidesFloatingNavigationShellWhileExpanded() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            instrumentation.waitForIdleSync()
+
+            scenario.onActivity { activity ->
+                val bottomNavigation = activity.findViewById<BottomNavigationView>(R.id.bottom_navigation)
+                bottomNavigation.selectedItemId = R.id.nav_agent
+            }
+            instrumentation.waitForIdleSync()
+
+            scenario.onActivity { activity ->
+                val navShell = activity.findViewById<View>(R.id.nav_shell)
+                val agentFragmentView = activity.supportFragmentManager.findFragmentById(R.id.fragment_container)?.view
+                val buttonMenu = requireNotNull(agentFragmentView?.findViewById<View>(R.id.button_agent_menu))
+
+                assertEquals(View.VISIBLE, navShell.visibility)
+                buttonMenu.performClick()
+            }
+            instrumentation.waitForIdleSync()
+
+            scenario.onActivity { activity ->
+                val navShell = activity.findViewById<View>(R.id.nav_shell)
+                val agentFragmentView = activity.supportFragmentManager.findFragmentById(R.id.fragment_container)?.view
+                val overlay = requireNotNull(agentFragmentView?.findViewById<View>(R.id.view_agent_session_overlay))
+
+                assertEquals(View.GONE, navShell.visibility)
+                overlay.performClick()
+            }
+            instrumentation.waitForIdleSync()
+
+            scenario.onActivity { activity ->
+                val navShell = activity.findViewById<View>(R.id.nav_shell)
+                assertEquals(View.VISIBLE, navShell.visibility)
+            }
+        }
+    }
+
     private fun measureCurrentFabGap(scenario: ActivityScenario<MainActivity>, label: String): Int {
         val measuredGap = AtomicReference<Int>()
         scenario.onActivity { activity ->

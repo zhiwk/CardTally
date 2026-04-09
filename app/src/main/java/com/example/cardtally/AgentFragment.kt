@@ -151,6 +151,7 @@ class AgentFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(isSessionDrawerOpen)
 
         if (!AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext())) {
             requireActivity()
@@ -166,6 +167,7 @@ class AgentFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(false)
         if (hasActiveStream) {
             persistCurrentAssistantDraftBeforeForcedStop()
             suppressNextTerminalCallback = true
@@ -614,6 +616,7 @@ class AgentFragment : Fragment() {
         }
 
         isSessionDrawerOpen = true
+        (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(true)
         closeDrawerCallback.isEnabled = true
         overlaySessionDrawer.alpha = 0f
         overlaySessionDrawer.visibility = View.VISIBLE
@@ -632,6 +635,7 @@ class AgentFragment : Fragment() {
         }
 
         isSessionDrawerOpen = false
+        (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(false)
         closeDrawerCallback.isEnabled = false
         val closedTranslation = -layoutSessionDrawer.width.toFloat()
 
