@@ -9,6 +9,7 @@ object AiAssistantSettingsHelper {
     private const val KEY_AI_API_KEY = "ai_api_key"
     private const val KEY_MINIMAX_MODEL = "minimax_model"
     private const val KEY_MINIMAX_REQUEST_URL = "minimax_base_url"
+    private const val KEY_ACTIVE_SESSION_ID = "active_session_id"
 
     fun saveAiAssistantEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -71,5 +72,15 @@ object AiAssistantSettingsHelper {
 
     fun isMiniMaxConfigComplete(context: Context): Boolean {
         return getMiniMaxConfig(context).isComplete()
+    }
+
+    fun saveActiveSessionId(context: Context, sessionId: Long) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putLong(KEY_ACTIVE_SESSION_ID, sessionId).apply()
+    }
+
+    fun getActiveSessionId(context: Context): Long {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getLong(KEY_ACTIVE_SESSION_ID, 0L)
     }
 }
