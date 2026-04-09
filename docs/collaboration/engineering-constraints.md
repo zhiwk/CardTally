@@ -62,6 +62,8 @@ CardTally 当前明确的产品气质是：`静奢理财日记`。
 
 ```powershell
 .\gradlew.bat assembleDebug
+.\gradlew.bat testDebugUnitTest
+.\gradlew.bat connectedDebugAndroidTest
 .\gradlew.bat clean
 ```
 
@@ -69,6 +71,8 @@ CardTally 当前明确的产品气质是：`静奢理财日记`。
 
 ```bash
 ./gradlew assembleDebug
+./gradlew testDebugUnitTest
+./gradlew connectedDebugAndroidTest
 ./gradlew clean
 ```
 
@@ -79,8 +83,12 @@ CardTally 当前明确的产品气质是：`静奢理财日记`。
 ### 测试现状
 
 - `app/build.gradle` 已配置 JUnit4、AndroidX Test、Espresso 依赖。
-- 当前仓库中未发现 `app/src/test/` 或 `app/src/androidTest/` 下的实际测试文件。
-- 这意味着很多改动最终只能依靠构建通过和受影响路径的人工验证。
+- 当前仓库已存在实际测试文件，包括：
+  - `app/src/test/java/com/example/cardtally/util/AgentSessionTitleHelperTest.kt`
+  - `app/src/androidTest/java/com/example/cardtally/database/DatabaseHelperAgentChatSessionTest.kt`
+  - `app/src/androidTest/java/com/example/cardtally/util/AiAssistantSettingsHelperTest.kt`
+- 涉及 AI 助手多会话持久化时，优先先跑相关单测 / 真机测试，再补 `assembleDebug` 与人工验证。
+- 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest`；不要并行跑共享 `app/build/` 产物的任务。详见 `docs/collaboration/skills/android-gradle-serial-verification.md`
 
 ## 文档可信度排序
 

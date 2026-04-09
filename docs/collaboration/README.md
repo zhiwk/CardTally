@@ -16,6 +16,7 @@
 - 任务入口 / 先读什么：`docs/collaboration/task-entrypoints.md`
 - 工程约束 / UI 气质 / 提交前检查：`docs/collaboration/engineering-constraints.md`
 - 最近代码现实 / 当日快照：`docs/collaboration/current-snapshot.md`
+- Android 构建 / 单测 / 真机验证：`docs/collaboration/skills/android-gradle-serial-verification.md`
 
 ## 文档目标
 
