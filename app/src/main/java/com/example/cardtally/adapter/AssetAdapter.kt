@@ -9,11 +9,11 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Asset
 import com.example.cardtally.util.SwipeToEditDeleteHelper
+import com.example.cardtally.util.ThemeColorHelper
 
 class AssetAdapter(
     private var assets: List<Asset>,
@@ -41,16 +41,19 @@ class AssetAdapter(
 
         val presentation = when (asset.type) {
             0 -> AssetPresentation("现金", R.drawable.ic_asset, R.color.warning_primary, R.color.warning_container)
-            1 -> AssetPresentation("银行卡", R.drawable.ic_asset, R.color.primary_light, R.color.surface_container_lowest)
-            2 -> AssetPresentation("支付宝", R.drawable.ic_asset, R.color.secondary_light, R.color.surface_container_lowest)
-            3 -> AssetPresentation("微信", R.drawable.ic_asset, R.color.secondary_light, R.color.surface_container_lowest)
-            else -> AssetPresentation("其他", R.drawable.ic_asset, R.color.primary_light, R.color.surface_container_lowest)
+            1 -> AssetPresentation("银行卡", R.drawable.ic_asset, null, R.color.surface_container_lowest)
+            2 -> AssetPresentation("支付宝", R.drawable.ic_asset, null, R.color.surface_container_lowest)
+            3 -> AssetPresentation("微信", R.drawable.ic_asset, null, R.color.surface_container_lowest)
+            else -> AssetPresentation("其他", R.drawable.ic_asset, null, R.color.surface_container_lowest)
         }
         holder.textAssetType.text = presentation.label
         holder.imageAssetIcon.setImageResource(presentation.iconRes)
-        holder.imageAssetIcon.setColorFilter(ContextCompat.getColor(context, presentation.iconTint))
+        holder.imageAssetIcon.setColorFilter(
+            presentation.iconTint?.let { ThemeColorHelper.resolveThemeAwareResource(context, it) }
+                ?: ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary)
+        )
         holder.iconContainer.backgroundTintList = ColorStateList.valueOf(
-            ContextCompat.getColor(context, presentation.iconBackground)
+            ThemeColorHelper.resolveThemeAwareResource(context, presentation.iconBackground)
         )
 
         holder.swipeHelper = SwipeToEditDeleteHelper(
@@ -77,7 +80,7 @@ class AssetAdapter(
     private data class AssetPresentation(
         val label: String,
         val iconRes: Int,
-        val iconTint: Int,
+        val iconTint: Int?,
         val iconBackground: Int
     )
 

@@ -18,7 +18,7 @@
             android:text="收支趋势"
             android:textSize="@dimen/text_size_body1"
             android:textStyle="bold"
-            android:textColor="@color/onBackground_light"
+            android:textColor="?attr/colorOnBackground"
             android:textAppearance="@style/TextAppearance.CardTally.Subtitle1"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -40,7 +40,7 @@
             android:layout_height="wrap_content"
             android:text="图表功能开发中..."
             android:textSize="@dimen/text_size_caption"
-            android:textColor="@color/onSurfaceVariant_light"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:visibility="gone"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

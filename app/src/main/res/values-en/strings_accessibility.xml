@@ -40,9 +40,6 @@
     <string name="content_description_light_theme">Light theme</string>
     <string name="content_description_dark_theme">Dark theme</string>
     <string name="content_description_system_theme">Follow system</string>
-    <string name="content_description_blue_theme">Blue theme</string>
-    <string name="content_description_green_theme">Green theme</string>
-    <string name="content_description_orange_theme">Orange theme</string>
     <string name="content_description_category_statistics">Statistics by category</string>
     <string name="content_description_time_statistics">Statistics by time</string>
     <string name="content_description_empty_records">No records</string>

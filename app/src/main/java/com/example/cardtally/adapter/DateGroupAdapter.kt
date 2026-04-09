@@ -8,12 +8,12 @@ import android.widget.ImageView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.SwipeToEditDeleteHelper
+import com.example.cardtally.util.ThemeColorHelper
 
 class DateGroupAdapter(
     private var dateGroups: List<DateGroup>,
@@ -267,23 +267,23 @@ class DateGroupAdapter(
 
             val context = itemView.context
             val categoryColors = mapOf(
-                "餐饮" to ContextCompat.getColor(context, R.color.warning_container),
-                "购物" to ContextCompat.getColor(context, R.color.secondaryContainer_light),
-                "工资" to ContextCompat.getColor(context, R.color.success_container),
-                "交通" to ContextCompat.getColor(context, R.color.error_container),
-                "住房" to ContextCompat.getColor(context, R.color.info_container),
-                "娱乐" to ContextCompat.getColor(context, R.color.editorial_surface_low)
+                "餐饮" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.warning_container),
+                "购物" to ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondaryContainer),
+                "工资" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.success_container),
+                "交通" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.error_container),
+                "住房" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.info_container),
+                "娱乐" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_low)
             )
             viewIcon.backgroundTintList = ColorStateList.valueOf(
                 categoryColors[record.category]
-                    ?: ContextCompat.getColor(context, R.color.editorial_surface_low)
+                    ?: ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_low)
             )
 
             val amountText = if (record.type == 0) {
-                textAmount.setTextColor(ContextCompat.getColor(context, R.color.expense_primary))
+                textAmount.setTextColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.expense_primary))
                 String.format("-¥%.2f", record.amount)
             } else {
-                textAmount.setTextColor(ContextCompat.getColor(context, R.color.income_primary))
+                textAmount.setTextColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.income_primary))
                 String.format("+¥%.2f", record.amount)
             }
             textAmount.text = amountText
@@ -294,11 +294,11 @@ class DateGroupAdapter(
 
                 if (isSelected) {
                     cardContent.setBackgroundColor(
-                        ContextCompat.getColor(context, R.color.secondaryContainer_light)
+                        ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondaryContainer)
                     )
                 } else {
                     cardContent.setBackgroundColor(
-                        ContextCompat.getColor(context, R.color.surface_light)
+                        ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSurface)
                     )
                 }
 
@@ -307,7 +307,7 @@ class DateGroupAdapter(
                 }
             } else {
                 cardContent.setBackgroundColor(
-                    ContextCompat.getColor(context, R.color.surface_light)
+                    ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSurface)
                 )
 
                 swipeHelper = SwipeToEditDeleteHelper(

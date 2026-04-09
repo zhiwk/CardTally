@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:text=">"
             android:textSize="@dimen/text_size_h6"
-            android:textColor="@color/onSurfaceVariant_light"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginStart="@dimen/spacing_s" />
 
     </LinearLayout>

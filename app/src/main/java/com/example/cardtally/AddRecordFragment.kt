@@ -21,6 +21,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
+import com.example.cardtally.util.ThemeColorHelper
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.util.Calendar
 
@@ -111,16 +112,16 @@ class AddRecordFragment : Fragment() {
     private fun updateTypeStyle() {
         if (currentType == 0) {
             btnExpense.setBackgroundResource(R.drawable.shape_button_primary)
-            btnExpense.setTextColor(ContextCompat.getColor(requireContext(), R.color.onPrimary_light))
+            btnExpense.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnPrimary))
             
             btnIncome.setBackgroundResource(android.R.color.transparent)
-            btnIncome.setTextColor(ContextCompat.getColor(requireContext(), R.color.onSurfaceVariant_light))
+            btnIncome.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurfaceVariant))
         } else {
             btnExpense.setBackgroundResource(android.R.color.transparent)
-            btnExpense.setTextColor(ContextCompat.getColor(requireContext(), R.color.onSurfaceVariant_light))
+            btnExpense.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurfaceVariant))
             
             btnIncome.setBackgroundResource(R.drawable.shape_button_primary)
-            btnIncome.setTextColor(ContextCompat.getColor(requireContext(), R.color.onPrimary_light))
+            btnIncome.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnPrimary))
         }
     }
 

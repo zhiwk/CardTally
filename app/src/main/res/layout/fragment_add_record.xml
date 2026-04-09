@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_light"
+    android:background="?android:attr/colorBackground"
     tools:context=".AddRecordFragment">
 
     <!-- Top Navigation -->
@@ -17,7 +17,7 @@
         android:paddingTop="24dp"
         android:paddingBottom="16dp"
         android:gravity="center_vertical"
-        android:background="#D9fffcf7">
+        android:background="?attr/colorSurface">
 
         <ImageButton
             android:id="@+id/btn_close"
@@ -25,7 +25,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_close"
-            app:tint="@color/onSurfaceVariant_light" />
+            app:tint="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:id="@+id/text_title"
@@ -34,7 +34,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/record_title_new"
-            android:textColor="@color/primary_light"
+            android:textColor="?attr/colorPrimary"
             android:textSize="20sp"
             android:textStyle="italic" />
 
@@ -87,7 +87,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="¥"
-                        android:textColor="@color/primary_light"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="36sp"
                         android:textStyle="normal"
                         android:fontFamily="serif"/>
@@ -98,7 +98,7 @@
                         android:layout_height="80dp"
                         android:background="@null"
                         android:text="@string/amount_default"
-                        android:textColor="@color/onBackground_light"
+                        android:textColor="?attr/colorOnBackground"
                         android:textSize="72sp"
                         android:inputType="numberDecimal"
                         android:fontFamily="serif"
@@ -123,7 +123,7 @@
                     android:layout_height="40dp"
                     android:background="@drawable/shape_button_primary"
                     android:text="@string/record_type_expense"
-                    android:textColor="@color/onPrimary_light"
+                    android:textColor="?attr/colorOnPrimary"
                     android:textAllCaps="false"
                     android:textSize="14sp"
                     android:paddingHorizontal="32dp"
@@ -135,7 +135,7 @@
                     android:layout_height="40dp"
                     android:background="@android:color/transparent"
                     android:text="@string/record_type_income"
-                    android:textColor="@color/onSurfaceVariant_light"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textAllCaps="false"
                     android:textSize="14sp"
                     android:paddingHorizontal="32dp"
@@ -159,7 +159,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/record_when_label"
-                        android:textColor="@color/primaryVariant_light"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="20sp"
                         android:textStyle="italic"
                         android:fontFamily="serif"/>
@@ -170,14 +170,14 @@
                         android:layout_height="wrap_content"
                         android:text="@string/record_date_placeholder"
                         android:textSize="18sp"
-                        android:textColor="@color/onBackground_light"
+                        android:textColor="?attr/colorOnBackground"
                         android:background="@null"
                         android:paddingVertical="8dp"/>
                         
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#4Dbabab0"/> <!-- outline-variant at 30% -->
+                        android:background="?attr/colorOutlineVariant"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -190,7 +190,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/record_asset_label"
-                        android:textColor="@color/primaryVariant_light"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="20sp"
                         android:textStyle="italic"
                         android:fontFamily="serif"/>
@@ -205,7 +205,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#4Dbabab0"/>
+                        android:background="?attr/colorOutlineVariant"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -217,7 +217,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/record_detail_label"
-                        android:textColor="@color/primaryVariant_light"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="20sp"
                         android:textStyle="italic"
                         android:fontFamily="serif"/>
@@ -228,8 +228,8 @@
                         android:layout_height="wrap_content"
                         android:hint="@string/record_detail_hint"
                         android:textSize="18sp"
-                        android:textColor="@color/onBackground_light"
-                        android:textColorHint="@color/placeholder_light"
+                        android:textColor="?attr/colorOnBackground"
+                        android:textColorHint="?attr/colorOnSurfaceVariant"
                         android:background="@null"
                         android:paddingVertical="8dp"
                         android:maxLines="1"
@@ -238,7 +238,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#4Dbabab0"/>
+                        android:background="?attr/colorOutlineVariant"/>
                 </LinearLayout>
             </LinearLayout>
 
@@ -297,7 +297,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_close"
-                app:tint="@color/onSurfaceVariant_light"
+                app:tint="?attr/colorOnSurfaceVariant"
                 android:alpha="0.6"/>
                 
             <TextView
@@ -306,7 +306,7 @@
                 android:layout_marginTop="4dp"
                 android:text="@string/record_cancel"
                 android:textSize="10sp"
-                android:textColor="@color/onSurfaceVariant_light"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:letterSpacing="0.1"
                 android:fontFamily="sans-serif-medium"
                 android:alpha="0.6"/>

@@ -10,5 +10,5 @@
     android:textStyle="bold"
     app:cornerRadius="@dimen/button_corner_radius_medium"
     app:strokeWidth="1dp"
-    app:strokeColor="@color/divider_light"
-    app:backgroundTint="@color/chipBackground_light" />
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:backgroundTint="?attr/colorSecondaryContainer" />

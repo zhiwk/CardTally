@@ -2,6 +2,6 @@
 <View xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="1dp"
-    android:background="@color/divider_light"
+    android:background="?attr/colorOutlineVariant"
     android:layout_marginStart="@dimen/card_padding_large"
     android:layout_marginEnd="@dimen/card_padding_large" />

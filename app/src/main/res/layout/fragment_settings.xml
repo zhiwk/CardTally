@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_light"
+    android:background="?android:attr/colorBackground"
     tools:context=".SettingsFragment">
 
     <!-- Top Navigation -->
@@ -24,7 +24,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
                 android:text="@string/settings_header_title"
-            android:textColor="@color/onBackground_light"
+            android:textColor="?attr/colorOnBackground"
             android:textSize="24sp"
             android:textStyle="italic"
             android:fontFamily="serif"/>
@@ -33,7 +33,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="@drawable/selector_button_primary"
-            android:backgroundTint="@color/surfaceVariant_light"
+            android:backgroundTint="?attr/colorSurfaceVariant"
             android:clipToOutline="true"
             android:outlineProvider="background">
             
@@ -42,7 +42,7 @@
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_settings"
-                app:tint="@color/onSurfaceVariant_light" />
+                app:tint="?attr/colorOnSurfaceVariant" />
         </FrameLayout>
 
     </LinearLayout>
@@ -79,14 +79,14 @@
                         android:layout_height="40dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_person"
-                        app:tint="@color/primary_light" />
+                        app:tint="?attr/colorPrimary" />
                 </FrameLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_profile_title"
-                    android:textColor="@color/onSurface_light"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="32sp"
                     android:fontFamily="serif"
                     android:layout_marginBottom="4dp"/>
@@ -95,7 +95,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_profile_tier"
-                    android:textColor="@color/onSurfaceVariant_light"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="10sp"
                     android:letterSpacing="0.2"
                     android:textStyle="bold"
@@ -107,7 +107,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/settings_aesthetic_preferences"
-                android:textColor="@color/onBackground_light"
+                android:textColor="?attr/colorOnBackground"
                 android:textSize="18sp"
                 android:textStyle="italic"
                 android:fontFamily="serif"
@@ -150,17 +150,17 @@
                             android:id="@+id/text_current_theme"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textColor="@color/onSurfaceVariant_light"
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="12sp"
                             android:alpha="0.6"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
                     
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="@color/primary_light" />
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_arrow_right"
+                            app:tint="?attr/colorPrimary" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -182,7 +182,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/settings_language"
-                            android:textColor="@color/onSurface_light"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp" />
 
                         <TextView
@@ -190,7 +190,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/language_option_chinese"
-                            android:textColor="@color/onSurfaceVariant_light"
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="12sp"
                             android:alpha="0.6"
                             android:layout_marginTop="2dp" />
@@ -200,7 +200,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_arrow_right"
-                        app:tint="@color/primary_light" />
+                        app:tint="?attr/colorPrimary" />
                 </LinearLayout>
 
                 <!-- Quick Add -->
@@ -246,7 +246,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/settings_ai_assistant_group"
-                android:textColor="@color/onBackground_light"
+                android:textColor="?attr/colorOnBackground"
                 android:textSize="18sp"
                 android:textStyle="italic"
                 android:fontFamily="serif"
@@ -257,7 +257,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_summary_item"
-                android:backgroundTint="@color/surface_container_low"
+                android:backgroundTint="?attr/colorSurfaceContainerLow"
                 android:orientation="vertical"
                 android:padding="24dp"
                 android:layout_marginBottom="24dp">
@@ -279,14 +279,14 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/settings_ai_assistant_toggle"
-                            android:textColor="@color/onSurface_light"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/settings_ai_assistant_toggle_hint"
-                            android:textColor="@color/onSurfaceVariant_light"
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="12sp"
                             android:alpha="0.6"
                             android:layout_marginTop="2dp" />
@@ -316,7 +316,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/settings_ai_api_key"
-                            android:textColor="@color/onSurface_light"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp" />
 
                         <TextView
@@ -324,17 +324,17 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/settings_ai_api_key_status_not_set"
-                            android:textColor="@color/onSurfaceVariant_light"
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="12sp"
                             android:alpha="0.6"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_right"
-                        app:tint="@color/primary_light" />
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_arrow_right"
+                            app:tint="?attr/colorPrimary" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -344,7 +344,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/settings_management"
-                android:textColor="@color/onBackground_light"
+                android:textColor="?attr/colorOnBackground"
                 android:textSize="18sp"
                 android:textStyle="italic"
                 android:fontFamily="serif"
@@ -390,7 +390,7 @@
                         android:layout_weight="1"
                         android:layout_marginStart="16dp"
                         android:text="@string/settings_category_organization"
-                        android:textColor="@color/onSurface_light"
+                            android:textColor="?attr/colorOnSurface"
                         android:textSize="18sp" />
 
                     <ImageView
@@ -473,7 +473,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_story_body"
-                    android:textColor="@color/onSurfaceVariant_light"
+                            android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp"
                     android:lineSpacingExtra="4dp"
                     android:alpha="0.8"/>

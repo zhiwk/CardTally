@@ -97,7 +97,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_asset"
-                    app:tint="@color/primaryVariant_light"/>
+                    app:tint="?attr/colorPrimary"/>
             </FrameLayout>
 
             <LinearLayout
@@ -113,7 +113,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Bank of China"
-                    android:textColor="@color/onSurface_light"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp"
                     android:fontFamily="sans-serif-medium" />
 
@@ -123,7 +123,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="Main Savings"
-                    android:textColor="@color/onSurfaceVariant_light"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="11sp"
                     android:letterSpacing="0.05" />
 
@@ -134,7 +134,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="¥ 84,200.00"
-                android:textColor="@color/primary_light"
+                android:textColor="?attr/colorPrimary"
                 android:textSize="20sp"
                 android:fontFamily="serif" />
 

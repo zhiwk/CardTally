@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_light"
+    android:background="?android:attr/colorBackground"
     tools:context=".AiAssistantSettingsFragment">
 
     <LinearLayout
@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/ai_settings_title"
-            android:textColor="@color/onBackground_light"
+            android:textColor="?attr/colorOnBackground"
             android:textSize="24sp"
             android:textStyle="italic"
             android:fontFamily="serif" />
@@ -32,7 +32,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="@drawable/selector_button_primary"
-            android:backgroundTint="@color/surfaceVariant_light"
+            android:backgroundTint="?attr/colorSurfaceVariant"
             android:clipToOutline="true"
             android:outlineProvider="background">
 
@@ -41,7 +41,7 @@
                 android:layout_height="24dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_agent"
-                app:tint="@color/onSurfaceVariant_light" />
+                app:tint="?attr/colorOnSurfaceVariant" />
         </FrameLayout>
 
     </LinearLayout>
@@ -64,7 +64,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/ai_settings_api_key_group"
-                android:textColor="@color/onBackground_light"
+                android:textColor="?attr/colorOnBackground"
                 android:textSize="18sp"
                 android:textStyle="italic"
                 android:fontFamily="serif"
@@ -75,7 +75,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_summary_item"
-                android:backgroundTint="@color/surface_container_low"
+                android:backgroundTint="?attr/colorSurfaceContainerLow"
                 android:orientation="vertical"
                 android:padding="24dp">
 
@@ -83,7 +83,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/ai_settings_api_key_description"
-                    android:textColor="@color/onSurfaceVariant_light"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp"
                     android:lineSpacingExtra="4dp"
                     android:alpha="0.8" />
@@ -94,7 +94,7 @@
                     android:layout_marginTop="24dp"
                     android:layout_marginBottom="8dp"
                     android:text="@string/ai_settings_api_key_label"
-                    android:textColor="@color/onSurface_light"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp" />
 
                 <EditText
@@ -102,14 +102,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_summary_item"
-                    android:backgroundTint="@color/surface_container_lowest"
+                    android:backgroundTint="?attr/colorSurfaceContainerLowest"
                     android:hint="@string/ai_settings_api_key_hint"
                     android:inputType="textPassword|textNoSuggestions"
                     android:minHeight="56dp"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="12dp"
-                    android:textColor="@color/onSurface_light"
-                    android:textColorHint="@color/onSurfaceVariant_light"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp" />
 
                 <TextView
@@ -118,7 +118,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:text="@string/ai_settings_defaults_status_fallback"
-                    android:textColor="@color/onSurfaceVariant_light"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="12sp"
                     android:lineSpacingExtra="4dp"
                     android:alpha="0.75" />
@@ -129,7 +129,7 @@
                     android:layout_marginTop="24dp"
                     android:layout_marginBottom="8dp"
                     android:text="@string/ai_settings_model_label"
-                    android:textColor="@color/onSurface_light"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp" />
 
                 <EditText
@@ -137,14 +137,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_summary_item"
-                    android:backgroundTint="@color/surface_container_lowest"
+                    android:backgroundTint="?attr/colorSurfaceContainerLowest"
                     android:hint="@string/ai_settings_model_hint"
                     android:inputType="textNoSuggestions"
                     android:minHeight="56dp"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="12dp"
-                    android:textColor="@color/onSurface_light"
-                    android:textColorHint="@color/onSurfaceVariant_light"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp" />
 
                 <TextView
@@ -153,7 +153,7 @@
                     android:layout_marginTop="24dp"
                     android:layout_marginBottom="8dp"
                     android:text="@string/ai_settings_base_url_label"
-                    android:textColor="@color/onSurface_light"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp" />
 
                 <EditText
@@ -161,14 +161,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_summary_item"
-                    android:backgroundTint="@color/surface_container_lowest"
+                    android:backgroundTint="?attr/colorSurfaceContainerLowest"
                     android:hint="@string/ai_settings_base_url_hint"
                     android:inputType="textUri|textNoSuggestions"
                     android:minHeight="56dp"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="12dp"
-                    android:textColor="@color/onSurface_light"
-                    android:textColorHint="@color/onSurfaceVariant_light"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp" />
 
                 <LinearLayout
@@ -188,7 +188,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/ai_settings_save"
-                        android:textColor="@color/onPrimary_light"
+                        android:textColor="?attr/colorOnPrimary"
                         android:textSize="14sp"
                         android:textStyle="bold" />
                 </LinearLayout>

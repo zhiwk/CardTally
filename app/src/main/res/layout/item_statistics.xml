@@ -21,7 +21,7 @@
             android:layout_height="24dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_book"
-            app:tint="@color/primary_light" />
+            app:tint="?attr/colorPrimary" />
     </FrameLayout>
 
     <LinearLayout
@@ -36,7 +36,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Label"
-            android:textColor="@color/onSurface_light"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="16sp"
             android:fontFamily="sans-serif-medium"/>
 
@@ -45,7 +45,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="SUMMARY ENTRY"
-            android:textColor="@color/onSurfaceVariant_light"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="11sp"
             android:letterSpacing="0.08"
             android:layout_marginTop="2dp"
@@ -57,7 +57,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="¥100.00"
-        android:textColor="@color/primary_light"
+        android:textColor="?attr/colorPrimary"
         android:textSize="22sp"
         android:fontFamily="serif"/>
 

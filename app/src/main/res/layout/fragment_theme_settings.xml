@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
     android:padding="16dp"
     tools:context=".ThemeSettingsFragment">
 
@@ -12,6 +13,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/theme_settings_title"
+        android:textColor="?attr/colorOnBackground"
         android:textSize="24sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -42,7 +44,7 @@
             android:layout_height="wrap_content"
             android:text="@string/theme_basic_label"
             android:textSize="@dimen/text_size_body2"
-            android:textColor="@color/onSurfaceVariant_light"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginTop="@dimen/spacing_l" />
 
         <RadioButton
@@ -66,35 +68,6 @@
             android:text="@string/theme_system"
             android:padding="@dimen/spacing_s" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/theme_color_label"
-            android:textSize="@dimen/text_size_body2"
-            android:textColor="@color/onSurfaceVariant_light"
-            android:layout_marginTop="@dimen/spacing_l" />
-
-        <RadioButton
-            android:id="@+id/radio_blue"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/theme_blue"
-            android:padding="@dimen/spacing_s" />
-
-        <RadioButton
-            android:id="@+id/radio_green"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/theme_green"
-            android:padding="@dimen/spacing_s" />
-
-        <RadioButton
-            android:id="@+id/radio_orange"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/theme_orange"
-            android:padding="@dimen/spacing_s" />
-
     </RadioGroup>
 
     <TextView
@@ -103,7 +76,7 @@
         android:layout_height="wrap_content"
         android:text="@string/theme_hint"
         android:textSize="14sp"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:layout_marginTop="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

@@ -18,7 +18,7 @@
             android:text="餐饮"
             android:textSize="@dimen/text_size_body1"
             android:textStyle="bold"
-            android:textColor="@color/onBackground_light"
+            android:textColor="?attr/colorOnBackground"
             android:textAppearance="@style/TextAppearance.CardTally.ListTitle"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -71,7 +71,7 @@
                 android:layout_weight="1"
                 android:text="已用"
                 android:textSize="@dimen/text_size_caption"
-                android:textColor="@color/onSurfaceVariant_light" />
+                android:textColor="?attr/colorOnSurfaceVariant" />
 
             <TextView
                 android:id="@+id/text_budget_total"
@@ -79,14 +79,14 @@
                 android:layout_height="wrap_content"
                 android:text="预算: ¥1000.00"
                 android:textSize="@dimen/text_size_caption"
-                android:textColor="@color/onSurfaceVariant_light" />
+                android:textColor="?attr/colorOnSurfaceVariant" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="剩余"
                 android:textSize="@dimen/text_size_caption"
-                android:textColor="@color/onSurfaceVariant_light" />
+                android:textColor="?attr/colorOnSurfaceVariant" />
 
             <TextView
                 android:id="@+id/text_budget_remaining"

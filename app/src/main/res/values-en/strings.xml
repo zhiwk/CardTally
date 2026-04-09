@@ -181,13 +181,9 @@ waiting for your first entry.</string>
     <string name="theme_settings_title">Theme Settings</string>
     <string name="theme_select_label">Choose Theme</string>
     <string name="theme_basic_label">Base Themes</string>
-    <string name="theme_color_label">Color Themes</string>
     <string name="theme_light">Light Theme</string>
     <string name="theme_dark">Dark Theme</string>
     <string name="theme_system">Follow System</string>
-    <string name="theme_blue">Blue Theme</string>
-    <string name="theme_green">Green Theme</string>
-    <string name="theme_orange">Orange Theme</string>
     <string name="theme_hint">Note: Restart the app after changing the theme for full effect.</string>
 
     <string name="ai_settings_title">AI Assistant Settings</string>

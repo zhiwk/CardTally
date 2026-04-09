@@ -6,9 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
+import com.example.cardtally.util.ThemeColorHelper
 
 class StatisticsAdapter : RecyclerView.Adapter<StatisticsAdapter.StatisticsViewHolder>() {
     
@@ -45,17 +45,29 @@ class StatisticsAdapter : RecyclerView.Adapter<StatisticsAdapter.StatisticsViewH
             "住房" -> R.drawable.ic_category_housing
             else -> R.drawable.ic_book
         }
-        val iconBackground = if (item.amount >= 0) R.color.secondaryContainer_light else R.color.surface_container_low
-        val iconTint = if (item.amount >= 0) R.color.secondary_light else R.color.primary_light
-        val amountColor = if (item.amount >= 0) R.color.income_primary else R.color.primary_light
+        val iconBackground = if (item.amount >= 0) {
+            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondaryContainer)
+        } else {
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_container_low)
+        }
+        val iconTint = if (item.amount >= 0) {
+            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondary)
+        } else {
+            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary)
+        }
+        val amountColor = if (item.amount >= 0) {
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.income_primary)
+        } else {
+            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary)
+        }
 
         holder.imageIcon.setImageResource(iconRes)
-        holder.imageIcon.setColorFilter(ContextCompat.getColor(context, iconTint))
+        holder.imageIcon.setColorFilter(iconTint)
         holder.iconContainer.backgroundTintList = ColorStateList.valueOf(
-            ContextCompat.getColor(context, iconBackground)
+            iconBackground
         )
         holder.textMeta.text = if (item.amount >= 0) "POSITIVE FLOW" else "OUTGOING FLOW"
-        holder.textAmount.setTextColor(ContextCompat.getColor(context, amountColor))
+        holder.textAmount.setTextColor(amountColor)
     }
 
     override fun getItemCount(): Int = items.size

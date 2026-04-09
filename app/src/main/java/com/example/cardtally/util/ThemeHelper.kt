@@ -18,7 +18,14 @@ object ThemeHelper {
 
     fun getTheme(context: Context): Int {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getInt(KEY_THEME, THEME_LIGHT)
+        val storedTheme = prefs.getInt(KEY_THEME, THEME_LIGHT)
+        return when (storedTheme) {
+            THEME_LIGHT, THEME_DARK, THEME_SYSTEM -> storedTheme
+            else -> {
+                prefs.edit().putInt(KEY_THEME, THEME_LIGHT).apply()
+                THEME_LIGHT
+            }
+        }
     }
 
     fun getThemeResId(themeMode: Int): Int {
@@ -31,6 +38,10 @@ object ThemeHelper {
 
     fun getThemeName(context: Context, themeMode: Int): String {
         val themeNames = context.resources.getStringArray(R.array.theme_names)
-        return themeNames[themeMode]
+        val safeThemeMode = when (themeMode) {
+            THEME_LIGHT, THEME_DARK, THEME_SYSTEM -> themeMode
+            else -> THEME_LIGHT
+        }
+        return themeNames[safeThemeMode]
     }
 }

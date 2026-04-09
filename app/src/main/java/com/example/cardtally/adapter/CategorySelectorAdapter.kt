@@ -6,10 +6,10 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Category
+import com.example.cardtally.util.ThemeColorHelper
 
 class CategorySelectorAdapter(
     private var categories: List<Category>,
@@ -44,23 +44,23 @@ class CategorySelectorAdapter(
 
         if (selectedCategory?.id == category.id) {
             holder.cardCategory.setCardBackgroundColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.secondaryContainer_light)
+                ThemeColorHelper.resolveColor(holder.itemView.context, com.google.android.material.R.attr.colorSecondaryContainer)
             )
             holder.imageIcon.setColorFilter(
-                ContextCompat.getColor(holder.itemView.context, R.color.secondaryVariant_light)
+                ThemeColorHelper.resolveColor(holder.itemView.context, com.google.android.material.R.attr.colorSecondary)
             )
             holder.textName.setTextColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.secondaryVariant_light)
+                ThemeColorHelper.resolveColor(holder.itemView.context, com.google.android.material.R.attr.colorSecondary)
             )
         } else {
             holder.cardCategory.setCardBackgroundColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.editorial_surface_lowest)
+                ThemeColorHelper.resolveColor(holder.itemView.context, com.google.android.material.R.attr.colorSurfaceContainerLowest)
             )
             holder.imageIcon.setColorFilter(
-                ContextCompat.getColor(holder.itemView.context, R.color.primary_light)
+                ThemeColorHelper.resolveColor(holder.itemView.context, com.google.android.material.R.attr.colorPrimary)
             )
             holder.textName.setTextColor(
-                ContextCompat.getColor(holder.itemView.context, R.color.onBackground_light)
+                ThemeColorHelper.resolveColor(holder.itemView.context, com.google.android.material.R.attr.colorOnBackground)
             )
         }
 

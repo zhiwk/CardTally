@@ -6,11 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.AiChatMessage
 import com.example.cardtally.model.AiChatRole
+import com.example.cardtally.util.ThemeColorHelper
 import kotlin.math.roundToInt
 
 class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHolder>() {
@@ -120,7 +120,7 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
             holder.textMessage.setBackgroundResource(R.drawable.bg_agent_bubble_user)
             holder.textMessage.backgroundTintList = null
             holder.textMessage.setTextColor(
-                ContextCompat.getColor(context, R.color.onPrimaryContainer_light)
+                ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimaryContainer)
             )
         } else {
             holder.container.gravity = Gravity.START
@@ -132,10 +132,11 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
             holder.textMessage.setBackgroundResource(R.drawable.bg_agent_bubble_assistant)
             holder.textMessage.backgroundTintList = null
             holder.textMessage.setTextColor(
-                ContextCompat.getColor(
-                    context,
-                    if (message.isError) R.color.error_primary else R.color.onSurface_light
-                )
+                if (message.isError) {
+                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.error_primary)
+                } else {
+                    ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface)
+                }
             )
         }
 

@@ -30,7 +30,7 @@
             android:text="设置项标题"
             android:textSize="@dimen/text_size_body1"
             android:textStyle="bold"
-            android:textColor="@color/onBackground_light"
+            android:textColor="?attr/colorOnBackground"
             android:textAppearance="@style/TextAppearance.CardTally.Body1" />
 
         <TextView
@@ -39,7 +39,7 @@
             android:layout_height="wrap_content"
             android:text="设置项描述"
             android:textSize="@dimen/text_size_caption"
-            android:textColor="@color/onSurfaceVariant_light"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginTop="@dimen/spacing_xxs"
             android:maxLines="2"
             android:ellipsize="end"
@@ -53,7 +53,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/spacing_s"
-        android:thumbTint="@color/primary_light"
+        android:thumbTint="?attr/colorPrimary"
         android:trackTint="@color/neutral_300" />
 
 </LinearLayout>

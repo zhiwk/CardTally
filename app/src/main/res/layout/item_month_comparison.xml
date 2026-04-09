@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:text="本月"
         android:textSize="@dimen/text_size_caption"
-        android:textColor="@color/onSurfaceVariant_light"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:layout_marginEnd="@dimen/spacing_xs" />
 
     <TextView
@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:text="vs"
         android:textSize="@dimen/text_size_caption"
-        android:textColor="@color/onSurfaceVariant_light"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:layout_marginStart="@dimen/spacing_xs"
         android:layout_marginEnd="@dimen/spacing_xs" />
 
@@ -41,7 +41,7 @@
         android:text="¥0.00"
         android:textSize="@dimen/text_size_body2"
         android:textStyle="bold"
-        android:textColor="@color/onSurfaceVariant_light"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:layout_marginStart="@dimen/spacing_xs"
         android:layout_marginEnd="@dimen/spacing_l" />
 

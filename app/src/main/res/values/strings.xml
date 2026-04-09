@@ -181,13 +181,9 @@
     <string name="theme_settings_title">主题设置</string>
     <string name="theme_select_label">选择主题</string>
     <string name="theme_basic_label">基础主题</string>
-    <string name="theme_color_label">彩色主题</string>
     <string name="theme_light">浅色主题</string>
     <string name="theme_dark">深色主题</string>
     <string name="theme_system">跟随系统</string>
-    <string name="theme_blue">蓝色主题</string>
-    <string name="theme_green">绿色主题</string>
-    <string name="theme_orange">橙色主题</string>
     <string name="theme_hint">提示：更改主题后需要重启应用才能生效</string>
 
     <string name="ai_settings_title">AI 助理设置</string>
