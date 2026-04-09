@@ -123,13 +123,13 @@ waiting for your first entry.</string>
     <string name="agent_status_ready">MiniMax ready · model %1$s</string>
     <string name="agent_status_sending">Waiting for MiniMax to reply…</string>
     <string name="agent_status_receiving">Receiving response…</string>
-    <string name="agent_status_configuration_required">One more step: save your MiniMax key to start chatting.</string>
-    <string name="agent_config_missing_title">Connect MiniMax first</string>
-    <string name="agent_config_missing_body">The Agent page currently supports configured MiniMax text chat only. Add your API key in settings; model and URL can keep their defaults.</string>
-    <string name="agent_config_missing_cta">Open AI settings</string>
+    <string name="agent_status_configuration_required">One more step: save your API key to start chatting.</string>
+    <string name="agent_config_missing_title">Complete API configuration first</string>
+    <string name="agent_config_missing_body">The Agent page needs API configuration before chat can begin. Add your API key in settings; the model and request URL can keep their defaults.</string>
+    <string name="agent_config_missing_cta">Open API configuration</string>
     <string name="agent_error_empty_message">Enter a message first</string>
-    <string name="agent_error_config_missing">MiniMax configuration is incomplete. Please review AI settings first.</string>
-    <string name="agent_error_invalid_url">The MiniMax request URL is invalid. Please check it in settings.</string>
+    <string name="agent_error_config_missing">API configuration is incomplete. Please review settings first.</string>
+    <string name="agent_error_invalid_url">The API request URL is invalid. Please check it in settings.</string>
     <string name="agent_error_network">Network connection failed. Please try again shortly.</string>
     <string name="agent_error_auth">MiniMax authentication failed. Please verify that your API key is correct and still active.</string>
     <string name="agent_error_rate_limit">MiniMax rate limit reached. Please wait a moment and try again.</string>
@@ -155,7 +155,7 @@ waiting for your first entry.</string>
     <string name="settings_ai_assistant_group">AI Assistant</string>
     <string name="settings_ai_assistant_toggle">Show AI surfaces</string>
     <string name="settings_ai_assistant_toggle_hint">Controls the Home card and bottom AI tab</string>
-    <string name="settings_ai_api_key">MiniMax settings</string>
+    <string name="settings_ai_api_key">API Configuration</string>
     <string name="settings_ai_api_key_status_not_set">Needs setup</string>
     <string name="settings_ai_api_key_status_saved">Ready</string>
     <string name="settings_management">Management</string>
@@ -186,10 +186,10 @@ waiting for your first entry.</string>
     <string name="theme_system">Follow System</string>
     <string name="theme_hint">Note: Restart the app after changing the theme for full effect.</string>
 
-    <string name="ai_settings_title">AI Assistant Settings</string>
-    <string name="ai_settings_api_key_group">MiniMax BYOK</string>
-    <string name="ai_settings_api_key_description">Save the MiniMax text chat configuration used on this device. The API key stays on-device, while the model and full request URL remain editable.</string>
-    <string name="ai_settings_api_key_label">MiniMax API Key</string>
+    <string name="ai_settings_title">API Configuration</string>
+    <string name="ai_settings_api_key_group">API Configuration</string>
+    <string name="ai_settings_api_key_description">Save the API chat configuration used on this device. The API key stays on-device, while the model and full request URL remain editable.</string>
+    <string name="ai_settings_api_key_label">API Key</string>
     <string name="ai_settings_api_key_hint">Enter API Key</string>
     <string name="ai_settings_model_label">Model</string>
     <string name="ai_settings_model_hint">Example: M2-her</string>
@@ -200,7 +200,7 @@ Default request URL: %2$s</string>
     <string name="ai_settings_defaults_status_fallback">Default model: M2-her
 Default request URL: https://api.minimax.io/v1/text/chatcompletion_v2</string>
     <string name="ai_settings_save">Save</string>
-    <string name="toast_ai_api_key_saved">MiniMax settings saved</string>
+    <string name="toast_ai_api_key_saved">API settings saved</string>
 
     <string-array name="theme_names">
         <item>@string/theme_light</item>

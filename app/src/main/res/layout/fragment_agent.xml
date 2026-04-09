@@ -85,7 +85,7 @@
             android:paddingStart="24dp"
             android:paddingTop="12dp"
             android:paddingEnd="24dp"
-            android:paddingBottom="192dp">
+            android:paddingBottom="@dimen/agent_content_bottom_padding_with_composer">
 
             <TextView
                 android:id="@+id/text_agent_status"
@@ -167,24 +167,24 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:orientation="horizontal"
-            android:paddingStart="24dp"
+            android:paddingStart="@dimen/agent_composer_horizontal_inset"
             android:paddingTop="16dp"
-            android:paddingEnd="24dp"
-            android:paddingBottom="118dp">
+            android:paddingEnd="@dimen/agent_composer_horizontal_inset"
+            android:paddingBottom="@dimen/agent_composer_bottom_padding_with_nav">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_agent_composer_shell"
-                android:elevation="10dp"
+                android:elevation="0dp"
                 android:gravity="center_vertical"
-                android:minHeight="64dp"
+                android:minHeight="60dp"
                 android:outlineProvider="background"
                 android:orientation="horizontal"
                 android:paddingStart="20dp"
-                android:paddingTop="8dp"
+                android:paddingTop="6dp"
                 android:paddingEnd="8dp"
-                android:paddingBottom="8dp">
+                android:paddingBottom="6dp">
 
                 <EditText
                     android:id="@+id/edit_agent_message"

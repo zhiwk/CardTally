@@ -123,13 +123,13 @@
     <string name="agent_status_ready">MiniMax 已就绪 · 模型 %1$s</string>
     <string name="agent_status_sending">正在等待 MiniMax 回复…</string>
     <string name="agent_status_receiving">正在接收回复…</string>
-    <string name="agent_status_configuration_required">还差一步配置，保存 MiniMax Key 后即可开始对话。</string>
-    <string name="agent_config_missing_title">先连接你的 MiniMax</string>
-    <string name="agent_config_missing_body">当前 Agent 仅支持已配置的 MiniMax 文本对话。请先在设置中填写 API Key，模型和地址可继续使用默认值。</string>
-    <string name="agent_config_missing_cta">前往 AI 设置</string>
+    <string name="agent_status_configuration_required">还差一步配置，保存 API Key 后即可开始对话。</string>
+    <string name="agent_config_missing_title">先完成 API 配置</string>
+    <string name="agent_config_missing_body">当前 Agent 需要先完成 API 配置。请先在设置中填写 API Key，模型和请求 URL 可继续使用默认值。</string>
+    <string name="agent_config_missing_cta">前往 API 配置</string>
     <string name="agent_error_empty_message">请输入想发送的内容</string>
-    <string name="agent_error_config_missing">当前 MiniMax 配置未完成，请先检查设置。</string>
-    <string name="agent_error_invalid_url">MiniMax 请求地址不可用，请返回设置检查请求 URL。</string>
+    <string name="agent_error_config_missing">当前 API 配置未完成，请先检查设置。</string>
+    <string name="agent_error_invalid_url">API 请求地址不可用，请返回设置检查请求 URL。</string>
     <string name="agent_error_network">网络连接失败，请稍后重试。</string>
     <string name="agent_error_auth">MiniMax 鉴权失败，请检查 API Key 是否正确且仍然有效。</string>
     <string name="agent_error_rate_limit">MiniMax 请求过于频繁，请稍后再试。</string>
@@ -155,7 +155,7 @@
     <string name="settings_ai_assistant_group">AI 助理</string>
     <string name="settings_ai_assistant_toggle">显示 AI 入口</string>
     <string name="settings_ai_assistant_toggle_hint">控制首页卡片与底部 AI 标签</string>
-    <string name="settings_ai_api_key">MiniMax 配置</string>
+    <string name="settings_ai_api_key">API 配置</string>
     <string name="settings_ai_api_key_status_not_set">待配置</string>
     <string name="settings_ai_api_key_status_saved">已就绪</string>
     <string name="settings_management">管理</string>
@@ -186,10 +186,10 @@
     <string name="theme_system">跟随系统</string>
     <string name="theme_hint">提示：更改主题后需要重启应用才能生效</string>
 
-    <string name="ai_settings_title">AI 助理设置</string>
-    <string name="ai_settings_api_key_group">MiniMax BYOK</string>
-    <string name="ai_settings_api_key_description">在此保存当前设备使用的 MiniMax 文本对话配置。API Key 仅保存在本机，模型与完整请求 URL 可按需调整。</string>
-    <string name="ai_settings_api_key_label">MiniMax API Key</string>
+    <string name="ai_settings_title">API 配置</string>
+    <string name="ai_settings_api_key_group">API 配置</string>
+    <string name="ai_settings_api_key_description">在此保存当前设备使用的 API 对话配置。API Key 仅保存在本机，模型与完整请求 URL 可按需调整。</string>
+    <string name="ai_settings_api_key_label">API Key</string>
     <string name="ai_settings_api_key_hint">请输入 API Key</string>
     <string name="ai_settings_model_label">模型</string>
     <string name="ai_settings_model_hint">例如：M2-her</string>
@@ -200,7 +200,7 @@
     <string name="ai_settings_defaults_status_fallback">默认模型：M2-her
 默认请求 URL：https://api.minimax.io/v1/text/chatcompletion_v2</string>
     <string name="ai_settings_save">保存</string>
-    <string name="toast_ai_api_key_saved">MiniMax 设置已保存</string>
+    <string name="toast_ai_api_key_saved">API 设置已保存</string>
 
     <string-array name="theme_names">
         <item>@string/theme_light</item>

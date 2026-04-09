@@ -58,6 +58,9 @@
     <!-- Derived from current floating nav height + bottom margin + required 15dp gap. -->
     <dimen name="floating_primary_fab_bottom_margin_with_nav">111dp</dimen>
     <dimen name="content_bottom_padding_with_floating_nav">168dp</dimen>
+    <dimen name="agent_composer_horizontal_inset">24dp</dimen>
+    <dimen name="agent_composer_bottom_padding_with_nav">123dp</dimen>
+    <dimen name="agent_content_bottom_padding_with_composer">193dp</dimen>
     
     <!-- 图标尺寸 -->
     <dimen name="icon_size_small">16dp</dimen>
