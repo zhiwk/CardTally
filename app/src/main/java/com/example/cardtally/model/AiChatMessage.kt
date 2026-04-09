@@ -6,7 +6,10 @@ enum class AiChatRole(val apiValue: String) {
 }
 
 data class AiChatMessage(
+    val id: Long = 0L,
+    val sessionId: Long = 0L,
     val role: AiChatRole,
     val content: String,
-    val isError: Boolean = false
+    val isError: Boolean = false,
+    val createdAt: Long = 0L
 )

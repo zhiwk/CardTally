@@ -4,6 +4,9 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.example.cardtally.model.AiChatMessage
+import com.example.cardtally.model.AiChatRole
+import com.example.cardtally.model.AiChatSession
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
@@ -15,7 +18,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
-        private const val DATABASE_VERSION = 8
+        private const val DATABASE_VERSION = 9
 
         private const val TABLE_RECORDS = "records"
         private const val COLUMN_ID = "id"
@@ -39,6 +42,20 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val COLUMN_ASSET_AMOUNT = "amount"
         private const val COLUMN_ASSET_TYPE = "type"
         private const val COLUMN_ASSET_IS_ARCHIVED = "is_archived"
+
+        private const val TABLE_AI_CHAT_SESSIONS = "ai_chat_sessions"
+        private const val COLUMN_AI_CHAT_SESSION_ID = "id"
+        private const val COLUMN_AI_CHAT_SESSION_TITLE = "title"
+        private const val COLUMN_AI_CHAT_SESSION_CREATED_AT = "created_at"
+        private const val COLUMN_AI_CHAT_SESSION_UPDATED_AT = "updated_at"
+
+        private const val TABLE_AI_CHAT_MESSAGES = "ai_chat_messages"
+        private const val COLUMN_AI_CHAT_MESSAGE_ID = "id"
+        private const val COLUMN_AI_CHAT_MESSAGE_SESSION_ID = "session_id"
+        private const val COLUMN_AI_CHAT_MESSAGE_ROLE = "role"
+        private const val COLUMN_AI_CHAT_MESSAGE_CONTENT = "content"
+        private const val COLUMN_AI_CHAT_MESSAGE_IS_ERROR = "is_error"
+        private const val COLUMN_AI_CHAT_MESSAGE_CREATED_AT = "created_at"
 
         private const val CREATE_TABLE_RECORDS =
             "CREATE TABLE $TABLE_RECORDS (" +
@@ -65,12 +82,38 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             "$COLUMN_ASSET_AMOUNT REAL NOT NULL, " +
             "$COLUMN_ASSET_TYPE INTEGER NOT NULL, " +
             "$COLUMN_ASSET_IS_ARCHIVED INTEGER DEFAULT 0)"
+
+        private const val CREATE_TABLE_AI_CHAT_SESSIONS =
+            "CREATE TABLE $TABLE_AI_CHAT_SESSIONS (" +
+            "$COLUMN_AI_CHAT_SESSION_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "$COLUMN_AI_CHAT_SESSION_TITLE TEXT NOT NULL, " +
+            "$COLUMN_AI_CHAT_SESSION_CREATED_AT INTEGER NOT NULL, " +
+            "$COLUMN_AI_CHAT_SESSION_UPDATED_AT INTEGER NOT NULL)"
+
+        private const val CREATE_TABLE_AI_CHAT_MESSAGES =
+            "CREATE TABLE $TABLE_AI_CHAT_MESSAGES (" +
+            "$COLUMN_AI_CHAT_MESSAGE_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "$COLUMN_AI_CHAT_MESSAGE_SESSION_ID INTEGER NOT NULL, " +
+            "$COLUMN_AI_CHAT_MESSAGE_ROLE TEXT NOT NULL, " +
+            "$COLUMN_AI_CHAT_MESSAGE_CONTENT TEXT NOT NULL, " +
+            "$COLUMN_AI_CHAT_MESSAGE_IS_ERROR INTEGER DEFAULT 0, " +
+            "$COLUMN_AI_CHAT_MESSAGE_CREATED_AT INTEGER NOT NULL)"
+
+        private const val CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT =
+            "CREATE INDEX IF NOT EXISTS idx_ai_chat_sessions_updated_at ON $TABLE_AI_CHAT_SESSIONS($COLUMN_AI_CHAT_SESSION_UPDATED_AT DESC)"
+
+        private const val CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT =
+            "CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_session_created_at ON $TABLE_AI_CHAT_MESSAGES($COLUMN_AI_CHAT_MESSAGE_SESSION_ID, $COLUMN_AI_CHAT_MESSAGE_CREATED_AT ASC)"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(CREATE_TABLE_RECORDS)
         db.execSQL(CREATE_TABLE_CATEGORIES)
         db.execSQL(CREATE_TABLE_ASSETS)
+        db.execSQL(CREATE_TABLE_AI_CHAT_SESSIONS)
+        db.execSQL(CREATE_TABLE_AI_CHAT_MESSAGES)
+        db.execSQL(CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT)
+        db.execSQL(CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT)
         insertDefaultCategories(db)
     }
 
@@ -97,6 +140,12 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
         if (oldVersion < 8) {
             db.execSQL("ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_IS_ARCHIVED INTEGER DEFAULT 0")
+        }
+        if (oldVersion < 9) {
+            db.execSQL(CREATE_TABLE_AI_CHAT_SESSIONS)
+            db.execSQL(CREATE_TABLE_AI_CHAT_MESSAGES)
+            db.execSQL(CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT)
+            db.execSQL(CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT)
         }
     }
 
@@ -692,5 +741,163 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         cursor.close()
         db.close()
         return total
+    }
+
+    fun addAiChatSession(
+        title: String,
+        createdAt: Long = System.currentTimeMillis(),
+        updatedAt: Long = createdAt
+    ): Long {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_AI_CHAT_SESSION_TITLE, title)
+            put(COLUMN_AI_CHAT_SESSION_CREATED_AT, createdAt)
+            put(COLUMN_AI_CHAT_SESSION_UPDATED_AT, updatedAt)
+        }
+
+        val id = db.insert(TABLE_AI_CHAT_SESSIONS, null, values)
+        db.close()
+        return id
+    }
+
+    fun getAiChatSessions(): List<AiChatSession> {
+        val sessions = mutableListOf<AiChatSession>()
+        val selectQuery = "SELECT * FROM $TABLE_AI_CHAT_SESSIONS ORDER BY $COLUMN_AI_CHAT_SESSION_UPDATED_AT DESC, $COLUMN_AI_CHAT_SESSION_ID DESC"
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(selectQuery, null)
+
+        if (cursor.moveToFirst()) {
+            do {
+                sessions.add(
+                    AiChatSession(
+                        id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_ID)),
+                        title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_TITLE)),
+                        createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_CREATED_AT)),
+                        updatedAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_UPDATED_AT))
+                    )
+                )
+            } while (cursor.moveToNext())
+        }
+
+        cursor.close()
+        db.close()
+        return sessions
+    }
+
+    fun getAiChatSessionById(id: Long): AiChatSession? {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT * FROM $TABLE_AI_CHAT_SESSIONS WHERE $COLUMN_AI_CHAT_SESSION_ID = ?",
+            arrayOf(id.toString())
+        )
+
+        val session = if (cursor.moveToFirst()) {
+            AiChatSession(
+                id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_ID)),
+                title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_TITLE)),
+                createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_CREATED_AT)),
+                updatedAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_UPDATED_AT))
+            )
+        } else {
+            null
+        }
+
+        cursor.close()
+        db.close()
+        return session
+    }
+
+    fun updateAiChatSessionTitle(
+        id: Long,
+        title: String,
+        updatedAt: Long = System.currentTimeMillis()
+    ): Int {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_AI_CHAT_SESSION_TITLE, title)
+            put(COLUMN_AI_CHAT_SESSION_UPDATED_AT, updatedAt)
+        }
+
+        val rowsAffected = db.update(
+            TABLE_AI_CHAT_SESSIONS,
+            values,
+            "$COLUMN_AI_CHAT_SESSION_ID = ?",
+            arrayOf(id.toString())
+        )
+        db.close()
+        return rowsAffected
+    }
+
+    fun touchAiChatSession(id: Long, updatedAt: Long = System.currentTimeMillis()): Int {
+        val db = writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_AI_CHAT_SESSION_UPDATED_AT, updatedAt)
+        }
+
+        val rowsAffected = db.update(
+            TABLE_AI_CHAT_SESSIONS,
+            values,
+            "$COLUMN_AI_CHAT_SESSION_ID = ?",
+            arrayOf(id.toString())
+        )
+        db.close()
+        return rowsAffected
+    }
+
+    fun addAiChatMessage(message: AiChatMessage): Long {
+        val db = writableDatabase
+        val createdAt = message.createdAt.takeIf { it > 0L } ?: System.currentTimeMillis()
+        val values = ContentValues().apply {
+            put(COLUMN_AI_CHAT_MESSAGE_SESSION_ID, message.sessionId)
+            put(COLUMN_AI_CHAT_MESSAGE_ROLE, message.role.apiValue)
+            put(COLUMN_AI_CHAT_MESSAGE_CONTENT, message.content)
+            put(COLUMN_AI_CHAT_MESSAGE_IS_ERROR, if (message.isError) 1 else 0)
+            put(COLUMN_AI_CHAT_MESSAGE_CREATED_AT, createdAt)
+        }
+
+        val id = db.insert(TABLE_AI_CHAT_MESSAGES, null, values)
+        if (message.sessionId > 0L) {
+            val sessionValues = ContentValues().apply {
+                put(COLUMN_AI_CHAT_SESSION_UPDATED_AT, createdAt)
+            }
+            db.update(
+                TABLE_AI_CHAT_SESSIONS,
+                sessionValues,
+                "$COLUMN_AI_CHAT_SESSION_ID = ?",
+                arrayOf(message.sessionId.toString())
+            )
+        }
+        db.close()
+        return id
+    }
+
+    fun getAiChatMessages(sessionId: Long): List<AiChatMessage> {
+        val messages = mutableListOf<AiChatMessage>()
+        val selectQuery = "SELECT * FROM $TABLE_AI_CHAT_MESSAGES WHERE $COLUMN_AI_CHAT_MESSAGE_SESSION_ID = ? ORDER BY $COLUMN_AI_CHAT_MESSAGE_CREATED_AT ASC, $COLUMN_AI_CHAT_MESSAGE_ID ASC"
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(selectQuery, arrayOf(sessionId.toString()))
+
+        if (cursor.moveToFirst()) {
+            do {
+                messages.add(
+                    AiChatMessage(
+                        id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_ID)),
+                        sessionId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_SESSION_ID)),
+                        role = AiChatRole.values().firstOrNull {
+                            it.apiValue == cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_ROLE))
+                        } ?: AiChatRole.ASSISTANT,
+                        content = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_CONTENT)),
+                        isError = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_IS_ERROR)) == 1,
+                        createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_CREATED_AT))
+                    )
+                )
+            } while (cursor.moveToNext())
+        }
+
+        cursor.close()
+        db.close()
+        return messages
     }
 }
