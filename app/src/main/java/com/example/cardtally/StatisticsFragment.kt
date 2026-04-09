@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.StatisticsAdapter
 import com.example.cardtally.database.DatabaseHelper
+import com.example.cardtally.util.FloatingNavLayoutHelper
 import java.util.Calendar
 
 class StatisticsFragment : Fragment() {
@@ -47,6 +48,10 @@ class StatisticsFragment : Fragment() {
                 .replace(R.id.fragment_container, AddRecordFragment())
                 .addToBackStack(null)
                 .commit()
+        }
+
+        requireActivity().findViewById<View>(R.id.nav_shell)?.let { navShell ->
+            FloatingNavLayoutHelper.applyFabGapAboveBottomNav(fabAdd, navShell)
         }
 
         return view

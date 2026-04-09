@@ -48,6 +48,16 @@
     <dimen name="fab_size_mini">40dp</dimen>
     <dimen name="fab_size_normal">56dp</dimen>
     <dimen name="fab_size_large">64dp</dimen>
+
+    <!-- Floating bottom navigation / FAB -->
+    <dimen name="floating_nav_horizontal_margin">16dp</dimen>
+    <dimen name="floating_nav_bottom_margin">24dp</dimen>
+    <dimen name="floating_nav_vertical_padding">6dp</dimen>
+    <dimen name="floating_primary_fab_end_margin">28dp</dimen>
+    <dimen name="floating_primary_fab_gap_above_nav">15dp</dimen>
+    <!-- Derived from current floating nav height + bottom margin + required 15dp gap. -->
+    <dimen name="floating_primary_fab_bottom_margin_with_nav">111dp</dimen>
+    <dimen name="content_bottom_padding_with_floating_nav">168dp</dimen>
     
     <!-- 图标尺寸 -->
     <dimen name="icon_size_small">16dp</dimen>

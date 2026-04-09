@@ -1,6 +1,7 @@
 package com.example.cardtally
 
 import android.os.Bundle
+import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -14,6 +15,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 class MainActivity : AppCompatActivity() {
 
     private lateinit var bottomNavigationView: BottomNavigationView
+    private lateinit var navShell: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         LanguageHelper.applySavedLanguage(this)
@@ -22,9 +24,18 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         bottomNavigationView = findViewById(R.id.bottom_navigation)
+        navShell = findViewById(R.id.nav_shell)
 
         updateBottomNavigationVisibility()
-        
+
+        supportFragmentManager.registerFragmentLifecycleCallbacks(object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentResumed(fm: androidx.fragment.app.FragmentManager, f: Fragment) {
+                if (f.id == R.id.fragment_container) {
+                    updateBottomNavigationForFragment(f)
+                }
+            }
+        }, false)
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (supportFragmentManager.backStackEntryCount > 0) {
@@ -63,6 +74,10 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, initialFragment)
                 .commit()
+        } else {
+            supportFragmentManager.findFragmentById(R.id.fragment_container)?.let {
+                updateBottomNavigationForFragment(it)
+            }
         }
     }
 
@@ -80,5 +95,17 @@ class MainActivity : AppCompatActivity() {
         val assetItem = menu.findItem(R.id.nav_asset)
         aiItem.isVisible = showAiAssistant
         assetItem.isVisible = showAsset
+    }
+
+    private fun updateBottomNavigationForFragment(fragment: Fragment) {
+        val isTopLevel = fragment is HomeFragment ||
+            fragment is AssetFragment ||
+            fragment is StatisticsFragment ||
+            fragment is AgentFragment ||
+            fragment is SettingsFragment
+
+        val visibility = if (isTopLevel) View.VISIBLE else View.GONE
+        navShell.visibility = visibility
+        bottomNavigationView.visibility = visibility
     }
 }

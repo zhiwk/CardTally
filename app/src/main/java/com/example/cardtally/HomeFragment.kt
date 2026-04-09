@@ -3,9 +3,7 @@ package com.example.cardtally
 import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
-import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.TextView
@@ -19,6 +17,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.AiAssistantSettingsHelper
+import com.example.cardtally.util.FloatingNavLayoutHelper
 import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.RecordDragCallback
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -43,9 +42,6 @@ class HomeFragment : Fragment() {
     private var currentYear: Int = 0
     private var currentMonth: Int = 0
     private var currentPeriod: String = "month" // fixed to monthly view matching new UI
-
-    private var isBottomNavVisible = true
-    private var isFabVisible = true
 
     private var allRecords: List<Record> = emptyList()
 
@@ -97,46 +93,9 @@ class HomeFragment : Fragment() {
                 .commit()
         }
 
-        recyclerRecords.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                
-                if (dy > 0) {
-                    hideBottomNav()
-                    hideFab()
-                } else if (dy < 0) {
-                    showBottomNav()
-                    showFab()
-                }
-            }
-        })
-
-        recyclerRecords.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
-            private var initialY = 0f
-            private val touchSlop = ViewConfiguration.get(requireContext()).scaledTouchSlop
-            
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                when (e.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        initialY = e.rawY
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        val deltaY = e.rawY - initialY
-                        if (deltaY > touchSlop) {
-                            showBottomNav()
-                            showFab()
-                        } else if (deltaY < -touchSlop) {
-                            hideBottomNav()
-                            hideFab()
-                        }
-                    }
-                }
-                return false
-            }
-            
-            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
-            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
-        })
+        requireActivity().findViewById<View>(R.id.nav_shell)?.let { navShell ->
+            FloatingNavLayoutHelper.applyFabGapAboveBottomNav(fabAdd, navShell)
+        }
 
         return view
     }
@@ -145,8 +104,6 @@ class HomeFragment : Fragment() {
         super.onResume()
         updateAiAssistantVisibility()
         loadRecords()
-        showBottomNav()
-        showFab()
     }
 
     private fun updateAiAssistantVisibility() {
@@ -433,61 +390,4 @@ class HomeFragment : Fragment() {
             .show()
     }
 
-    private fun hideBottomNav() {
-        if (isBottomNavVisible) {
-            val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
-            bottomNav?.animate()
-                ?.alpha(0f)
-                ?.translationY(bottomNav.height.toFloat())
-                ?.setDuration(200)
-                ?.withEndAction {
-                    bottomNav.visibility = View.GONE
-                }
-                ?.start()
-            isBottomNavVisible = false
-        }
-    }
-
-    private fun showBottomNav() {
-        if (!isBottomNavVisible) {
-            val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
-            bottomNav.visibility = View.VISIBLE
-            bottomNav.alpha = 0f
-            bottomNav.translationY = bottomNav.height.toFloat()
-            bottomNav.animate()
-                ?.alpha(1f)
-                ?.translationY(0f)
-                ?.setDuration(200)
-                ?.start()
-            isBottomNavVisible = true
-        }
-    }
-
-    private fun hideFab() {
-        if (isFabVisible) {
-            fabAdd.animate()
-                .alpha(0f)
-                .translationX(fabAdd.width.toFloat() * 2)
-                .setDuration(200)
-                .withEndAction {
-                    fabAdd.visibility = View.GONE
-                }
-                .start()
-            isFabVisible = false
-        }
-    }
-
-    private fun showFab() {
-        if (!isFabVisible) {
-            fabAdd.visibility = View.VISIBLE
-            fabAdd.alpha = 0f
-            fabAdd.translationX = fabAdd.width.toFloat() * 2
-            fabAdd.animate()
-                .alpha(1f)
-                .translationX(0f)
-                .setDuration(200)
-                .start()
-            isFabVisible = true
-        }
-    }
 }

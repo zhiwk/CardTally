@@ -111,7 +111,7 @@
     <style name="Theme.CardTally" parent="Theme.CardTally.Light" />
 
     <style name="App.Custom.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">@color/secondaryContainer_light</item>
+        <item name="android:color">@android:color/transparent</item>
         <item name="android:width">56dp</item>
         <item name="android:height">28dp</item>
         <item name="android:radius">14dp</item>

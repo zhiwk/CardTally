@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_light"
+    android:background="?android:attr/colorBackground"
     tools:context=".StatisticsFragment">
 
     <!-- Top Navigation -->
@@ -25,7 +25,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_search"
-            app:tint="@color/primary_light" />
+            app:tint="?attr/colorPrimary" />
 
         <TextView
             android:id="@+id/text_title"
@@ -34,7 +34,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="Ledger"
-            android:textColor="@color/onBackground_light"
+            android:textColor="?attr/colorOnBackground"
             android:textSize="24sp"
             android:textStyle="italic"
             android:fontFamily="serif"/>
@@ -45,7 +45,7 @@
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_tune"
-            app:tint="@color/primary_light" />
+            app:tint="?attr/colorPrimary" />
 
     </LinearLayout>
 
@@ -54,7 +54,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="无记录内容"
-        android:textColor="@color/emptyText_light"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="15sp"
         android:visibility="gone"
         android:layout_gravity="center" />
@@ -67,18 +67,18 @@
         android:clipToPadding="false"
         android:paddingTop="8dp"
         android:paddingHorizontal="24dp"
-        android:paddingBottom="168dp" />
+        android:paddingBottom="@dimen/content_bottom_padding_with_floating_nav" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_marginEnd="28dp"
-        android:layout_marginBottom="112dp"
+        android:layout_marginEnd="@dimen/floating_primary_fab_end_margin"
+        android:layout_marginBottom="@dimen/floating_primary_fab_bottom_margin_with_nav"
         android:contentDescription="New entry"
         android:src="@drawable/ic_edit"
-        app:backgroundTint="@color/primary_light"
-        app:tint="@color/onPrimary_light" />
+        app:backgroundTint="?attr/colorPrimary"
+        app:tint="?attr/colorOnPrimary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

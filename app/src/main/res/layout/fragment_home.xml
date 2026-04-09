@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
+    android:background="?android:attr/colorBackground"
     tools:context=".HomeFragment">
 
     <!-- Scrollable content -->
@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:paddingBottom="168dp">
+        android:paddingBottom="@dimen/content_bottom_padding_with_floating_nav">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -33,7 +33,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/home_date_placeholder"
-                    android:textColor="@color/onBackground_light"
+                    android:textColor="?attr/colorOnBackground"
                     android:textSize="36sp"
                     android:textStyle="bold"
                     android:letterSpacing="-0.02" />
@@ -94,7 +94,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
                                 android:text="@string/currency_amount_placeholder"
-                                android:textColor="@color/primary_light"
+                                android:textColor="?attr/colorPrimary"
                                 android:textSize="38sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -177,7 +177,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/surface_container_lowest"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLowest"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="2dp"
                 app:strokeWidth="1dp"
@@ -200,7 +200,7 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_agent"
-                            app:tint="@color/primary_light" />
+                            app:tint="?attr/colorPrimary" />
                     </FrameLayout>
 
                     <LinearLayout
@@ -214,7 +214,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/home_agent_title"
-                            android:textColor="@color/onSurface_light"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="14sp"
                             android:textStyle="bold" />
 
@@ -223,7 +223,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="@string/home_agent_subtitle"
-                            android:textColor="@color/onSurfaceVariant_light"
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="12sp" />
                     </LinearLayout>
 
@@ -248,7 +248,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/home_recent_entries"
-                    android:textColor="@color/primary_light"
+                    android:textColor="?attr/colorPrimary"
                     android:textSize="22sp"
                     android:textStyle="italic" />
 
@@ -270,7 +270,7 @@
                 android:gravity="center"
                 android:paddingVertical="32dp"
                 android:text="@string/home_empty"
-                android:textColor="@color/emptyText_light"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="15sp"
                 android:lineSpacingExtra="6dp"
                 android:visibility="gone" />
@@ -292,12 +292,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_marginEnd="28dp"
-        android:layout_marginBottom="112dp"
+        android:layout_marginEnd="@dimen/floating_primary_fab_end_margin"
+        android:layout_marginBottom="@dimen/floating_primary_fab_bottom_margin_with_nav"
         android:contentDescription="@string/content_description_add"
         android:src="@drawable/ic_edit"
-        app:backgroundTint="@color/primary_light"
+        app:backgroundTint="?attr/colorPrimary"
         app:elevation="4dp"
-        app:tint="@color/onPrimary_light" />
+        app:tint="?attr/colorOnPrimary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
