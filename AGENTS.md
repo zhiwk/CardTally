@@ -25,7 +25,7 @@ CardTally 仓库的 AI 协作入口文件。开始任何修改前，先读本文
 - 当前录入页复用现实：`AddRecordFragment` / `EditRecordFragment` 共享 `fragment_add_record.xml`；`AddAssetFragment` / `EditAssetFragment` 共享 `fragment_add_asset.xml`。
 - 当前 AI 助手现实：`AgentFragment` 已接入 MiniMax BYOK 流式文本聊天，请求默认携带 `stream=true`，并会按实际响应内容识别流式 / 非流式返回；当前已支持增量渲染回复，以及区分 `TIMEOUT / CANCELLED / INTERRUPTED / NETWORK` 等失败态并在已有内容时保留部分回复。当前 AI 助手会话与消息已持久化到 SQLite，可跨页面切换与重启保留；`AgentSessionAdapter` / `AiChatSession` / `DatabaseHelper` 共同支撑多会话切换、新建与重命名。`AiAssistantSettingsFragment` / `AiAssistantSettingsHelper` 负责本机保存 API Key、模型、完整请求 URL 与当前活动会话 ID。
 - 当前主题现实：主题设置当前只保留 `浅色 / 深色 / 跟随系统` 三档；历史蓝 / 绿 / 橙彩色主题已从设置入口与资源层移除，`ThemeHelper` 会把旧的彩色主题存档值回退到浅色主题。当前仓库正在以主题属性和 `values-night` 覆盖替换旧的 `*_light` 直接引用；涉及主题/深色模式问题时，优先检查 `ThemeHelper`、`ThemeSettingsFragment`、`styles.xml`、`values-night/*.xml` 与受影响布局/适配器。
-- 当前导航现实：`MainActivity` 统一持有浮动底部导航壳；一级页显示，进入二级页面（add/edit/settings detail 等）后隐藏整个 `nav_shell`，不要再在单个 Fragment 中分散维护导航显隐规则。
+- 当前导航现实：`MainActivity` 统一持有浮动底部导航壳；一级页显示，进入二级页面（add/edit/settings detail 等）后隐藏整个 `nav_shell`，不要再在单个 Fragment 中分散维护导航显隐规则。当前 `AgentFragment` 会话抽屉展开时，也会临时隐藏 `nav_shell`，关闭后恢复。
 - 当前仓库已接入应用级中英文国际化；涉及文案、语言切换或字符串资源时，先检查 `LanguageHelper` 和 `res/values*/strings*.xml`。
 - 修改优先做最小必要改动，尤其是 bugfix 和局部功能补全。
 - 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 等命令；不要并行跑共享 `app/build/` 产物的任务，避免出现 `Tool execution aborted` 或中间产物互相踩踏导致误判。

@@ -55,6 +55,6 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 - 当前 AI 助手已经不是静态示例页，而是带 SQLite 持久化多会话的 MiniMax BYOK 聊天页；不要再按“单会话内存态”理解 `AgentFragment`。
 - 当前主题设置现实是 `浅色 / 深色 / 跟随系统` 三档，不要再按旧的蓝 / 绿 / 橙彩色主题理解设置页。
 - 当前深色模式适配依赖 `ThemeHelper`、主题属性与 `values-night` 覆盖；不要继续往布局和 Kotlin 里新增 `*_light` 直接引用。
-- 当前底部导航由 `MainActivity` 统一控制一级 / 二级页显隐，不要在各个二级页里继续各自维护一套 hide/show 规则。
+- 当前底部导航由 `MainActivity` 统一控制一级 / 二级页显隐，不要在各个二级页里继续各自维护一套 hide/show 规则；`AgentFragment` 的会话抽屉显隐也应通过 `MainActivity` 的导航壳控制链路协同。
 - README 和规划文档里出现的目标架构，不等于当前代码已经实现。
 - 若只是在修 bug 或补局部功能，优先沿用现有模式，避免顺手做大规模架构迁移。
