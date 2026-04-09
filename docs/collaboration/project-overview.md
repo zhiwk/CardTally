@@ -26,9 +26,9 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 - `*Fragment.kt`：页面级逻辑，例如 `HomeFragment`、`AddRecordFragment`、`EditRecordFragment`、`AddAssetFragment`、`EditAssetFragment`、`StatisticsFragment`、`SettingsFragment`、`SearchFragment`、`AgentFragment`、`AssetFragment`
 - `adapter/`：RecyclerView 相关适配器
 - `database/`：SQLite 数据访问，核心在 `DatabaseHelper.kt`
-- `model/`：数据模型
+- `model/`：数据模型，包括记录、资产，以及 AI 助手会话 / 消息模型
 - `network/`：网络请求与 MiniMax BYOK 聊天相关客户端逻辑
-- `util/`：工具类，例如主题、快捷记账、列表交互辅助
+- `util/`：工具类，例如主题、快捷记账、列表交互辅助、AI 设置与会话默认命名辅助
 
 ### 资源
 
@@ -52,5 +52,6 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 - 当前应用以 `Fragment + XML + 手工导航/切换` 为主，不要默认已经接入 Navigation Component。
 - 当前数据层是 `SQLite + DatabaseHelper`，不要默认已经迁移到 Room。
 - 当前语言切换基于应用级 locale，不要再额外引入第二套手写国际化状态。
+- 当前 AI 助手已经不是静态示例页，而是带 SQLite 持久化多会话的 MiniMax BYOK 聊天页；不要再按“单会话内存态”理解 `AgentFragment`。
 - README 和规划文档里出现的目标架构，不等于当前代码已经实现。
 - 若只是在修 bug 或补局部功能，优先沿用现有模式，避免顺手做大规模架构迁移。

@@ -57,6 +57,18 @@
 - AI 设置状态当前使用 `AiAssistantSettingsHelper.kt` 持久化到本地 `SharedPreferences`，并保存 `API Key / 模型 / 完整请求 URL`
 - AI 设置中的 URL 语义已改为“完整请求 URL”，客户端不再自动拼接固定 MiniMax endpoint
 
+## 2026-04-09 最新代码现实
+
+- `AgentFragment` 已从“单会话内存态”升级为“SQLite 持久化多会话聊天页”
+- AI 助手会话和消息当前由 `DatabaseHelper` 持久化，新增了会话与消息表；切换页面或重启应用后，会恢复上次活动会话与历史消息
+- `AiAssistantSettingsHelper.kt` 当前除保存 `API Key / 模型 / 完整请求 URL` 外，也会保存当前活动会话 ID
+- `AgentFragment` 左上角菜单已改为本地左滑会话栏入口，可切换历史会话
+- `AgentFragment` 右上角头像位已替换为 `+` 号，用于新建会话；默认会话命名格式为“新会话-年月日”
+- 会话项当前支持长按重命名，列表渲染由 `AgentSessionAdapter` 驱动
+- AI 回复在流式完成后会落库；取消、超时或中断时，如果已有部分回复内容，也会按错误态消息保留下来
+- 当前仓库已新增真实测试文件，不再是“只有测试依赖、没有实际测试”状态；现有测试覆盖会话默认命名、AI 会话/消息 SQLite 持久化，以及活动会话 ID 偏好存储
+
 ## 环境注意事项
 
 - `local.properties` 属于本机环境文件；当前构建依赖其中的 `sdk.dir` 或等效 Android SDK 环境变量，不要提交该文件
+- Android Gradle 验证在同一工作区内默认串行执行；不要并行跑 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 这类共享 `app/build/` 产物的任务，避免因中间产物互踩而误判

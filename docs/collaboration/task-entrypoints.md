@@ -48,6 +48,21 @@
 2. 相关 `model/*.kt`
 3. 发起查询或渲染数据的 Fragment / Adapter
 
+### 改 AI 助手 / MiniMax 对话 / 会话持久化
+
+先读：
+
+1. `app/src/main/java/com/example/cardtally/AgentFragment.kt`
+2. `app/src/main/java/com/example/cardtally/database/DatabaseHelper.kt`
+3. `app/src/main/java/com/example/cardtally/adapter/AgentChatAdapter.kt`
+4. `app/src/main/java/com/example/cardtally/adapter/AgentSessionAdapter.kt`
+5. `app/src/main/java/com/example/cardtally/model/AiChatMessage.kt`
+6. `app/src/main/java/com/example/cardtally/model/AiChatSession.kt`
+7. `app/src/main/java/com/example/cardtally/util/AiAssistantSettingsHelper.kt`
+8. `app/src/main/java/com/example/cardtally/network/MiniMaxClient.kt`
+9. `app/src/main/res/layout/fragment_agent.xml`
+10. `docs/collaboration/skills/android-gradle-serial-verification.md`（如果需要跑构建 / 单测 / 真机验证）
+
 ### 改主题 / 样式 / 视觉一致性
 
 先读：
