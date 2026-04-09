@@ -68,9 +68,13 @@
 先读：
 
 1. `util/ThemeHelper.kt`
-2. `res/values/*.xml`
-3. 受影响页面布局
-4. `docs/design/guidelines/*`
+2. `ThemeSettingsFragment.kt` 与 `fragment_theme_settings.xml`
+3. `res/values/*.xml` 与 `res/values-night/*.xml`
+4. `util/ThemeColorHelper.kt`（如果涉及 Kotlin 运行时取色）
+5. 受影响页面布局 / Adapter / Fragment
+6. `docs/design/guidelines/*`
+
+注意：当前仓库主题现实只有 `浅色 / 深色 / 跟随系统` 三档；如果看到 `*_light` 直接引用，默认应视为待迁移对象，而不是可继续沿用的模式。
 
 ### 改文案 / 国际化 / 语言切换
 

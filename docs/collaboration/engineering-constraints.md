@@ -16,11 +16,13 @@
 - 涉及主题、卡片、排版等 UI 变更时，优先复用已有资源文件，例如：
   - `colors_light.xml`
   - `colors_dark.xml`
-  - `colors_gradients.xml`
+  - `values-night/*.xml`
   - `styles.xml`
   - `styles_cards.xml`
   - `styles_typography.xml`
   - `dimens.xml`
+- 当前主题设置只保留 `浅色 / 深色 / 跟随系统` 三档；不要再新增或恢复蓝 / 绿 / 橙彩色主题分支。
+- 当前深色模式修复策略是：优先使用主题属性（如 `?attr/colorOnSurface`），必要时通过 `values-night` 做兼容覆盖；不要继续新增 `@color/*_light` 或 `R.color.*_light` 直接引用。
 
 ## 业务规则约束
 
@@ -87,7 +89,10 @@ CardTally 当前明确的产品气质是：`静奢理财日记`。
   - `app/src/test/java/com/example/cardtally/util/AgentSessionTitleHelperTest.kt`
   - `app/src/androidTest/java/com/example/cardtally/database/DatabaseHelperAgentChatSessionTest.kt`
   - `app/src/androidTest/java/com/example/cardtally/util/AiAssistantSettingsHelperTest.kt`
+  - `app/src/androidTest/java/com/example/cardtally/MainActivityThemeApplicationTest.kt`
+  - `app/src/androidTest/java/com/example/cardtally/util/ThemeHelperTest.kt`
 - 涉及 AI 助手多会话持久化时，优先先跑相关单测 / 真机测试，再补 `assembleDebug` 与人工验证。
+- 涉及主题 / 深色模式修复时，优先先跑 `ThemeHelperTest`、`MainActivityThemeApplicationTest` 这类主题回归，再补 `assembleDebug` 与人工验证。
 - 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest`；不要并行跑共享 `app/build/` 产物的任务。详见 `docs/collaboration/skills/android-gradle-serial-verification.md`
 
 ## 文档可信度排序
