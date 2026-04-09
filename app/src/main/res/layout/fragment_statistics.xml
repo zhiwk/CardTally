@@ -79,6 +79,9 @@
         android:contentDescription="New entry"
         android:src="@drawable/ic_edit"
         app:backgroundTint="?attr/colorPrimary"
+        app:elevation="@dimen/card_elevation_none"
+        app:hoveredFocusedTranslationZ="@dimen/card_elevation_none"
+        app:pressedTranslationZ="@dimen/card_elevation_none"
         app:tint="?attr/colorOnPrimary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
