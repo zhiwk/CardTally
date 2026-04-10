@@ -178,13 +178,13 @@
                 android:background="@drawable/bg_agent_composer_shell"
                 android:elevation="0dp"
                 android:gravity="center_vertical"
-                android:minHeight="60dp"
+                android:minHeight="@dimen/agent_composer_shell_resting_height"
                 android:outlineProvider="background"
                 android:orientation="horizontal"
                 android:paddingStart="20dp"
-                android:paddingTop="6dp"
+                android:paddingTop="@dimen/spacing_xs"
                 android:paddingEnd="8dp"
-                android:paddingBottom="6dp">
+                android:paddingBottom="@dimen/spacing_xs">
 
                 <EditText
                     android:id="@+id/edit_agent_message"
@@ -196,7 +196,7 @@
                     android:imeOptions="actionSend"
                     android:inputType="textCapSentences|textMultiLine|textNoSuggestions"
                     android:maxLines="5"
-                    android:minHeight="48dp"
+                    android:minHeight="@dimen/button_height"
                     android:paddingEnd="12dp"
                     android:textColor="?attr/colorOnSurface"
                     android:textColorHint="?attr/colorOnSurfaceVariant"
@@ -212,8 +212,8 @@
 
                 <FrameLayout
                     android:id="@+id/button_agent_send"
-                    android:layout_width="52dp"
-                    android:layout_height="52dp"
+                    android:layout_width="@dimen/agent_composer_send_button_size"
+                    android:layout_height="@dimen/agent_composer_send_button_size"
                     android:background="@drawable/bg_circle_primary_container"
                     android:clickable="true"
                     android:contentDescription="@string/agent_send_content_description"

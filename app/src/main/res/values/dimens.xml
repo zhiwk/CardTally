@@ -58,7 +58,9 @@
     <!-- Derived from current floating nav height + bottom margin + required 15dp gap. -->
     <dimen name="floating_primary_fab_bottom_margin_with_nav">111dp</dimen>
     <dimen name="content_bottom_padding_with_floating_nav">168dp</dimen>
-    <dimen name="agent_composer_horizontal_inset">24dp</dimen>
+    <dimen name="agent_composer_horizontal_inset">@dimen/floating_nav_horizontal_margin</dimen>
+    <dimen name="agent_composer_shell_resting_height">56dp</dimen>
+    <dimen name="agent_composer_send_button_size">48dp</dimen>
     <dimen name="agent_composer_bottom_padding_with_nav">123dp</dimen>
     <dimen name="agent_content_bottom_padding_with_composer">193dp</dimen>
     
