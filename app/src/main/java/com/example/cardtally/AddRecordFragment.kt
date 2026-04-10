@@ -67,6 +67,7 @@ class AddRecordFragment : Fragment() {
 
         selectedDate = databaseHelper.getCurrentDate()
         textDate.text = selectedDate
+        setupAmountInputBehavior()
 
         recyclerCategories.layoutManager = GridLayoutManager(requireContext(), 4)
 
@@ -241,8 +242,30 @@ class AddRecordFragment : Fragment() {
     }
 
     private fun clearAmountAndDescription() {
-        editAmount.setText("")
+        editAmount.setText(getString(R.string.amount_default))
         editDescription.setText("")
+    }
+
+    private fun setupAmountInputBehavior() {
+        editAmount.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                selectAmountIfStillDefault()
+            }
+        }
+
+        editAmount.setOnClickListener {
+            selectAmountIfStillDefault()
+        }
+    }
+
+    private fun selectAmountIfStillDefault() {
+        if (editAmount.text.toString() != getString(R.string.amount_default)) {
+            return
+        }
+
+        editAmount.post {
+            editAmount.selectAll()
+        }
     }
 
     private fun hideBottomNav() {
