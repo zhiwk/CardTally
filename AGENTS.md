@@ -22,8 +22,8 @@ CardTally 仓库的 AI 协作入口文件。开始任何修改前，先读本文
 
 - 先基于源码和 Gradle 配置工作，再参考 README、规划文档和设计文档。
 - 当前仓库现实是 `Fragment + XML + SQLite(DatabaseHelper)`，不要默认已经接入 Room 或 Navigation Component。
-- 当前录入页复用现实：`AddRecordFragment` / `EditRecordFragment` 共享 `fragment_add_record.xml`；`AddAssetFragment` / `EditAssetFragment` 共享 `fragment_add_asset.xml`。
-- 当前 AI 助手现实：`AgentFragment` 已接入 MiniMax BYOK 流式文本聊天，请求默认携带 `stream=true`，并会按实际响应内容识别流式 / 非流式返回；当前已支持增量渲染回复，以及区分 `TIMEOUT / CANCELLED / INTERRUPTED / NETWORK` 等失败态并在已有内容时保留部分回复。当前 AI 助手会话与消息已持久化到 SQLite，可跨页面切换与重启保留；`AgentSessionAdapter` / `AiChatSession` / `DatabaseHelper` 共同支撑多会话切换、新建与重命名。`AiAssistantSettingsFragment` / `AiAssistantSettingsHelper` 负责本机保存 API Key、模型、完整请求 URL 与当前活动会话 ID。
+- 当前录入页复用现实：`AddRecordFragment` / `EditRecordFragment` 共享 `fragment_add_record.xml`；`AddAssetFragment` / `EditAssetFragment` 共享 `fragment_add_asset.xml`。当前“记一笔”金额输入默认显示 `0.00`；当默认值仍在时，`AddRecordFragment` 会在点击 / 聚焦金额框时选中默认值，便于直接覆盖输入，而不是先手动删除已有的 `0`。
+- 当前 AI 助手现实：`AgentFragment` 已接入 MiniMax BYOK 流式文本聊天，请求默认携带 `stream=true`，并会按实际响应内容识别流式 / 非流式返回；当前已支持增量渲染回复，以及区分 `TIMEOUT / CANCELLED / INTERRUPTED / NETWORK` 等失败态并在已有内容时保留部分回复。当前 AI 助手会话与消息已持久化到 SQLite，可跨页面切换与重启保留；`AgentSessionAdapter` / `AiChatSession` / `DatabaseHelper` 共同支撑多会话切换、新建与重命名。`AiAssistantSettingsFragment` / `AiAssistantSettingsHelper` 负责本机保存 API Key、模型、完整请求 URL 与当前活动会话 ID。当前 Agent 页底部输入壳左右边距已与活动级浮动底部导航壳对齐，静态壳高为 `56dp`，发送按钮为 `48dp`。
 - 当前主题现实：主题设置当前只保留 `浅色 / 深色 / 跟随系统` 三档；历史蓝 / 绿 / 橙彩色主题已从设置入口与资源层移除，`ThemeHelper` 会把旧的彩色主题存档值回退到浅色主题。当前仓库正在以主题属性和 `values-night` 覆盖替换旧的 `*_light` 直接引用；涉及主题/深色模式问题时，优先检查 `ThemeHelper`、`ThemeSettingsFragment`、`styles.xml`、`values-night/*.xml` 与受影响布局/适配器。
 - 当前导航现实：`MainActivity` 统一持有浮动底部导航壳；一级页显示，进入二级页面（add/edit/settings detail 等）后隐藏整个 `nav_shell`，不要再在单个 Fragment 中分散维护导航显隐规则。当前 `AgentFragment` 会话抽屉展开时，也会临时隐藏 `nav_shell`，关闭后恢复。
 - 当前仓库已接入应用级中英文国际化；涉及文案、语言切换或字符串资源时，先检查 `LanguageHelper` 和 `res/values*/strings*.xml`。
