@@ -2,7 +2,7 @@
 
 ## 当前有效快照
 
-以下内容用于帮助后续 AI 快速识别仓库的最近实现状态，避免把已落地的内容继续误判为“规划中”。
+以下内容用于帮助后续 AI 快速识别仓库的最近实现状态，避免把已落地的内容继续误判为"规划中"。
 
 ## 2026-04-06 已落地状态
 
@@ -45,9 +45,9 @@
 - `EditAssetFragment` 已切换为复用 `fragment_add_asset.xml`
 - `fragment_edit_asset.xml` 已移除，新增资产与编辑资产现在共享同一套录入 UX 基准
 - 应用已接入应用级中英文国际化，当前支持 `中文 / English`
-- 语言切换入口位于“我的”页，并在切换后立即全局生效
+- 语言切换入口位于"我的"页，并在切换后立即全局生效
 - 国际化基础设施集中在 `LanguageHelper.kt`、`app/src/main/res/values/strings.xml`、`app/src/main/res/values-en/strings.xml` 和 `app/src/main/res/xml/locale_config.xml`
-- “我的”页已新增 `AI 助理` 分组，包含 AI 入口显示开关与 `MiniMax 配置` 二级设置页
+- "我的"页已新增 `AI 助理` 分组，包含 AI 入口显示开关与 `MiniMax 配置` 二级设置页
 - AI 显示开关当前会控制首页 Agent 卡片与底部 `AI 助手` tab 的可见性，并在关闭时阻止继续停留在 Agent 页面
 - `AgentFragment` 已从静态示例页切换为 MiniMax BYOK 聊天页；当前请求默认携带 `stream=true`
 - AI 客户端会按实际响应内容识别流式 / 非流式返回：如果收到 SSE / chunk 形态内容，则增量刷新当前 Assistant 气泡；如果返回完整 JSON，则回退为一次性解析完整回复
@@ -55,18 +55,18 @@
 - AI 页面当前支持区分 `TIMEOUT / CANCELLED / INTERRUPTED / NETWORK` 等失败态，不再统一映射为普通网络失败
 - 对于取消、超时或中断这类场景，如果 Assistant 内容已经部分到达，当前会优先保留已收到的回复片段，而不是直接丢弃
 - AI 设置状态当前使用 `AiAssistantSettingsHelper.kt` 持久化到本地 `SharedPreferences`，并保存 `API Key / 模型 / 完整请求 URL`
-- AI 设置中的 URL 语义已改为“完整请求 URL”，客户端不再自动拼接固定 MiniMax endpoint
+- AI 设置中的 URL 语义已改为"完整请求 URL"，客户端不再自动拼接固定 MiniMax endpoint
 
 ## 2026-04-09 最新代码现实
 
-- `AgentFragment` 已从“单会话内存态”升级为“SQLite 持久化多会话聊天页”
+- `AgentFragment` 已从"单会话内存态"升级为"SQLite 持久化多会话聊天页"
 - AI 助手会话和消息当前由 `DatabaseHelper` 持久化，新增了会话与消息表；切换页面或重启应用后，会恢复上次活动会话与历史消息
 - `AiAssistantSettingsHelper.kt` 当前除保存 `API Key / 模型 / 完整请求 URL` 外，也会保存当前活动会话 ID
 - `AgentFragment` 左上角菜单已改为本地左滑会话栏入口，可切换历史会话
-- `AgentFragment` 右上角头像位已替换为 `+` 号，用于新建会话；默认会话命名格式为“新会话-年月日”
+- `AgentFragment` 右上角头像位已替换为 `+` 号，用于新建会话；默认会话命名格式为"新会话-年月日"
 - 会话项当前支持长按重命名，列表渲染由 `AgentSessionAdapter` 驱动
 - AI 回复在流式完成后会落库；取消、超时或中断时，如果已有部分回复内容，也会按错误态消息保留下来
-- 当前仓库已新增真实测试文件，不再是“只有测试依赖、没有实际测试”状态；现有测试覆盖会话默认命名、AI 会话/消息 SQLite 持久化，以及活动会话 ID 偏好存储
+- 当前仓库已新增真实测试文件，不再是"只有测试依赖、没有实际测试"状态；现有测试覆盖会话默认命名、AI 会话/消息 SQLite 持久化，以及活动会话 ID 偏好存储
 
 ## 2026-04-10 最新代码现实
 
@@ -77,8 +77,25 @@
 - 主题设置当前只保留 `浅色 / 深色 / 跟随系统` 三档；`fragment_custom_theme.xml` 与蓝 / 绿 / 橙彩色主题资源已移除
 - `ThemeHelper.kt` 当前会对旧的彩色主题存档值做兜底回退，避免历史 `theme_mode` 越界继续污染运行时
 - 当前仓库已新增 `MainActivityThemeApplicationTest` 与 `ThemeHelperTest`，用于验证主题回退与非 AI 页面深色模式应用
-- 深色模式修复方向已经从“只在 Agent 页使用主题属性”扩展到更广泛的布局 / Adapter / 资源层：当前已通过主题属性、`values-night/colors_system.xml` 和 `values-night/colors_legacy_light_overrides.xml` 开始收口旧的 `*_light` 直接引用
-- “记一笔”金额输入当前默认显示 `0.00`；当该默认值尚未被改动时，点击或聚焦金额框会自动选中默认值，便于直接覆盖输入，同时保存后的金额清空逻辑也会回到 `0.00`
+- 深色模式修复方向已经从"只在 Agent 页使用主题属性"扩展到更广泛的布局 / Adapter / 资源层：当前已通过主题属性、`values-night/colors_system.xml` 和 `values-night/colors_legacy_light_overrides.xml` 开始收口旧的 `*_light` 直接引用
+- "记一笔"金额输入当前默认显示 `0.00`；当该默认值尚未被改动时，点击或聚焦金额框会自动选中默认值，便于直接覆盖输入，同时保存后的金额清空逻辑也会回到 `0.00`
+
+## 2026-04-14 最新代码现实
+
+- 分类系统已升级为**树形层级结构**，支持任意深度（默认最大深度 2，可在设置中调整至 50）
+- `categories` 表已新增 `parent_id` 字段，`records` 表已新增 `category_id`、`category_name_snapshot`、`category_path_snapshot` 字段
+- 记账记录现在通过 `category_id` 绑定到**叶子分类**（无子分类的分类），并保留快照用于历史追溯
+- `CategoryManageFragment` 支持层级缩进展示、父分类选择、删除保护（有子分类或关联记录时禁止删除）
+- 新增 `CategoryHierarchySettingsHelper.kt` 用于管理分类层级深度设置（`getMaxCategoryDepth()` / `setMaxCategoryDepth()` / `sanitizeCategoryDepth()`）
+- `SettingsFragment` 新增「分类层级上限」设置入口，支持 1-50 的深度配置
+- `AddRecordFragment` / `EditRecordFragment` 已改为仅选择叶子分类，并保存 `category_id` 和快照
+- 兼容历史数据：唯一命中的分类名称会自动回填 `category_id`；模糊匹配时保留快照，`category_id` 设为 null
+- 新增测试覆盖：
+  - `DatabaseHelperCategoryTreeTest` - 分类树的 CRUD、层级计算、环检测、删除保护
+  - `DatabaseHelperRecursiveCategoryMigrationTest` - 历史数据迁移与回填逻辑
+  - `DatabaseHelperRecursiveCategoryQueryTest` - 递归查询方法
+  - `CategoryHierarchySettingsHelperTest` - 深度设置的持久化与边界值
+- 新增实施计划文档：`docs/requirements/plans/2026-04-13-recursive-category-id-demo-plan.md`
 
 ## 环境注意事项
 
