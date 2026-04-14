@@ -96,6 +96,7 @@
   - `DatabaseHelperRecursiveCategoryQueryTest` - 递归查询方法
   - `CategoryHierarchySettingsHelperTest` - 深度设置的持久化与边界值
 - 新增实施计划文档：`docs/requirements/plans/2026-04-13-recursive-category-id-demo-plan.md`
+- `activity_main.xml` 中的底部导航壳已调整为更明确的卡片式容器：使用 `MaterialCardView` 承载导航、带 1dp 描边和轻阴影，并将选中项恢复为柔和的胶囊型 active indicator，避免导航看起来像贴底的纯平条带
 
 ## 环境注意事项
 
