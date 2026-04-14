@@ -127,7 +127,7 @@ class AddRecordFragment : Fragment() {
     }
 
     private fun loadCategories(type: Int) {
-        currentCategories = databaseHelper.getCategoriesByType(type).toMutableList()
+        currentCategories = databaseHelper.getLeafCategoriesByType(type).toMutableList()
 
         if (categoryAdapter == null) {
             categoryAdapter = CategorySelectorAdapter(
@@ -222,6 +222,9 @@ class AddRecordFragment : Fragment() {
             date = date,
             amount = amount,
             category = category,
+            categoryId = selectedCategory?.id,
+            categoryNameSnapshot = selectedCategory?.name,
+            categoryPathSnapshot = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel) ?: category,
             type = currentType,
             description = description,
             assetSource = assetSource

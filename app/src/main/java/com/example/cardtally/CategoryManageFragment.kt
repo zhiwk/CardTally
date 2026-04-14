@@ -6,9 +6,11 @@ import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -18,6 +20,7 @@ import com.example.cardtally.adapter.CategoryAdapter
 import com.example.cardtally.adapter.IconPickerAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Category
+import com.example.cardtally.util.CategoryHierarchySettingsHelper
 import com.google.android.material.tabs.TabLayout
 
 class CategoryManageFragment : Fragment() {
@@ -28,6 +31,13 @@ class CategoryManageFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
     private var adapter: CategoryAdapter? = null
     private var currentType = 0
+
+    private data class ParentOption(
+        val category: Category?,
+        val label: String
+    ) {
+        override fun toString(): String = label
+    }
 
     private val availableIcons = listOf(
         "ic_category_food",
@@ -62,7 +72,6 @@ class CategoryManageFragment : Fragment() {
         btnAdd = view.findViewById(R.id.btn_add)
 
         databaseHelper = DatabaseHelper(requireContext())
-
         recyclerCategories.layoutManager = LinearLayoutManager(requireContext())
 
         loadCategories()
@@ -73,167 +82,255 @@ class CategoryManageFragment : Fragment() {
                 loadCategories()
             }
 
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
+            override fun onTabUnselected(tab: TabLayout.Tab?) = Unit
+
+            override fun onTabReselected(tab: TabLayout.Tab?) = Unit
         })
 
         btnAdd.setOnClickListener {
-            showAddDialog()
+            showCategoryDialog(category = null)
         }
 
         return view
     }
 
+    override fun onDestroyView() {
+        if (::databaseHelper.isInitialized) {
+            databaseHelper.close()
+        }
+        super.onDestroyView()
+    }
+
     private fun loadCategories() {
-        val categories = databaseHelper.getCategoriesByType(currentType)
+        val categories = databaseHelper.getCategoryTreeByType(currentType)
+        val categoryDepths = calculateCategoryDepths(categories)
 
         if (categories.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
             recyclerCategories.visibility = View.GONE
-        } else {
-            textEmpty.visibility = View.GONE
-            recyclerCategories.visibility = View.VISIBLE
+            return
+        }
 
-            if (adapter == null) {
-                adapter = CategoryAdapter(categories, object : CategoryAdapter.OnCategoryActionListener {
+        textEmpty.visibility = View.GONE
+        recyclerCategories.visibility = View.VISIBLE
+
+        if (adapter == null) {
+            adapter = CategoryAdapter(
+                categories = categories,
+                categoryDepths = categoryDepths,
+                listener = object : CategoryAdapter.OnCategoryActionListener {
                     override fun onEdit(category: Category) {
-                        showEditDialog(category)
+                        showCategoryDialog(category)
                     }
 
                     override fun onDelete(category: Category) {
                         showDeleteDialog(category)
                     }
-                })
-                recyclerCategories.adapter = adapter
-            } else {
-                adapter?.updateCategories(categories)
-            }
-        }
-    }
-
-    private fun showAddDialog() {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("添加分类")
-
-        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_category, null)
-        builder.setView(view)
-
-        val editName = view.findViewById<EditText>(R.id.edit_category_name)
-        val imageIcon = view.findViewById<ImageView>(R.id.image_category_icon)
-        
-        var selectedIcon: String? = null
-        
-        imageIcon.setOnClickListener {
-            showIconPickerDialog { icon ->
-                selectedIcon = icon
-                if (icon != null) {
-                    val resourceId = requireContext().resources.getIdentifier(
-                        icon,
-                        "drawable",
-                        requireContext().packageName
-                    )
-                    if (resourceId != 0) {
-                        imageIcon.setImageResource(resourceId)
-                    }
                 }
-            }
-        }
-
-        builder.setPositiveButton("确定") { _, _ ->
-            val name = editName.text.toString().trim()
-            if (TextUtils.isEmpty(name)) {
-                Toast.makeText(requireContext(), "分类名称不能为空", Toast.LENGTH_SHORT).show()
-                return@setPositiveButton
-            }
-
-            val category = Category(name = name, type = currentType, icon = selectedIcon)
-            val id = databaseHelper.addCategory(category)
-            if (id != -1L) {
-                Toast.makeText(requireContext(), "添加成功", Toast.LENGTH_SHORT).show()
-                loadCategories()
-            } else {
-                Toast.makeText(requireContext(), "添加失败", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        builder.setNegativeButton("取消", null)
-
-        builder.show()
-    }
-
-    private fun showEditDialog(category: Category) {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("编辑分类")
-
-        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_category, null)
-        builder.setView(view)
-
-        val editName = view.findViewById<EditText>(R.id.edit_category_name)
-        val imageIcon = view.findViewById<ImageView>(R.id.image_category_icon)
-        
-        editName.setText(category.name)
-        
-        var selectedIcon = category.icon
-        
-        if (category.icon != null) {
-            val resourceId = requireContext().resources.getIdentifier(
-                category.icon,
-                "drawable",
-                requireContext().packageName
             )
-            if (resourceId != 0) {
-                imageIcon.setImageResource(resourceId)
+            recyclerCategories.adapter = adapter
+        } else {
+            adapter?.updateCategories(categories, categoryDepths)
+        }
+    }
+
+    private fun calculateCategoryDepths(categories: List<Category>): Map<Long, Int> {
+        val categoriesById = categories.associateBy { it.id }
+        val depthCache = mutableMapOf<Long, Int>()
+
+        fun resolveDepth(category: Category, visiting: MutableSet<Long> = mutableSetOf()): Int {
+            depthCache[category.id]?.let { return it }
+            if (!visiting.add(category.id)) {
+                return 0
+            }
+
+            val depth = category.parentId
+                ?.let { parentId -> categoriesById[parentId] }
+                ?.let { parent -> resolveDepth(parent, visiting) + 1 }
+                ?: 0
+
+            visiting.remove(category.id)
+            depthCache[category.id] = depth
+            return depth
+        }
+
+        return categories.associate { category -> category.id to resolveDepth(category) }
+    }
+
+    private fun buildParentOptions(category: Category?): List<ParentOption> {
+        val categories = databaseHelper.getCategoryTreeByType(currentType)
+        val categoryDepths = calculateCategoryDepths(categories)
+        val excludedIds = category?.let { currentCategory ->
+            buildSet {
+                add(currentCategory.id)
+                collectDescendantIds(currentCategory.id, categories, this)
+            }
+        } ?: emptySet()
+
+        val options = mutableListOf(ParentOption(null, getString(R.string.category_parent_none)))
+        categories.forEach { candidate ->
+            if (candidate.id !in excludedIds) {
+                val depth = categoryDepths[candidate.id] ?: 0
+                options.add(ParentOption(candidate, "    ".repeat(depth) + candidate.name))
             }
         }
-        
+        return options
+    }
+
+    private fun collectDescendantIds(
+        categoryId: Long,
+        categories: List<Category>,
+        descendants: MutableSet<Long>
+    ) {
+        categories
+            .filter { it.parentId == categoryId }
+            .forEach { child ->
+                if (descendants.add(child.id)) {
+                    collectDescendantIds(child.id, categories, descendants)
+                }
+            }
+    }
+
+    private fun bindCategoryIcon(imageView: ImageView, icon: String?) {
+        if (icon.isNullOrEmpty()) {
+            imageView.setImageResource(R.drawable.ic_category_other)
+            return
+        }
+
+        val resourceId = requireContext().resources.getIdentifier(
+            icon,
+            "drawable",
+            requireContext().packageName
+        )
+        if (resourceId != 0) {
+            imageView.setImageResource(resourceId)
+        } else {
+            imageView.setImageResource(R.drawable.ic_category_other)
+        }
+    }
+
+    private fun categoryOperationMessage(error: DatabaseHelper.CategoryOperationError): String {
+        return when (error) {
+            DatabaseHelper.CategoryOperationError.PARENT_NOT_FOUND,
+            DatabaseHelper.CategoryOperationError.PARENT_TYPE_MISMATCH -> {
+                getString(R.string.category_error_invalid_parent)
+            }
+            DatabaseHelper.CategoryOperationError.SELF_PARENT -> {
+                getString(R.string.category_error_self_parent)
+            }
+            DatabaseHelper.CategoryOperationError.DESCENDANT_CYCLE -> {
+                getString(R.string.category_error_cycle)
+            }
+            DatabaseHelper.CategoryOperationError.MAX_DEPTH_EXCEEDED -> {
+                getString(
+                    R.string.category_error_depth_exceeded,
+                    CategoryHierarchySettingsHelper.getCategoryMaxDepth(requireContext())
+                )
+            }
+            DatabaseHelper.CategoryOperationError.HAS_CHILDREN -> {
+                getString(R.string.category_error_has_children)
+            }
+            DatabaseHelper.CategoryOperationError.IN_USE_BY_RECORDS -> {
+                getString(R.string.category_error_in_use)
+            }
+        }
+    }
+
+    private fun showCategoryDialog(category: Category?) {
+        val isEditing = category != null
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_add_category, null)
+        val editName = dialogView.findViewById<EditText>(R.id.edit_category_name)
+        val imageIcon = dialogView.findViewById<ImageView>(R.id.image_category_icon)
+        val spinnerParent = dialogView.findViewById<Spinner>(R.id.spinner_parent_category)
+        val parentOptions = buildParentOptions(category)
+        val parentAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_small, parentOptions)
+
+        parentAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        spinnerParent.adapter = parentAdapter
+
+        var selectedIcon = category?.icon
+        editName.setText(category?.name.orEmpty())
+        bindCategoryIcon(imageIcon, selectedIcon)
+
+        val selectedParentIndex = category?.parentId?.let { parentId ->
+            parentOptions.indexOfFirst { it.category?.id == parentId }
+        } ?: 0
+        spinnerParent.setSelection(selectedParentIndex.coerceAtLeast(0))
+
         imageIcon.setOnClickListener {
             showIconPickerDialog { icon ->
                 selectedIcon = icon
-                if (icon != null) {
-                    val resourceId = requireContext().resources.getIdentifier(
-                        icon,
-                        "drawable",
-                        requireContext().packageName
-                    )
-                    if (resourceId != 0) {
-                        imageIcon.setImageResource(resourceId)
-                    }
+                bindCategoryIcon(imageIcon, selectedIcon)
+            }
+        }
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(if (isEditing) R.string.category_edit_title else R.string.category_add_title)
+            .setView(dialogView)
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .setPositiveButton(R.string.dialog_confirm, null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val name = editName.text.toString().trim()
+                if (TextUtils.isEmpty(name)) {
+                    Toast.makeText(requireContext(), R.string.category_error_empty_name, Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
                 }
-            }
-        }
 
-        builder.setPositiveButton("确定") { _, _ ->
-            val name = editName.text.toString().trim()
-            if (TextUtils.isEmpty(name)) {
-                Toast.makeText(requireContext(), "分类名称不能为空", Toast.LENGTH_SHORT).show()
-                return@setPositiveButton
-            }
+                val targetCategory = (category?.copy() ?: Category(type = currentType)).apply {
+                    this.name = name
+                    this.type = currentType
+                    this.icon = selectedIcon
+                    this.parentId = parentOptions
+                        .getOrNull(spinnerParent.selectedItemPosition)
+                        ?.category
+                        ?.id
+                }
 
-            category.name = name
-            category.icon = selectedIcon
-            val rowsAffected = databaseHelper.updateCategory(category)
-            if (rowsAffected > 0) {
-                Toast.makeText(requireContext(), "更新成功", Toast.LENGTH_SHORT).show()
+                try {
+                    if (isEditing) {
+                        val rowsAffected = databaseHelper.updateCategory(targetCategory)
+                        if (rowsAffected <= 0) {
+                            Toast.makeText(requireContext(), R.string.toast_update_failed, Toast.LENGTH_SHORT).show()
+                            return@setOnClickListener
+                        }
+                        Toast.makeText(requireContext(), R.string.toast_update_success, Toast.LENGTH_SHORT).show()
+                    } else {
+                        val id = databaseHelper.addCategory(targetCategory)
+                        if (id == -1L) {
+                            Toast.makeText(requireContext(), R.string.category_add_failed, Toast.LENGTH_SHORT).show()
+                            return@setOnClickListener
+                        }
+                        Toast.makeText(requireContext(), R.string.category_add_success, Toast.LENGTH_SHORT).show()
+                    }
+                } catch (exception: DatabaseHelper.CategoryOperationException) {
+                    Toast.makeText(
+                        requireContext(),
+                        categoryOperationMessage(exception.error),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@setOnClickListener
+                }
+
                 loadCategories()
-            } else {
-                Toast.makeText(requireContext(), "更新失败", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
             }
         }
 
-        builder.setNegativeButton("取消", null)
-
-        builder.show()
+        dialog.show()
     }
 
     private fun showIconPickerDialog(onIconSelected: (String?) -> Unit) {
         val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("选择图标")
+        builder.setTitle(R.string.category_icon_picker_title)
 
         val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_icon_picker, null)
         builder.setView(view)
 
         val recyclerIcons = view.findViewById<RecyclerView>(R.id.recycler_icons)
-        
         val iconAdapter = IconPickerAdapter(availableIcons, null) { icon ->
             onIconSelected(icon)
         }
@@ -245,14 +342,22 @@ class CategoryManageFragment : Fragment() {
 
     private fun showDeleteDialog(category: Category) {
         AlertDialog.Builder(requireContext())
-            .setTitle("删除分类")
-            .setMessage("确定要删除\"${category.name}\"吗？")
-            .setPositiveButton("确定") { _, _ ->
-                databaseHelper.deleteCategory(category.id)
-                Toast.makeText(requireContext(), "删除成功", Toast.LENGTH_SHORT).show()
-                loadCategories()
+            .setTitle(R.string.category_delete_title)
+            .setMessage(getString(R.string.category_delete_message, category.name))
+            .setPositiveButton(R.string.dialog_confirm) { _, _ ->
+                try {
+                    databaseHelper.deleteCategory(category.id)
+                    Toast.makeText(requireContext(), R.string.toast_delete_success, Toast.LENGTH_SHORT).show()
+                    loadCategories()
+                } catch (exception: DatabaseHelper.CategoryOperationException) {
+                    Toast.makeText(
+                        requireContext(),
+                        categoryOperationMessage(exception.error),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton(R.string.dialog_cancel, null)
             .show()
     }
 }

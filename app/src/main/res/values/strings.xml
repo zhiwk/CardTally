@@ -11,6 +11,8 @@
 
     <string name="add_record">添加记录</string>
     <string name="statistics">统计分析</string>
+    <string name="statistics_expense_prefix">支出: %1$s</string>
+    <string name="statistics_income_prefix">收入: %1$s</string>
     <string name="categories">分类管理</string>
     <string name="budget">预算管理</string>
     <string name="settings">设置</string>
@@ -60,6 +62,7 @@
     <string name="validation_zero_amount">金额不能为 0</string>
     <string name="validation_zero_amount_edit">金额不能为0</string>
     <string name="validation_select_category">请选择分类</string>
+    <string name="record_category_missing_reselect">原分类已失效，请重新选择分类</string>
     <string name="toast_save_success">保存成功</string>
     <string name="toast_save_failed">保存失败</string>
     <string name="toast_update_success">更新成功</string>
@@ -160,11 +163,41 @@
     <string name="settings_ai_api_key_status_saved">已就绪</string>
     <string name="settings_management">管理</string>
     <string name="settings_category_organization">分类管理</string>
+    <string name="settings_category_max_depth">分类层级上限</string>
+    <string name="settings_category_max_depth_value">当前上限 %1$d 级</string>
+    <string name="settings_category_max_depth_dialog_title">设置分类层级上限</string>
+    <string name="settings_category_max_depth_dialog_message">请输入 1 到 50 之间的层级深度。</string>
+    <string name="settings_category_max_depth_invalid">请输入有效的层级数</string>
+    <string name="settings_category_max_depth_too_small">当前分类已使用到 %1$d 级，不能保存更小的上限</string>
     <string name="settings_account_assets">账户资产</string>
     <string name="settings_about_section">The Chronicle</string>
     <string name="settings_story_title">The Chronicle Story</string>
     <string name="settings_story_body">了解你的理财日记背后的理念，以及我们对静奢体验与数据主权的坚持。</string>
     <string name="settings_member_footer">MEMBER SINCE 2026 • CARDTALLY V4.2.1</string>
+
+    <string name="category_empty">暂无分类</string>
+    <string name="category_add_cta">添加分类</string>
+    <string name="category_add_title">添加分类</string>
+    <string name="category_edit_title">编辑分类</string>
+    <string name="category_delete_title">删除分类</string>
+    <string name="category_delete_message">确定要删除“%1$s”吗？</string>
+    <string name="category_add_success">添加成功</string>
+    <string name="category_add_failed">添加失败</string>
+    <string name="category_dialog_name_hint">请输入分类名称</string>
+    <string name="category_dialog_parent_label">父分类</string>
+    <string name="category_parent_none">无父分类</string>
+    <string name="category_dialog_icon_label">图标</string>
+    <string name="category_dialog_icon_hint">点击图标可选择</string>
+    <string name="category_icon_picker_title">选择图标</string>
+    <string name="category_action_edit">编辑分类</string>
+    <string name="category_action_delete">删除分类</string>
+    <string name="category_error_empty_name">分类名称不能为空</string>
+    <string name="category_error_invalid_parent">父分类无效，请重新选择</string>
+    <string name="category_error_self_parent">分类不能设置自己为父分类</string>
+    <string name="category_error_cycle">父分类不能是当前分类的子分类</string>
+    <string name="category_error_depth_exceeded">分类层级不能超过 %1$d 级</string>
+    <string name="category_error_has_children">该分类下仍有子分类，无法删除</string>
+    <string name="category_error_in_use">该分类已被记录引用，无法删除</string>
 
     <string name="language_dialog_title">选择语言</string>
     <string name="language_option_chinese">中文</string>

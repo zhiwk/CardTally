@@ -76,8 +76,12 @@ class StatisticsFragment : Fragment() {
         val incomeStats = databaseHelper.getCategoryStatistics(1)
 
         val allStats = mutableMapOf<String, Double>()
-        allStats.putAll(expenseStats)
-        allStats.putAll(incomeStats)
+        expenseStats.forEach { (label, amount) ->
+            allStats[getString(R.string.statistics_expense_prefix, label)] = -amount
+        }
+        incomeStats.forEach { (label, amount) ->
+            allStats[getString(R.string.statistics_income_prefix, label)] = amount
+        }
 
         if (allStats.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
@@ -96,8 +100,12 @@ class StatisticsFragment : Fragment() {
         val incomeStats = databaseHelper.getMonthlyStatistics(1, currentYear)
 
         val allStats = mutableMapOf<String, Double>()
-        allStats.putAll(expenseStats)
-        allStats.putAll(incomeStats)
+        expenseStats.forEach { (label, amount) ->
+            allStats[getString(R.string.statistics_expense_prefix, label)] = -amount
+        }
+        incomeStats.forEach { (label, amount) ->
+            allStats[getString(R.string.statistics_income_prefix, label)] = amount
+        }
 
         if (allStats.isEmpty()) {
             textEmpty.visibility = View.VISIBLE

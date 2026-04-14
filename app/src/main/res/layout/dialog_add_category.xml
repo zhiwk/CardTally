@@ -10,17 +10,32 @@
         android:id="@+id/edit_category_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="请输入分类名称"
+        android:hint="@string/category_dialog_name_hint"
         android:inputType="text"
         android:maxLines="1" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="图标"
-        android:textSize="14sp"
+        android:layout_marginTop="16dp"
+        android:text="@string/category_dialog_parent_label"
         android:textColor="@android:color/darker_gray"
-        android:layout_marginTop="16dp" />
+        android:textSize="14sp" />
+
+    <Spinner
+        android:id="@+id/spinner_parent_category"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:minHeight="48dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/category_dialog_icon_label"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="14sp" />
 
     <androidx.cardview.widget.CardView
         android:layout_width="wrap_content"
@@ -42,9 +57,9 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="点击图标可选择"
-        android:textSize="12sp"
+        android:layout_marginTop="4dp"
+        android:text="@string/category_dialog_icon_hint"
         android:textColor="@android:color/darker_gray"
-        android:layout_marginTop="4dp" />
+        android:textSize="12sp" />
 
 </LinearLayout>

@@ -28,7 +28,7 @@
                 android:layout_height="match_parent"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_edit"
-                android:contentDescription="编辑"
+                android:contentDescription="@string/category_action_edit"
                 android:scaleType="center" />
 
         </androidx.cardview.widget.CardView>
@@ -46,7 +46,7 @@
                 android:layout_height="match_parent"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_delete"
-                android:contentDescription="删除"
+                android:contentDescription="@string/category_action_delete"
                 android:scaleType="center" />
 
         </androidx.cardview.widget.CardView>
@@ -61,6 +61,7 @@
         app:cardElevation="4dp">
 
         <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layout_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="16dp">

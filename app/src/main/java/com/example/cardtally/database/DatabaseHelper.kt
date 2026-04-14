@@ -2,6 +2,7 @@ package com.example.cardtally.database
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.example.cardtally.model.AiChatMessage
@@ -10,21 +11,41 @@ import com.example.cardtally.model.AiChatSession
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
+import com.example.cardtally.util.CategoryHierarchySettingsHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class DatabaseHelper(
+    private val appContext: Context
+) : SQLiteOpenHelper(appContext, DATABASE_NAME, null, DATABASE_VERSION) {
+
+    enum class CategoryOperationError {
+        PARENT_NOT_FOUND,
+        PARENT_TYPE_MISMATCH,
+        SELF_PARENT,
+        DESCENDANT_CYCLE,
+        MAX_DEPTH_EXCEEDED,
+        HAS_CHILDREN,
+        IN_USE_BY_RECORDS
+    }
+
+    class CategoryOperationException(
+        val error: CategoryOperationError
+    ) : IllegalArgumentException(error.name)
 
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
-        private const val DATABASE_VERSION = 9
+        private const val DATABASE_VERSION = 10
 
         private const val TABLE_RECORDS = "records"
         private const val COLUMN_ID = "id"
         private const val COLUMN_DATE = "date"
         private const val COLUMN_AMOUNT = "amount"
         private const val COLUMN_CATEGORY = "category"
+        private const val COLUMN_RECORD_CATEGORY_ID = "category_id"
+        private const val COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT = "category_name_snapshot"
+        private const val COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT = "category_path_snapshot"
         private const val COLUMN_TYPE = "type"
         private const val COLUMN_DESCRIPTION = "description"
         private const val COLUMN_ASSET_SOURCE = "asset_source"
@@ -35,6 +56,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val COLUMN_CATEGORY_NAME = "name"
         private const val COLUMN_CATEGORY_TYPE = "type"
         private const val COLUMN_CATEGORY_ICON = "icon"
+        private const val COLUMN_CATEGORY_PARENT_ID = "parent_id"
 
         private const val TABLE_ASSETS = "assets"
         private const val COLUMN_ASSET_ID = "id"
@@ -63,6 +85,9 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             "$COLUMN_DATE TEXT NOT NULL, " +
             "$COLUMN_AMOUNT REAL NOT NULL, " +
             "$COLUMN_CATEGORY TEXT NOT NULL, " +
+            "$COLUMN_RECORD_CATEGORY_ID INTEGER, " +
+            "$COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT TEXT, " +
+            "$COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT TEXT, " +
             "$COLUMN_TYPE INTEGER NOT NULL, " +
             "$COLUMN_DESCRIPTION TEXT, " +
             "$COLUMN_ASSET_SOURCE TEXT, " +
@@ -73,7 +98,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             "$COLUMN_CATEGORY_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "$COLUMN_CATEGORY_NAME TEXT NOT NULL, " +
             "$COLUMN_CATEGORY_TYPE INTEGER NOT NULL, " +
-            "$COLUMN_CATEGORY_ICON TEXT)"
+            "$COLUMN_CATEGORY_ICON TEXT, " +
+            "$COLUMN_CATEGORY_PARENT_ID INTEGER)"
 
         private const val CREATE_TABLE_ASSETS =
             "CREATE TABLE $TABLE_ASSETS (" +
@@ -147,6 +173,33 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             db.execSQL(CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT)
             db.execSQL(CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT)
         }
+        if (oldVersion < 10) {
+            ensureColumn(
+                db = db,
+                tableName = TABLE_CATEGORIES,
+                columnName = COLUMN_CATEGORY_PARENT_ID,
+                alterStatement = "ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_CATEGORY_PARENT_ID INTEGER"
+            )
+            ensureColumn(
+                db = db,
+                tableName = TABLE_RECORDS,
+                columnName = COLUMN_RECORD_CATEGORY_ID,
+                alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_RECORD_CATEGORY_ID INTEGER"
+            )
+            ensureColumn(
+                db = db,
+                tableName = TABLE_RECORDS,
+                columnName = COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT,
+                alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT TEXT"
+            )
+            ensureColumn(
+                db = db,
+                tableName = TABLE_RECORDS,
+                columnName = COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT,
+                alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT TEXT"
+            )
+            backfillLegacyRecordCategorySnapshots(db)
+        }
     }
 
     private fun insertDefaultCategories(db: SQLiteDatabase) {
@@ -210,6 +263,227 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
     }
 
+    private fun ensureColumn(
+        db: SQLiteDatabase,
+        tableName: String,
+        columnName: String,
+        alterStatement: String
+    ) {
+        if (!tableHasColumn(db, tableName, columnName)) {
+            db.execSQL(alterStatement)
+        }
+    }
+
+    private fun tableHasColumn(db: SQLiteDatabase, tableName: String, columnName: String): Boolean {
+        val cursor = db.rawQuery("PRAGMA table_info($tableName)", null)
+        cursor.use {
+            while (it.moveToNext()) {
+                if (it.getString(it.getColumnIndexOrThrow("name")) == columnName) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    private fun backfillLegacyRecordCategorySnapshots(db: SQLiteDatabase) {
+        db.execSQL(
+            "UPDATE $TABLE_RECORDS " +
+                "SET $COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT = $COLUMN_CATEGORY " +
+                "WHERE $COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT IS NULL OR TRIM($COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT) = ''"
+        )
+        db.execSQL(
+            "UPDATE $TABLE_RECORDS " +
+                "SET $COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT = $COLUMN_CATEGORY " +
+                "WHERE $COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT IS NULL OR TRIM($COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT) = ''"
+        )
+        db.execSQL(
+            "UPDATE $TABLE_RECORDS " +
+                "SET $COLUMN_RECORD_CATEGORY_ID = (" +
+                "SELECT c.$COLUMN_CATEGORY_ID FROM $TABLE_CATEGORIES c " +
+                "WHERE c.$COLUMN_CATEGORY_TYPE = $TABLE_RECORDS.$COLUMN_TYPE " +
+                "AND c.$COLUMN_CATEGORY_NAME = $TABLE_RECORDS.$COLUMN_CATEGORY" +
+                ") " +
+                "WHERE (" +
+                "SELECT COUNT(*) FROM $TABLE_CATEGORIES c " +
+                "WHERE c.$COLUMN_CATEGORY_TYPE = $TABLE_RECORDS.$COLUMN_TYPE " +
+                "AND c.$COLUMN_CATEGORY_NAME = $TABLE_RECORDS.$COLUMN_CATEGORY" +
+                ") = 1"
+        )
+    }
+
+    private fun createRecordValues(record: Record): ContentValues {
+        val categoryNameSnapshot = record.categoryNameSnapshot ?: record.category
+        val categoryPathSnapshot = record.categoryPathSnapshot ?: record.category
+
+        return ContentValues().apply {
+            put(COLUMN_DATE, record.date)
+            put(COLUMN_AMOUNT, record.amount)
+            put(COLUMN_CATEGORY, record.category)
+            if (record.categoryId != null) {
+                put(COLUMN_RECORD_CATEGORY_ID, record.categoryId)
+            } else {
+                putNull(COLUMN_RECORD_CATEGORY_ID)
+            }
+            put(COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT, categoryNameSnapshot)
+            put(COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT, categoryPathSnapshot)
+            put(COLUMN_TYPE, record.type)
+            put(COLUMN_DESCRIPTION, record.description)
+            put(COLUMN_ASSET_SOURCE, record.assetSource)
+        }
+    }
+
+    private fun createRecordFromCursor(cursor: Cursor): Record {
+        return Record(
+            id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID)),
+            date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE)),
+            amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
+            category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
+            categoryId = getNullableLong(cursor, COLUMN_RECORD_CATEGORY_ID),
+            categoryNameSnapshot = getNullableString(cursor, COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT),
+            categoryPathSnapshot = getNullableString(cursor, COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT),
+            type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
+            description = getNullableString(cursor, COLUMN_DESCRIPTION),
+            assetSource = getNullableString(cursor, COLUMN_ASSET_SOURCE),
+            sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
+        )
+    }
+
+    private fun createCategoryFromCursor(cursor: Cursor): Category {
+        return Category(
+            id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_ID)),
+            name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_NAME)),
+            type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE)),
+            icon = getNullableString(cursor, COLUMN_CATEGORY_ICON),
+            parentId = getNullableLong(cursor, COLUMN_CATEGORY_PARENT_ID)
+        )
+    }
+
+    private fun getNullableString(cursor: Cursor, columnName: String): String? {
+        val columnIndex = cursor.getColumnIndex(columnName)
+        if (columnIndex == -1 || cursor.isNull(columnIndex)) {
+            return null
+        }
+        return cursor.getString(columnIndex)
+    }
+
+    private fun getNullableLong(cursor: Cursor, columnName: String): Long? {
+        val columnIndex = cursor.getColumnIndex(columnName)
+        if (columnIndex == -1 || cursor.isNull(columnIndex)) {
+            return null
+        }
+        return cursor.getLong(columnIndex)
+    }
+
+    private fun getCategoryByIdInternal(db: SQLiteDatabase, id: Long): Category? {
+        val cursor = db.rawQuery(
+            "SELECT * FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_ID = ?",
+            arrayOf(id.toString())
+        )
+
+        cursor.use {
+            if (!it.moveToFirst()) {
+                return null
+            }
+            return createCategoryFromCursor(it)
+        }
+    }
+
+    private fun getCategoriesByTypeInternal(db: SQLiteDatabase, type: Int): List<Category> {
+        val categories = mutableListOf<Category>()
+        val cursor = db.rawQuery(
+            "SELECT * FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_TYPE = ? ORDER BY $COLUMN_CATEGORY_NAME COLLATE NOCASE ASC, $COLUMN_CATEGORY_ID ASC",
+            arrayOf(type.toString())
+        )
+
+        cursor.use {
+            if (it.moveToFirst()) {
+                do {
+                    categories.add(createCategoryFromCursor(it))
+                } while (it.moveToNext())
+            }
+        }
+
+        return categories
+    }
+
+    private fun validateParentAssignment(db: SQLiteDatabase, category: Category) {
+        val parentId = category.parentId ?: return
+        val categoryId = category.id.takeIf { it > 0L }
+        val parent = getCategoryByIdInternal(db, parentId)
+            ?: throw CategoryOperationException(CategoryOperationError.PARENT_NOT_FOUND)
+
+        if (parent.type != category.type) {
+            throw CategoryOperationException(CategoryOperationError.PARENT_TYPE_MISMATCH)
+        }
+        if (categoryId != null && parentId == categoryId) {
+            throw CategoryOperationException(CategoryOperationError.SELF_PARENT)
+        }
+        if (categoryId != null && isDescendantCategory(db, categoryId, parentId)) {
+            throw CategoryOperationException(CategoryOperationError.DESCENDANT_CYCLE)
+        }
+
+        val assignedDepth = resolveCategoryDepth(db, parentId, mutableSetOf()) + 1
+        val maxDepth = CategoryHierarchySettingsHelper.getCategoryMaxDepth(appContext)
+        if (assignedDepth > maxDepth) {
+            throw CategoryOperationException(CategoryOperationError.MAX_DEPTH_EXCEEDED)
+        }
+    }
+
+    private fun isDescendantCategory(db: SQLiteDatabase, categoryId: Long, candidateParentId: Long): Boolean {
+        var currentParentId: Long? = candidateParentId
+        val visited = mutableSetOf<Long>()
+
+        while (currentParentId != null) {
+            if (!visited.add(currentParentId)) {
+                break
+            }
+            if (currentParentId == categoryId) {
+                return true
+            }
+            currentParentId = getCategoryByIdInternal(db, currentParentId)?.parentId
+        }
+
+        return false
+    }
+
+    private fun resolveCategoryDepth(
+        db: SQLiteDatabase,
+        categoryId: Long,
+        visiting: MutableSet<Long>
+    ): Int {
+        if (!visiting.add(categoryId)) {
+            return 1
+        }
+
+        val category = getCategoryByIdInternal(db, categoryId) ?: return 1
+        val depth = category.parentId?.let { resolveCategoryDepth(db, it, visiting) + 1 } ?: 1
+        visiting.remove(categoryId)
+        return depth
+    }
+
+    private fun categoryHasChildren(db: SQLiteDatabase, id: Long): Boolean {
+        val cursor = db.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_PARENT_ID = ?",
+            arrayOf(id.toString())
+        )
+
+        cursor.use {
+            return it.moveToFirst() && it.getInt(0) > 0
+        }
+    }
+
+    private fun categoryIsReferencedByRecordId(db: SQLiteDatabase, id: Long): Boolean {
+        val cursor = db.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_RECORDS WHERE $COLUMN_RECORD_CATEGORY_ID = ?",
+            arrayOf(id.toString())
+        )
+
+        cursor.use {
+            return it.moveToFirst() && it.getInt(0) > 0
+        }
+    }
+
     fun addRecord(record: Record): Long {
         val db = writableDatabase
         
@@ -221,13 +495,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         }
         cursor.close()
         
-        val values = ContentValues().apply {
-            put(COLUMN_DATE, record.date)
-            put(COLUMN_AMOUNT, record.amount)
-            put(COLUMN_CATEGORY, record.category)
-            put(COLUMN_TYPE, record.type)
-            put(COLUMN_DESCRIPTION, record.description)
-            put(COLUMN_ASSET_SOURCE, record.assetSource)
+        val values = createRecordValues(record).apply {
             put(COLUMN_SORT_ORDER, maxSortOrder + 1)
         }
 
@@ -237,8 +505,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         if (id != -1L && !assetSource.isNullOrEmpty()) {
             updateAssetAmount(db, assetSource, record.amount, record.type == 1)
         }
-        
-        db.close()
+
         return id
     }
 
@@ -251,22 +518,11 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
         if (cursor.moveToFirst()) {
             do {
-                val record = Record(
-                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID)),
-                    date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE)),
-                    amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
-                    category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
-                    description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
-                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE)),
-                    sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
-                )
-                records.add(record)
+                records.add(createRecordFromCursor(cursor))
             } while (cursor.moveToNext())
         }
 
         cursor.close()
-        db.close()
         return records
     }
 
@@ -275,14 +531,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         
         val oldRecord = getRecordByIdInternal(db, record.id)
         
-        val values = ContentValues().apply {
-            put(COLUMN_DATE, record.date)
-            put(COLUMN_AMOUNT, record.amount)
-            put(COLUMN_CATEGORY, record.category)
-            put(COLUMN_TYPE, record.type)
-            put(COLUMN_DESCRIPTION, record.description)
-            put(COLUMN_ASSET_SOURCE, record.assetSource)
-        }
+        val values = createRecordValues(record)
 
         val rowsAffected = db.update(TABLE_RECORDS, values, "$COLUMN_ID = ?",
             arrayOf(record.id.toString()))
@@ -297,15 +546,13 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 updateAssetAmount(db, newAssetSource, record.amount, record.type == 1)
             }
         }
-        
-        db.close()
+
         return rowsAffected
     }
 
     fun getRecordById(id: Long): Record? {
         val db = readableDatabase
         val record = getRecordByIdInternal(db, id)
-        db.close()
         return record
     }
 
@@ -316,16 +563,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         
         var record: Record? = null
         if (cursor.moveToFirst()) {
-            record = Record(
-                id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID)),
-                date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE)),
-                amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
-                category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
-                type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
-                description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
-                assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE)),
-                sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
-            )
+            record = createRecordFromCursor(cursor)
         }
         
         cursor.close()
@@ -343,8 +581,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         if (record != null && !assetSource.isNullOrEmpty()) {
             updateAssetAmount(db, assetSource, record.amount, record.type != 1)
         }
-        
-        db.close()
     }
 
     private fun updateAssetAmount(db: SQLiteDatabase, assetName: String, amount: Double, isAdd: Boolean) {
@@ -370,7 +606,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             put(COLUMN_SORT_ORDER, newSortOrder)
         }
         db.update(TABLE_RECORDS, values, "$COLUMN_ID = ?", arrayOf(recordId.toString()))
-        db.close()
     }
 
     fun updateRecordsSortOrder(records: List<Record>) {
@@ -387,7 +622,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         } finally {
             db.endTransaction()
         }
-        db.close()
     }
 
     fun getCurrentDate(): String {
@@ -397,10 +631,16 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun addCategory(category: Category): Long {
         val db = writableDatabase
+        validateParentAssignment(db, category)
         val values = ContentValues().apply {
             put(COLUMN_CATEGORY_NAME, category.name)
             put(COLUMN_CATEGORY_TYPE, category.type)
             put(COLUMN_CATEGORY_ICON, category.icon)
+            if (category.parentId != null) {
+                put(COLUMN_CATEGORY_PARENT_ID, category.parentId)
+            } else {
+                putNull(COLUMN_CATEGORY_PARENT_ID)
+            }
         }
 
         val id = db.insert(TABLE_CATEGORIES, null, values)
@@ -410,20 +650,71 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun getCategoriesByType(type: Int): List<Category> {
         val categories = mutableListOf<Category>()
-        val selectQuery = "SELECT * FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_TYPE = ?"
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT * FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_TYPE = ?",
+            arrayOf(type.toString())
+        )
+
+        cursor.use {
+            if (it.moveToFirst()) {
+                do {
+                    categories.add(createCategoryFromCursor(it))
+                } while (it.moveToNext())
+            }
+        }
+
+        db.close()
+        return categories
+    }
+
+    fun getCategoryTreeByType(type: Int): List<Category> {
+        val db = readableDatabase
+        val categories = getCategoriesByTypeInternal(db, type)
+        db.close()
+
+        if (categories.isEmpty()) {
+            return emptyList()
+        }
+
+        val categoriesByParentId = categories.groupBy { parentId ->
+            val parentExists = parentId.parentId != null && categories.any { it.id == parentId.parentId }
+            if (parentExists) {
+                parentId.parentId
+            } else {
+                null
+            }
+        }
+        val orderedCategories = mutableListOf<Category>()
+
+        fun appendChildren(parentId: Long?) {
+            categoriesByParentId[parentId]?.forEach { category ->
+                orderedCategories.add(category)
+                appendChildren(category.id)
+            }
+        }
+
+        appendChildren(null)
+        return orderedCategories
+    }
+
+    fun getLeafCategoriesByType(type: Int): List<Category> {
+        val categories = mutableListOf<Category>()
+        val selectQuery =
+            "SELECT c.* FROM $TABLE_CATEGORIES c " +
+                "WHERE c.$COLUMN_CATEGORY_TYPE = ? " +
+                "AND NOT EXISTS (" +
+                "SELECT 1 FROM $TABLE_CATEGORIES child " +
+                "WHERE child.$COLUMN_CATEGORY_PARENT_ID = c.$COLUMN_CATEGORY_ID " +
+                "AND child.$COLUMN_CATEGORY_TYPE = c.$COLUMN_CATEGORY_TYPE) " +
+                "ORDER BY c.$COLUMN_CATEGORY_NAME"
 
         val db = readableDatabase
         val cursor = db.rawQuery(selectQuery, arrayOf(type.toString()))
 
         if (cursor.moveToFirst()) {
             do {
-                val category = Category(
-                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_ID)),
-                    name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_NAME)),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE)),
-                    icon = cursor.getString(cursor.getColumnIndex(COLUMN_CATEGORY_ICON))
-                )
-                categories.add(category)
+                categories.add(createCategoryFromCursor(cursor))
             } while (cursor.moveToNext())
         }
 
@@ -432,36 +723,51 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         return categories
     }
 
-    fun getAllCategories(): List<Category> {
-        val categories = mutableListOf<Category>()
-        val selectQuery = "SELECT * FROM $TABLE_CATEGORIES ORDER BY $COLUMN_CATEGORY_TYPE, $COLUMN_CATEGORY_NAME"
-
+    fun buildCategoryPathLabel(categoryId: Long): String? {
         val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, null)
+        val segments = mutableListOf<String>()
+        val visited = mutableSetOf<Long>()
+        var currentCategory = getCategoryByIdInternal(db, categoryId)
 
-        if (cursor.moveToFirst()) {
-            do {
-                val category = Category(
-                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_ID)),
-                    name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_NAME)),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE)),
-                    icon = cursor.getString(cursor.getColumnIndex(COLUMN_CATEGORY_ICON))
-                )
-                categories.add(category)
-            } while (cursor.moveToNext())
+        while (currentCategory != null && visited.add(currentCategory.id)) {
+            segments.add(currentCategory.name)
+            currentCategory = currentCategory.parentId?.let { parentId ->
+                getCategoryByIdInternal(db, parentId)
+            }
         }
 
-        cursor.close()
+        db.close()
+        return segments.takeIf { it.isNotEmpty() }?.asReversed()?.joinToString(" / ")
+    }
+
+    fun getCategoryById(id: Long): Category? {
+        val db = readableDatabase
+        val category = getCategoryByIdInternal(db, id)
+        db.close()
+        return category
+    }
+
+    fun getAllCategories(): List<Category> {
+        val db = readableDatabase
+        val categories = mutableListOf<Category>()
+        categories += getCategoriesByTypeInternal(db, 0)
+        categories += getCategoriesByTypeInternal(db, 1)
         db.close()
         return categories
     }
 
     fun updateCategory(category: Category): Int {
         val db = writableDatabase
+        validateParentAssignment(db, category)
         val values = ContentValues().apply {
             put(COLUMN_CATEGORY_NAME, category.name)
             put(COLUMN_CATEGORY_TYPE, category.type)
             put(COLUMN_CATEGORY_ICON, category.icon)
+            if (category.parentId != null) {
+                put(COLUMN_CATEGORY_PARENT_ID, category.parentId)
+            } else {
+                putNull(COLUMN_CATEGORY_PARENT_ID)
+            }
         }
 
         val rowsAffected = db.update(TABLE_CATEGORIES, values, "$COLUMN_CATEGORY_ID = ?",
@@ -472,6 +778,14 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     fun deleteCategory(id: Long) {
         val db = writableDatabase
+        if (categoryHasChildren(db, id)) {
+            db.close()
+            throw CategoryOperationException(CategoryOperationError.HAS_CHILDREN)
+        }
+        if (categoryIsReferencedByRecordId(db, id)) {
+            db.close()
+            throw CategoryOperationException(CategoryOperationError.IN_USE_BY_RECORDS)
+        }
         db.delete(TABLE_CATEGORIES, "$COLUMN_CATEGORY_ID = ?", arrayOf(id.toString()))
         db.close()
     }
@@ -517,17 +831,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
         if (cursor.moveToFirst()) {
             do {
-                val record = Record(
-                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID)),
-                    date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE)),
-                    amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
-                    category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
-                    description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
-                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE)),
-                    sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
-                )
-                records.add(record)
+                records.add(createRecordFromCursor(cursor))
             } while (cursor.moveToNext())
         }
 
@@ -545,17 +849,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
         if (cursor.moveToFirst()) {
             do {
-                val record = Record(
-                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID)),
-                    date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE)),
-                    amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
-                    category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
-                    description = cursor.getString(cursor.getColumnIndex(COLUMN_DESCRIPTION)),
-                    assetSource = cursor.getString(cursor.getColumnIndex(COLUMN_ASSET_SOURCE)),
-                    sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
-                )
-                records.add(record)
+                records.add(createRecordFromCursor(cursor))
             } while (cursor.moveToNext())
         }
 

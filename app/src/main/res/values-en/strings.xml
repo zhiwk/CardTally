@@ -11,6 +11,8 @@
 
     <string name="add_record">Add Record</string>
     <string name="statistics">Statistics</string>
+    <string name="statistics_expense_prefix">Expense: %1$s</string>
+    <string name="statistics_income_prefix">Income: %1$s</string>
     <string name="categories">Categories</string>
     <string name="budget">Budget</string>
     <string name="settings">Settings</string>
@@ -60,6 +62,7 @@
     <string name="validation_zero_amount">Amount cannot be 0</string>
     <string name="validation_zero_amount_edit">Amount cannot be 0</string>
     <string name="validation_select_category">Please select a category</string>
+    <string name="record_category_missing_reselect">The original category is no longer available. Please choose a category again.</string>
     <string name="toast_save_success">Saved successfully</string>
     <string name="toast_save_failed">Save failed</string>
     <string name="toast_update_success">Updated successfully</string>
@@ -160,11 +163,41 @@ waiting for your first entry.</string>
     <string name="settings_ai_api_key_status_saved">Ready</string>
     <string name="settings_management">Management</string>
     <string name="settings_category_organization">Category Organization</string>
+    <string name="settings_category_max_depth">Category Max Depth</string>
+    <string name="settings_category_max_depth_value">Current limit: %1$d levels</string>
+    <string name="settings_category_max_depth_dialog_title">Set Category Max Depth</string>
+    <string name="settings_category_max_depth_dialog_message">Enter a depth value between 1 and 50.</string>
+    <string name="settings_category_max_depth_invalid">Enter a valid depth value</string>
+    <string name="settings_category_max_depth_too_small">Current categories already use %1$d levels. Save a value at or above that depth.</string>
     <string name="settings_account_assets">Account Assets</string>
     <string name="settings_about_section">The Chronicle</string>
     <string name="settings_story_title">The Chronicle Story</string>
     <string name="settings_story_body">Discover the philosophy behind your financial diary and our commitment to quiet luxury and data sovereignty.</string>
     <string name="settings_member_footer">MEMBER SINCE 2026 • CARDTALLY V4.2.1</string>
+
+    <string name="category_empty">No categories yet</string>
+    <string name="category_add_cta">Add Category</string>
+    <string name="category_add_title">Add Category</string>
+    <string name="category_edit_title">Edit Category</string>
+    <string name="category_delete_title">Delete Category</string>
+    <string name="category_delete_message">Are you sure you want to delete "%1$s"?</string>
+    <string name="category_add_success">Added successfully</string>
+    <string name="category_add_failed">Add failed</string>
+    <string name="category_dialog_name_hint">Enter a category name</string>
+    <string name="category_dialog_parent_label">Parent Category</string>
+    <string name="category_parent_none">No parent</string>
+    <string name="category_dialog_icon_label">Icon</string>
+    <string name="category_dialog_icon_hint">Tap the icon to choose</string>
+    <string name="category_icon_picker_title">Choose Icon</string>
+    <string name="category_action_edit">Edit category</string>
+    <string name="category_action_delete">Delete category</string>
+    <string name="category_error_empty_name">Category name cannot be empty</string>
+    <string name="category_error_invalid_parent">The selected parent category is invalid</string>
+    <string name="category_error_self_parent">A category cannot be its own parent</string>
+    <string name="category_error_cycle">The parent category cannot be one of its descendants</string>
+    <string name="category_error_depth_exceeded">Category depth cannot exceed %1$d levels</string>
+    <string name="category_error_has_children">Delete child categories first</string>
+    <string name="category_error_in_use">This category is referenced by records and cannot be deleted</string>
 
     <string name="language_dialog_title">Choose Language</string>
     <string name="language_option_chinese">Chinese</string>

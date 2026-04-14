@@ -254,7 +254,8 @@ class DateGroupAdapter(
             isSelected: Boolean
         ) {
             currentRecord = record
-            textCategory.text = record.category
+            val categoryLabel = record.categoryPathSnapshot?.takeIf { it.isNotBlank() } ?: record.category
+            textCategory.text = categoryLabel
             textTime.text = record.assetSource?.uppercase().orEmpty().ifEmpty { "CURATED ENTRY" }
             imageIcon.setImageResource(categoryIcons[record.category] ?: R.drawable.ic_category_other)
 

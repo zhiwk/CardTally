@@ -78,7 +78,7 @@ class SearchFragment : Fragment() {
         val allRecords = databaseHelper.getAllRecords()
 
         val filteredRecords = allRecords.filter { record ->
-            record.category.contains(searchKeyword, ignoreCase = true) ||
+            (record.categoryPathSnapshot ?: record.category).contains(searchKeyword, ignoreCase = true) ||
             record.description?.contains(searchKeyword, ignoreCase = true) == true ||
             record.amount.toString().contains(searchKeyword) ||
             String.format("%.2f", record.amount).contains(searchKeyword) ||

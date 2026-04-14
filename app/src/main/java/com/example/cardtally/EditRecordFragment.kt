@@ -159,19 +159,19 @@ class EditRecordFragment : Fragment() {
             currentType = r.type
             updateTypeStyle()
 
-            loadCategories(r.type, r.category)
+            loadCategories(r.type, r.categoryId)
             loadAssets(r.assetSource)
         }
     }
 
-    private fun loadCategories(type: Int, selectedCategoryName: String?) {
-        currentCategories = databaseHelper.getCategoriesByType(type).toMutableList()
+    private fun loadCategories(type: Int, selectedCategoryId: Long?) {
+        currentCategories = databaseHelper.getLeafCategoriesByType(type).toMutableList()
 
         var selectedCat: Category? = null
-        if (selectedCategoryName != null) {
-            selectedCat = currentCategories.find { it.name == selectedCategoryName }
+        if (selectedCategoryId != null) {
+            selectedCat = currentCategories.find { it.id == selectedCategoryId }
         }
-        if (selectedCat == null && currentCategories.isNotEmpty()) {
+        if (selectedCat == null && selectedCategoryId == null && currentCategories.isNotEmpty()) {
             selectedCat = currentCategories[0]
         }
 
@@ -189,6 +189,9 @@ class EditRecordFragment : Fragment() {
         }
 
         selectedCategory = selectedCat
+        if (selectedCategoryId != null && selectedCat == null) {
+            Toast.makeText(requireContext(), getString(R.string.record_category_missing_reselect), Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun loadAssets(selectedAssetSource: String?) {
@@ -273,6 +276,9 @@ class EditRecordFragment : Fragment() {
             r.date = date
             r.amount = amount
             r.category = category
+            r.categoryId = selectedCategory?.id
+            r.categoryNameSnapshot = selectedCategory?.name
+            r.categoryPathSnapshot = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel) ?: category
             r.type = currentType
             r.description = description
             r.assetSource = assetSource

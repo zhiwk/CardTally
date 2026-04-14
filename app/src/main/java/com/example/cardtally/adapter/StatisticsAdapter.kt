@@ -34,7 +34,9 @@ class StatisticsAdapter : RecyclerView.Adapter<StatisticsAdapter.StatisticsViewH
         holder.textLabel.text = item.label
         holder.textAmount.text = String.format("¥%.2f", item.amount)
 
-        val iconRes = when (item.label) {
+        val normalizedLabel = item.label.substringAfter("· ", item.label).substringAfter(": ", item.label)
+
+        val iconRes = when (normalizedLabel) {
             "工资", "奖金", "投资", "兼职" -> R.drawable.ic_asset
             "餐饮" -> R.drawable.ic_category_food
             "交通" -> R.drawable.ic_category_transport
