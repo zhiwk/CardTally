@@ -19,59 +19,149 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="24dp"
-            android:paddingTop="32dp">
+            android:paddingTop="10dp">
 
-            <!-- 1. Large Date Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="18dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <FrameLayout
+                    android:layout_width="32dp"
+                    android:layout_height="32dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_menu"
+                        app:tint="?attr/colorPrimary" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/app_name_en"
+                        android:textColor="?attr/colorOnBackground"
+                        android:textSize="22sp"
+                        android:fontFamily="serif" />
+                </LinearLayout>
+
+                <FrameLayout
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_circle_primary_container"
+                    android:backgroundTint="?attr/colorSurfaceContainerHighest">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_person"
+                        app:tint="?attr/colorPrimary" />
+                </FrameLayout>
+            </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginBottom="32dp">
+                android:layout_marginBottom="16dp">
 
                 <TextView
                     android:id="@+id/text_date"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/home_date_placeholder"
-                    android:textColor="?attr/colorOnBackground"
-                    android:textSize="36sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="-0.02" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:paddingHorizontal="2dp"
-                    android:text="@string/home_daily_log"
-                    android:textColor="@color/editorial_text_muted"
-                    android:textSize="12sp"
-                    android:letterSpacing="0.2"
-                    android:textStyle="bold" />
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="20sp"
+                    android:textStyle="italic"
+                    android:fontFamily="serif"
+                    android:letterSpacing="-0.01" />
             </LinearLayout>
 
-            <!-- 2. Monthly Summary Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardBackgroundColor="@color/surface_container_low"
-                app:cardCornerRadius="24dp"
+                android:layout_marginBottom="14dp"
+                app:cardBackgroundColor="?attr/colorPrimary"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#1A818178">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:padding="20dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="top|start">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/home_total_balance_label"
+                            android:textColor="?attr/colorOnPrimary"
+                            android:textSize="10sp"
+                            android:alpha="0.7"
+                            android:letterSpacing="0.18"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_statistics"
+                            app:tint="?attr/colorOnPrimary"
+                            android:alpha="0.58" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:baselineAligned="true"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="¥"
+                            android:textColor="?attr/colorOnPrimary"
+                            android:textSize="24sp"
+                            android:fontFamily="serif"
+                            android:alpha="0.82" />
+
+                        <TextView
+                            android:id="@+id/text_balance"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/currency_amount_placeholder"
+                            android:textColor="?attr/colorOnPrimary"
+                            android:textSize="36sp"
+                            android:fontFamily="serif" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -82,106 +172,73 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/home_current_balance"
-                                android:textColor="@color/editorial_text_muted"
-                                android:textSize="10sp"
-                                android:letterSpacing="0.1"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/text_balance"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="@string/currency_amount_placeholder"
-                                android:textColor="?attr/colorPrimary"
-                                android:textSize="38sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                    <!-- Income / Expense Split -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="24dp">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_summary_item"
-                            android:orientation="vertical"
-                            android:layout_marginEnd="8dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/home_monthly_income"
-                                android:textColor="@color/editorial_text_muted"
-                                android:textSize="10sp"
-                                android:letterSpacing="0.1"
+                                android:text="@string/home_monthly_spend"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:textSize="9sp"
+                                android:alpha="0.62"
+                                android:letterSpacing="0.12"
                                 android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/text_income"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
+                                android:layout_marginTop="2dp"
                                 android:text="@string/currency_amount_placeholder"
-                                android:textColor="@color/income_primary"
-                                android:textSize="20sp"
-                                android:textStyle="bold" />
+                                android:textColor="?attr/colorOnPrimary"
+                                android:textSize="18sp"
+                                android:fontFamily="serif" />
                         </LinearLayout>
+
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="24dp"
+                            android:layout_marginHorizontal="10dp"
+                            android:background="?attr/colorOnPrimary"
+                            android:alpha="0.1" />
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:background="@drawable/bg_summary_item"
-                            android:orientation="vertical"
-                            android:layout_marginStart="8dp">
+                            android:orientation="vertical">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/home_monthly_expense"
-                                android:textColor="@color/editorial_text_muted"
-                                android:textSize="10sp"
-                                android:letterSpacing="0.1"
+                                android:text="@string/home_daily_average"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:textSize="9sp"
+                                android:alpha="0.62"
+                                android:letterSpacing="0.12"
                                 android:textStyle="bold" />
 
                             <TextView
                                 android:id="@+id/text_expense"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
+                                android:layout_marginTop="2dp"
                                 android:text="@string/currency_amount_placeholder"
-                                android:textColor="@color/expense_primary"
-                                android:textSize="20sp"
-                                android:textStyle="bold" />
+                                android:textColor="?attr/colorOnPrimary"
+                                android:textSize="18sp"
+                                android:fontFamily="serif" />
                         </LinearLayout>
                     </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 3. Agent Note Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_agent_note"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
+                android:layout_marginBottom="18dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground"
-                app:cardBackgroundColor="?attr/colorSurfaceContainerLowest"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="@dimen/card_elevation_none"
-                app:strokeWidth="1dp"
-                app:strokeColor="#1A818178">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -193,14 +250,15 @@
                     <FrameLayout
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        android:background="@drawable/bg_circle_primary_container">
+                        android:background="@drawable/bg_circle_primary_container"
+                        android:backgroundTint="?attr/colorSecondaryContainer">
                         
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_agent"
-                            app:tint="?attr/colorPrimary" />
+                            app:tint="?attr/colorOnSecondaryContainer" />
                     </FrameLayout>
 
                     <LinearLayout
@@ -213,53 +271,60 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/home_agent_title"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="14sp"
+                            android:text="@string/home_agent_caption"
+                            android:textColor="?attr/colorOutline"
+                            android:textSize="10sp"
+                            android:letterSpacing="0.12"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
+                            android:layout_marginTop="4dp"
                             android:text="@string/home_agent_subtitle"
                             android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="12sp" />
+                            android:textSize="14sp"
+                            android:textStyle="italic"
+                            android:fontFamily="serif" />
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
                         android:src="@drawable/ic_arrow_right"
-                        app:tint="@color/editorial_outline" />
+                        app:tint="?attr/colorOutlineVariant"
+                        android:alpha="0.38" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 4. Recent Records Module -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="bottom"
                 android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="8dp">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/home_recent_entries"
-                    android:textColor="?attr/colorPrimary"
-                    android:textSize="22sp"
-                    android:textStyle="italic" />
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="20sp"
+                    android:fontFamily="serif" />
 
                 <TextView
+                    android:id="@+id/text_view_ledger"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackgroundBorderless"
                     android:text="@string/home_view_archive"
-                    android:textColor="@color/editorial_text_muted"
+                    android:textColor="?attr/colorPrimary"
                     android:textSize="10sp"
                     android:layout_marginBottom="4dp"
-                    android:letterSpacing="0.1"
+                    android:letterSpacing="0.14"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -281,6 +346,7 @@
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false"
                 android:clipToPadding="false"
+                android:paddingBottom="16dp"
                 tools:itemCount="3" />
 
         </LinearLayout>
@@ -289,17 +355,18 @@
     <!-- 5. Floating Action Button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="@dimen/floating_primary_fab_end_margin"
         android:layout_marginBottom="@dimen/floating_primary_fab_bottom_margin_with_nav"
         android:contentDescription="@string/content_description_add"
         android:src="@drawable/ic_edit"
-        app:backgroundTint="?attr/colorPrimary"
+        app:backgroundTint="?attr/colorPrimaryContainer"
         app:elevation="@dimen/card_elevation_none"
         app:hoveredFocusedTranslationZ="@dimen/card_elevation_none"
         app:pressedTranslationZ="@dimen/card_elevation_none"
-        app:tint="?attr/colorOnPrimary" />
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.CardTally.HomeFab"
+        app:tint="?attr/colorOnPrimaryContainer" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

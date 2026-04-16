@@ -24,7 +24,7 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 - `app/src/main/java/com/example/cardtally/`
 - `MainActivity.kt`：主 Activity
 - `*Fragment.kt`：页面级逻辑，例如 `HomeFragment`、`AddRecordFragment`、`EditRecordFragment`、`AddAssetFragment`、`EditAssetFragment`、`StatisticsFragment`、`SettingsFragment`、`SearchFragment`、`AgentFragment`、`AssetFragment`；其中当前“账本”一级页仍由 `StatisticsFragment` 承载，并在页内切换 `统计 / 明细` 两种视图
-- `adapter/`：RecyclerView 相关适配器
+- `adapter/`：RecyclerView 相关适配器；当前除通用列表外，也包含录入页抽屉相关适配器，如 `RecordAssetSheetAdapter`、`RecordCategoryTreeAdapter`
 - `database/`：SQLite 数据访问，核心在 `DatabaseHelper.kt`
 - `model/`：数据模型，包括记录、资产，以及 AI 助手会话 / 消息模型
 - `network/`：网络请求与 MiniMax BYOK 聊天相关客户端逻辑
@@ -56,5 +56,6 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 - 当前主题设置现实是 `浅色 / 深色 / 跟随系统` 三档，不要再按旧的蓝 / 绿 / 橙彩色主题理解设置页。
 - 当前深色模式适配依赖 `ThemeHelper`、主题属性与 `values-night` 覆盖；不要继续往布局和 Kotlin 里新增 `*_light` 直接引用。
 - 当前底部导航由 `MainActivity` 统一控制一级 / 二级页显隐，不要在各个二级页里继续各自维护一套 hide/show 规则；`AgentFragment` 的会话抽屉显隐也应通过 `MainActivity` 的导航壳控制链路协同。
+- 当前录入页不是“表单全铺开 + Spinner + 分类网格”的旧形态；当前现实是主页面极简录入壳，日期 / 资产 / 分类通过底部抽屉完成选择。
 - README 和规划文档里出现的目标架构，不等于当前代码已经实现。
 - 若只是在修 bug 或补局部功能，优先沿用现有模式，避免顺手做大规模架构迁移。

@@ -107,6 +107,17 @@
 - 账本明细视图已复用现有记录编辑与删除交互；删除后会在当前页内刷新列表
 - `fragment_statistics.xml` 已从单一统计列表壳更新为带轻量切换控件的账本页壳
 
+## 2026-04-16 录入页最新现实
+
+- `AddRecordFragment` / `EditRecordFragment` 当前继续共享 `fragment_add_record.xml`
+- “记一笔 / 编辑记录”主页面已改为 Stitch 风格的极简录入壳：金额区、支出/收入切换、信息卡、底部保存区
+- 日期选择已从系统直接弹窗切换为底部抽屉中的 `DatePicker`
+- 资产选择已从页内 `Spinner` 切换为底部抽屉列表，当前由 `RecordAssetSheetAdapter` 渲染
+- 分类选择已从页内网格切换为树形底部抽屉，当前由 `RecordCategoryTreeAdapter` 渲染，并支持任意深度展开
+- 当前录入页仍只允许选择**叶子分类**，并继续保存 `category_id`、`category_name_snapshot`、`category_path_snapshot`
+- `AddRecordFragment` / `EditRecordFragment` 当前已统一通过 `nav_shell` 控制二级页进入时隐藏底部导航，而不是单独操作 `bottom_navigation`
+- 当前录入页的下一步精修重点已收敛为：分类抽屉视觉层级、资产抽屉信息呈现、金额区与底部保存区留白
+
 ## 环境注意事项
 
 - `local.properties` 属于本机环境文件；当前构建依赖其中的 `sdk.dir` 或等效 Android SDK 环境变量，不要提交该文件

@@ -7,15 +7,14 @@
     android:background="?android:attr/colorBackground"
     tools:context=".AddRecordFragment">
 
-    <!-- Top Navigation -->
     <LinearLayout
         android:id="@+id/appbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:paddingHorizontal="24dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="16dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="12dp"
         android:gravity="center_vertical"
         android:background="?attr/colorSurface">
 
@@ -36,7 +35,8 @@
             android:text="@string/record_title_new"
             android:textColor="?attr/colorPrimary"
             android:textSize="20sp"
-            android:textStyle="italic" />
+            android:textStyle="italic"
+            android:fontFamily="serif" />
 
         <View
             android:layout_width="40dp"
@@ -44,33 +44,32 @@
 
     </LinearLayout>
 
-    <!-- Scrollable content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="72dp"
         android:clipToPadding="false"
-        android:paddingBottom="140dp">
+        android:paddingBottom="124dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="32dp"
-            android:paddingTop="16dp">
+            android:paddingHorizontal="28dp"
+            android:paddingTop="12dp">
 
-            <!-- Hero Section: Amount Input -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginBottom="32dp">
+                android:layout_marginBottom="28dp"
+                android:gravity="center_horizontal">
                 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/record_amount_label"
-                    android:textColor="@color/editorial_text_muted"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="10sp"
                     android:alpha="0.6"
                     android:letterSpacing="0.2"
@@ -78,7 +77,7 @@
                     android:layout_marginBottom="8dp"/>
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
@@ -88,33 +87,44 @@
                         android:layout_height="wrap_content"
                         android:text="¥"
                         android:textColor="?attr/colorPrimary"
-                        android:textSize="36sp"
-                        android:textStyle="normal"
+                        android:textSize="34sp"
                         android:fontFamily="serif"/>
-                        
+
                     <EditText
                         android:id="@+id/edit_amount"
-                        android:layout_width="match_parent"
-                        android:layout_height="80dp"
+                        android:layout_width="220dp"
+                        android:layout_height="72dp"
                         android:background="@null"
                         android:text="@string/amount_default"
-                        android:textColor="?attr/colorOnBackground"
-                        android:textSize="72sp"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="64sp"
                         android:inputType="numberDecimal"
                         android:fontFamily="serif"
-                        android:textStyle="normal"
+                        android:gravity="center"
                         android:layout_marginStart="8dp"
                         android:importantForAutofill="no"/>
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/text_prompt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/record_editor_prompt"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="13sp"
+                    android:textStyle="italic"
+                    android:fontFamily="serif"
+                    android:alpha="0.68" />
             </LinearLayout>
 
-            <!-- Subtly Styled Toggle -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_summary_item"
                 android:orientation="horizontal"
-                android:layout_marginBottom="32dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="28dp"
                 android:padding="4dp">
                 
                 <Button
@@ -142,134 +152,240 @@
                     android:minWidth="0dp"/>
             </LinearLayout>
 
-            <!-- Minimalist Ledger Inputs -->
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="48dp">
-                
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginBottom="24dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/record_when_label"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="20sp"
-                        android:textStyle="italic"
-                        android:fontFamily="serif"/>
-                        
-                    <TextView
-                        android:id="@+id/text_date"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/record_date_placeholder"
-                        android:textSize="18sp"
-                        android:textColor="?attr/colorOnBackground"
-                        android:background="@null"
-                        android:paddingVertical="8dp"/>
-                        
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOutlineVariant"/>
-                </LinearLayout>
+                android:layout_marginBottom="36dp"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:layout_marginBottom="24dp">
+                    android:padding="22dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/record_asset_label"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="20sp"
-                        android:textStyle="italic"
-                        android:fontFamily="serif"/>
-
-                    <Spinner
-                        android:id="@+id/spinner_asset_source"
+                    <LinearLayout
+                        android:id="@+id/row_date"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingVertical="8dp"
-                        android:background="@null" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingVertical="4dp">
+
+                        <FrameLayout
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_circle_primary_container"
+                            android:backgroundTint="?attr/colorSurfaceContainerHigh">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_calendar"
+                                app:tint="?attr/colorPrimary" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/record_when_label"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:textSize="11sp"
+                                android:letterSpacing="0.14"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/text_date"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/record_date_placeholder"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:src="@drawable/ic_arrow_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="?attr/colorOutlineVariant"/>
-                </LinearLayout>
+                        android:layout_marginVertical="14dp"
+                        android:background="?attr/colorOutlineVariant" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/record_detail_label"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="20sp"
-                        android:textStyle="italic"
-                        android:fontFamily="serif"/>
-                        
-                    <EditText
-                        android:id="@+id/edit_description"
+                    <LinearLayout
+                        android:id="@+id/row_asset"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/record_detail_hint"
-                        android:textSize="18sp"
-                        android:textColor="?attr/colorOnBackground"
-                        android:textColorHint="?attr/colorOnSurfaceVariant"
-                        android:background="@null"
-                        android:paddingVertical="8dp"
-                        android:maxLines="1"
-                        android:inputType="text"/>
-                        
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingVertical="4dp">
+
+                        <FrameLayout
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_circle_primary_container"
+                            android:backgroundTint="?attr/colorSecondaryContainer">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_asset"
+                                app:tint="?attr/colorOnSecondaryContainer" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/record_asset_label"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:textSize="11sp"
+                                android:letterSpacing="0.14"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/text_asset_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/record_asset_none"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:src="@drawable/ic_expand_more"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="?attr/colorOutlineVariant"/>
-                </LinearLayout>
-            </LinearLayout>
+                        android:layout_marginVertical="14dp"
+                        android:background="?attr/colorOutlineVariant" />
 
-            <!-- Category Grid -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-                
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/record_category_label"
-                    android:textColor="@color/editorial_text_muted"
-                    android:textSize="10sp"
-                    android:alpha="0.6"
-                    android:letterSpacing="0.2"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="24dp"/>
-                    
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recycler_categories"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false" />
-            </LinearLayout>
-            
+                    <LinearLayout
+                        android:id="@+id/row_category"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingVertical="4dp">
+
+                        <FrameLayout
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_circle_primary_container"
+                            android:backgroundTint="?attr/colorTertiaryContainer">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_category_other"
+                                app:tint="?attr/colorOnTertiaryContainer" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/record_category_label"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:textSize="11sp"
+                                android:letterSpacing="0.14"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/text_category_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/record_category_unselected"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:src="@drawable/ic_arrow_right"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="14dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_edit"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+
+                        <EditText
+                            android:id="@+id/edit_description"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:hint="@string/record_detail_hint"
+                            android:inputType="text"
+                            android:maxLines="1"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textColorHint="?attr/colorOnSurfaceVariant"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- BottomNavBar (The Footer Shell) -->
     <LinearLayout
         android:id="@+id/layout_buttons"
         android:layout_width="match_parent"
@@ -277,9 +393,9 @@
         android:layout_gravity="bottom"
         android:background="@drawable/bg_bottom_nav_sheet"
         android:orientation="horizontal"
-        android:paddingHorizontal="32dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="32dp"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="24dp"
         android:gravity="center_horizontal"
         android:elevation="16dp">
 
@@ -290,8 +406,9 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="12dp">
+            android:background="@drawable/bg_summary_item"
+            android:padding="12dp"
+            android:layout_marginEnd="8dp">
             
             <ImageView
                 android:layout_width="24dp"
@@ -305,7 +422,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="@string/record_cancel"
-                android:textSize="10sp"
+                android:textSize="11sp"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:letterSpacing="0.1"
                 android:fontFamily="sans-serif-medium"
@@ -320,7 +437,8 @@
             android:orientation="vertical"
             android:gravity="center"
             android:background="@drawable/shape_button_primary"
-            android:padding="12dp">
+            android:padding="12dp"
+            android:layout_marginStart="8dp">
             
             <ImageView
                 android:id="@+id/image_save_icon"
@@ -335,7 +453,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="@string/record_save_entry"
-                android:textSize="10sp"
+                android:textSize="11sp"
                 android:textColor="@color/onPrimary_light"
                 android:letterSpacing="0.1"
                 android:fontFamily="sans-serif-medium"/>

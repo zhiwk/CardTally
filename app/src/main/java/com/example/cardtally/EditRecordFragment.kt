@@ -1,91 +1,98 @@
 package com.example.cardtally
 
-import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.DatePicker
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.cardtally.adapter.CategorySelectorAdapter
+import com.example.cardtally.adapter.AssetSheetItem
+import com.example.cardtally.adapter.RecordAssetSheetAdapter
+import com.example.cardtally.adapter.RecordCategoryTreeAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.ThemeColorHelper
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import java.util.Calendar
+import java.util.Locale
 
 class EditRecordFragment : Fragment() {
     private lateinit var textTitle: TextView
     private lateinit var textDate: TextView
+    private lateinit var textAssetValue: TextView
+    private lateinit var textCategoryValue: TextView
     private lateinit var editAmount: EditText
     private lateinit var editDescription: EditText
-    private lateinit var spinnerAssetSource: Spinner
     private lateinit var btnExpense: Button
     private lateinit var btnIncome: Button
-    private lateinit var recyclerCategories: RecyclerView
     private lateinit var btnClose: View
     private lateinit var btnCancel: View
     private lateinit var btnSave: View
     private lateinit var textSaveLabel: TextView
     private lateinit var imageSaveIcon: ImageView
+    private lateinit var rowDate: View
+    private lateinit var rowAsset: View
+    private lateinit var rowCategory: View
     private lateinit var databaseHelper: DatabaseHelper
-    
+
     private var record: Record? = null
     private var recordId: Long = 0
-    private var categoryAdapter: CategorySelectorAdapter? = null
+    private var categoryAdapter: RecordCategoryTreeAdapter? = null
     private var currentCategories = mutableListOf<Category>()
     private var currentAssets = mutableListOf<Asset>()
     private var currentType = 0
     private var selectedDate: String = ""
     private var selectedCategory: Category? = null
+    private var selectedAsset: Asset? = null
 
     companion object {
         fun newInstance(recordId: Long): EditRecordFragment {
-            val fragment = EditRecordFragment()
-            val args = Bundle()
-            args.putLong("record_id", recordId)
-            fragment.arguments = args
-            return fragment
+            return EditRecordFragment().apply {
+                arguments = Bundle().apply {
+                    putLong("record_id", recordId)
+                }
+            }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            recordId = it.getLong("record_id")
-        }
+        recordId = arguments?.getLong("record_id") ?: 0
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val view = inflater.inflate(R.layout.fragment_add_record, container, false)
 
         textTitle = view.findViewById(R.id.text_title)
         textDate = view.findViewById(R.id.text_date)
+        textAssetValue = view.findViewById(R.id.text_asset_value)
+        textCategoryValue = view.findViewById(R.id.text_category_value)
         editAmount = view.findViewById(R.id.edit_amount)
         editDescription = view.findViewById(R.id.edit_description)
-        spinnerAssetSource = view.findViewById(R.id.spinner_asset_source)
         btnExpense = view.findViewById(R.id.btn_expense)
         btnIncome = view.findViewById(R.id.btn_income)
-        recyclerCategories = view.findViewById(R.id.recycler_categories)
         btnClose = view.findViewById(R.id.btn_close)
         btnCancel = view.findViewById(R.id.btn_cancel)
         btnSave = view.findViewById(R.id.btn_save)
         textSaveLabel = view.findViewById(R.id.text_save_label)
         imageSaveIcon = view.findViewById(R.id.image_save_icon)
+        rowDate = view.findViewById(R.id.row_date)
+        rowAsset = view.findViewById(R.id.row_asset)
+        rowCategory = view.findViewById(R.id.row_category)
 
         databaseHelper = DatabaseHelper(requireContext())
 
@@ -93,11 +100,11 @@ class EditRecordFragment : Fragment() {
         textSaveLabel.text = getString(R.string.record_update)
         imageSaveIcon.setImageResource(R.drawable.ic_check)
 
-        recyclerCategories.layoutManager = GridLayoutManager(requireContext(), 4)
-
         loadRecord()
 
-        textDate.setOnClickListener { showDatePicker() }
+        rowDate.setOnClickListener { showDateSheet() }
+        rowAsset.setOnClickListener { showAssetSheet() }
+        rowCategory.setOnClickListener { showCategorySheet() }
 
         btnExpense.setOnClickListener {
             if (currentType != 0) {
@@ -135,115 +142,216 @@ class EditRecordFragment : Fragment() {
     private fun updateTypeStyle() {
         if (currentType == 0) {
             btnExpense.setBackgroundResource(R.drawable.shape_button_primary)
-            btnExpense.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnPrimary))
-
+            btnExpense.setTextColor(
+                ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnPrimary)
+            )
             btnIncome.setBackgroundResource(android.R.color.transparent)
-            btnIncome.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurfaceVariant))
+            btnIncome.setTextColor(
+                ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurfaceVariant)
+            )
         } else {
             btnExpense.setBackgroundResource(android.R.color.transparent)
-            btnExpense.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurfaceVariant))
-
+            btnExpense.setTextColor(
+                ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurfaceVariant)
+            )
             btnIncome.setBackgroundResource(R.drawable.shape_button_primary)
-            btnIncome.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnPrimary))
+            btnIncome.setTextColor(
+                ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnPrimary)
+            )
         }
     }
 
     private fun loadRecord() {
         record = databaseHelper.getRecordById(recordId)
-
-        record?.let { r ->
-            selectedDate = r.date
-            textDate.text = r.date
-            editAmount.setText(r.amount.toString())
-            editDescription.setText(r.description)
-            currentType = r.type
+        record?.let { loadedRecord ->
+            selectedDate = loadedRecord.date
+            editAmount.setText(String.format(Locale.US, "%.2f", loadedRecord.amount))
+            editDescription.setText(loadedRecord.description)
+            currentType = loadedRecord.type
             updateTypeStyle()
+            updateDisplayedDate()
 
-            loadCategories(r.type, r.categoryId)
-            loadAssets(r.assetSource)
+            loadCategories(loadedRecord.type, loadedRecord.categoryId)
+            loadAssets(loadedRecord.assetSource)
         }
     }
 
     private fun loadCategories(type: Int, selectedCategoryId: Long?) {
-        currentCategories = databaseHelper.getLeafCategoriesByType(type).toMutableList()
-
-        var selectedCat: Category? = null
-        if (selectedCategoryId != null) {
-            selectedCat = currentCategories.find { it.id == selectedCategoryId }
+        currentCategories = databaseHelper.getCategoryTreeByType(type).toMutableList()
+        var resolvedCategory = selectedCategoryId?.let { id -> currentCategories.firstOrNull { it.id == id } }
+        if (resolvedCategory == null) {
+            resolvedCategory = currentCategories.firstOrNull { isLeafCategory(it) }
         }
-        if (selectedCat == null && selectedCategoryId == null && currentCategories.isNotEmpty()) {
-            selectedCat = currentCategories[0]
-        }
-
-        if (categoryAdapter == null) {
-            categoryAdapter = CategorySelectorAdapter(
-                currentCategories,
-                selectedCat
-            ) { category ->
-                selectedCategory = category
-            }
-            recyclerCategories.adapter = categoryAdapter
-        } else {
-            categoryAdapter?.updateCategories(currentCategories)
-            categoryAdapter?.setSelectedCategory(selectedCat)
-        }
-
-        selectedCategory = selectedCat
-        if (selectedCategoryId != null && selectedCat == null) {
+        selectedCategory = resolvedCategory
+        updateCategorySummary()
+        if (selectedCategoryId != null && resolvedCategory?.id != selectedCategoryId) {
             Toast.makeText(requireContext(), getString(R.string.record_category_missing_reselect), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun loadAssets(selectedAssetSource: String?) {
         currentAssets = databaseHelper.getAllAssets().toMutableList()
+        selectedAsset = currentAssets.firstOrNull { it.name == selectedAssetSource }
+        updateAssetSummary()
+    }
 
-        val assetNames = mutableListOf(getString(R.string.record_asset_none))
-        currentAssets.forEach { assetNames.add(it.name) }
+    private fun showDateSheet() {
+        val dialog = BottomSheetDialog(requireContext())
+        val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_date, null)
+        dialog.setContentView(sheetView)
 
-        val adapter = ArrayAdapter(
-            requireContext(),
-            R.layout.spinner_item_small,
-            assetNames
+        val datePicker = sheetView.findViewById<DatePicker>(R.id.date_picker)
+        val btnCloseSheet = sheetView.findViewById<ImageButton>(R.id.btn_close_sheet)
+        val btnConfirmDate = sheetView.findViewById<View>(R.id.btn_confirm_date)
+        val textSelectToday = sheetView.findViewById<TextView>(R.id.text_select_today)
+
+        val parts = selectedDate.split("-")
+        datePicker.updateDate(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt())
+
+        btnCloseSheet.setOnClickListener { dialog.dismiss() }
+        textSelectToday.setOnClickListener {
+            val calendar = Calendar.getInstance()
+            datePicker.updateDate(
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            )
+        }
+        btnConfirmDate.setOnClickListener {
+            selectedDate = String.format(
+                Locale.US,
+                "%04d-%02d-%02d",
+                datePicker.year,
+                datePicker.month + 1,
+                datePicker.dayOfMonth
+            )
+            updateDisplayedDate()
+            dialog.dismiss()
+        }
+        dialog.show()
+    }
+
+    private fun showAssetSheet() {
+        val dialog = BottomSheetDialog(requireContext())
+        val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_assets, null)
+        dialog.setContentView(sheetView)
+
+        val btnCloseSheet = sheetView.findViewById<ImageButton>(R.id.btn_close_sheet)
+        val recyclerAssets = sheetView.findViewById<RecyclerView>(R.id.recycler_assets)
+        val adapter = RecordAssetSheetAdapter(buildAssetSheetItems(), selectedAsset?.id) { item ->
+            selectedAsset = item.asset
+            updateAssetSummary()
+            dialog.dismiss()
+        }
+
+        recyclerAssets.layoutManager = LinearLayoutManager(requireContext())
+        recyclerAssets.adapter = adapter
+        btnCloseSheet.setOnClickListener { dialog.dismiss() }
+        dialog.show()
+    }
+
+    private fun showCategorySheet() {
+        val dialog = BottomSheetDialog(requireContext())
+        val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_category, null)
+        dialog.setContentView(sheetView)
+
+        val btnCloseSheet = sheetView.findViewById<ImageButton>(R.id.btn_close_sheet)
+        val recyclerCategories = sheetView.findViewById<RecyclerView>(R.id.recycler_categories)
+        val textBreadcrumb = sheetView.findViewById<TextView>(R.id.text_category_breadcrumb)
+        val btnConfirm = sheetView.findViewById<View>(R.id.btn_confirm_category)
+
+        var pendingCategory = selectedCategory
+        categoryAdapter = RecordCategoryTreeAdapter(currentCategories, selectedCategory?.id) { category ->
+            pendingCategory = category
+            textBreadcrumb.text = category.id.let(databaseHelper::buildCategoryPathLabel)
+                ?: getString(R.string.record_category_sheet_breadcrumb_empty)
+        }
+
+        recyclerCategories.layoutManager = LinearLayoutManager(requireContext())
+        recyclerCategories.adapter = categoryAdapter
+        textBreadcrumb.text = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel)
+            ?: getString(R.string.record_category_sheet_breadcrumb_empty)
+
+        btnCloseSheet.setOnClickListener { dialog.dismiss() }
+        btnConfirm.setOnClickListener {
+            val category = pendingCategory
+            if (category == null || !isLeafCategory(category)) {
+                Toast.makeText(requireContext(), getString(R.string.validation_select_category), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            selectedCategory = category
+            updateCategorySummary()
+            dialog.dismiss()
+        }
+        dialog.show()
+    }
+
+    private fun updateDisplayedDate() {
+        textDate.text = formatDisplayDate(selectedDate)
+    }
+
+    private fun formatDisplayDate(rawDate: String): String {
+        val parts = rawDate.split("-")
+        return if (parts.size == 3) {
+            getString(R.string.record_date_display, parts[1].toInt(), parts[2].toInt())
+        } else {
+            rawDate
+        }
+    }
+
+    private fun updateAssetSummary() {
+        textAssetValue.text = selectedAsset?.name ?: getString(R.string.record_asset_none)
+    }
+
+    private fun updateCategorySummary() {
+        textCategoryValue.text = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel)
+            ?: getString(R.string.record_category_unselected)
+    }
+
+    private fun buildAssetSheetItems(): List<AssetSheetItem> {
+        val noneItem = AssetSheetItem(
+            id = null,
+            asset = null,
+            title = getString(R.string.record_asset_none),
+            subtitle = getString(R.string.record_asset_sheet_none_subtitle),
+            amountLabel = getString(R.string.record_asset_sheet_none_amount)
         )
-        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        spinnerAssetSource.adapter = adapter
-
-        if (selectedAssetSource != null) {
-            val index = assetNames.indexOf(selectedAssetSource)
-            if (index >= 0) {
-                spinnerAssetSource.setSelection(index)
+        return buildList {
+            add(noneItem)
+            currentAssets.forEach { asset ->
+                add(
+                    AssetSheetItem(
+                        id = asset.id,
+                        asset = asset,
+                        title = asset.name,
+                        subtitle = getAssetTypeLabel(asset.type),
+                        amountLabel = getString(R.string.currency_amount, asset.amount)
+                    )
+                )
             }
         }
     }
 
-    private fun showDatePicker() {
-        val parts = selectedDate.split("-")
-        val datePickerDialog = DatePickerDialog(
-            requireContext(),
-            { _, selectedYear, selectedMonth, selectedDay ->
-                selectedDate = String.format(
-                    "%04d-%02d-%02d",
-                    selectedYear,
-                    selectedMonth + 1,
-                    selectedDay
-                )
-                textDate.text = selectedDate
-            },
-            parts[0].toInt(),
-            parts[1].toInt() - 1,
-            parts[2].toInt()
-        )
-        datePickerDialog.show()
+    private fun getAssetTypeLabel(type: Int): String {
+        return when (type) {
+            0 -> getString(R.string.asset_type_cash)
+            1 -> getString(R.string.asset_type_bank)
+            2 -> getString(R.string.asset_type_alipay)
+            3 -> getString(R.string.asset_type_wechat)
+            else -> getString(R.string.record_asset_none)
+        }
+    }
+
+    private fun isLeafCategory(category: Category): Boolean {
+        return currentCategories.none { it.parentId == category.id }
     }
 
     private fun updateRecord() {
-        val date = selectedDate
         val amountStr = editAmount.text.toString().trim()
         val category = selectedCategory?.name
-        val assetSourceName = spinnerAssetSource.selectedItem.toString()
         val description = editDescription.text.toString().trim()
 
-        if (date.isEmpty()) {
+        if (selectedDate.isEmpty()) {
             Toast.makeText(requireContext(), getString(R.string.validation_select_date), Toast.LENGTH_SHORT).show()
             return
         }
@@ -255,7 +363,7 @@ class EditRecordFragment : Fragment() {
 
         val amount = try {
             amountStr.toDouble()
-        } catch (e: NumberFormatException) {
+        } catch (_: NumberFormatException) {
             Toast.makeText(requireContext(), getString(R.string.validation_enter_valid_amount_edit), Toast.LENGTH_SHORT).show()
             return
         }
@@ -270,20 +378,18 @@ class EditRecordFragment : Fragment() {
             return
         }
 
-        val assetSource = if (assetSourceName == getString(R.string.record_asset_none)) null else assetSourceName
+        record?.let { loadedRecord ->
+            loadedRecord.date = selectedDate
+            loadedRecord.amount = amount
+            loadedRecord.category = category
+            loadedRecord.categoryId = selectedCategory?.id
+            loadedRecord.categoryNameSnapshot = selectedCategory?.name
+            loadedRecord.categoryPathSnapshot = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel) ?: category
+            loadedRecord.type = currentType
+            loadedRecord.description = description
+            loadedRecord.assetSource = selectedAsset?.name
 
-        record?.let { r ->
-            r.date = date
-            r.amount = amount
-            r.category = category
-            r.categoryId = selectedCategory?.id
-            r.categoryNameSnapshot = selectedCategory?.name
-            r.categoryPathSnapshot = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel) ?: category
-            r.type = currentType
-            r.description = description
-            r.assetSource = assetSource
-
-            val rowsAffected = databaseHelper.updateRecord(r)
+            val rowsAffected = databaseHelper.updateRecord(loadedRecord)
             if (rowsAffected > 0) {
                 Toast.makeText(requireContext(), getString(R.string.toast_update_success), Toast.LENGTH_SHORT).show()
                 parentFragmentManager.popBackStack()
@@ -294,12 +400,10 @@ class EditRecordFragment : Fragment() {
     }
 
     private fun hideBottomNav() {
-        val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNav?.visibility = View.GONE
+        requireActivity().findViewById<View>(R.id.nav_shell)?.visibility = View.GONE
     }
 
     private fun showBottomNav() {
-        val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNav?.visibility = View.VISIBLE
+        requireActivity().findViewById<View>(R.id.nav_shell)?.visibility = View.VISIBLE
     }
 }

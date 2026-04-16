@@ -840,6 +840,27 @@ class DatabaseHelper(
         return records
     }
 
+    fun getLatestRecordDayRecords(): List<Record> {
+        val records = mutableListOf<Record>()
+        val selectQuery =
+            "SELECT * FROM $TABLE_RECORDS " +
+                "WHERE $COLUMN_DATE = (SELECT MAX($COLUMN_DATE) FROM $TABLE_RECORDS) " +
+                "ORDER BY $COLUMN_SORT_ORDER ASC"
+
+        val db = readableDatabase
+        val cursor = db.rawQuery(selectQuery, null)
+
+        if (cursor.moveToFirst()) {
+            do {
+                records.add(createRecordFromCursor(cursor))
+            } while (cursor.moveToNext())
+        }
+
+        cursor.close()
+        db.close()
+        return records
+    }
+
     fun getRecordsByAssetSource(assetSource: String): List<Record> {
         val records = mutableListOf<Record>()
         val selectQuery = "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_ASSET_SOURCE = ? ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC"

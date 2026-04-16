@@ -39,8 +39,16 @@ class SwipeToEditDeleteHelper(
     init {
         val configuration = ViewConfiguration.get(cardContent.context)
         touchSlop = configuration.scaledTouchSlop
-        val buttonCount = if (onArchive != null) 3 else 2
-        maxSwipeDistance = (80 * buttonCount * cardContent.context.resources.displayMetrics.density).toInt()
+        val buttonCount = listOfNotNull(
+            layoutActions.findViewById<View>(R.id.btn_edit),
+            layoutActions.findViewById<View>(R.id.btn_delete),
+            layoutActions.findViewById<View>(R.id.btn_archive)
+        ).size.coerceAtLeast(1)
+        val density = cardContent.context.resources.displayMetrics.density
+        val buttonWidth = 40 * density
+        val buttonGap = 6 * density
+        val trailingGap = 8 * density
+        maxSwipeDistance = (buttonWidth * buttonCount + buttonGap * (buttonCount - 1) + trailingGap).toInt()
         minVelocity = ViewConfiguration.get(cardContent.context).scaledMinimumFlingVelocity * 2f
         edgeSlop = (20 * cardContent.context.resources.displayMetrics.density).toInt()
         

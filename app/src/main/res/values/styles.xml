@@ -121,10 +121,15 @@
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
 
+    <style name="ShapeAppearanceOverlay.CardTally.HomeFab" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">18dp</item>
+    </style>
+
     <style name="App.Custom.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">?attr/colorSurfaceContainerHigh</item>
-        <item name="android:width">68dp</item>
-        <item name="android:height">32dp</item>
+        <item name="android:width">74dp</item>
+        <item name="android:height">40dp</item>
         <item name="android:radius">16dp</item>
     </style>
 

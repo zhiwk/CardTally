@@ -5,39 +5,37 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.cardtally.adapter.DateGroupAdapter
+import com.example.cardtally.adapter.HomeRecentRecordAdapter
 import com.example.cardtally.database.DatabaseHelper
-import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.AiAssistantSettingsHelper
 import com.example.cardtally.util.FloatingNavLayoutHelper
 import com.example.cardtally.util.LanguageHelper
-import com.example.cardtally.util.RecordDragCallback
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
+import kotlin.math.max
 
 class HomeFragment : Fragment() {
     private lateinit var recyclerRecords: RecyclerView
     private lateinit var textEmpty: TextView
     private lateinit var fabAdd: FloatingActionButton
     private lateinit var cardAgentNote: View
+    private lateinit var textViewLedger: View
 
     private lateinit var textDate: TextView
     private lateinit var textIncome: TextView
     private lateinit var textExpense: TextView
     private lateinit var textBalance: TextView
     private lateinit var databaseHelper: DatabaseHelper
-    private var adapter: DateGroupAdapter? = null
-    private var itemTouchHelper: ItemTouchHelper? = null
+    private var adapter: HomeRecentRecordAdapter? = null
 
     private var currentYear: Int = 0
     private var currentMonth: Int = 0
@@ -56,6 +54,7 @@ class HomeFragment : Fragment() {
         textEmpty = view.findViewById(R.id.text_empty)
         fabAdd = view.findViewById(R.id.fab_add)
         cardAgentNote = view.findViewById(R.id.card_agent_note)
+        textViewLedger = view.findViewById(R.id.text_view_ledger)
 
         textDate = view.findViewById(R.id.text_date)
         textIncome = view.findViewById(R.id.text_income)
@@ -84,6 +83,10 @@ class HomeFragment : Fragment() {
             }
 
             requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId = R.id.nav_agent
+        }
+
+        textViewLedger.setOnClickListener {
+            requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId = R.id.nav_statistics
         }
 
         fabAdd.setOnClickListener {
@@ -116,72 +119,20 @@ class HomeFragment : Fragment() {
 
 
 
-    private fun showFilterDialog() {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle(R.string.filter_dialog_title)
-
-        // 这里可以添加筛选选项，如分类、金额范围等
-        val categories = databaseHelper.getAllCategories()
-        val categoryNames = categories.map { it.name }.toTypedArray()
-        val checkedItems = BooleanArray(categoryNames.size) { false }
-
-        builder.setMultiChoiceItems(categoryNames, checkedItems) { _, which, isChecked ->
-            checkedItems[which] = isChecked
-        }
-
-        builder.setPositiveButton(R.string.dialog_confirm) { _, _ ->
-            // 处理筛选逻辑
-            val selectedCategories = mutableListOf<String>()
-            for (i in checkedItems.indices) {
-                if (checkedItems[i]) {
-                    selectedCategories.add(categoryNames[i])
-                }
-            }
-            // 根据筛选条件加载记录
-            loadRecords(selectedCategories)
-        }
-
-        builder.setNegativeButton(R.string.dialog_cancel, null)
-
-        builder.show()
-    }
-
-    private fun showSearchDialog() {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle(R.string.search_dialog_title)
-
-        val input = EditText(requireContext())
-        input.hint = getString(R.string.search_dialog_hint)
-        builder.setView(input)
-
-        builder.setPositiveButton(R.string.search_dialog_confirm) { _, _ ->
-            val keyword = input.text.toString().trim()
-            if (keyword.isNotEmpty()) {
-                val searchFragment = SearchFragment.newInstance(keyword)
-                parentFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, searchFragment)
-                    .addToBackStack(null)
-                    .commit()
-            }
-        }
-
-        builder.setNegativeButton(R.string.dialog_cancel, null)
-
-        builder.show()
-    }
-
-    private fun loadRecords(selectedCategories: List<String> = emptyList()) {
+    private fun loadRecords() {
         val (startDate, endDate) = getDateRangeByPeriod()
 
-        allRecords = databaseHelper.getRecordsByDateRange(startDate, endDate)
+        allRecords = databaseHelper.getLatestRecordDayRecords()
 
         val income = databaseHelper.getTotalByTypeAndDateRange(1, startDate, endDate)
         val expense = databaseHelper.getTotalByTypeAndDateRange(0, startDate, endDate)
         val balance = income - expense
+        val daysElapsed = max(Calendar.getInstance().get(Calendar.DAY_OF_MONTH), 1)
+        val dailyAverage = expense / daysElapsed
 
-        textIncome.text = getString(R.string.currency_amount, income)
-        textExpense.text = getString(R.string.currency_amount, expense)
-        textBalance.text = getString(R.string.currency_amount, balance)
+        textIncome.text = getString(R.string.currency_amount, expense)
+        textExpense.text = getString(R.string.currency_amount, dailyAverage)
+        textBalance.text = String.format(Locale.getDefault(), "%,.2f", balance)
 
         if (allRecords.isEmpty()) {
             textEmpty.text = getString(R.string.home_empty_records_hint)
@@ -191,10 +142,8 @@ class HomeFragment : Fragment() {
             textEmpty.visibility = View.GONE
             recyclerRecords.visibility = View.VISIBLE
 
-            val dateGroups = groupRecordsByDate(allRecords)
-
             if (adapter == null) {
-                adapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
+                adapter = HomeRecentRecordAdapter(allRecords, object : HomeRecentRecordAdapter.Listener {
                     override fun onEdit(record: Record) {
                         val editFragment = EditRecordFragment.newInstance(record.id)
                         parentFragmentManager.beginTransaction()
@@ -206,75 +155,15 @@ class HomeFragment : Fragment() {
                     override fun onDelete(record: Record) {
                         showDeleteDialog(record)
                     }
-
-                    override fun onMultiSelectChanged(selectedCount: Int) {
-                        if (selectedCount > 0) {
-                            fabAdd.setImageResource(R.drawable.ic_delete)
-                            fabAdd.setOnClickListener {
-                                showDeleteSelectedDialog()
-                            }
-                        } else {
-                            fabAdd.setImageResource(R.drawable.ic_edit)
-                            fabAdd.setOnClickListener {
-                                parentFragmentManager.beginTransaction()
-                                    .replace(R.id.fragment_container, AddRecordFragment())
-                                    .addToBackStack(null)
-                                    .commit()
-                            }
-                        }
-                    }
-
-                    override fun onDeleteSelected(records: List<Record>) {
-                        showDeleteSelectedDialog()
-                    }
-
-                    override fun onEnterMultiSelectMode(record: Record) {
-                        adapter?.enterMultiSelectMode(record)
-                    }
-
-                    override fun onToggleMultiSelect(record: Record) {
-                        adapter?.toggleMultiSelect(record)
-                    }
                 })
                 recyclerRecords.adapter = adapter
-                
-                val callback = RecordDragCallback(
-                    adapter!!,
-                    onRecordMoved = { fromPosition, toPosition ->
-                        saveSortOrder()
-                    },
-                    onEnterMultiSelectMode = { position ->
-                        val record = adapter?.getRecordAtPosition(position)
-                        if (record != null) {
-                            adapter?.enterMultiSelectMode(record)
-                        }
-                    }
-                )
-                itemTouchHelper = ItemTouchHelper(callback)
-                itemTouchHelper?.attachToRecyclerView(recyclerRecords)
             } else {
-                adapter?.updateDateGroups(dateGroups)
+                adapter?.updateRecords(allRecords)
                 if (recyclerRecords.adapter == null) {
                     recyclerRecords.adapter = adapter
                 }
             }
         }
-    }
-
-    private fun saveSortOrder() {
-        val dateGroups = adapter?.getDateGroups() ?: return
-        val records = mutableListOf<Record>()
-        for (dateGroup in dateGroups) {
-            records.addAll(dateGroup.records)
-        }
-        databaseHelper.updateRecordsSortOrder(records)
-    }
-
-    private fun groupRecordsByDate(records: List<Record>): List<DateGroup> {
-        val grouped = records.groupBy { it.date }
-        return grouped.map { (date, records) ->
-            DateGroup(date, records)
-        }.sortedByDescending { it.date }
     }
 
     private fun showDeleteDialog(record: Record) {
@@ -362,32 +251,6 @@ class HomeFragment : Fragment() {
                 Pair(startDate, endDate)
             }
         }
-    }
-
-    private fun showDeleteSelectedDialog() {
-        val selectedRecords = adapter?.getSelectedRecords() ?: return
-        if (selectedRecords.isEmpty()) return
-        
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.delete_record_title)
-            .setMessage(getString(R.string.delete_selected_records_message, selectedRecords.size))
-            .setPositiveButton(R.string.dialog_confirm) { _, _ ->
-                for (record in selectedRecords) {
-                    databaseHelper.deleteRecord(record.id)
-                }
-                Toast.makeText(requireContext(), getString(R.string.toast_delete_success), Toast.LENGTH_SHORT).show()
-                adapter?.exitMultiSelectMode()
-                fabAdd.setImageResource(R.drawable.ic_edit)
-                fabAdd.setOnClickListener {
-                    parentFragmentManager.beginTransaction()
-                        .replace(R.id.fragment_container, AddRecordFragment())
-                        .addToBackStack(null)
-                        .commit()
-                }
-                loadRecords()
-            }
-            .setNegativeButton(R.string.dialog_cancel, null)
-            .show()
     }
 
 }

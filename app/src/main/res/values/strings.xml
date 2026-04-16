@@ -40,6 +40,20 @@
     <string name="record_cancel">取消</string>
     <string name="record_save_entry">保存记录</string>
     <string name="record_update">更新</string>
+    <string name="record_editor_prompt">“这一刻，值得被记下一笔。”</string>
+    <string name="record_date_display">%1$d月%2$d日</string>
+    <string name="record_category_unselected">请选择分类</string>
+    <string name="record_asset_sheet_title">选择资产</string>
+    <string name="record_asset_sheet_subtitle">今天这笔记账来自哪个账户？</string>
+    <string name="record_asset_sheet_none_subtitle">不关联具体资产</string>
+    <string name="record_asset_sheet_none_amount">-</string>
+    <string name="record_category_sheet_title">选择分类</string>
+    <string name="record_category_sheet_breadcrumb_empty">尚未选择叶子分类</string>
+    <string name="record_category_confirm">确认分类</string>
+    <string name="record_date_sheet_title">选择日期</string>
+    <string name="record_date_sheet_subtitle">把这一笔安放到正确的一天</string>
+    <string name="record_date_select_today">选择今天</string>
+    <string name="record_date_confirm">确认日期</string>
 
     <string name="asset_title_add">添加资产</string>
     <string name="asset_title_edit">编辑资产</string>
@@ -88,16 +102,25 @@
     <string name="home_date_pattern">M月dd日 E</string>
     <string name="home_date_placeholder">3月27日 周四</string>
     <string name="home_daily_log">静奢理财日记</string>
+    <string name="home_total_balance_label">总净值</string>
     <string name="home_current_balance">当前结余</string>
     <string name="home_monthly_income">本月收入</string>
     <string name="home_monthly_expense">本月支出</string>
+    <string name="home_monthly_spend">本月支出</string>
+    <string name="home_daily_average">日均支出</string>
     <string name="home_agent_title">您的专属财务管家</string>
-    <string name="home_agent_subtitle">账本已就位，随时待命。</string>
+    <string name="home_agent_caption">FINANCIAL CONCIERGE</string>
+    <string name="home_agent_subtitle">“本周你的支出依然克制，不妨把多出的 500 元收进储蓄账户。”</string>
     <string name="home_recent_entries">最近记录</string>
     <string name="home_view_archive">查看归档</string>
     <string name="home_empty">就像空无一字的首页
 等待您的第一笔记录</string>
-    <string name="home_empty_records_hint">暂无记录，点击右下角按钮添加记录</string>
+    <string name="home_empty_records_hint">最近还没有记账，点击右下角按钮添加记录</string>
+    <string name="home_record_today">今天</string>
+    <string name="home_record_yesterday">昨天</string>
+    <string name="home_recent_record_date_pattern">M月d日</string>
+    <string name="home_record_edit">编辑记录</string>
+    <string name="home_record_delete">删除记录</string>
 
     <string name="agent_title">AI 助手</string>
     <string name="agent_role_assistant">Assistant</string>

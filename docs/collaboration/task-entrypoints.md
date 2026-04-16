@@ -40,6 +40,20 @@
 
 先读对应 Fragment，再读关联布局、Adapter、资源文件。
 
+### 改“记一笔” / “编辑记录”录入页
+
+先读：
+
+1. `app/src/main/java/com/example/cardtally/AddRecordFragment.kt`
+2. `app/src/main/java/com/example/cardtally/EditRecordFragment.kt`
+3. `app/src/main/res/layout/fragment_add_record.xml`
+4. `app/src/main/java/com/example/cardtally/adapter/RecordAssetSheetAdapter.kt`
+5. `app/src/main/java/com/example/cardtally/adapter/RecordCategoryTreeAdapter.kt`
+6. `app/src/main/res/layout/bottom_sheet_record_*.xml`
+7. `app/src/main/java/com/example/cardtally/database/DatabaseHelper.kt`
+
+注意：当前录入页现实已经是“主页面极简壳 + 底部抽屉交互”，不要按旧的 `Spinner + 分类网格` 页面假设继续改。
+
 ### 改数据库或数据展示
 
 先读：

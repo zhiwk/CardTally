@@ -40,6 +40,20 @@
     <string name="record_cancel">CANCEL</string>
     <string name="record_save_entry">SAVE ENTRY</string>
     <string name="record_update">UPDATE</string>
+    <string name="record_editor_prompt">&quot;A small moment is still worth recording.&quot;</string>
+    <string name="record_date_display">%1$d/%2$d</string>
+    <string name="record_category_unselected">Choose a category</string>
+    <string name="record_asset_sheet_title">Select Asset</string>
+    <string name="record_asset_sheet_subtitle">Which account are you using for this entry?</string>
+    <string name="record_asset_sheet_none_subtitle">Do not attach an asset</string>
+    <string name="record_asset_sheet_none_amount">-</string>
+    <string name="record_category_sheet_title">Select Category</string>
+    <string name="record_category_sheet_breadcrumb_empty">No leaf category selected yet</string>
+    <string name="record_category_confirm">Confirm Category</string>
+    <string name="record_date_sheet_title">Select Date</string>
+    <string name="record_date_sheet_subtitle">Place this entry on the right day</string>
+    <string name="record_date_select_today">Select Today</string>
+    <string name="record_date_confirm">Confirm Date</string>
 
     <string name="asset_title_add">Add Asset</string>
     <string name="asset_title_edit">Edit Asset</string>
@@ -88,16 +102,25 @@
     <string name="home_date_pattern">MMM dd EEE</string>
     <string name="home_date_placeholder">Mar 27 Thu</string>
     <string name="home_daily_log">CURATED DAILY LOG</string>
+    <string name="home_total_balance_label">TOTAL NET WORTH</string>
     <string name="home_current_balance">CURRENT BALANCE</string>
     <string name="home_monthly_income">MONTHLY INCOME</string>
     <string name="home_monthly_expense">MONTHLY EXPENSE</string>
+    <string name="home_monthly_spend">MONTHLY SPEND</string>
+    <string name="home_daily_average">DAILY AVG</string>
     <string name="home_agent_title">Your Financial Concierge</string>
-    <string name="home_agent_subtitle">The ledger is ready whenever you are.</string>
+    <string name="home_agent_caption">FINANCIAL CONCIERGE</string>
+    <string name="home_agent_subtitle">&quot;You've stayed 12% under budget this week. Consider moving $500 to Vault.&quot;</string>
     <string name="home_recent_entries">Recent Entries</string>
     <string name="home_view_archive">VIEW ARCHIVE</string>
     <string name="home_empty">Like a blank journal page,
 waiting for your first entry.</string>
-    <string name="home_empty_records_hint">No records yet. Tap the bottom-right button to add one.</string>
+    <string name="home_empty_records_hint">No recent entries yet. Tap the bottom-right button to add one.</string>
+    <string name="home_record_today">Today</string>
+    <string name="home_record_yesterday">Yesterday</string>
+    <string name="home_recent_record_date_pattern">MMM d</string>
+    <string name="home_record_edit">Edit record</string>
+    <string name="home_record_delete">Delete record</string>
 
     <string name="agent_title">AI Assistant</string>
     <string name="agent_role_assistant">Assistant</string>
