@@ -25,6 +25,35 @@ object FloatingNavLayoutHelper {
         }
     }
 
+    fun applyViewBottomPaddingGapAboveBottomNav(
+        paddingContainer: View,
+        anchoredView: View,
+        navShell: View,
+        expectedGapResId: Int = R.dimen.floating_primary_fab_gap_above_nav
+    ) {
+        anchoredView.post {
+            navShell.post {
+                paddingContainer.post {
+                    val navTop = navShell.topOnScreen()
+                    val expectedGap = anchoredView.resources.getDimensionPixelSize(expectedGapResId)
+
+                    val currentGap = navTop - anchoredView.bottomOnScreen()
+                    val targetBottomPadding =
+                        (paddingContainer.paddingBottom + (expectedGap - currentGap)).coerceAtLeast(0)
+
+                    if (paddingContainer.paddingBottom != targetBottomPadding) {
+                        paddingContainer.setPaddingRelative(
+                            paddingContainer.paddingStart,
+                            paddingContainer.paddingTop,
+                            paddingContainer.paddingEnd,
+                            targetBottomPadding
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     private fun View.topOnScreen(): Int {
         val location = IntArray(2)
         getLocationOnScreen(location)

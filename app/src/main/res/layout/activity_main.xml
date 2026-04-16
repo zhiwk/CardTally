@@ -20,17 +20,12 @@
         android:id="@+id/nav_shell"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/floating_nav_horizontal_margin"
-        android:layout_marginEnd="@dimen/floating_nav_horizontal_margin"
-        android:layout_marginBottom="@dimen/floating_nav_bottom_margin"
-        app:cardBackgroundColor="?attr/colorSurfaceContainerLowest"
-        app:cardCornerRadius="28dp"
-        app:cardElevation="6dp"
-        app:strokeColor="?attr/colorOutlineVariant"
-        app:strokeWidth="1dp"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+        app:cardElevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.CardTally.BottomNavShell">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_navigation"
@@ -41,8 +36,8 @@
             android:minHeight="64dp"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:paddingTop="@dimen/floating_nav_vertical_padding"
-            android:paddingBottom="@dimen/floating_nav_vertical_padding"
+            android:paddingTop="6dp"
+            android:paddingBottom="8dp"
             app:itemIconTint="@color/bottom_nav_item_colors"
             app:itemRippleColor="@color/bottom_nav_item_colors"
             app:itemTextColor="@color/bottom_nav_item_colors"

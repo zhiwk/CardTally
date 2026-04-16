@@ -23,7 +23,7 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 
 - `app/src/main/java/com/example/cardtally/`
 - `MainActivity.kt`：主 Activity
-- `*Fragment.kt`：页面级逻辑，例如 `HomeFragment`、`AddRecordFragment`、`EditRecordFragment`、`AddAssetFragment`、`EditAssetFragment`、`StatisticsFragment`、`SettingsFragment`、`SearchFragment`、`AgentFragment`、`AssetFragment`
+- `*Fragment.kt`：页面级逻辑，例如 `HomeFragment`、`AddRecordFragment`、`EditRecordFragment`、`AddAssetFragment`、`EditAssetFragment`、`StatisticsFragment`、`SettingsFragment`、`SearchFragment`、`AgentFragment`、`AssetFragment`；其中当前“账本”一级页仍由 `StatisticsFragment` 承载，并在页内切换 `统计 / 明细` 两种视图
 - `adapter/`：RecyclerView 相关适配器
 - `database/`：SQLite 数据访问，核心在 `DatabaseHelper.kt`
 - `model/`：数据模型，包括记录、资产，以及 AI 助手会话 / 消息模型

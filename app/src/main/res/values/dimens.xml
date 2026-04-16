@@ -55,14 +55,14 @@
     <dimen name="floating_nav_vertical_padding">6dp</dimen>
     <dimen name="floating_primary_fab_end_margin">28dp</dimen>
     <dimen name="floating_primary_fab_gap_above_nav">15dp</dimen>
-    <!-- Derived from current floating nav height + bottom margin + required 15dp gap. -->
-    <dimen name="floating_primary_fab_bottom_margin_with_nav">111dp</dimen>
-    <dimen name="content_bottom_padding_with_floating_nav">168dp</dimen>
+    <!-- Runtime helpers align FAB/composer to keep a fixed 15dp gap above bottom nav. -->
+    <dimen name="floating_primary_fab_bottom_margin_with_nav">92dp</dimen>
+    <dimen name="content_bottom_padding_with_floating_nav">132dp</dimen>
     <dimen name="agent_composer_horizontal_inset">@dimen/floating_nav_horizontal_margin</dimen>
     <dimen name="agent_composer_shell_resting_height">56dp</dimen>
     <dimen name="agent_composer_send_button_size">48dp</dimen>
-    <dimen name="agent_composer_bottom_padding_with_nav">123dp</dimen>
-    <dimen name="agent_content_bottom_padding_with_composer">193dp</dimen>
+    <dimen name="agent_composer_bottom_padding_with_nav">92dp</dimen>
+    <dimen name="agent_content_bottom_padding_with_composer">176dp</dimen>
     
     <!-- 图标尺寸 -->
     <dimen name="icon_size_small">16dp</dimen>

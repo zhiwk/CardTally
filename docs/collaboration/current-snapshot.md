@@ -98,6 +98,15 @@
 - 新增实施计划文档：`docs/requirements/plans/2026-04-13-recursive-category-id-demo-plan.md`
 - `activity_main.xml` 中的底部导航壳已调整为更明确的卡片式容器：使用 `MaterialCardView` 承载导航、带 1dp 描边和轻阴影，并将选中项恢复为柔和的胶囊型 active indicator，避免导航看起来像贴底的纯平条带
 
+## 2026-04-16 最新代码现实
+
+- “账本”一级页当前仍使用 `StatisticsFragment`，未拆出独立 `RecordsFragment`
+- `StatisticsFragment` 页内已新增 `统计 / 明细` 双视图切换
+- 统计视图当前展示分类维度的收入 / 支出聚合结果
+- 明细视图当前通过 `DatabaseHelper.getAllRecords()` 读取全部记录，并按日期分组后交给 `DateGroupAdapter` 渲染
+- 账本明细视图已复用现有记录编辑与删除交互；删除后会在当前页内刷新列表
+- `fragment_statistics.xml` 已从单一统计列表壳更新为带轻量切换控件的账本页壳
+
 ## 环境注意事项
 
 - `local.properties` 属于本机环境文件；当前构建依赖其中的 `sdk.dir` 或等效 Android SDK 环境变量，不要提交该文件

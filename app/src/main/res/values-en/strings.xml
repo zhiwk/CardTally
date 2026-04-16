@@ -13,6 +13,10 @@
     <string name="statistics">Statistics</string>
     <string name="statistics_expense_prefix">Expense: %1$s</string>
     <string name="statistics_income_prefix">Income: %1$s</string>
+    <string name="ledger_view_statistics">Statistics</string>
+    <string name="ledger_view_records">Records</string>
+    <string name="ledger_empty_statistics">No statistics yet</string>
+    <string name="ledger_empty_records">No records yet</string>
     <string name="categories">Categories</string>
     <string name="budget">Budget</string>
     <string name="settings">Settings</string>

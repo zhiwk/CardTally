@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Ledger"
+            android:text="@string/nav_ledger"
             android:textColor="?attr/colorOnBackground"
             android:textSize="24sp"
             android:textStyle="italic"
@@ -49,11 +49,38 @@
 
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/toggle_ledger_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="88dp"
+        app:singleSelection="true"
+        app:selectionRequired="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_view_statistics"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:text="@string/ledger_view_statistics" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_view_records"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:text="@string/ledger_view_records" />
+
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
     <TextView
         android:id="@+id/text_empty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="无记录内容"
+        android:text="@string/ledger_empty_statistics"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="15sp"
         android:visibility="gone"
@@ -63,7 +90,7 @@
         android:id="@+id/recycler_statistics"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="148dp"
         android:clipToPadding="false"
         android:paddingTop="8dp"
         android:paddingHorizontal="24dp"

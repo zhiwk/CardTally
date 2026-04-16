@@ -163,6 +163,7 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/layout_agent_composer_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
@@ -173,6 +174,7 @@
             android:paddingBottom="@dimen/agent_composer_bottom_padding_with_nav">
 
             <LinearLayout
+                android:id="@+id/layout_agent_composer_shell"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_agent_composer_shell"

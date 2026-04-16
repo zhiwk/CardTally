@@ -28,6 +28,7 @@ import com.example.cardtally.network.MiniMaxClient
 import com.example.cardtally.network.MiniMaxErrorType
 import com.example.cardtally.util.AgentSessionTitleHelper
 import com.example.cardtally.util.AiAssistantSettingsHelper
+import com.example.cardtally.util.FloatingNavLayoutHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -47,6 +48,8 @@ class AgentFragment : Fragment() {
     private lateinit var progressSending: ProgressBar
     private lateinit var overlaySessionDrawer: View
     private lateinit var imageSend: ImageView
+    private lateinit var layoutComposerContainer: View
+    private lateinit var layoutComposerShell: View
 
     private lateinit var databaseHelper: DatabaseHelper
     private val miniMaxClient = MiniMaxClient()
@@ -81,6 +84,8 @@ class AgentFragment : Fragment() {
         progressSending = view.findViewById(R.id.progress_agent_sending)
         overlaySessionDrawer = view.findViewById(R.id.view_agent_session_overlay)
         imageSend = view.findViewById(R.id.image_agent_send)
+        layoutComposerContainer = view.findViewById(R.id.layout_agent_composer_container)
+        layoutComposerShell = view.findViewById(R.id.layout_agent_composer_shell)
 
         chatAdapter = AgentChatAdapter()
         recyclerMessages.layoutManager = LinearLayoutManager(requireContext())
@@ -144,6 +149,7 @@ class AgentFragment : Fragment() {
         }
 
         configureSessionDrawerWidth()
+        applyComposerGapAboveBottomNav()
         initializeChatState()
         refreshChatUi()
         return view
@@ -152,6 +158,7 @@ class AgentFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(isSessionDrawerOpen)
+        applyComposerGapAboveBottomNav()
 
         if (!AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext())) {
             requireActivity()
@@ -191,6 +198,16 @@ class AgentFragment : Fragment() {
         }
 
         updateSendingState(isSending, hasActiveStream)
+    }
+
+    private fun applyComposerGapAboveBottomNav() {
+        activity?.findViewById<View>(R.id.nav_shell)?.let { navShell ->
+            FloatingNavLayoutHelper.applyViewBottomPaddingGapAboveBottomNav(
+                paddingContainer = layoutComposerContainer,
+                anchoredView = layoutComposerShell,
+                navShell = navShell
+            )
+        }
     }
 
     private fun sendCurrentMessage() {
