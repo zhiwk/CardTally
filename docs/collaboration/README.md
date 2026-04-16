@@ -17,6 +17,9 @@
 - 工程约束 / UI 气质 / 提交前检查：`docs/collaboration/engineering-constraints.md`
 - 最近代码现实 / 当日快照：`docs/collaboration/current-snapshot.md`
 - Android 构建 / 单测 / 真机验证：`docs/collaboration/skills/android-gradle-serial-verification.md`
+- Android Debug 编译：`skills/android-build-debug.md`
+- Android Debug 安装：`skills/android-install-debug-apk.md`
+- Android 真机当前页面截图：`skills/adb-current-screen-screenshot.md`
 
 ## 文档目标
 

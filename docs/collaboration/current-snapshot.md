@@ -116,7 +116,15 @@
 - 分类选择已从页内网格切换为树形底部抽屉，当前由 `RecordCategoryTreeAdapter` 渲染，并支持任意深度展开
 - 当前录入页仍只允许选择**叶子分类**，并继续保存 `category_id`、`category_name_snapshot`、`category_path_snapshot`
 - `AddRecordFragment` / `EditRecordFragment` 当前已统一通过 `nav_shell` 控制二级页进入时隐藏底部导航，而不是单独操作 `bottom_navigation`
+- 普通入口进入“记一笔”时，返回会回到发起页面；如果开启“快捷记账”后冷启动直接进入“记一笔”，当前返回会落到首页
 - 当前录入页的下一步精修重点已收敛为：分类抽屉视觉层级、资产抽屉信息呈现、金额区与底部保存区留白
+
+## 2026-04-16 协作技能最新现实
+
+- 根目录已新增 `skills/`，用于存放可直接执行的本地协作 skill，而不是继续把所有 skill 都放在 `docs/collaboration/skills/`
+- 当前已提供 3 个根目录 skill：`skills/android-build-debug.md`、`skills/android-install-debug-apk.md`、`skills/adb-current-screen-screenshot.md`
+- ADB 截图 skill 当前默认把留档截图保存到根目录 `screenshot/`
+- 部分设备存在多 display；如果默认 `screencap` 出现黑图，当前应先执行 `adb shell dumpsys SurfaceFlinger --display-id`，再改用 `screencap -d <display-id>`
 
 ## 环境注意事项
 

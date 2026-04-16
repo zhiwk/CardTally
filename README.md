@@ -75,6 +75,8 @@ CardTally/
 │           │   └── xml/              # locale_config 等 XML 配置
 │           └── AndroidManifest.xml
 ├── docs/                             # 文档目录（见下文）
+├── skills/                           # 本地协作 skill（编译 / 安装 / 截图等）
+├── screenshot/                       # 真机截图留档目录（按需生成）
 ├── AGENTS.md                         # 仓库协作入口
 ├── build.gradle                      # 项目级构建配置
 └── README.md                         # 项目说明
@@ -91,11 +93,12 @@ docs/
 │   ├── guidelines/  # 设计指南
 │   └── assets/      # 设计产出物
 ├── collaboration/    # AI协作指南
-│   └── skills/      # 专项协作 skill
+│   └── skills/      # 拆分协作文档中的专项 skill
 └── archive/         # 历史归档
 ```
 
 - `AGENTS.md`：仓库协作入口
+- `skills/`：根目录本地协作 skill
 
 ## 🚀 使用指南
 

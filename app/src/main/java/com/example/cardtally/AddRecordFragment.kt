@@ -10,6 +10,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +23,7 @@ import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.ThemeColorHelper
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.util.Calendar
 import java.util.Locale
 
@@ -48,6 +50,7 @@ class AddRecordFragment : Fragment() {
     private var selectedDate: String = ""
     private var selectedCategory: Category? = null
     private var selectedAsset: Asset? = null
+    private lateinit var backPressedCallback: OnBackPressedCallback
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -79,6 +82,7 @@ class AddRecordFragment : Fragment() {
         loadCategories(currentType)
         loadAssets()
         updateTypeStyle()
+        setupBackNavigation()
 
         rowDate.setOnClickListener { showDateSheet() }
         rowAsset.setOnClickListener { showAssetSheet() }
@@ -100,8 +104,8 @@ class AddRecordFragment : Fragment() {
             }
         }
 
-        btnClose.setOnClickListener { parentFragmentManager.popBackStack() }
-        btnCancel.setOnClickListener { parentFragmentManager.popBackStack() }
+        btnClose.setOnClickListener { navigateBack() }
+        btnCancel.setOnClickListener { navigateBack() }
         btnSave.setOnClickListener { saveRecord(true) }
 
         return view
@@ -364,7 +368,7 @@ class AddRecordFragment : Fragment() {
         if (id != -1L) {
             Toast.makeText(requireContext(), getString(R.string.toast_save_success), Toast.LENGTH_SHORT).show()
             if (shouldReturn) {
-                parentFragmentManager.popBackStack()
+                navigateBack()
             } else {
                 clearAmountAndDescription()
             }
@@ -392,6 +396,24 @@ class AddRecordFragment : Fragment() {
             return
         }
         editAmount.post { editAmount.selectAll() }
+    }
+
+    private fun setupBackNavigation() {
+        backPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                navigateBack()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
+
+    private fun navigateBack() {
+        if (parentFragmentManager.backStackEntryCount > 0) {
+            parentFragmentManager.popBackStack()
+            return
+        }
+
+        requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId = R.id.nav_home
     }
 
     private fun hideBottomNav() {

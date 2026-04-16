@@ -77,6 +77,25 @@
 9. `app/src/main/res/layout/fragment_agent.xml`
 10. `docs/collaboration/skills/android-gradle-serial-verification.md`（如果需要跑构建 / 单测 / 真机验证）
 
+### 做真机截图 / 页面取证 / UI 回归留档
+
+先读：
+
+1. `skills/adb-current-screen-screenshot.md`
+2. 如同时涉及构建或测试，再读 `docs/collaboration/skills/android-gradle-serial-verification.md`
+
+注意：当前仓库推荐先用 `adb devices` 确认设备状态；如果有多台设备，后续截图命令必须带 `-s <serial>`。如果设备提示存在多个 display，或默认截图出现黑图，先执行 `adb shell dumpsys SurfaceFlinger --display-id`，再改用 `screencap -d <display-id>`；需要留档时默认保存到根目录 `screenshot/`。
+
+### 做 Debug 编译或 APK 安装
+
+先读：
+
+1. `skills/android-build-debug.md`
+2. `skills/android-install-debug-apk.md`
+3. 如同时涉及测试或整轮验证，再读 `docs/collaboration/skills/android-gradle-serial-verification.md`
+
+注意：当前仓库内 Gradle 构建与测试默认串行；安装前先确认 `app/build/outputs/apk/debug/CardTally-debug.apk` 已生成。
+
 ### 改主题 / 样式 / 视觉一致性
 
 先读：
