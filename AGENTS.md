@@ -31,7 +31,7 @@ CardTally 仓库的 AI 协作入口文件。开始任何修改前，先读本文
 - 当前分类系统现实：分类表已支持**树形层级结构**，`categories` 表新增 `parent_id` 字段支持任意深度（默认最大深度 2，可在设置中调整至 50）；`CategoryManageFragment` 支持层级缩进展示、父分类选择、删除保护（有子分类或关联记录时禁止删除）。记账记录通过 `category_id` 绑定到**叶子分类**，并保留 `category_name_snapshot` 和 `category_path_snapshot` 用于显示和历史追溯。当前“账本”一级页仍由 `StatisticsFragment` 承载，但页内已支持 `统计 / 明细` 切换：统计视图展示分类统计，明细视图按日期分组展示全部记录，并复用现有编辑/删除交互。涉及分类管理、记账录入/编辑、首页/搜索/统计/账本明细展示时，优先检查 `CategoryManageFragment`、`CategoryAdapter`、`CategoryHierarchySettingsHelper`、`DatabaseHelper`、`StatisticsFragment`、`DateGroupAdapter` 中的相关实现，以及 `Record` 模型的分类字段。
 - 当前主题现实：主题设置当前只保留 `浅色 / 深色 / 跟随系统` 三档；历史蓝 / 绿 / 橙彩色主题已从设置入口与资源层移除，`ThemeHelper` 会把旧的彩色主题存档值回退到浅色主题。当前仓库正在以主题属性和 `values-night` 覆盖替换旧的 `*_light` 直接引用；涉及主题/深色模式问题时，优先检查 `ThemeHelper`、`ThemeSettingsFragment`、`styles.xml`、`values-night/*.xml` 与受影响布局/适配器。
 - 当前导航现实：`MainActivity` 统一持有卡片式浮动底部导航壳；一级页显示，进入二级页面（add/edit/settings detail 等）后隐藏整个 `nav_shell`，不要再在单个 Fragment 中分散维护导航显隐规则。当前底部导航已使用带描边与轻阴影的卡片容器，并为当前 tab 提供柔和的胶囊型选中态。`AgentFragment` 会话抽屉展开时，也会临时隐藏 `nav_shell`，关闭后恢复。
-- 当前仓库已接入应用级中英文国际化；涉及文案、语言切换或字符串资源时，先检查 `LanguageHelper` 和 `res/values*/strings*.xml`。
+- 当前仓库已接入应用级中英文国际化；涉及文案、语言切换或字符串资源时，先检查 `LanguageHelper` 和 `res/values*/strings*.xml`。当前语言切换入口位于“我的”页；现状是已做过一轮减轻闪动优化，但真机切换中英文时仍会轻微闪屏，不能视为已完全解决。后续目标是做成更平滑的淡入淡出过渡，而不是接受当前闪动表现；继续处理时，优先检查 `SettingsFragment`、`LanguageHelper`、`MainActivity`、`activity_main.xml` 与主题 / 窗口动画相关资源。
 - 修改优先做最小必要改动，尤其是 bugfix 和局部功能补全。
 - 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 等命令；不要并行跑任何 `gradlew` / Gradle 任务，尤其不要并行跑共享 `app/build/` 产物的任务，避免出现 `Tool execution aborted`、中间产物互相踩踏、或结果已成功但协作者未正确消费输出的误判。
 - 涉及业务规则时，必须先对照 `docs/requirements/decisions/business_rules.md`。

@@ -119,6 +119,13 @@
 4. 受影响页面对应的 `Fragment` 和 `layout`
 5. 如涉及设置入口，再读 `SettingsFragment.kt` 和 `fragment_settings.xml`
 
+补充现实：
+
+- 语言切换入口在“我的”页 `SettingsFragment`
+- 当前已做过一轮减闪处理，但真机切换中英文仍会轻微闪屏
+- 后续目标是更平滑的淡入淡出过渡，而不是维持当前闪动效果
+- 如需继续排查，连同 `MainActivity`、`activity_main.xml` 与主题 / 窗口动画资源一起看
+
 ### 改产品结构 / 新页面框架
 
 先读：

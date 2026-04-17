@@ -47,6 +47,9 @@
 - 应用已接入应用级中英文国际化，当前支持 `中文 / English`
 - 语言切换入口位于"我的"页，并在切换后立即全局生效
 - 国际化基础设施集中在 `LanguageHelper.kt`、`app/src/main/res/values/strings.xml`、`app/src/main/res/values-en/strings.xml` 和 `app/src/main/res/xml/locale_config.xml`
+- 语言切换当前已做过一轮减闪处理：去掉额外 `recreate()`、补了无动画窗口切换、过渡遮罩，以及避免重复 `setApplicationLocales(...)`
+- 但真机从“我的”页切换中英文时仍会轻微闪屏；当前只能算“减轻”，不能算“解决”
+- 该问题后续期望方案是更平滑的淡入淡出过渡；如果继续处理，优先沿 `SettingsFragment -> LanguageHelper -> MainActivity/activity_main.xml` 这条链路排查
 - "我的"页已新增 `AI 助理` 分组，包含 AI 入口显示开关与 `MiniMax 配置` 二级设置页
 - AI 显示开关当前会控制首页 Agent 卡片与底部 `AI 助手` tab 的可见性，并在关闭时阻止继续停留在 Agent 页面
 - `AgentFragment` 已从静态示例页切换为 MiniMax BYOK 聊天页；当前请求默认携带 `stream=true`

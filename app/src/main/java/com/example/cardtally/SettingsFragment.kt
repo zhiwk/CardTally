@@ -167,11 +167,14 @@ class SettingsFragment : Fragment() {
             .setTitle(R.string.language_dialog_title)
             .setSingleChoiceItems(languageEntries, checkedIndex) { dialog, which ->
                 val selectedLanguage = languageValues[which]
-                if (selectedLanguage != currentLanguageTag) {
-                    LanguageHelper.updateLanguage(requireContext(), selectedLanguage)
-                    requireActivity().recreate()
-                }
                 dialog.dismiss()
+                if (selectedLanguage != currentLanguageTag) {
+                    view?.post {
+                        if (isAdded) {
+                            LanguageHelper.updateLanguage(requireContext(), selectedLanguage)
+                        }
+                    }
+                }
             }
             .setNegativeButton(R.string.dialog_cancel, null)
             .show()
