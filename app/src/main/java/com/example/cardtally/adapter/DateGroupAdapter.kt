@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
+import com.example.cardtally.util.LedgerDisplayHelper
 import com.example.cardtally.util.SwipeToEditDeleteHelper
 import com.example.cardtally.util.ThemeColorHelper
 
@@ -68,7 +69,7 @@ class DateGroupAdapter(
         var currentPosition = 0
         for (dateGroup in dateGroups) {
             if (position == currentPosition) {
-                (holder as DateHeaderViewHolder).bind(dateGroup.date)
+                (holder as DateHeaderViewHolder).bind(dateGroup)
                 return
             }
             currentPosition++
@@ -214,9 +215,18 @@ class DateGroupAdapter(
 
     class DateHeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textDate: TextView = itemView.findViewById(R.id.text_date)
+        private val textDateTotal: TextView = itemView.findViewById(R.id.text_date_total)
 
-        fun bind(date: String) {
-            textDate.text = date
+        fun bind(dateGroup: DateGroup) {
+            textDate.text = LedgerDisplayHelper.formatDateHeader(dateGroup.date)
+            val total = dateGroup.records.sumOf { record ->
+                if (record.type == 1) record.amount else -record.amount
+            }
+            textDateTotal.text = itemView.context.getString(
+                R.string.ledger_day_total,
+                if (total >= 0) "+" else "-",
+                kotlin.math.abs(total)
+            )
         }
     }
 
@@ -254,17 +264,15 @@ class DateGroupAdapter(
             isSelected: Boolean
         ) {
             currentRecord = record
+            val title = record.description?.takeIf { it.isNotBlank() }
+                ?: record.categoryNameSnapshot?.takeIf { it.isNotBlank() }
+                ?: record.category
             val categoryLabel = record.categoryPathSnapshot?.takeIf { it.isNotBlank() } ?: record.category
-            textCategory.text = categoryLabel
-            textTime.text = record.assetSource?.uppercase().orEmpty().ifEmpty { "CURATED ENTRY" }
+            textCategory.text = title
+            textTime.text = buildSubtitle(record, categoryLabel)
             imageIcon.setImageResource(categoryIcons[record.category] ?: R.drawable.ic_category_other)
 
-            if (!record.description.isNullOrEmpty()) {
-                textDescription.text = record.description
-                textDescription.visibility = View.VISIBLE
-            } else {
-                textDescription.visibility = View.GONE
-            }
+            textDescription.visibility = View.GONE
 
             val context = itemView.context
             val categoryColors = mapOf(
@@ -299,7 +307,7 @@ class DateGroupAdapter(
                     )
                 } else {
                     cardContent.setBackgroundColor(
-                        ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSurface)
+                        ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_lowest)
                     )
                 }
 
@@ -308,7 +316,7 @@ class DateGroupAdapter(
                 }
             } else {
                 cardContent.setBackgroundColor(
-                    ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSurface)
+                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_lowest)
                 )
 
                 swipeHelper = SwipeToEditDeleteHelper(
@@ -324,6 +332,17 @@ class DateGroupAdapter(
                     true
                 }
             }
+        }
+
+        private fun buildSubtitle(record: Record, categoryLabel: String): String {
+            val leadingLabel = record.assetSource?.takeIf { it.isNotBlank() }
+                ?: categoryLabel.substringAfterLast('/')
+            val typeLabel = if (record.type == 1) {
+                itemView.context.getString(R.string.record_type_income)
+            } else {
+                itemView.context.getString(R.string.record_type_expense)
+            }
+            return "$leadingLabel • $typeLabel"
         }
     }
 }

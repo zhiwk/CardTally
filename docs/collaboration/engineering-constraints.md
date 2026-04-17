@@ -93,7 +93,7 @@ CardTally 当前明确的产品气质是：`静奢理财日记`。
   - `app/src/androidTest/java/com/example/cardtally/util/ThemeHelperTest.kt`
 - 涉及 AI 助手多会话持久化时，优先先跑相关单测 / 真机测试，再补 `assembleDebug` 与人工验证。
 - 涉及主题 / 深色模式修复时，优先先跑 `ThemeHelperTest`、`MainActivityThemeApplicationTest` 这类主题回归，再补 `assembleDebug` 与人工验证。
-- 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest`；不要并行跑共享 `app/build/` 产物的任务。详见 `docs/collaboration/skills/android-gradle-serial-verification.md`
+- 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest`；不要并行跑任何 `gradlew` / Gradle 任务，尤其不要并行跑共享 `app/build/` 产物的任务。详见 `docs/collaboration/skills/android-gradle-serial-verification.md`
 
 ## 文档可信度排序
 

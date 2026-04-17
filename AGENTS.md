@@ -33,7 +33,7 @@ CardTally 仓库的 AI 协作入口文件。开始任何修改前，先读本文
 - 当前导航现实：`MainActivity` 统一持有卡片式浮动底部导航壳；一级页显示，进入二级页面（add/edit/settings detail 等）后隐藏整个 `nav_shell`，不要再在单个 Fragment 中分散维护导航显隐规则。当前底部导航已使用带描边与轻阴影的卡片容器，并为当前 tab 提供柔和的胶囊型选中态。`AgentFragment` 会话抽屉展开时，也会临时隐藏 `nav_shell`，关闭后恢复。
 - 当前仓库已接入应用级中英文国际化；涉及文案、语言切换或字符串资源时，先检查 `LanguageHelper` 和 `res/values*/strings*.xml`。
 - 修改优先做最小必要改动，尤其是 bugfix 和局部功能补全。
-- 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 等命令；不要并行跑共享 `app/build/` 产物的任务，避免出现 `Tool execution aborted` 或中间产物互相踩踏导致误判。
+- 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 等命令；不要并行跑任何 `gradlew` / Gradle 任务，尤其不要并行跑共享 `app/build/` 产物的任务，避免出现 `Tool execution aborted`、中间产物互相踩踏、或结果已成功但协作者未正确消费输出的误判。
 - 涉及业务规则时，必须先对照 `docs/requirements/decisions/business_rules.md`。
 - 涉及视觉改动时，必须先对照 `docs/design/guidelines/*`，并保持"静奢理财日记"方向。
 - 文档目录已统一到当前结构；不要再引用旧路径别名，例如 `docs/agent-guide/*`、`docs/stitch-guidance/*`、`.sisyphus/*`、`design/stitch_extracted/*`。

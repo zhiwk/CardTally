@@ -13,7 +13,7 @@
 
 ### 1. 同一工作区里的 Android Gradle 验证命令默认串行执行
 
-不要在同一个仓库工作区里并行运行这些命令：
+不要在同一个仓库工作区里并行运行任何 `gradlew` / Gradle 命令，尤其是这些命令：
 
 - `assembleDebug`
 - `testDebugUnitTest`
@@ -75,7 +75,8 @@
 - 当前仓库是 Android + Gradle + 真机可连环境
 - 真机测试会和安装、Dex、构建产物共享状态
 - 因此一次任务里涉及多条 Android 验证命令时，默认采用“上一条完成，再跑下一条”的策略
+- 即使多个命令彼此独立，只要它们通过 `gradlew` 进入同一工作区，也不要并行触发
 
 ## 一句话记忆
 
-> 在 CardTally 里，Android Gradle 构建与测试验证默认串行，不要并发跑；看到 `Tool execution aborted` 时，先排查并发冲突，再决定是不是代码真的失败。
+> 在 CardTally 里，Android Gradle 构建与测试验证默认串行，不要并发跑任何 `gradlew` / Gradle 任务；看到 `Tool execution aborted` 时，先排查并发冲突，再决定是不是代码真的失败。

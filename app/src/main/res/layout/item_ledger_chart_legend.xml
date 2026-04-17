@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="6dp">
+
+    <View
+        android:id="@+id/view_legend_dot"
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:background="@drawable/bg_legend_dot" />
+
+    <TextView
+        android:id="@+id/text_legend_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:textColor="@color/editorial_text_muted"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.08"
+        tools:text="DINING" />
+
+    <TextView
+        android:id="@+id/text_legend_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="12sp"
+        android:textStyle="italic"
+        android:fontFamily="serif"
+        tools:text="¥842" />
+
+</LinearLayout>

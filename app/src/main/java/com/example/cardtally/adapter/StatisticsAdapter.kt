@@ -11,14 +11,17 @@ import com.example.cardtally.R
 import com.example.cardtally.util.ThemeColorHelper
 
 class StatisticsAdapter : RecyclerView.Adapter<StatisticsAdapter.StatisticsViewHolder>() {
-    
+
     private val items = mutableListOf<StatisticsItem>()
 
-    fun updateData(data: Map<String, Double>) {
+    fun updateData(data: Map<String, Double>, entryCounts: Map<String, Int> = emptyMap()) {
         items.clear()
-        data.forEach { (label, amount) ->
-            items.add(StatisticsItem(label, amount))
-        }
+        data.entries
+            .sortedByDescending { (_, amount) -> kotlin.math.abs(amount) }
+            .forEach { (label, amount) ->
+                val normalizedLabel = label.substringAfter(": ", label).substringAfter("· ", label)
+                items.add(StatisticsItem(label, amount, entryCounts[normalizedLabel] ?: 0))
+            }
         notifyDataSetChanged()
     }
 
@@ -32,7 +35,7 @@ class StatisticsAdapter : RecyclerView.Adapter<StatisticsAdapter.StatisticsViewH
         val item = items[position]
         val context = holder.itemView.context
         holder.textLabel.text = item.label
-        holder.textAmount.text = String.format("¥%.2f", item.amount)
+        holder.textAmount.text = String.format("¥%.2f", kotlin.math.abs(item.amount))
 
         val normalizedLabel = item.label.substringAfter("· ", item.label).substringAfter(": ", item.label)
 
@@ -68,7 +71,27 @@ class StatisticsAdapter : RecyclerView.Adapter<StatisticsAdapter.StatisticsViewH
         holder.iconContainer.backgroundTintList = ColorStateList.valueOf(
             iconBackground
         )
-        holder.textMeta.text = if (item.amount >= 0) "POSITIVE FLOW" else "OUTGOING FLOW"
+        holder.textMeta.text = when (normalizedLabel) {
+            "餐饮" -> "Evenings spent with friends"
+            "交通" -> "Mobility across the city"
+            "购物" -> "Objects chosen for daily life"
+            "娱乐" -> "Leisure and cultural moments"
+            "医疗" -> "Care for body and mind"
+            "教育" -> "Learning and growth"
+            "住房" -> "Essentials and home comforts"
+            "工资" -> "Primary income and salary flow"
+            "奖金" -> "Extra rewards and bonuses"
+            else -> if (item.amount >= 0) {
+                "Positive cash flow"
+            } else {
+                "Outgoing flow in this period"
+            }
+        }
+        holder.textAmountMeta.text = if (item.entryCount > 0) {
+            holder.itemView.context.getString(R.string.ledger_statistics_entries_meta, item.entryCount)
+        } else {
+            "CURATED ENTRY"
+        }
         holder.textAmount.setTextColor(amountColor)
     }
 
@@ -80,7 +103,8 @@ class StatisticsAdapter : RecyclerView.Adapter<StatisticsAdapter.StatisticsViewH
         val textLabel: TextView = itemView.findViewById(R.id.text_label)
         val textMeta: TextView = itemView.findViewById(R.id.text_meta)
         val textAmount: TextView = itemView.findViewById(R.id.text_amount)
+        val textAmountMeta: TextView = itemView.findViewById(R.id.text_amount_meta)
     }
 
-    private data class StatisticsItem(val label: String, val amount: Double)
+    private data class StatisticsItem(val label: String, val amount: Double, val entryCount: Int)
 }

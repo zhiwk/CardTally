@@ -106,6 +106,12 @@
 - 明细视图当前通过 `DatabaseHelper.getAllRecords()` 读取全部记录，并按日期分组后交给 `DateGroupAdapter` 渲染
 - 账本明细视图已复用现有记录编辑与删除交互；删除后会在当前页内刷新列表
 - `fragment_statistics.xml` 已从单一统计列表壳更新为带轻量切换控件的账本页壳
+- 账本页右上角当前已改为锚点式下拉菜单，用于切换 `统计（支出）/ 统计（收入）/ 明细`，不再使用底部抽屉切换该模式
+- 账本折线图当前在 `周 / 月` 周期下，横轴仅显示“日”数字，不再重复显示“月”信息；`年` 周期仍按月份显示
+- 当周期为 `ALL / CUSTOM` 时，图表模式会回到饼图，右上图表切换控件会隐藏但保留占位，避免“趋势概览”副标题发生纵向跳动
+- 当周期为 `CUSTOM` 时，顶部 `周 / 月 / 年 / 全部` 按钮当前允许无选中态，不再强制高亮某个预设周期
+- 从账本明细进入“记一笔”后返回，当前会重新绑定 `recyclerRecords.adapter`，避免因 Fragment View 重建导致列表空白
+- 账本明细记录项当前已向首页最近记录卡片样式收敛：保留按日期分组与编辑/删除交互，但视觉语言、间距和信息排布已更接近首页
 
 ## 2026-04-16 录入页最新现实
 
@@ -129,4 +135,4 @@
 ## 环境注意事项
 
 - `local.properties` 属于本机环境文件；当前构建依赖其中的 `sdk.dir` 或等效 Android SDK 环境变量，不要提交该文件
-- Android Gradle 验证在同一工作区内默认串行执行；不要并行跑 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 这类共享 `app/build/` 产物的任务，避免因中间产物互踩而误判
+- Android Gradle 验证在同一工作区内默认串行执行；不要并行跑任何 `gradlew` / Gradle 任务，尤其不要并行跑 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 这类共享 `app/build/` 产物的任务，避免因中间产物互踩、命令结果被错误消费、或 `Tool execution aborted` 而误判

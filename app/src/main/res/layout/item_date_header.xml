@@ -1,19 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="18dp"
-    android:paddingBottom="10dp">
+    android:gravity="bottom"
+    android:orientation="horizontal"
+    android:paddingTop="26dp"
+    android:paddingBottom="12dp">
 
     <TextView
         android:id="@+id/text_date"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="serif"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="22sp"
+        android:textStyle="italic"
+        tools:text="Tuesday, 14th" />
+
+    <TextView
+        android:id="@+id/text_date_total"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="serif"
-        android:letterSpacing="0.04"
-        android:text="2024-01-01"
         android:textColor="@color/editorial_text_muted"
-        android:textSize="18sp"
-        android:textStyle="italic" />
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.06"
+        tools:text="TOTAL: -¥142.00" />
 
 </LinearLayout>
