@@ -158,3 +158,6 @@ Thumbs.db
 
 # Trae IDE
 .trae/
+
+# Local screenshot archives
+screenshot/

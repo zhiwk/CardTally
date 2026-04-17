@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ledger Details - The Curated Chronicle</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-container": "#545059",
+                    "on-background": "#383831",
+                    "on-secondary-fixed-variant": "#4d6051",
+                    "inverse-on-surface": "#9e9d98",
+                    "inverse-surface": "#0e0e0c",
+                    "surface-container": "#f6f4ec",
+                    "on-surface-variant": "#65655c",
+                    "secondary-container": "#d3e8d5",
+                    "surface-dim": "#e4e3d7",
+                    "tertiary-dim": "#635647",
+                    "tertiary-fixed": "#f4e3ce",
+                    "primary-fixed": "#e7e0eb",
+                    "on-error-container": "#782232",
+                    "primary-dim": "#55515a",
+                    "secondary": "#56695a",
+                    "on-secondary-fixed": "#314436",
+                    "outline": "#818178",
+                    "on-primary": "#fcf5ff",
+                    "secondary-fixed": "#d3e8d5",
+                    "on-tertiary-container": "#5d5242",
+                    "surface-bright": "#fffcf7",
+                    "on-surface": "#383831",
+                    "error-container": "#ff8b9a",
+                    "error": "#a54453",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#5e5a63",
+                    "inverse-primary": "#f2ebf6",
+                    "on-secondary-container": "#435647",
+                    "surface-container-highest": "#eae8de",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#f4e3ce",
+                    "tertiary": "#6f6252",
+                    "on-tertiary-fixed": "#4a3f31",
+                    "error-dim": "#4f0116",
+                    "primary-container": "#e7e0eb",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#e6d5c1",
+                    "on-primary-fixed": "#413e46",
+                    "secondary-dim": "#4a5d4e",
+                    "surface": "#fffcf7",
+                    "background": "#fffcf7",
+                    "primary": "#615d66",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#f0eee5",
+                    "surface-tint": "#615d66",
+                    "secondary-fixed-dim": "#c5dac7",
+                    "primary-fixed-dim": "#d9d2dd",
+                    "outline-variant": "#babab0",
+                    "on-tertiary-fixed-variant": "#685b4c",
+                    "surface-variant": "#eae8de",
+                    "surface-container-low": "#fcf9f3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Newsreader"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
+        .font-serif { font-family: 'Newsreader', serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- Top App Bar -->
+<header class="w-full pt-6 pb-2 bg-[#fffcf7] dark:bg-stone-950">
+<div class="flex justify-between items-center px-8 w-full max-w-xl mx-auto relative">
+<button class="hover:opacity-70 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[#615d66] dark:text-stone-300">menu</span>
+</button>
+<h1 class="absolute left-1/2 -translate-x-1/2 font-headline text-[#2D2A32] dark:text-stone-100 text-xl font-medium">账本</h1>
+<button class="hover:opacity-70 transition-opacity active:scale-95 duration-200"><div class="flex items-center gap-1">
+<span class="font-label text-[11px] uppercase tracking-widest text-[#615d66] dark:text-stone-300">明细</span>
+<span class="material-symbols-outlined text-[#615d66] dark:text-stone-300">expand_more</span>
+</div></button>
+</div>
+</header>
+<main class="max-w-xl mx-auto px-8 mt-8">
+<!-- Time Period Switcher & Range -->
+<div class="flex flex-col items-center mb-10">
+<nav class="flex gap-2 mb-4 overflow-x-auto no-scrollbar w-full justify-center">
+<button class="px-5 py-2 rounded-full font-label text-[11px] uppercase tracking-widest text-outline hover:text-primary transition-colors">Week</button>
+<button class="px-5 py-2 rounded-full font-label text-[11px] uppercase tracking-widest bg-secondary-container text-on-secondary-container font-bold">Month</button>
+<button class="px-5 py-2 rounded-full font-label text-[11px] uppercase tracking-widest text-outline hover:text-primary transition-colors">Year</button>
+<button class="px-5 py-2 rounded-full font-label text-[11px] uppercase tracking-widest text-outline hover:text-primary transition-colors">ALL</button>
+</nav>
+<p class="font-serif italic text-sm text-outline opacity-80 tracking-wide">Jan 1, 2024 — Jan 31, 2024</p>
+</div>
+<!-- Financial Entries Grouped by Day -->
+<div class="space-y-12">
+<!-- Day Group 1 -->
+<section>
+<header class="flex justify-between items-baseline mb-6">
+<h3 class="font-serif text-xl italic text-on-surface">Tuesday, 14th</h3>
+<span class="font-label text-[10px] uppercase tracking-tighter text-outline">Total: —$142.00</span>
+</header>
+<div class="space-y-6">
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl">local_cafe</span>
+</div>
+<div>
+<p class="text-sm font-medium text-on-surface">Artisan Coffee House</p>
+<p class="text-[11px] text-outline uppercase tracking-wider">Lifestyle</p>
+</div>
+</div>
+<span class="font-serif text-lg italic text-on-surface">—$12.00</span>
+</div>
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl">shopping_bag</span>
+</div>
+<div>
+<p class="text-sm font-medium text-on-surface">Minimalist Atelier</p>
+<p class="text-[11px] text-outline uppercase tracking-wider">Apparel</p>
+</div>
+</div>
+<span class="font-serif text-lg italic text-on-surface">—$130.00</span>
+</div>
+</div>
+</section>
+<!-- Day Group 2 -->
+<section>
+<header class="flex justify-between items-baseline mb-6">
+<h3 class="font-serif text-xl italic text-on-surface">Monday, 13th</h3>
+<span class="font-label text-[10px] uppercase tracking-tighter text-outline">Total: +$4,200.00</span>
+</header>
+<div class="space-y-6">
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-container/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-xl">payments</span>
+</div>
+<div>
+<p class="text-sm font-medium text-on-surface">Monthly Retainer</p>
+<p class="text-[11px] text-outline uppercase tracking-wider">Income</p>
+</div>
+</div>
+<span class="font-serif text-lg italic text-secondary">+$4,200.00</span>
+</div>
+</div>
+</section>
+<!-- Day Group 3 -->
+<section>
+<header class="flex justify-between items-baseline mb-6">
+<h3 class="font-serif text-xl italic text-on-surface">Sunday, 12th</h3>
+<span class="font-label text-[10px] uppercase tracking-tighter text-outline">Total: —$85.50</span>
+</header>
+<div class="space-y-6">
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl">restaurant</span>
+</div>
+<div>
+<p class="text-sm font-medium text-on-surface">The Oak &amp; Vine</p>
+<p class="text-[11px] text-outline uppercase tracking-wider">Dining</p>
+</div>
+</div>
+<span class="font-serif text-lg italic text-on-surface">—$85.50</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-6 pb-8 pt-4 bg-[#fffcf7]/85 dark:bg-stone-950/85 backdrop-blur-xl rounded-t-[2rem] shadow-[0_-8px_32px_rgba(56,56,49,0.04)]">
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-600 tap-highlight-transparent transition-all hover:text-[#2D2A32] dark:hover:text-white" href="#">
+<span class="material-symbols-outlined mb-1">auto_stories</span>
+<span class="font-sans text-[10px] tracking-widest uppercase">Journal</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#615d66] dark:text-stone-100 font-bold tap-highlight-transparent transition-all" href="#">
+<span class="material-symbols-outlined mb-1">menu_book</span>
+<span class="font-sans text-[10px] tracking-widest uppercase">Ledger</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-600 tap-highlight-transparent transition-all hover:text-[#2D2A32] dark:hover:text-white" href="#">
+<span class="material-symbols-outlined mb-1">analytics</span>
+<span class="font-sans text-[10px] tracking-widest uppercase">Insights</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-400 dark:text-stone-600 tap-highlight-transparent transition-all hover:text-[#2D2A32] dark:hover:text-white" href="#">
+<span class="material-symbols-outlined mb-1">account_balance</span>
+<span class="font-sans text-[10px] tracking-widest uppercase">Vault</span>
+</a>
+</nav>
+</body></html>
