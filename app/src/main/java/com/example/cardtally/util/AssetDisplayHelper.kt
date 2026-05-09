@@ -13,6 +13,6 @@ object AssetDisplayHelper {
 
     fun getShowAsset(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_SHOW_ASSET, true)
+        return prefs.getBoolean(KEY_SHOW_ASSET, false)
     }
 }

@@ -18,7 +18,7 @@ object AiAssistantSettingsHelper {
 
     fun getAiAssistantEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_AI_ASSISTANT_ENABLED, true)
+        return prefs.getBoolean(KEY_AI_ASSISTANT_ENABLED, false)
     }
 
     fun saveApiKey(context: Context, apiKey: String) {
