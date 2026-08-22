@@ -18,25 +18,19 @@
 2. `docs/requirements/plans/2026-03-26-cardtally-product-restart-design.md`
 3. `docs/requirements/plans/*.md`
 
-## 涉及视觉设计 / UI 风格 / Stitch 设计稿时再读
+## 涉及视觉设计 / UI 风格时再读
 
-1. `docs/design/guidelines/README.md`
-2. `docs/design/guidelines/brand-design-guide.md`
-3. `docs/design/guidelines/visual-design-guide.md`
-4. `docs/design/guidelines/page-design-guide.md`
-5. `docs/design/guidelines/home-page-spec.md`
-6. 必要时查看 `docs/design/assets/stitch/`
+1. `DESIGN.md`
+2. 当前页面对应的布局、Fragment、Adapter 和资源文件
 
 ## 涉及历史计划 / 过程文档时再读
 
 - `docs/requirements/plans/*.md`
-- `docs/design/assets/stitch/`
-
-这些文件可用于理解历史执行意图、阶段性方案或外部设计产物，但不能直接当成当前代码现状的权威来源，必须回到代码与高可信文档验证。
+这些文件可用于理解历史执行意图或阶段性方案，但不能直接当成当前代码现状的权威来源，必须回到代码与高可信文档验证。
 
 ## 常见任务入口
 
-### 改首页 / 记录 / 统计 / 设置等页面
+### 改账本 / 记录 / 设置等页面
 
 先读对应 Fragment，再读关联布局、Adapter、资源文件。
 
@@ -105,9 +99,9 @@
 3. `res/values/*.xml` 与 `res/values-night/*.xml`
 4. `util/ThemeColorHelper.kt`（如果涉及 Kotlin 运行时取色）
 5. 受影响页面布局 / Adapter / Fragment
-6. `docs/design/guidelines/*`
+6. `DESIGN.md`
 
-注意：当前仓库主题现实只有 `浅色 / 深色 / 跟随系统` 三档；如果看到 `*_light` 直接引用，默认应视为待迁移对象，而不是可继续沿用的模式。
+注意：当前视觉方向以 `DESIGN.md` 为准，不要继续沿用已删除的历史设计指南或 Stitch 导出。
 
 ### 改文案 / 国际化 / 语言切换
 

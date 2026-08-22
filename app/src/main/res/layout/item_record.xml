@@ -3,13 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp">
+    android:background="@color/surface_light"
+    android:layout_marginBottom="0dp">
 
     <LinearLayout
         android:id="@+id/layout_actions"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="end|center_vertical"
+        android:background="@color/surface_light"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingEnd="4dp">
@@ -43,26 +45,25 @@
         android:id="@+id/card_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_home_recent_record"
+        android:background="@color/surface_light"
         android:clickable="true"
         android:focusable="true"
-        android:foreground="?attr/selectableItemBackground"
         android:gravity="center_vertical"
-        android:minHeight="64dp"
+        android:minHeight="56dp"
         android:orientation="horizontal"
         android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp">
+        android:paddingVertical="10dp">
 
         <FrameLayout
             android:id="@+id/view_icon"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:background="@drawable/bg_home_recent_record_icon">
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_ledger_record_icon">
 
             <ImageView
                 android:id="@+id/image_icon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_category_other"
                 app:tint="?attr/colorPrimary" />
@@ -85,7 +86,7 @@
                 android:maxLines="1"
                 android:text="餐饮"
                 android:textColor="?attr/colorOnSurface"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -97,7 +98,7 @@
                 android:maxLines="1"
                 android:text="现金 • 支出"
                 android:textColor="?attr/colorOutline"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 />
 
             <TextView
@@ -108,15 +109,33 @@
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/text_amount"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
-            android:text="-¥100.00"
-            android:textColor="@color/expense_primary"
-            android:textSize="15sp"
-            android:fontFamily="serif" />
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_amount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-¥100.00"
+                android:textColor="@color/expense_primary"
+                android:textSize="15sp"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/text_asset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
 
     </LinearLayout>
 

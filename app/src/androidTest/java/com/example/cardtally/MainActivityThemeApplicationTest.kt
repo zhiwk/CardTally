@@ -17,20 +17,22 @@ class MainActivityThemeApplicationTest {
     @Before
     fun setUp() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        ThemeHelper.saveTheme(context, ThemeHelper.THEME_DARK)
+        ThemeHelper.saveTheme(context, 1)
     }
 
     @Test
-    fun darkTheme_appliesToHomeAndSettingsScreens() {
+    fun staleDarkPreference_appliesLightToLedgerAndSettingsScreens() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val expectedBackground = context.getColor(R.color.background_dark)
+        val expectedBackground = context.getColor(R.color.background_light)
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             instrumentation.waitForIdleSync()
 
             scenario.onActivity { activity ->
                 val currentFragmentView = activity.supportFragmentManager.findFragmentById(R.id.fragment_container)?.view
+                assertEquals(true, activity.supportFragmentManager.findFragmentById(R.id.fragment_container) is LedgerFragment)
+                assertEquals(R.id.nav_ledger, activity.findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId)
                 assertEquals(expectedBackground, (currentFragmentView?.background as ColorDrawable).color)
             }
 

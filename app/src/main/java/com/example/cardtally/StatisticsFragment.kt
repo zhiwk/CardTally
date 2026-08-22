@@ -20,11 +20,20 @@ import com.example.cardtally.adapter.StatisticsAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
+import com.example.cardtally.state.ChartMode
+import com.example.cardtally.state.FilterSurface
+import com.example.cardtally.state.LedgerScreenState
+import com.example.cardtally.state.LedgerViewState
+import com.example.cardtally.state.PeriodPreset
+import com.example.cardtally.state.StatisticsType
 import com.example.cardtally.util.FloatingNavLayoutHelper
+import com.example.cardtally.util.LedgerAggregationHelper
 import com.example.cardtally.util.LedgerDateRange
 import com.example.cardtally.util.LedgerDisplayHelper
 import com.example.cardtally.util.LedgerPeriodHelper
 import com.example.cardtally.util.LedgerPeriodPreset
+import com.example.cardtally.util.LedgerUxPreferences
+import com.example.cardtally.util.LedgerView
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.view.LedgerDonutChartView
 import com.example.cardtally.view.LedgerLineChartView
@@ -70,6 +79,8 @@ class StatisticsFragment : Fragment() {
     private var currentPeriodPreset = LedgerPeriodPreset.MONTH
     private var currentRange = LedgerPeriodHelper.resolveRange(LedgerPeriodPreset.MONTH)
     private var currentChartMode = CHART_MODE_PIE
+    private var openFilterSurface = FilterSurface.NONE
+    private var restoredLedgerState: LedgerScreenState? = null
 
     companion object {
         private const val VIEW_MODE_STATISTICS = 0
@@ -120,6 +131,11 @@ class StatisticsFragment : Fragment() {
         layoutRangeSelector = view.findViewById(R.id.layout_range_selector)
 
         databaseHelper = DatabaseHelper(requireContext())
+        restoredLedgerState = LedgerScreenState.readFrom(savedInstanceState, resolveStartupView())
+        applyLedgerState(restoredLedgerState!!)
+        currentViewMode = VIEW_MODE_STATISTICS
+        layoutModeSelector.visibility = View.GONE
+        view.findViewById<ImageButton>(R.id.btn_ledger_menu).visibility = View.GONE
         recyclerStatistics.layoutManager = LinearLayoutManager(requireContext())
         recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
         statisticsAdapter = StatisticsAdapter()
@@ -157,8 +173,8 @@ class StatisticsFragment : Fragment() {
             FloatingNavLayoutHelper.applyFabGapAboveBottomNav(fabAdd, navShell)
         }
 
-        togglePeriodPreset.check(R.id.btn_period_month)
-        toggleChartMode.check(R.id.btn_chart_pie)
+        checkPeriodToggle(togglePeriodPreset, currentPeriodPreset, false)
+        toggleChartMode.check(if (currentChartMode == CHART_MODE_LINE) R.id.btn_chart_line else R.id.btn_chart_pie)
 
         if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM) {
             clearTopPeriodToggleSelection()
@@ -168,7 +184,16 @@ class StatisticsFragment : Fragment() {
             toggleChartMode.visibility = View.GONE
         }
 
+        view.post {
+            restoreScrollPositions()
+            if (openFilterSurface == FilterSurface.PERIOD) showCustomPeriodSheet()
+        }
         return view
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        currentLedgerState().writeTo(outState)
     }
 
     override fun onResume() {
@@ -357,13 +382,14 @@ class StatisticsFragment : Fragment() {
             ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorTertiary),
             ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_outline)
         )
-        val topItems = stats.entries
-            .sortedByDescending { (_, amount) -> kotlin.math.abs(amount) }
-            .take(4)
-        val total = topItems.sumOf { kotlin.math.abs(it.value) }
-        val slices = topItems.mapIndexed { index, entry ->
+        val summary = LedgerAggregationHelper.summarize(
+            statistics = stats,
+            maxSlices = palette.size,
+            otherLabel = getString(R.string.ledger_chart_other)
+        )
+        val slices = summary.slices.mapIndexed { index, slice ->
             LedgerDonutChartView.Slice(
-                value = kotlin.math.abs(entry.value).toFloat(),
+                value = slice.amount.toFloat(),
                 color = palette[index % palette.size]
             )
         }
@@ -371,7 +397,7 @@ class StatisticsFragment : Fragment() {
         viewStatisticsChart.submitData(
             slices = slices,
             totalLabel = getString(R.string.ledger_chart_total_label),
-            totalValue = getString(R.string.currency_amount, total)
+            totalValue = getString(R.string.currency_amount, summary.completeTotal)
         )
 
         val showLineChart = currentPeriodPreset == LedgerPeriodPreset.WEEK ||
@@ -425,16 +451,20 @@ class StatisticsFragment : Fragment() {
         }
 
         layoutChartLegend.removeAllViews()
-        topItems.forEachIndexed { index, entry ->
+        summary.slices.forEachIndexed { index, slice ->
             val legendView = layoutInflater.inflate(R.layout.item_ledger_chart_legend, layoutChartLegend, false)
             val dot = legendView.findViewById<View>(R.id.view_legend_dot)
             val label = legendView.findViewById<TextView>(R.id.text_legend_label)
             val value = legendView.findViewById<TextView>(R.id.text_legend_value)
             dot.backgroundTintList = android.content.res.ColorStateList.valueOf(palette[index % palette.size])
 
-            val normalizedLabel = entry.key.substringAfter(": ", entry.key).substringAfter("· ", entry.key)
-            label.text = normalizedLabel.uppercase() + "  ·  " + LedgerDisplayHelper.formatEntriesMeta(entryCounts[normalizedLabel] ?: 0)
-            value.text = getString(R.string.currency_amount, kotlin.math.abs(entry.value))
+            val entryCount = slice.sourceLabels.sumOf { sourceLabel ->
+                val normalizedLabel = sourceLabel.substringAfter(": ", sourceLabel).substringAfter("· ", sourceLabel)
+                entryCounts[normalizedLabel] ?: 0
+            }
+            val displayLabel = slice.label.substringAfter(": ", slice.label).substringAfter("· ", slice.label)
+            label.text = displayLabel.uppercase() + "  ·  " + LedgerDisplayHelper.formatEntriesMeta(entryCount)
+            value.text = getString(R.string.currency_amount, slice.amount)
             layoutChartLegend.addView(legendView)
         }
 
@@ -519,6 +549,7 @@ class StatisticsFragment : Fragment() {
 
                 else -> return@setOnMenuItemClickListener false
             }
+            LedgerUxPreferences.saveLastView(requireContext(), currentLedgerViewPreference())
             renderCurrentView()
             true
         }
@@ -534,6 +565,7 @@ class StatisticsFragment : Fragment() {
     }
 
     private fun showCustomPeriodSheet() {
+        openFilterSurface = FilterSurface.PERIOD
         val dialog = BottomSheetDialog(requireContext())
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_ledger_period, null)
         dialog.setContentView(sheetView)
@@ -604,6 +636,7 @@ class StatisticsFragment : Fragment() {
             btnApply = btnApply
         )
 
+        dialog.setOnDismissListener { openFilterSurface = FilterSurface.NONE }
         sheetView.findViewById<ImageButton>(R.id.btn_close_period_sheet).setOnClickListener {
             dialog.dismiss()
         }
@@ -819,6 +852,86 @@ class StatisticsFragment : Fragment() {
         } else {
             LedgerDateRange(records.last().date, records.first().date)
         }
+    }
+
+    private fun resolveStartupView(): LedgerViewState {
+        return when (LedgerUxPreferences.resolveStartupView(requireContext())) {
+            LedgerView.DETAILS -> LedgerViewState.DETAILS
+            LedgerView.STATISTICS_EXPENSE -> LedgerViewState.STATISTICS_EXPENSE
+            LedgerView.STATISTICS_INCOME -> LedgerViewState.STATISTICS_INCOME
+        }
+    }
+
+    private fun applyLedgerState(state: LedgerScreenState) {
+        currentViewMode = if (state.view == LedgerViewState.DETAILS) VIEW_MODE_RECORDS else VIEW_MODE_STATISTICS
+        currentStatsType = if (state.statisticsType == StatisticsType.INCOME) TYPE_INCOME else TYPE_EXPENSE
+        currentPeriodPreset = when (state.periodPreset) {
+            PeriodPreset.WEEK -> LedgerPeriodPreset.WEEK
+            PeriodPreset.MONTH -> LedgerPeriodPreset.MONTH
+            PeriodPreset.YEAR -> LedgerPeriodPreset.YEAR
+            PeriodPreset.ALL -> LedgerPeriodPreset.ALL
+            PeriodPreset.CUSTOM -> LedgerPeriodPreset.CUSTOM
+        }
+        currentRange = when (state.periodPreset) {
+            PeriodPreset.ALL -> resolveAllRange()
+            PeriodPreset.CUSTOM -> LedgerDateRange(state.customStartDate, state.customEndDate)
+            else -> LedgerPeriodHelper.resolveRange(currentPeriodPreset)
+        }
+        currentChartMode = if (state.chartMode == ChartMode.LINE) CHART_MODE_LINE else CHART_MODE_PIE
+        openFilterSurface = state.openFilterSurface
+    }
+
+    private fun currentLedgerState(): LedgerScreenState {
+        val previous = restoredLedgerState ?: LedgerScreenState.defaults(resolveStartupView())
+        val detailsPosition = recyclerScrollState(recyclerRecords)
+        val statisticsPosition = recyclerScrollState(recyclerStatistics)
+        return LedgerScreenState(
+            view = when {
+                currentViewMode == VIEW_MODE_RECORDS -> LedgerViewState.DETAILS
+                currentStatsType == TYPE_INCOME -> LedgerViewState.STATISTICS_INCOME
+                else -> LedgerViewState.STATISTICS_EXPENSE
+            },
+            statisticsType = if (currentStatsType == TYPE_INCOME) StatisticsType.INCOME else StatisticsType.EXPENSE,
+            periodPreset = when (currentPeriodPreset) {
+                LedgerPeriodPreset.WEEK -> PeriodPreset.WEEK
+                LedgerPeriodPreset.MONTH -> PeriodPreset.MONTH
+                LedgerPeriodPreset.YEAR -> PeriodPreset.YEAR
+                LedgerPeriodPreset.ALL -> PeriodPreset.ALL
+                LedgerPeriodPreset.CUSTOM -> PeriodPreset.CUSTOM
+            },
+            customStartDate = if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM) currentRange.startDate else null,
+            customEndDate = if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM) currentRange.endDate else null,
+            chartMode = if (currentChartMode == CHART_MODE_LINE) ChartMode.LINE else ChartMode.PIE,
+            detailsScrollPosition = detailsPosition?.first ?: previous.detailsScrollPosition,
+            detailsScrollOffset = detailsPosition?.second ?: previous.detailsScrollOffset,
+            statisticsScrollPosition = statisticsPosition?.first ?: previous.statisticsScrollPosition,
+            statisticsScrollOffset = statisticsPosition?.second ?: previous.statisticsScrollOffset,
+            openFilterSurface = openFilterSurface
+        )
+    }
+
+    private fun currentLedgerViewPreference(): LedgerView {
+        return when {
+            currentViewMode == VIEW_MODE_RECORDS -> LedgerView.DETAILS
+            currentStatsType == TYPE_INCOME -> LedgerView.STATISTICS_INCOME
+            else -> LedgerView.STATISTICS_EXPENSE
+        }
+    }
+
+    private fun recyclerScrollState(recyclerView: RecyclerView): Pair<Int, Int>? {
+        val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return null
+        val position = layoutManager.findFirstVisibleItemPosition()
+        if (position == RecyclerView.NO_POSITION) return null
+        val offset = layoutManager.findViewByPosition(position)?.top ?: 0
+        return position to offset
+    }
+
+    private fun restoreScrollPositions() {
+        val state = restoredLedgerState ?: return
+        (recyclerRecords.layoutManager as LinearLayoutManager)
+            .scrollToPositionWithOffset(state.detailsScrollPosition, state.detailsScrollOffset)
+        (recyclerStatistics.layoutManager as LinearLayoutManager)
+            .scrollToPositionWithOffset(state.statisticsScrollPosition, state.statisticsScrollOffset)
     }
 
     private fun updatePeriodToggleStyles(group: MaterialButtonToggleGroup, isSheet: Boolean) {

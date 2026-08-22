@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/colorBackground"
+    android:background="@color/surface_container"
     tools:context=".AgentFragment">
 
     <FrameLayout
@@ -16,7 +16,7 @@
             android:id="@+id/appbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?android:attr/colorBackground"
+            android:background="@color/surface_container_lowest"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="24dp"
@@ -29,7 +29,7 @@
                 android:layout_width="44dp"
                 android:layout_height="44dp"
                 android:background="@drawable/bg_circle_primary_container"
-                android:backgroundTint="?attr/colorSurfaceContainerLow"
+                android:backgroundTint="@color/surface_container"
                 android:clickable="true"
                 android:contentDescription="@string/agent_menu_content_description"
                 android:focusable="true"
@@ -50,11 +50,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_weight="1"
-                android:fontFamily="serif"
                 android:text="@string/agent_title"
                 android:textColor="?attr/colorPrimary"
                 android:textSize="26sp"
-                android:textStyle="italic" />
+                android:textStyle="bold" />
 
             <FrameLayout
                 android:id="@+id/button_agent_new_session"
@@ -104,7 +103,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_summary_item"
-                android:backgroundTint="?attr/colorSurfaceContainerLow"
+                android:backgroundTint="@color/surface_container_lowest"
                 android:orientation="vertical"
                 android:padding="24dp"
                 android:visibility="gone">
@@ -112,11 +111,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="serif"
                     android:text="@string/agent_config_missing_title"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="20sp"
-                    android:textStyle="italic" />
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -177,7 +175,8 @@
                 android:id="@+id/layout_agent_composer_shell"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_agent_composer_shell"
+                android:background="@drawable/bg_summary_item"
+                android:backgroundTint="@color/surface_container_lowest"
                 android:elevation="0dp"
                 android:gravity="center_vertical"
                 android:minHeight="@dimen/agent_composer_shell_resting_height"
@@ -239,7 +238,7 @@
         android:id="@+id/view_agent_session_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?attr/colorSurfaceVariant"
+        android:background="#66000000"
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone"
@@ -250,7 +249,7 @@
         android:layout_width="288dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="?attr/colorSurfaceContainerLowest"
+        android:background="@color/surface_container_lowest"
         android:clickable="true"
         android:elevation="14dp"
         android:focusable="true"

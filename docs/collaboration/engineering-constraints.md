@@ -21,7 +21,7 @@
   - `styles_cards.xml`
   - `styles_typography.xml`
   - `dimens.xml`
-- 当前主题设置只保留 `浅色 / 深色 / 跟随系统` 三档；不要再新增或恢复蓝 / 绿 / 橙彩色主题分支。
+- 当前视觉方向以根目录 `DESIGN.md` 为准；不要恢复已废弃的旧主题或旧设计语言。
 - 当前深色模式修复策略是：优先使用主题属性（如 `?attr/colorOnSurface`），必要时通过 `values-night` 做兼容覆盖；不要继续新增 `@color/*_light` 或 `R.color.*_light` 直接引用。
 
 ## 业务规则约束
@@ -38,23 +38,9 @@
 
 ## 视觉与产品气质约束
 
-CardTally 当前明确的产品气质是：`静奢理财日记`。
+CardTally 当前视觉与交互方向以根目录 `DESIGN.md` 为准。
 
-进行 UI / 视觉调整时，应优先符合这些方向：
-
-- 安静、不喧嚣、无压迫感
-- 高级感、品质感、克制的细节
-- 纯净留白，不做拥挤 dashboard
-- 有温度，但不要过度卡通化
-
-明确避免：
-
-- 高饱和主色大面积铺陈
-- 数据密集型后台风 UI
-- 模板化记账 App 观感
-- 过重的阴影、分隔线和装饰
-
-如果是视觉工作，先读 `docs/design/guidelines/README.md` 及其关联文件，再动资源与布局。
+如果是视觉工作，先读 `DESIGN.md` 及当前页面对应的资源，再动布局或代码。
 
 ## 命令与验证
 
@@ -102,9 +88,9 @@ CardTally 当前明确的产品气质是：`静奢理财日记`。
 1. 当前源码与 Gradle 配置
 2. `docs/requirements/decisions/*.md` 中的明确业务规则
 3. `docs/requirements/plans/*.md` 中已确认的产品/结构方向
-4. `docs/design/guidelines/*.md` 中的视觉约束
+4. `DESIGN.md` 中的视觉约束
 5. `README.md`
-6. `docs/archive/*.md`、`docs/design/assets/stitch/*` 等历史 / 过程性文件
+6. `docs/archive/*.md` 等历史 / 过程性文件
 
 ## 提交前最低自检
 
@@ -112,9 +98,9 @@ CardTally 当前明确的产品气质是：`静奢理财日记`。
 
 1. 重新阅读所有改动文件，确认风格一致
 2. 执行 `assembleDebug`
-3. 检查受影响页面是否还符合“静奢理财日记”方向
+3. 检查受影响页面是否符合 `DESIGN.md`
 4. 如果动了业务规则，核对 `docs/requirements/decisions/business_rules.md`
-5. 如果动了视觉设计，核对 `docs/design/guidelines/*`
+5. 如果动了视觉设计，核对 `DESIGN.md`
 
 如果只修改文档：
 

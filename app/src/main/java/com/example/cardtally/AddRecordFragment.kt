@@ -21,6 +21,10 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
+import com.example.cardtally.state.RecordFormState
+import com.example.cardtally.state.RecordSheet
+import com.example.cardtally.state.RecordType
+import com.example.cardtally.state.StableIdResolver
 import com.example.cardtally.util.ThemeColorHelper
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -50,6 +54,8 @@ class AddRecordFragment : Fragment() {
     private var selectedDate: String = ""
     private var selectedCategory: Category? = null
     private var selectedAsset: Asset? = null
+    private var openSheet = RecordSheet.NONE
+    private var pendingCategoryId: Long? = null
     private lateinit var backPressedCallback: OnBackPressedCallback
 
     override fun onCreateView(
@@ -75,12 +81,22 @@ class AddRecordFragment : Fragment() {
 
         databaseHelper = DatabaseHelper(requireContext())
 
-        selectedDate = databaseHelper.getCurrentDate()
-        updateDisplayedDate()
+        val defaultState = RecordFormState.DEFAULT.copy(selectedDate = databaseHelper.getCurrentDate())
+        val restoredState = RecordFormState.readFrom(savedInstanceState, defaultState)
+        currentType = if (restoredState.recordType == RecordType.INCOME) 1 else 0
+        selectedDate = restoredState.selectedDate
+        openSheet = restoredState.openSheet
+        pendingCategoryId = restoredState.pendingCategoryId
+        editAmount.setText(restoredState.amountBuffer)
+        editDescription.setText(restoredState.description)
         setupAmountInputBehavior()
 
         loadCategories(currentType)
         loadAssets()
+        if (savedInstanceState != null) {
+            restoreSelections(restoredState)
+        }
+        updateDisplayedDate()
         updateTypeStyle()
         setupBackNavigation()
 
@@ -108,7 +124,22 @@ class AddRecordFragment : Fragment() {
         btnCancel.setOnClickListener { navigateBack() }
         btnSave.setOnClickListener { saveRecord(true) }
 
+        view.post { restoreOpenSheet() }
         return view
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        RecordFormState(
+            amountBuffer = editAmount.text.toString(),
+            recordType = if (currentType == 1) RecordType.INCOME else RecordType.EXPENSE,
+            selectedDate = selectedDate,
+            selectedAssetId = selectedAsset?.id,
+            selectedCategoryId = selectedCategory?.id,
+            description = editDescription.text.toString(),
+            openSheet = openSheet,
+            pendingCategoryId = pendingCategoryId
+        ).writeTo(outState)
     }
 
     override fun onResume() {
@@ -170,6 +201,7 @@ class AddRecordFragment : Fragment() {
     }
 
     private fun showDateSheet() {
+        openSheet = RecordSheet.DATE
         val dialog = BottomSheetDialog(requireContext())
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_date, null)
         dialog.setContentView(sheetView)
@@ -182,6 +214,7 @@ class AddRecordFragment : Fragment() {
         val parts = selectedDate.split("-")
         datePicker.updateDate(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt())
 
+        dialog.setOnDismissListener { openSheet = RecordSheet.NONE }
         btnCloseSheet.setOnClickListener { dialog.dismiss() }
         textSelectToday.setOnClickListener {
             val calendar = Calendar.getInstance()
@@ -206,6 +239,7 @@ class AddRecordFragment : Fragment() {
     }
 
     private fun showAssetSheet() {
+        openSheet = RecordSheet.ASSET
         val dialog = BottomSheetDialog(requireContext())
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_assets, null)
         dialog.setContentView(sheetView)
@@ -218,6 +252,7 @@ class AddRecordFragment : Fragment() {
             dialog.dismiss()
         }
 
+        dialog.setOnDismissListener { openSheet = RecordSheet.NONE }
         recyclerAssets.layoutManager = LinearLayoutManager(requireContext())
         recyclerAssets.adapter = adapter
         btnCloseSheet.setOnClickListener { dialog.dismiss() }
@@ -225,6 +260,7 @@ class AddRecordFragment : Fragment() {
     }
 
     private fun showCategorySheet() {
+        openSheet = RecordSheet.CATEGORY
         val dialog = BottomSheetDialog(requireContext())
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_category, null)
         dialog.setContentView(sheetView)
@@ -234,9 +270,12 @@ class AddRecordFragment : Fragment() {
         val textBreadcrumb = sheetView.findViewById<TextView>(R.id.text_category_breadcrumb)
         val btnConfirm = sheetView.findViewById<View>(R.id.btn_confirm_category)
 
-        var pendingCategory = selectedCategory
-        categoryAdapter = RecordCategoryTreeAdapter(currentCategories, selectedCategory?.id) { category ->
+        var pendingCategory = pendingCategoryId?.let { id -> currentCategories.firstOrNull { it.id == id } }
+            ?: selectedCategory
+        pendingCategoryId = pendingCategory?.id
+        categoryAdapter = RecordCategoryTreeAdapter(currentCategories, pendingCategoryId) { category ->
             pendingCategory = category
+            pendingCategoryId = category.id
             textBreadcrumb.text = category.id.let(databaseHelper::buildCategoryPathLabel)
                 ?: getString(R.string.record_category_sheet_breadcrumb_empty)
         }
@@ -246,6 +285,10 @@ class AddRecordFragment : Fragment() {
         textBreadcrumb.text = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel)
             ?: getString(R.string.record_category_sheet_breadcrumb_empty)
 
+        dialog.setOnDismissListener {
+            openSheet = RecordSheet.NONE
+            pendingCategoryId = null
+        }
         btnCloseSheet.setOnClickListener { dialog.dismiss() }
         btnConfirm.setOnClickListener {
             val category = pendingCategory
@@ -318,6 +361,25 @@ class AddRecordFragment : Fragment() {
 
     private fun isLeafCategory(category: Category): Boolean {
         return currentCategories.none { it.parentId == category.id }
+    }
+
+    private fun restoreSelections(state: RecordFormState) {
+        val assetId = StableIdResolver.resolve(state.selectedAssetId, currentAssets.mapTo(mutableSetOf()) { it.id })
+        selectedAsset = assetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
+        val categoryId = StableIdResolver.resolve(state.selectedCategoryId, currentCategories.mapTo(mutableSetOf()) { it.id })
+        selectedCategory = categoryId?.let { id -> currentCategories.firstOrNull { it.id == id && isLeafCategory(it) } }
+        pendingCategoryId = state.pendingCategoryId?.takeIf { id -> currentCategories.any { it.id == id && isLeafCategory(it) } }
+        updateAssetSummary()
+        updateCategorySummary()
+    }
+
+    private fun restoreOpenSheet() {
+        when (openSheet) {
+            RecordSheet.NONE -> Unit
+            RecordSheet.DATE -> showDateSheet()
+            RecordSheet.ASSET -> showAssetSheet()
+            RecordSheet.CATEGORY -> showCategorySheet()
+        }
     }
 
     private fun saveRecord(shouldReturn: Boolean) {
@@ -413,7 +475,7 @@ class AddRecordFragment : Fragment() {
             return
         }
 
-        requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId = R.id.nav_home
+        requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId = R.id.nav_ledger
     }
 
     private fun hideBottomNav() {

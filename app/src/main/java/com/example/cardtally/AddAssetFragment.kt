@@ -11,6 +11,8 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
+import com.example.cardtally.state.AssetFormState
+import com.example.cardtally.state.AssetType
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.chip.ChipGroup
 
@@ -35,6 +37,7 @@ class AddAssetFragment : Fragment() {
         btnSave = view.findViewById(R.id.btn_save)
 
         databaseHelper = DatabaseHelper(requireContext())
+        applyState(AssetFormState.readFrom(savedInstanceState, AssetFormState.DEFAULT))
 
         btnBack.setOnClickListener {
             parentFragmentManager.popBackStack()
@@ -45,6 +48,11 @@ class AddAssetFragment : Fragment() {
         }
 
         return view
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        currentState().writeTo(outState)
     }
 
     override fun onResume() {
@@ -93,6 +101,29 @@ class AddAssetFragment : Fragment() {
         } else {
             Toast.makeText(requireContext(), getString(R.string.asset_toast_add_failed), Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun currentState(): AssetFormState {
+        val type = when (chipGroupType.checkedChipId) {
+            R.id.chip_bank -> AssetType.BANK
+            R.id.chip_alipay -> AssetType.ALIPAY
+            R.id.chip_wechat -> AssetType.WECHAT
+            else -> AssetType.CASH
+        }
+        return AssetFormState(editName.text.toString(), editAmount.text.toString(), type)
+    }
+
+    private fun applyState(state: AssetFormState) {
+        editName.setText(state.assetName)
+        editAmount.setText(state.assetAmountBuffer)
+        chipGroupType.check(
+            when (state.assetType) {
+                AssetType.CASH -> R.id.chip_cash
+                AssetType.BANK -> R.id.chip_bank
+                AssetType.ALIPAY -> R.id.chip_alipay
+                AssetType.WECHAT -> R.id.chip_wechat
+            }
+        )
     }
 
     private fun hideBottomNav() {

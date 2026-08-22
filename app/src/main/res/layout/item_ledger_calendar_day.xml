@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/day_container"
     android:layout_width="match_parent"
-    android:layout_height="44dp"
+    android:layout_height="52dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackgroundBorderless">
@@ -29,11 +29,35 @@
         android:id="@+id/text_day_value"
         android:layout_width="32dp"
         android:layout_height="32dp"
-        android:layout_gravity="center"
+        android:layout_gravity="center_horizontal|top"
         android:background="@drawable/bg_ledger_calendar_day_bubble"
         android:gravity="center"
         android:textColor="?attr/colorOnSurface"
         android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/text_day_income"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="12dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="@color/income_primary"
+        android:textSize="8sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/text_day_expense"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="2dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="@color/expense_primary"
+        android:textSize="8sp"
+        android:visibility="gone" />
 
     <View
         android:id="@+id/view_today_dot"

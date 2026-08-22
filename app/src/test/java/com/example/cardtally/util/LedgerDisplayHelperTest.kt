@@ -7,10 +7,10 @@ import java.util.Locale
 class LedgerDisplayHelperTest {
 
     @Test
-    fun formatDateHeader_buildsEditorialWeekdayAndOrdinal() {
+    fun formatDateHeader_includesYearAndEditorialWeekday() {
         val result = LedgerDisplayHelper.formatDateHeader("2026-04-14", Locale.US)
 
-        assertEquals("Tuesday, 14th", result)
+        assertEquals("Tuesday, 14th, 2026", result)
     }
 
     @Test

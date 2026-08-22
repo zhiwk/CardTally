@@ -12,6 +12,9 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
+import com.example.cardtally.state.AssetFormState
+import com.example.cardtally.state.AssetType
+import com.example.cardtally.state.EditAssetState
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.chip.ChipGroup
 
@@ -40,9 +43,9 @@ class EditAssetFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            assetId = it.getLong("asset_id")
-        }
+        assetId = EditAssetState.readFrom(savedInstanceState, AssetFormState.DEFAULT)?.assetId
+            ?: arguments?.getLong("asset_id")
+            ?: 0L
     }
 
     override fun onCreateView(
@@ -70,17 +73,26 @@ class EditAssetFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        loadAsset()
+        if (!loadAsset()) {
+            view.post { parentFragmentManager.popBackStack() }
+            return view
+        }
+        EditAssetState.readFrom(savedInstanceState, currentState())?.form?.let(::applyState)
 
         btnSave.setOnClickListener {
             updateAsset()
         }
 
         btnDelete.setOnClickListener {
-            deleteAsset()
+            archiveAsset()
         }
 
         return view
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        EditAssetState(assetId, currentState()).writeTo(outState)
     }
 
     override fun onResume() {
@@ -93,7 +105,7 @@ class EditAssetFragment : Fragment() {
         showBottomNav()
     }
 
-    private fun loadAsset() {
+    private fun loadAsset(): Boolean {
         asset = databaseHelper.getAllAssets().find { it.id == assetId }
 
         asset?.let { a ->
@@ -101,6 +113,7 @@ class EditAssetFragment : Fragment() {
             editAmount.setText(a.amount.toString())
             chipGroupType.check(getChipIdForType(a.type))
         }
+        return asset != null
     }
 
     private fun updateAsset() {
@@ -146,9 +159,9 @@ class EditAssetFragment : Fragment() {
         }
     }
 
-    private fun deleteAsset() {
-        databaseHelper.deleteAsset(assetId)
-        Toast.makeText(requireContext(), getString(R.string.toast_delete_success), Toast.LENGTH_SHORT).show()
+    private fun archiveAsset() {
+        databaseHelper.archiveAsset(assetId)
+        Toast.makeText(requireContext(), "已归档", Toast.LENGTH_SHORT).show()
         parentFragmentManager.popBackStack()
     }
 
@@ -159,6 +172,22 @@ class EditAssetFragment : Fragment() {
             3 -> R.id.chip_wechat
             else -> R.id.chip_cash
         }
+    }
+
+    private fun currentState(): AssetFormState {
+        val type = when (chipGroupType.checkedChipId) {
+            R.id.chip_bank -> AssetType.BANK
+            R.id.chip_alipay -> AssetType.ALIPAY
+            R.id.chip_wechat -> AssetType.WECHAT
+            else -> AssetType.CASH
+        }
+        return AssetFormState(editName.text.toString(), editAmount.text.toString(), type)
+    }
+
+    private fun applyState(state: AssetFormState) {
+        editName.setText(state.assetName)
+        editAmount.setText(state.assetAmountBuffer)
+        chipGroupType.check(getChipIdForType(state.assetType.databaseValue))
     }
 
     private fun hideBottomNav() {

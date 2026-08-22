@@ -47,11 +47,6 @@
         <item name="cardBackgroundColor">@color/cardBackground_light</item>
     </style>
     
-    <!-- 卡片 - 深色主题 -->
-    <style name="CardDark" parent="CardMedium">
-        <item name="cardBackgroundColor">@color/cardBackground_dark</item>
-    </style>
-    
     <!-- 卡片 - 收入 -->
     <style name="CardIncome" parent="CardSmall">
         <item name="cardBackgroundColor">@color/income_background</item>

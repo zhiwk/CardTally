@@ -11,11 +11,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
-        android:fontFamily="serif"
         android:text="@string/agent_role_assistant"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="12sp"
-        android:textStyle="italic" />
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/text_agent_message_body"

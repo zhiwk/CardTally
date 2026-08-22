@@ -4,12 +4,10 @@
     <string name="content_description_edit">Edit record</string>
     <string name="content_description_delete">Delete record</string>
     <string name="content_description_search">Search records</string>
-    <string name="content_description_home">Home</string>
     <string name="content_description_statistics">Statistics</string>
     <string name="content_description_settings">Settings</string>
     <string name="content_description_categories">Category management</string>
     <string name="content_description_assets">Asset management</string>
-    <string name="content_description_theme">Theme settings</string>
     <string name="content_description_export">Export data</string>
     <string name="content_description_budget">Budget management</string>
     <string name="content_description_prev_month">Previous month</string>
@@ -37,9 +35,6 @@
     <string name="content_description_budget_used">Budget used</string>
     <string name="content_description_budget_total">Total budget</string>
     <string name="content_description_budget_remaining">Remaining budget</string>
-    <string name="content_description_light_theme">Light theme</string>
-    <string name="content_description_dark_theme">Dark theme</string>
-    <string name="content_description_system_theme">Follow system</string>
     <string name="content_description_category_statistics">Statistics by category</string>
     <string name="content_description_time_statistics">Statistics by time</string>
     <string name="content_description_empty_records">No records</string>

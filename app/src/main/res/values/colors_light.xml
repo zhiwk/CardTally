@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Stitch UI "The Curated Chronicle" Tokens for Light Theme -->
-    <color name="primary_light">#615d66</color>
+    <color name="primary_light">#17181A</color>
     <color name="primary_light_transparent">#CC615d66</color>
-    <color name="primaryVariant_light">#55515A</color>
-    <color name="primaryContainer_light">#e7e0eb</color>
-    <color name="onPrimaryContainer_light">#545059</color>
+    <color name="primaryVariant_light">#303236</color>
+    <color name="primaryContainer_light">#DDF3F4</color>
+    <color name="onPrimaryContainer_light">#164E52</color>
     
     <color name="secondary_light">#56695a</color>
     <color name="secondaryVariant_light">#4a5d4e</color>
     <color name="secondaryContainer_light">#d3e8d5</color>
     <color name="onSecondaryContainer_light">#435647</color>
     
-    <color name="background_light">#fffcf7</color>
-    <color name="onBackground_light">#383831</color>
+    <color name="background_light">#EEEEEE</color>
+    <color name="onBackground_light">#17181A</color>
     
-    <color name="surface_light">#fffcf7</color>
-    <color name="onSurface_light">#383831</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="onSurface_light">#17181A</color>
     
-    <color name="surfaceVariant_light">#eae8de</color>
-    <color name="onSurfaceVariant_light">#65655c</color>
+    <color name="surfaceVariant_light">#F2F3F4</color>
+    <color name="onSurfaceVariant_light">#565B61</color>
     
-    <color name="error_light">#a54453</color>
-    <color name="errorContainer_light">#ff8b9a</color>
-    <color name="onErrorContainer_light">#782232</color>
+    <color name="error_light">#7A2926</color>
+    <color name="errorContainer_light">#F9E4E3</color>
+    <color name="onErrorContainer_light">#7A2926</color>
     
     <color name="onPrimary_light">#fcf5ff</color>
     <color name="onSecondary_light">#ffffff</color>
@@ -31,30 +31,30 @@
     
     <!-- Surface Container Tiers (Critical for the no-line rule) -->
     <color name="surface_container_lowest">#ffffff</color>
-    <color name="surface_container_low">#fcf9f3</color>
-    <color name="surface_container">#f6f4ec</color>
-    <color name="surface_container_high">#f0eee5</color>
-    <color name="surface_container_highest">#eae8de</color>
+    <color name="surface_container_low">#F2F3F4</color>
+    <color name="surface_container">#E9EAEC</color>
+    <color name="surface_container_high">#E1E3E6</color>
+    <color name="surface_container_highest">#D5D8DC</color>
     
     <!-- UI Element Colors -->
     <color name="inputBackground_light">#ffffff</color>
-    <color name="inputStroke_light">#babab0</color>
+    <color name="inputStroke_light">#AEB3B9</color>
     <color name="inputStrokeFocused_light">#615d66</color>
     
     <color name="cardBackground_light">#fcf9f3</color>
     <color name="cardElevation_light">#06383831</color> <!-- Approx 4-6% of on-surface -->
     
-    <color name="buttonPrimary_light">#615d66</color>
+    <color name="buttonPrimary_light">#17181A</color>
     <color name="buttonSecondary_light">#d3e8d5</color>
     <color name="buttonTertiary_light">#ffffff</color>
     <color name="onButtonTertiary_light">#383831</color>
     
-    <color name="fabBackground_light">#615d66</color>
-    <color name="fabIcon_light">#fcf5ff</color>
+    <color name="fabBackground_light">#17181A</color>
+    <color name="fabIcon_light">#FFFFFF</color>
     
     <color name="navBackground_light">#D9fffcf7</color> <!-- 85% opacity surface -->
-    <color name="navSelected_light">#615d66</color>
-    <color name="navUnselected_light">#babab0</color>
+    <color name="navSelected_light">#129EAE</color>
+    <color name="navUnselected_light">#747A81</color>
     <color name="navIndicator_light">#00000000</color> <!-- No high contrast blocks -->
     
     <!-- Shadows & Outlines -->
@@ -110,8 +110,8 @@
     
     <color name="balance_primary">#615d66</color>
     <color name="error_primary">#a54453</color>
-    <color name="expense_primary">#a54453</color> <!-- Muted old rose -->
-    <color name="income_primary">#56695a</color> <!-- Soft green -->
+    <color name="expense_primary">#E8453C</color>
+    <color name="income_primary">#1B9E45</color>
     <color name="info_primary">#545059</color>
     <color name="success_primary">#435647</color>
     <color name="warning_primary">#685b4c</color>
@@ -119,8 +119,9 @@
     <!-- Editorial specifics -->
     <color name="editorial_surface_low">#fcf9f3</color>
     <color name="editorial_surface_lowest">#ffffff</color>
-    <color name="editorial_outline">#babab0</color>
-    <color name="editorial_text_muted">#65655c</color>
+    <color name="editorial_outline">#D5D8DC</color>
+    <color name="ledger_outline_light">#E1E3E6</color>
+    <color name="editorial_text_muted">#747A81</color>
 
     <!-- Compatibility aliases used by newer layouts -->
     <color name="surfaceContainerHigh_light">@color/surface_container_high</color>

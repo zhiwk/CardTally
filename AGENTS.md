@@ -1,88 +1,86 @@
-# AGENTS.md
+# CardTally 稳定操作入口
 
-CardTally 仓库的 AI 协作入口文件。开始任何修改前，先读本文件，再按任务类型继续读 `docs/collaboration/` 下的拆分文档。
+## 1 定位与使用方式
 
-## 1. 使用方式
+CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。本文件是 CardTally 的 OPC（一人公司）稳定操作入口，用于约束长期有效的判断、协作和交付方式。
 
-所有任务都先读：
+开始任何任务前，按以下顺序阅读：
 
 1. `README.md`
 2. 本文件 `AGENTS.md`
 3. `docs/collaboration/README.md`
 
-然后按任务类型继续读对应文档：
+随后按任务类型进入 `docs/collaboration/task-entrypoints.md`。它负责说明页面、数据、视觉、AI、构建和真机任务应先读哪些文件。近期且易变的实现状态只看 `docs/collaboration/current-snapshot.md`，不要写回本文件。
 
-- 项目事实 / 仓库地图：`docs/collaboration/project-overview.md`
-- 任务入口 / 先读什么：`docs/collaboration/task-entrypoints.md`
-- 工程约束 / 视觉约束 / 提交前检查：`docs/collaboration/engineering-constraints.md`
-- 最近代码现实 / 当日快照：`docs/collaboration/current-snapshot.md`
-- Android 构建 / 单测 / 真机验证：`docs/collaboration/skills/android-gradle-serial-verification.md`
-- Android Debug 编译：`skills/android-build-debug.md`
-- Android Debug 安装：`skills/android-install-debug-apk.md`
-- Android 真机当前页面截图：`skills/adb-current-screen-screenshot.md`
+## 2 一人公司工作模式
 
-## 2. 核心原则
+同一位所有者在产品、工程、测试、运营和市场角色之间切换，但每次任务只以当前目标为中心：
 
-- 先基于源码和 Gradle 配置工作，再参考 README、规划文档和设计文档。
-- 当前仓库现实是 `Fragment + XML + SQLite(DatabaseHelper)`，不要默认已经接入 Room 或 Navigation Component。
-- 当前录入页复用现实：`AddRecordFragment` / `EditRecordFragment` 共享 `fragment_add_record.xml`；`AddAssetFragment` / `EditAssetFragment` 共享 `fragment_add_asset.xml`。当前“记一笔 / 编辑记录”主页面已改为 Stitch 风格的极简录入壳：金额区 + 支出/收入切换 + 信息卡；日期、资产、分类已切换为底部抽屉交互，其中分类抽屉支持树形层级无限展开，但记录仍只能选择**叶子分类**。当前“记一笔”金额输入默认显示 `0.00`；当默认值仍在时，`AddRecordFragment` 会在点击 / 聚焦金额框时选中默认值，便于直接覆盖输入，而不是先手动删除已有的 `0`。普通入口进入“记一笔”时，侧滑返回会回到原页面；如果是开启“快捷记账”后的冷启动首屏进入“记一笔”，当前返回会落到首页。涉及录入页改动时，优先检查 `AddRecordFragment`、`EditRecordFragment`、`fragment_add_record.xml`、`RecordAssetSheetAdapter`、`RecordCategoryTreeAdapter` 与相关 bottom sheet 布局。
-- 当前录入页下一步精修提示：如果继续打磨“记一笔 / 编辑记录”，优先看 3 件事：1）分类抽屉的视觉层级是否要继续向 Stitch 靠拢；2）资产抽屉的图标 / 副文案 / 余额呈现是否要继续细化；3）主页面金额区与底部保存区的留白是否还要再压一轮。除非用户明确要求，否则不要顺手重做数据库结构或新增第二套录入架构。
-- 当前 AI 助手现实：`AgentFragment` 已接入 MiniMax BYOK 流式文本聊天，请求默认携带 `stream=true`，并会按实际响应内容识别流式 / 非流式返回；当前已支持增量渲染回复，以及区分 `TIMEOUT / CANCELLED / INTERRUPTED / NETWORK` 等失败态并在已有内容时保留部分回复。当前 AI 助手会话与消息已持久化到 SQLite，可跨页面切换与重启保留；`AgentSessionAdapter` / `AiChatSession` / `DatabaseHelper` 共同支撑多会话切换、新建与重命名。`AiAssistantSettingsFragment` / `AiAssistantSettingsHelper` 负责本机保存 API Key、模型、完整请求 URL 与当前活动会话 ID。当前 Agent 页底部输入壳左右边距已与活动级浮动底部导航壳对齐，静态壳高为 `56dp`，发送按钮为 `48dp`。
-- 当前分类系统现实：分类表已支持**树形层级结构**，`categories` 表新增 `parent_id` 字段支持任意深度（默认最大深度 2，可在设置中调整至 50）；`CategoryManageFragment` 支持层级缩进展示、父分类选择、删除保护（有子分类或关联记录时禁止删除）。记账记录通过 `category_id` 绑定到**叶子分类**，并保留 `category_name_snapshot` 和 `category_path_snapshot` 用于显示和历史追溯。当前“账本”一级页仍由 `StatisticsFragment` 承载，但页内已支持 `统计 / 明细` 切换：统计视图展示分类统计，明细视图按日期分组展示全部记录，并复用现有编辑/删除交互。涉及分类管理、记账录入/编辑、首页/搜索/统计/账本明细展示时，优先检查 `CategoryManageFragment`、`CategoryAdapter`、`CategoryHierarchySettingsHelper`、`DatabaseHelper`、`StatisticsFragment`、`DateGroupAdapter` 中的相关实现，以及 `Record` 模型的分类字段。
-- 当前主题现实：主题设置当前只保留 `浅色 / 深色 / 跟随系统` 三档；历史蓝 / 绿 / 橙彩色主题已从设置入口与资源层移除，`ThemeHelper` 会把旧的彩色主题存档值回退到浅色主题。当前仓库正在以主题属性和 `values-night` 覆盖替换旧的 `*_light` 直接引用；涉及主题/深色模式问题时，优先检查 `ThemeHelper`、`ThemeSettingsFragment`、`styles.xml`、`values-night/*.xml` 与受影响布局/适配器。
-- 当前导航现实：`MainActivity` 统一持有卡片式浮动底部导航壳；一级页显示，进入二级页面（add/edit/settings detail 等）后隐藏整个 `nav_shell`，不要再在单个 Fragment 中分散维护导航显隐规则。当前底部导航已使用带描边与轻阴影的卡片容器，并为当前 tab 提供柔和的胶囊型选中态。`AgentFragment` 会话抽屉展开时，也会临时隐藏 `nav_shell`，关闭后恢复。
-- 当前仓库已接入应用级中英文国际化；涉及文案、语言切换或字符串资源时，先检查 `LanguageHelper` 和 `res/values*/strings*.xml`。当前语言切换入口位于“我的”页；现状是已做过一轮减轻闪动优化，但真机切换中英文时仍会轻微闪屏，不能视为已完全解决。后续目标是做成更平滑的淡入淡出过渡，而不是接受当前闪动表现；继续处理时，优先检查 `SettingsFragment`、`LanguageHelper`、`MainActivity`、`activity_main.xml` 与主题 / 窗口动画相关资源。
-- 修改优先做最小必要改动，尤其是 bugfix 和局部功能补全。
-- 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 等命令；不要并行跑任何 `gradlew` / Gradle 任务，尤其不要并行跑共享 `app/build/` 产物的任务，避免出现 `Tool execution aborted`、中间产物互相踩踏、或结果已成功但协作者未正确消费输出的误判。
-- 涉及业务规则时，必须先对照 `docs/requirements/decisions/business_rules.md`。
-- 涉及视觉改动时，必须先对照 `docs/design/guidelines/*`，并保持"静奢理财日记"方向。
-- 文档目录已统一到当前结构；不要再引用旧路径别名，例如 `docs/agent-guide/*`、`docs/stitch-guidance/*`、`.sisyphus/*`、`design/stitch_extracted/*`。
-- `local.properties` 是本机环境文件，不要提交。
+- 产品角色先验证产品机会，再确认问题、范围和业务规则，不把愿景当成已实现功能。
+- 工程角色以源码和构建配置为准，做最小必要改动。
+- 测试角色用与改动相称的构建、测试和实际页面验证来确认结果。
+- 运营角色保护本机配置、用户财务数据和发布产物，不扩大数据暴露面。
+- 市场角色只发布可由当前代码和高可信文档证明的内容。
 
-## 3. 文档可信度排序
+角色切换不等于增加流程。先判断，再修改，再验证，再记录事实即可。
 
-当多个来源冲突时，默认按这个顺序判断：
+新产品、产品重启或重大方向调整时，第一步不是开发，而是产品机会验证：先写清问题假设，再调研目标场景、潜在用户、竞品和现有产品。调研必须形成可执行决策，包括证据、核心问题、差异化价值、明确非目标、最小验证范围和停止条件；只有资料汇总而没有决策，不进入设计与研发。范围已经确认的局部修复不重复做全量产品调研。
 
-1. 当前源码与 Gradle 配置
-2. `docs/requirements/decisions/*.md`
-3. `docs/requirements/plans/*.md`
-4. `docs/design/guidelines/*.md`
-5. `README.md`
-6. `docs/archive/*`、`docs/design/assets/*`
+## 3 事实来源与冲突处理
 
-## 4. 最低自检
+来源冲突时，按以下顺序处理，并明确区分各自用途：
 
-如果修改了代码或资源，而不是只改文档：
+1. 当前源码和 Gradle 配置是实现与构建事实。
+2. `docs/requirements/decisions/*.md` 是已确认且有约束力的业务决策。
+3. `docs/requirements/plans/*.md` 是已确认的方向与计划，不等于当前实现。
+4. `DESIGN.md` 是当前视觉和体验约束。
+5. `README.md` 是对外可见的产品说明，公开表述须与其及当前实现一致。
+6. `docs/collaboration/current-snapshot.md` 记录易变的近期实现状态，必须回到源码复核。
+7. `docs/design/assets/` 是设计参考，不是代码事实。
+8. `docs/archive/` 是历史材料，不是当前规则。
 
-1. 重新阅读所有改动文件，确认风格一致
-2. 执行 `assembleDebug`
-3. 检查受影响页面是否仍符合"静奢理财日记"方向
-4. 如果动了业务规则，核对 `docs/requirements/decisions/business_rules.md`
-5. 如果动了视觉设计，核对 `docs/design/guidelines/*`
+若代码与有约束力的业务决策不一致，先确认实际行为并在变更说明中指出冲突，不要静默改写规则或实现。
 
-如果只修改文档：
+## 4 产品与架构底线
 
-- 保证文档内容与仓库现状一致
-- 不要把愿景文档写成当前已实现事实
+- 记账与财务数据以本地核算为核心，不能把本地优先改成依赖云端的基本流程。
+- 工程保持 Kotlin、Fragment、XML、Material Components 和手写 SQLite（`DatabaseHelper`）的现有路线。不要假定或顺手引入 Room、Navigation Component 或第二套架构。
+- 记录只能选择叶子分类。分类层级或展示调整不能破坏这条绑定规则。
+- AI 仅是可选的 MiniMax BYOK 持久化文本聊天能力。不要把 AI 记账操作、自动执行或审计日志写成已经实现的能力。
+- 视觉方向以根目录 `DESIGN.md` 为准；旧的“静奢理财日记”方向已废弃。
 
-## 5. 文档目录
+## 5 工作流程与任务路由
 
-```
-docs/
-├── requirements/      # 需求文档
-│   ├── plans/        # 实施计划
-│   └── decisions/    # 业务决策
-├── design/            # 设计文档
-│   ├── guidelines/   # 设计指南
-│   └── assets/       # 设计产出物
-├── collaboration/     # AI协作指南
-│   └── skills/       # 拆分协作文档中的专项 skill
-└── archive/           # 历史归档
-```
+产品工作遵循“机会验证 → 用户与竞品调研 → 产品决策 → 最小范围 → 设计与研发 → 测试发布 → 市场反馈 → 下一轮验证”的闭环。进入研发前，必须能说明为谁解决什么问题、依据是什么、这轮明确不做什么，以及如何判断继续、调整或停止。
 
-根目录补充：
+先读受影响的文件簇，再动手。局部修复沿用现有模式，优先根因和最小必要改动，不把大改造混入局部任务。
 
-- `skills/`：可直接执行的本地协作 skill，如 Android Debug 编译、APK 安装、ADB 截图
-- `screenshot/`：按截图 skill 留档的真机截图输出目录
+- 业务规则或数据逻辑任务，先读 `docs/requirements/decisions/business_rules.md`、`DatabaseHelper` 和相关页面、模型或适配器。
+- 页面、样式或文案任务，先读对应代码和资源；视觉任务还必须读 `DESIGN.md`。
+- 构建、单测或真机验证任务，先读 `docs/collaboration/skills/android-gradle-serial-verification.md`；根目录 `skills/` 提供编译、安装和截图的专项说明。
+- 具体任务入口、必读文件和当前实现细节分别以 `docs/collaboration/task-entrypoints.md` 与 `docs/collaboration/current-snapshot.md` 为准。
 
-本文件保持为入口索引。
+不要使用已废弃的路径别名：`docs/agent-guide/*`、`docs/stitch-guidance/*`、`.sisyphus/*`、`design/stitch_extracted/*`。
+
+## 6 工程、测试与运营安全
+
+- 同一工作区中的 Android Gradle 任务必须串行执行。`assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 及其他共享 `app/build/` 的任务都不能并行运行。
+- `local.properties` 是本机环境文件，绝不提交。API Key、用户财务数据和设备相关信息也不得写入源码、文档、截图或对外材料。
+- OpenCode 不执行 `adb devices -l`，也不执行任何 APK 安装命令；涉及设备检查或安装时，只向用户输出需要由用户自行运行的命令。
+- 修改业务行为前必须过业务规则门槛，修改视觉前必须过 `DESIGN.md` 门槛。没有对应任务就不扩大改动范围。
+
+## 7 市场与对外声明边界
+
+对外说明只能陈述当前代码、Gradle 配置、已确认决策和 `README.md` 能证明的事实。对本地记账、财务陪伴、数据本地存储和可选 MiniMax BYOK 文本聊天的描述，必须与实际实现保持一致。
+
+不要编造用户画像、定价、渠道、指标、收入目标、发布节奏或支持流程。也不要宣称已经具备 AI 记账操作、自动化财务处理或审计日志等未实现能力。
+
+## 8 完成标准与维护边界
+
+代码或资源任务完成前，必须重新阅读改动文件，执行与改动相关的测试，并完成 `assembleDebug`。涉及业务规则时核对决策文档，涉及视觉时核对 `DESIGN.md`。
+
+文档任务完成前，必须确认内容与当前仓库事实一致，清楚区分已实现、计划和历史材料，不用愿景替代实现说明。
+
+发布任务完成前，必须先满足代码或资源任务的要求，再确认发布产物来自已验证的构建，并按发布范围完成必要的人工页面或设备验证。对外文案也必须通过第 7 节的事实边界。
+
+本文件只维护长期有效的规则和路由。详细任务指引更新到 `docs/collaboration/task-entrypoints.md`，易变实现状态更新到 `docs/collaboration/current-snapshot.md`，不要把日期、阶段里程碑、待打磨清单、文件穷举或表结构沿革重新塞回这里。

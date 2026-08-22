@@ -105,10 +105,6 @@
     <color name="gradient_card_light_start">#FFFFFF</color>
     <color name="gradient_card_light_end">#F5F5F5</color>
     
-    <!-- 卡片渐变 - 深色主题 -->
-    <color name="gradient_card_dark_start">#2C2C2C</color>
-    <color name="gradient_card_dark_end">#1E1E1E</color>
-    
     <!-- 按钮渐变 - 主按钮 -->
     <color name="gradient_button_primary_start">#7C4DFF</color>
     <color name="gradient_button_primary_end">#6200EE</color>
@@ -125,33 +121,17 @@
     <color name="gradient_nav_light_start">#FFFFFF</color>
     <color name="gradient_nav_light_end">#FAFAFA</color>
     
-    <!-- 导航栏渐变 - 深色主题 -->
-    <color name="gradient_nav_dark_start">#2C2C2C</color>
-    <color name="gradient_nav_dark_end">#1E1E1E</color>
-    
     <!-- 头部渐变 - 浅色主题 -->
     <color name="gradient_header_light_start">#6200EE</color>
     <color name="gradient_header_light_end">#3700B3</color>
-    
-    <!-- 头部渐变 - 深色主题 -->
-    <color name="gradient_header_dark_start">#BB86FC</color>
-    <color name="gradient_header_dark_end">#7B1FA2</color>
     
     <!-- 背景渐变 - 浅色主题 -->
     <color name="gradient_background_light_start">#FAFAFA</color>
     <color name="gradient_background_light_end">#F5F5F5</color>
     
-    <!-- 背景渐变 - 深色主题 -->
-    <color name="gradient_background_dark_start">#121212</color>
-    <color name="gradient_background_dark_end">#1E1E1E</color>
-    
     <!-- 对话框渐变 - 浅色主题 -->
     <color name="gradient_dialog_light_start">#FFFFFF</color>
     <color name="gradient_dialog_light_end">#FAFAFA</color>
-    
-    <!-- 对话框渐变 - 深色主题 -->
-    <color name="gradient_dialog_dark_start">#2C2C2C</color>
-    <color name="gradient_dialog_dark_end">#1E1E1E</color>
     
     <!-- 进度条渐变 -->
     <color name="gradient_progress_start">#7C4DFF</color>

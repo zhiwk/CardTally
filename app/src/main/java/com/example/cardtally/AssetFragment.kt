@@ -34,7 +34,7 @@ class AssetFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_asset, container, false)
+        val view = inflater.inflate(R.layout.fragment_asset_v2, container, false)
 
         recyclerAssets = view.findViewById(R.id.recycler_assets)
         textEmpty = view.findViewById(R.id.text_empty)
@@ -251,11 +251,11 @@ class AssetFragment : Fragment() {
 
     private fun showDeleteDialog(asset: Asset) {
         AlertDialog.Builder(requireContext())
-            .setTitle("删除资产")
-            .setMessage("确定要删除\"${asset.name}\"吗？")
+            .setTitle("归档资产")
+            .setMessage("确定要归档\"${asset.name}\"吗？")
             .setPositiveButton("确定") { _, _ ->
-                databaseHelper.deleteAsset(asset.id)
-                Toast.makeText(requireContext(), "删除成功", Toast.LENGTH_SHORT).show()
+                databaseHelper.archiveAsset(asset.id)
+                Toast.makeText(requireContext(), "已归档", Toast.LENGTH_SHORT).show()
                 loadAssets()
             }
             .setNegativeButton("取消", null)

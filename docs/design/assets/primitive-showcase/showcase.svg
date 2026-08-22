@@ -1,0 +1,462 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="7750" viewBox="0 0 420 7750" role="img" aria-labelledby="board-title board-desc">
+  <title id="board-title">CardTally compact-width primitive and state showcase</title>
+  <desc id="board-desc">A non-product design-system board showing foundations, navigation variants, headers, controls, overview and dense cards, category depth stress, keypad, overlays, chat, feedback, and accessibility states.</desc>
+  <defs>
+    <filter id="shadow-rest" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#17181A" flood-opacity="0.06"/>
+    </filter>
+    <filter id="shadow-modal" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#17181A" flood-opacity="0.10"/>
+    </filter>
+    <style>
+      :root { color-scheme: light; }
+      text { font-family: "Noto Sans SC", "Noto Sans", Roboto, Arial, sans-serif; fill: #17181A; }
+      .canvas { fill: #F7F7F8; }
+      .surface { fill: #FFFFFF; stroke: #D5D8DC; stroke-width: 1; }
+      .surface-subtle { fill: #F2F3F4; stroke: #D5D8DC; stroke-width: 1; }
+      .surface-muted { fill: #E9EAEC; stroke: #E5E7E9; stroke-width: 1; }
+      .pressed { fill: #E1E3E6; stroke: #AEB3B9; stroke-width: 1; }
+      .cyan { fill: #DDF3F4; stroke: #1E6267; stroke-width: 1.5; }
+      .cyan-flat { fill: #DDF3F4; }
+      .red { fill: #F9E4E3; stroke: #7A2926; stroke-width: 1; }
+      .green { fill: #E2F1E8; stroke: #285C3D; stroke-width: 1; }
+      .warning { fill: #F6EDD7; stroke: #6A511C; stroke-width: 1; }
+      .ink-fill { fill: #17181A; stroke: #17181A; }
+      .focus { fill: none; stroke: #1E6267; stroke-width: 3; }
+      .divider { stroke: #E5E7E9; stroke-width: 1; }
+      .title { font-size: 24px; font-weight: 700; }
+      .section-no { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; fill: #1E6267; }
+      .section-title { font-size: 20px; font-weight: 700; }
+      .card-title { font-size: 17px; font-weight: 700; }
+      .body { font-size: 15px; }
+      .body-medium { font-size: 15px; font-weight: 600; }
+      .support { font-size: 13px; fill: #565B61; }
+      .caption { font-size: 11px; font-weight: 600; fill: #565B61; letter-spacing: .2px; }
+      .micro { font-size: 10px; font-weight: 600; fill: #747A81; }
+      .text-200 { font-size: 30px; font-weight: 600; }
+      .amount { font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+      .amount-sm { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+      .white { fill: #FFFFFF; }
+      .cyan-ink { fill: #164E52; }
+      .red-ink { fill: #7A2926; }
+      .green-ink { fill: #285C3D; }
+      .warning-ink { fill: #6A511C; }
+      .disabled-ink { fill: #747A81; }
+      .icon { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .section-bg { fill: #FFFFFF; stroke: #E5E7E9; stroke-width: 1; }
+      .target { fill: none; stroke: #B8E4E6; stroke-width: 1; stroke-dasharray: 3 3; }
+      .ancestry { stroke: #1E6267; stroke-width: 2; }
+      .scrim-sample { fill: #D6D7D9; }
+      .handle { fill: #AEB3B9; }
+      .skeleton-strong { fill: #E1E3E6; }
+      .skeleton { fill: #E9EAEC; }
+      .retry { fill: #FFFFFF; stroke: #7A2926; stroke-width: 1; }
+      .snackbar-action { fill: #303236; stroke: #FFFFFF; stroke-width: 1; }
+      .color-ink { color: #17181A; }
+      .color-secondary { color: #565B61; }
+      .color-cyan { color: #164E52; }
+      .color-red { color: #7A2926; }
+      .color-disabled { color: #747A81; }
+      .color-white { color: #FFFFFF; }
+      .spinner { fill: none; stroke: #FFFFFF; stroke-width: 2; }
+    </style>
+    <symbol id="i-home" viewBox="0 0 24 24"><path class="icon" d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path class="icon" d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v16H7.5A3.5 3.5 0 0 0 4 21.5zM4 5.5v16M8 6h8M8 10h6"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><path class="icon" d="M4 6h14a2 2 0 0 1 2 2v11H4a2 2 0 0 1-2-2V6a3 3 0 0 1 3-3h12M15 11h7v5h-7a2.5 2.5 0 0 1 0-5z"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path class="icon" d="M4 4h16v12H8l-4 4zM8 8h8M8 12h5"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle class="icon" cx="12" cy="8" r="4"/><path class="icon" d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path class="icon" d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path class="icon" d="m15 5-7 7 7 7M8 12h12"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path class="icon" d="m5 12 4 4 10-10"/></symbol>
+    <symbol id="i-error" viewBox="0 0 24 24"><circle class="icon" cx="12" cy="12" r="9"/><path class="icon" d="M12 7v6M12 17h.01"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path class="icon" d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path class="icon" d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path class="icon" d="M4 5h16M7 12h10M10 19h4"/></symbol>
+    <symbol id="i-delete" viewBox="0 0 24 24"><path class="icon" d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></symbol>
+    <symbol id="i-backspace" viewBox="0 0 24 24"><path class="icon" d="m3 12 5-7h13v14H8zM12 9l5 6M17 9l-5 6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect class="icon" x="5" y="10" width="14" height="10" rx="2"/><path class="icon" d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  </defs>
+
+  <rect class="canvas" width="420" height="7750"/>
+
+  <!-- Board identity -->
+  <g aria-label="Board title and scope">
+    <rect x="16" y="16" width="388" height="148" rx="16" class="surface" filter="url(#shadow-rest)"/>
+    <text x="36" y="52" class="section-no">PRIMITIVE GATE · COMPACT 420</text>
+    <text x="36" y="84" class="title">CardTally / Light primitives</text>
+    <text x="36" y="112" class="support">Outlined cards · overview + dense workflow</text>
+    <rect x="36" y="130" width="144" height="22" rx="8" class="cyan"/>
+    <text x="48" y="145" class="micro cyan-ink">NOT A PRODUCT SCREEN</text>
+    <text x="196" y="145" class="micro">Android Views · 4dp grid</text>
+  </g>
+
+  <!-- 01 Foundations -->
+  <g aria-label="Foundations: color, type, spacing, radius, and depth">
+    <rect x="12" y="180" width="396" height="466" rx="16" class="section-bg"/>
+    <text x="28" y="210" class="section-no">01 · FOUNDATIONS</text>
+    <text x="28" y="238" class="section-title">Neutral structure, pale meaning</text>
+    <g transform="translate(28 260)">
+      <rect width="52" height="52" rx="12" fill="#17181A"/><text x="0" y="70" class="micro">INK</text>
+      <rect x="64" width="52" height="52" rx="12" fill="#FFFFFF" stroke="#D5D8DC"/><text x="64" y="70" class="micro">SURFACE</text>
+      <rect x="128" width="52" height="52" rx="12" fill="#E9EAEC"/><text x="128" y="70" class="micro">GRAY</text>
+      <rect x="192" width="52" height="52" rx="12" fill="#DDF3F4"/><text x="192" y="70" class="micro">SELECT</text>
+      <rect x="256" width="52" height="52" rx="12" fill="#F9E4E3"/><text x="256" y="70" class="micro">ERROR</text>
+      <rect x="320" width="52" height="52" rx="12" fill="#E2F1E8"/><text x="320" y="70" class="micro">INCOME</text>
+    </g>
+    <text x="28" y="362" class="amount">+¥12,340.80</text>
+    <text x="260" y="360" class="amount-sm red-ink">−¥268.50</text>
+    <text x="28" y="386" class="caption">Tabular figures · sign + label + color</text>
+    <text x="28" y="420" class="card-title">24 Page title</text>
+    <text x="198" y="420" class="body-medium">17 Card title</text>
+    <text x="28" y="446" class="body">16 Body / 正文</text>
+    <text x="198" y="446" class="support">14 Supporting text</text>
+    <g transform="translate(28 476)">
+      <rect width="4" height="12" fill="#17181A"/><text x="0" y="30" class="micro">4</text>
+      <rect x="28" width="8" height="12" fill="#17181A"/><text x="28" y="30" class="micro">8</text>
+      <rect x="60" width="12" height="12" fill="#17181A"/><text x="60" y="30" class="micro">12</text>
+      <rect x="96" width="16" height="12" fill="#17181A"/><text x="96" y="30" class="micro">16</text>
+      <rect x="136" width="24" height="12" fill="#17181A"/><text x="136" y="30" class="micro">24</text>
+      <rect x="184" width="32" height="12" fill="#17181A"/><text x="184" y="30" class="micro">32</text>
+      <text x="244" y="12" class="caption">4dp spacing ladder</text>
+    </g>
+    <g transform="translate(28 540)">
+      <rect width="76" height="48" rx="8" class="surface"/><text x="26" y="29" class="caption">8</text>
+      <rect x="88" width="76" height="48" rx="10" class="surface"/><text x="112" y="29" class="caption">10</text>
+      <rect x="176" width="76" height="48" rx="12" class="surface" filter="url(#shadow-rest)"/><text x="200" y="29" class="caption">12</text>
+      <rect x="264" width="108" height="48" rx="16" class="surface" filter="url(#shadow-modal)"/><text x="284" y="29" class="caption">16 modal</text>
+    </g>
+    <text x="28" y="622" class="micro">1dp cool-gray edge · top-center light · no glass / gradients</text>
+  </g>
+
+  <!-- 02 Navigation -->
+  <g aria-label="Three, four, and five destination navigation variants">
+    <rect x="12" y="662" width="396" height="490" rx="16" class="section-bg"/>
+    <text x="28" y="692" class="section-no">02 · NAVIGATION 3 / 4 / 5</text>
+    <text x="28" y="720" class="section-title">One shell, conditional destinations</text>
+    <text x="28" y="746" class="caption">Selected = pale cyan + marker + weight · 48dp targets</text>
+    <!-- 3 -->
+    <text x="28" y="784" class="caption">3 DESTINATIONS</text>
+    <rect x="28" y="798" width="364" height="76" rx="16" class="surface" filter="url(#shadow-rest)"/>
+    <rect x="40" y="810" width="104" height="52" rx="10" class="cyan"/>
+    <g class="color-cyan"><use href="#i-home" x="82" y="816" width="20" height="20"/></g><text x="72" y="854" class="caption cyan-ink">首页</text>
+    <g class="color-secondary"><use href="#i-book" x="202" y="816" width="20" height="20"/></g><text x="190" y="854" class="caption">账本</text>
+    <g class="color-secondary"><use href="#i-user" x="322" y="816" width="20" height="20"/></g><text x="310" y="854" class="caption">我的</text>
+    <!-- 4 -->
+    <text x="28" y="914" class="caption">4 DESTINATIONS · ASSETS VISIBLE</text>
+    <rect x="28" y="928" width="364" height="76" rx="16" class="surface" filter="url(#shadow-rest)"/>
+    <rect x="36" y="940" width="82" height="52" rx="10" class="cyan"/>
+    <g class="color-cyan"><use href="#i-home" x="66" y="946" width="20" height="20"/></g><text x="59" y="984" class="micro cyan-ink">首页</text>
+    <g class="color-secondary"><use href="#i-book" x="151" y="946" width="20" height="20"/></g><text x="144" y="984" class="micro">账本</text>
+    <g class="color-secondary"><use href="#i-wallet" x="236" y="946" width="20" height="20"/></g><text x="229" y="984" class="micro">资产</text>
+    <g class="color-secondary"><use href="#i-user" x="321" y="946" width="20" height="20"/></g><text x="314" y="984" class="micro">我的</text>
+    <!-- 5 -->
+    <text x="28" y="1044" class="caption">5 DESTINATIONS · ASSETS + AGENT</text>
+    <rect x="28" y="1058" width="364" height="76" rx="16" class="surface" filter="url(#shadow-rest)"/>
+    <rect x="34" y="1070" width="68" height="52" rx="10" class="cyan"/>
+    <g class="color-cyan"><use href="#i-home" x="58" y="1076" width="18" height="18"/></g><text x="51" y="1114" class="micro cyan-ink">首页</text>
+    <g class="color-secondary"><use href="#i-book" x="129" y="1076" width="18" height="18"/></g><text x="122" y="1114" class="micro">账本</text>
+    <g class="color-secondary"><use href="#i-wallet" x="200" y="1076" width="18" height="18"/></g><text x="193" y="1114" class="micro">资产</text>
+    <g class="color-secondary"><use href="#i-message" x="271" y="1076" width="18" height="18"/></g><text x="262" y="1114" class="micro">助手</text>
+    <g class="color-secondary"><use href="#i-user" x="342" y="1076" width="18" height="18"/></g><text x="335" y="1114" class="micro">我的</text>
+  </g>
+
+  <!-- 03 Headers and actions -->
+  <g aria-label="Headers, buttons, states, and floating action button">
+    <rect x="12" y="1168" width="396" height="596" rx="16" class="section-bg"/>
+    <text x="28" y="1198" class="section-no">03 · HEADERS + ACTION STATES</text>
+    <text x="28" y="1226" class="section-title">Clear hierarchy, immediate feedback</text>
+    <rect x="28" y="1248" width="364" height="72" rx="12" class="surface"/>
+    <text x="44" y="1276" class="micro">TOP LEVEL</text><text x="44" y="1304" class="card-title">账本 / Ledger</text>
+    <rect x="336" y="1260" width="48" height="48" rx="10" class="surface-subtle"/>
+    <g class="color-secondary"><use href="#i-more" x="350" y="1274" width="20" height="20"/></g>
+    <rect x="28" y="1332" width="364" height="72" rx="12" class="surface"/>
+    <rect x="36" y="1344" width="48" height="48" rx="10" class="surface-subtle"/>
+    <g class="color-ink"><use href="#i-back" x="50" y="1358" width="20" height="20"/></g>
+    <text x="100" y="1362" class="micro">SECONDARY</text><text x="100" y="1390" class="card-title">编辑记录 / Edit record</text>
+    <text x="28" y="1440" class="caption">BUTTON STATES</text>
+    <rect x="28" y="1454" width="110" height="48" rx="10" class="ink-fill"/><text x="54" y="1484" class="body-medium white">保存 / Save</text>
+    <rect x="150" y="1454" width="110" height="48" rx="10" class="pressed"/><text x="174" y="1484" class="body-medium">Pressed</text>
+    <rect x="272" y="1454" width="110" height="48" rx="10" class="surface"/><rect x="268" y="1450" width="118" height="56" rx="13" class="focus"/><text x="298" y="1484" class="body-medium cyan-ink">Focused</text>
+    <rect x="28" y="1516" width="110" height="48" rx="10" class="cyan"/><use href="#i-check" x="42" y="1530" width="20" height="20" class="color-cyan"/><text x="68" y="1546" class="body-medium cyan-ink">Selected</text>
+    <rect x="150" y="1516" width="110" height="48" rx="10" class="surface-muted"/><text x="174" y="1546" class="body-medium disabled-ink">Disabled</text>
+    <rect x="272" y="1516" width="110" height="48" rx="10" class="ink-fill"/><circle cx="292" cy="1540" r="7" class="spinner" stroke-dasharray="10 8"/><text x="308" y="1546" class="body-medium white">Saving</text>
+    <rect x="28" y="1578" width="172" height="48" rx="10" class="red"/><use href="#i-delete" x="44" y="1592" width="20" height="20" class="color-red"/><text x="72" y="1608" class="body-medium red-ink">删除 / Delete</text>
+    <rect x="212" y="1578" width="118" height="48" rx="10" class="surface"/><text x="232" y="1608" class="body-medium">Text action</text>
+    <circle cx="356" cy="1602" r="28" class="ink-fill" filter="url(#shadow-rest)"/><use href="#i-plus" x="344" y="1590" width="24" height="24" class="color-white"/>
+    <text x="28" y="1660" class="caption">ERROR COMPLETION + ACCESSIBLE LABEL RETAINED</text>
+    <rect x="28" y="1674" width="354" height="56" rx="10" class="red"/><use href="#i-error" x="44" y="1690" width="22" height="22" class="color-red"/><text x="78" y="1697" class="body-medium red-ink">保存失败 / Save failed</text><text x="78" y="1716" class="micro red-ink">Button · error · Retry save</text>
+  </g>
+
+  <!-- 04 Overview cards -->
+  <g aria-label="Overview profile summary, asset, record, and settings cards">
+    <rect x="12" y="1780" width="396" height="842" rx="16" class="section-bg"/>
+    <text x="28" y="1810" class="section-no">04 · OVERVIEW PROFILE</text>
+    <text x="28" y="1838" class="section-title">Meaningful cards, calm spacing</text>
+    <text x="28" y="1864" class="caption">20dp padding · 12/16dp outer radius · no nested row cards</text>
+    <!-- summary -->
+    <rect x="28" y="1886" width="364" height="226" rx="16" class="surface" filter="url(#shadow-rest)"/>
+    <text x="48" y="1916" class="micro">SUMMARY CARD · DEFAULT</text>
+    <text x="48" y="1946" class="card-title">本月结余 / Monthly balance</text>
+    <text x="48" y="1992" class="amount">+¥12,340.80</text>
+    <rect x="48" y="2020" width="142" height="64" rx="10" class="green"/>
+    <text x="62" y="2044" class="micro green-ink">收入 / INCOME +</text><text x="62" y="2070" class="amount-sm green-ink">+¥18,520.00</text>
+    <rect x="202" y="2020" width="170" height="64" rx="10" class="red"/>
+    <text x="216" y="2044" class="micro red-ink">支出 / EXPENSE −</text><text x="216" y="2070" class="amount-sm red-ink">−¥6,179.20</text>
+    <!-- asset -->
+    <rect x="28" y="2128" width="364" height="130" rx="12" class="surface" filter="url(#shadow-rest)"/>
+    <rect x="44" y="2146" width="44" height="44" rx="10" class="cyan"/><use href="#i-wallet" x="56" y="2158" width="20" height="20" class="color-cyan"/>
+    <text x="104" y="2166" class="card-title">日常支出银行卡</text><text x="104" y="2188" class="support">Everyday spending account</text>
+    <text x="104" y="2222" class="amount-sm">¥24,680.40</text><text x="278" y="2222" class="caption">Active · Open</text>
+    <use href="#i-chevron" x="354" y="2172" width="20" height="20" class="color-secondary"/>
+    <text x="44" y="2246" class="micro">Name-based association limitation applies</text>
+    <!-- record card group -->
+    <rect x="28" y="2274" width="364" height="150" rx="12" class="surface"/>
+    <text x="44" y="2302" class="micro">RECORD GROUP · TODAY</text>
+    <text x="44" y="2334" class="body-medium">餐饮 / Lunch</text><text x="300" y="2334" class="amount-sm red-ink">−¥48.00</text>
+    <text x="44" y="2354" class="micro">支出 · 12:32 · Edit record</text>
+    <line x1="44" y1="2370" x2="376" y2="2370" class="divider"/>
+    <text x="44" y="2400" class="body-medium">工资 / Salary</text><text x="286" y="2400" class="amount-sm green-ink">+¥9,800.00</text>
+    <!-- settings group -->
+    <text x="28" y="2462" class="caption">SETTINGS GROUP · ONE OUTLINE / THREE ROWS</text>
+    <rect x="28" y="2476" width="364" height="144" rx="12" class="surface"/>
+    <text x="44" y="2506" class="body-medium">首页偏好 / Home preferences</text><text x="300" y="2506" class="support">Default</text><use href="#i-chevron" x="354" y="2490" width="20" height="20" class="color-secondary"/>
+    <line x1="44" y1="2524" x2="376" y2="2524" class="divider"/>
+    <rect x="36" y="2524" width="348" height="48" rx="8" class="cyan-flat"/><text x="44" y="2554" class="body-medium cyan-ink">快捷记账 / Quick add</text><text x="326" y="2554" class="caption cyan-ink">ON</text>
+    <line x1="44" y1="2572" x2="376" y2="2572" class="divider"/>
+    <text x="44" y="2602" class="body-medium disabled-ink">主题 / Theme</text><text x="306" y="2602" class="caption disabled-ink">Removed</text>
+  </g>
+
+  <!-- 05 Dense workflow -->
+  <g aria-label="Dense record rows and 200 plus record stress pattern">
+    <rect x="12" y="2638" width="396" height="642" rx="16" class="section-bg"/>
+    <text x="28" y="2668" class="section-no">05 · DENSE WORKFLOW</text>
+    <text x="28" y="2696" class="section-title">200+ records, stable geometry</text>
+    <text x="28" y="2722" class="caption">RecyclerView · 52dp rows · date groups · no stagger</text>
+    <rect x="28" y="2744" width="364" height="334" rx="12" class="surface"/>
+    <rect x="28" y="2744" width="364" height="42" rx="12" class="surface-subtle"/><text x="44" y="2770" class="caption">今天 / TODAY · 4 RECORDS</text>
+    <!-- row 1 -->
+    <text x="44" y="2820" class="body-medium">餐饮 / Lunch</text><text x="294" y="2820" class="amount-sm red-ink">−¥48.00</text><text x="44" y="2838" class="micro">12:32 · expense · edit</text>
+    <line x1="44" y1="2850" x2="376" y2="2850" class="divider"/>
+    <!-- selected -->
+    <rect x="36" y="2858" width="348" height="58" rx="8" class="cyan"/>
+    <use href="#i-check" x="46" y="2876" width="20" height="20" class="color-cyan"/><text x="76" y="2884" class="body-medium cyan-ink">交通 / Metro commute</text><text x="292" y="2884" class="amount-sm cyan-ink">−¥6.00</text><text x="76" y="2903" class="micro cyan-ink">Selected · row 2 of 4</text>
+    <!-- swipe -->
+    <rect x="36" y="2924" width="348" height="58" rx="8" class="red"/><use href="#i-delete" x="46" y="2942" width="20" height="20" class="color-red"/><text x="76" y="2950" class="body-medium red-ink">Swipe reveal · 删除记录</text><text x="76" y="2969" class="micro red-ink">Equivalent accessibility action: Delete record</text>
+    <!-- disabled -->
+    <text x="44" y="3020" class="body-medium disabled-ink">正在删除 / Deleting</text><text x="302" y="3020" class="amount-sm disabled-ink">−¥28.50</text><text x="44" y="3039" class="micro">Disabled · transaction pending</text>
+    <text x="44" y="3062" class="micro">Rows share this outline; no row has its own card or shadow.</text>
+    <!-- filter distinction -->
+    <text x="28" y="3118" class="caption">EMPTY DISTINCTION</text>
+    <rect x="28" y="3132" width="172" height="124" rx="12" class="surface"/>
+    <text x="44" y="3162" class="body-medium">No records yet</text><text x="44" y="3184" class="support">Add the first record.</text>
+    <rect x="44" y="3198" width="128" height="48" rx="10" class="ink-fill"/><text x="62" y="3228" class="caption white">添加 / Add record</text>
+    <rect x="212" y="3132" width="180" height="124" rx="12" class="surface"/>
+    <text x="228" y="3162" class="body-medium">No filtered results</text><text x="228" y="3184" class="support">Data remains available.</text>
+    <rect x="228" y="3198" width="148" height="48" rx="10" class="surface-subtle"/><text x="248" y="3228" class="caption">Clear filters</text>
+  </g>
+
+  <!-- 06 Tree stress -->
+  <g aria-label="Category hierarchy depth 50 stress pattern">
+    <rect x="12" y="3296" width="396" height="676" rx="16" class="section-bg"/>
+    <text x="28" y="3326" class="section-no">06 · TREE STRESS / DEPTH 50</text>
+    <text x="28" y="3354" class="section-title">Bounded indent, explicit ancestry</text>
+    <text x="28" y="3380" class="caption">Only levels 1–4 indent · L5–L50 hold text column</text>
+    <rect x="28" y="3402" width="364" height="426" rx="12" class="surface"/>
+    <text x="44" y="3430" class="micro">CATEGORY TREE · PARENT EXPANDS / LEAF SELECTS</text>
+    <!-- levels -->
+    <use href="#i-down" x="42" y="3450" width="20" height="20" class="color-secondary"/><text x="70" y="3466" class="body-medium">家庭 / Household</text><text x="288" y="3466" class="micro">L1 · expanded</text>
+    <line x1="44" y1="3480" x2="376" y2="3480" class="divider"/>
+    <use href="#i-down" x="54" y="3494" width="20" height="20" class="color-secondary"/><text x="82" y="3510" class="body-medium">日常维护 / Maintenance</text><text x="288" y="3510" class="micro">L2 · parent</text>
+    <line x1="56" y1="3524" x2="376" y2="3524" class="divider"/>
+    <use href="#i-down" x="66" y="3538" width="20" height="20" class="color-secondary"/><text x="94" y="3554" class="body-medium">周期费用 / Recurring</text><text x="288" y="3554" class="micro">L3</text>
+    <line x1="68" y1="3568" x2="376" y2="3568" class="divider"/>
+    <use href="#i-chevron" x="78" y="3582" width="20" height="20" class="color-secondary"/><text x="106" y="3598" class="body-medium">住宅服务 / Home services</text><text x="288" y="3598" class="micro">L4</text>
+    <line x1="80" y1="3612" x2="376" y2="3612" class="divider"/>
+    <!-- L50 -->
+    <line x1="58" y1="3632" x2="58" y2="3714" class="ancestry"/>
+    <rect x="44" y="3632" width="40" height="24" rx="8" class="cyan"/><text x="52" y="3648" class="micro cyan-ink">L50</text>
+    <text x="96" y="3650" class="body-medium">家庭与日常维护支出</text>
+    <text x="96" y="3672" class="support">Household maintenance and</text>
+    <text x="96" y="3692" class="support">recurring essentials</text>
+    <text x="96" y="3712" class="micro">… / Home / Maintenance / Current</text>
+    <circle cx="356" cy="3660" r="10" class="cyan"/><use href="#i-check" x="348" y="3652" width="16" height="16" class="color-cyan"/>
+    <line x1="44" y1="3728" x2="376" y2="3728" class="divider"/>
+    <use href="#i-lock" x="44" y="3742" width="20" height="20" class="color-disabled"/><text x="76" y="3758" class="body-medium disabled-ink">受保护父分类 / Protected parent</text><text x="76" y="3778" class="micro">Disabled · has children · expand only</text>
+    <text x="28" y="3868" class="caption">TALKBACK SAMPLE</text>
+    <rect x="28" y="3882" width="364" height="78" rx="10" class="cyan"/>
+    <text x="44" y="3906" class="support cyan-ink">“Household maintenance, level 50,</text>
+    <text x="44" y="3926" class="support cyan-ink">leaf, selected”</text>
+    <text x="44" y="3948" class="micro cyan-ink">Tree item · value · state · action: Select category</text>
+  </g>
+
+  <!-- 07 Controls and keypad -->
+  <g aria-label="Segmented controls, filters, fields, and fixed keypad">
+    <rect x="12" y="3988" width="396" height="898" rx="16" class="section-bg"/>
+    <text x="28" y="4018" class="section-no">07 · SEGMENTS / FIELDS / KEYPAD</text>
+    <text x="28" y="4046" class="section-title">Compact controls, full targets</text>
+    <rect x="28" y="4070" width="364" height="56" rx="10" class="surface-subtle"/>
+    <rect x="34" y="4074" width="172" height="48" rx="8" class="cyan"/><text x="78" y="4104" class="body-medium cyan-ink">明细 / Details</text>
+    <text x="250" y="4104" class="body-medium">统计 / Statistics</text>
+    <g transform="translate(28 4142)">
+      <rect width="72" height="48" rx="8" class="cyan"/><text x="24" y="30" class="caption cyan-ink">Month</text>
+      <rect x="80" width="64" height="48" rx="8" class="surface"/><text x="101" y="30" class="caption">Year</text>
+      <rect x="152" width="68" height="48" rx="8" class="surface"/><text x="173" y="30" class="caption">All</text>
+      <rect x="228" width="136" height="48" rx="8" class="surface"/><use href="#i-filter" x="242" y="14" width="20" height="20" class="color-secondary"/><text x="272" y="30" class="caption">More filters</text>
+    </g>
+    <text x="28" y="4222" class="caption">FIELD STATES</text>
+    <rect x="28" y="4236" width="172" height="68" rx="10" class="surface"/><text x="42" y="4258" class="micro">DEFAULT · LABEL</text><text x="42" y="4284" class="body">Record note</text>
+    <rect x="212" y="4236" width="180" height="68" rx="10" class="surface"/><rect x="208" y="4232" width="188" height="76" rx="13" class="focus"/><text x="226" y="4258" class="micro cyan-ink">FOCUSED</text><text x="226" y="4284" class="body">正在输入 / Editing</text>
+    <rect x="28" y="4320" width="172" height="82" rx="10" class="red"/><text x="42" y="4342" class="micro red-ink">ERROR</text><text x="42" y="4366" class="body red-ink">Amount required</text><text x="42" y="4388" class="micro red-ink">Live error · Retry</text>
+    <rect x="212" y="4320" width="180" height="82" rx="10" class="surface-muted"/><text x="226" y="4342" class="micro">DISABLED</text><text x="226" y="4366" class="body disabled-ink">Unavailable</text><text x="226" y="4388" class="micro">State announced</text>
+    <text x="28" y="4440" class="caption">FIXED IN-PAGE KEYPAD · NO SYSTEM KEYBOARD</text>
+    <rect x="28" y="4454" width="364" height="394" rx="16" class="surface" filter="url(#shadow-rest)"/>
+    <text x="48" y="4484" class="micro">AMOUNT BUFFER</text><text x="48" y="4526" class="amount">¥128.50</text>
+    <rect x="48" y="4544" width="146" height="48" rx="8" class="red"/><text x="88" y="4574" class="body-medium red-ink">支出 / Expense</text>
+    <rect x="206" y="4544" width="146" height="48" rx="8" class="surface-subtle"/><text x="248" y="4574" class="body-medium">收入 / Income</text>
+    <!-- keys -->
+    <g class="body-medium" text-anchor="middle">
+      <rect x="48" y="4604" width="92" height="52" rx="8" class="surface-subtle"/><text x="94" y="4636">1</text>
+      <rect x="154" y="4604" width="92" height="52" rx="8" class="surface-subtle"/><text x="200" y="4636">2</text>
+      <rect x="260" y="4604" width="92" height="52" rx="8" class="surface-subtle"/><text x="306" y="4636">3</text>
+      <rect x="48" y="4668" width="92" height="52" rx="8" class="surface-subtle"/><text x="94" y="4700">4</text>
+      <rect x="154" y="4668" width="92" height="52" rx="8" class="pressed"/><text x="200" y="4700">5 · pressed</text>
+      <rect x="260" y="4668" width="92" height="52" rx="8" class="surface-subtle"/><text x="306" y="4700">6</text>
+      <rect x="48" y="4732" width="92" height="52" rx="8" class="surface-subtle"/><text x="94" y="4764">7</text>
+      <rect x="154" y="4732" width="92" height="52" rx="8" class="surface-subtle"/><text x="200" y="4764">8</text>
+      <rect x="260" y="4732" width="92" height="52" rx="8" class="surface-subtle"/><text x="306" y="4764">9</text>
+      <rect x="48" y="4796" width="92" height="52" rx="8" class="surface-subtle"/><text x="94" y="4828">.</text>
+      <rect x="154" y="4796" width="92" height="52" rx="8" class="surface-subtle"/><text x="200" y="4828">0</text>
+      <rect x="260" y="4796" width="92" height="52" rx="8" class="surface-subtle"/>
+    </g>
+    <use href="#i-backspace" x="294" y="4810" width="24" height="24" class="color-ink"/>
+    <text x="48" y="4872" class="micro">Every key ≥48dp · Long press Backspace: Clear amount</text>
+  </g>
+
+  <!-- 08 Overlays -->
+  <g aria-label="Bottom sheet and dialog overlays with accessibility annotations">
+    <rect x="12" y="4902" width="396" height="714" rx="16" class="section-bg"/>
+    <text x="28" y="4932" class="section-no">08 · SHEETS + DIALOGS</text>
+    <text x="28" y="4960" class="section-title">Modal focus and spatial continuity</text>
+    <text x="28" y="4986" class="caption">Focus trap · Back dismiss · focus returns to trigger</text>
+    <!-- sheet -->
+    <rect x="28" y="5008" width="364" height="330" rx="16" class="scrim-sample"/>
+    <rect x="28" y="5058" width="364" height="280" rx="16" class="surface" filter="url(#shadow-modal)"/>
+    <rect x="178" y="5070" width="64" height="5" rx="3" class="handle"/>
+    <text x="48" y="5106" class="card-title">选择分类 / Choose category</text>
+    <text x="48" y="5128" class="support">Dialog · modal · current selection retained</text>
+    <rect x="48" y="5136" width="324" height="48" rx="8" class="cyan"/><text x="62" y="5166" class="body-medium cyan-ink">餐饮 / Food · selected</text><use href="#i-check" x="338" y="5150" width="20" height="20" class="color-cyan"/>
+    <rect x="48" y="5184" width="324" height="48" rx="8" class="target"/><text x="62" y="5214" class="body-medium">交通 / Transport</text><text x="300" y="5214" class="micro">48 target</text>
+    <rect x="48" y="5232" width="324" height="48" rx="8" class="target"/><text x="62" y="5262" class="body-medium">家庭 / Household · parent</text><use href="#i-chevron" x="338" y="5248" width="20" height="20" class="color-secondary"/>
+    <rect x="48" y="5282" width="146" height="48" rx="10" class="surface-subtle"/><text x="98" y="5312" class="caption">Cancel</text>
+    <rect x="206" y="5282" width="166" height="48" rx="10" class="ink-fill"/><text x="252" y="5312" class="caption white">Confirm leaf</text>
+    <!-- dialog -->
+    <text x="28" y="5378" class="caption">ENLARGED-TEXT DIALOG · ACTIONS STACK</text>
+    <rect x="44" y="5394" width="332" height="198" rx="16" class="surface" filter="url(#shadow-modal)"/>
+    <text x="64" y="5426" class="card-title">无法删除分类</text>
+    <text x="64" y="5452" class="body">This category still has child items.</text>
+    <text x="64" y="5476" class="body">Move or delete them before continuing.</text>
+    <rect x="64" y="5492" width="292" height="38" rx="8" class="red"/><use href="#i-error" x="74" y="5501" width="20" height="20" class="color-red"/><text x="104" y="5517" class="caption red-ink">Protected action · children exist</text>
+    <rect x="64" y="5540" width="292" height="48" rx="10" class="ink-fill"/><text x="152" y="5570" class="caption white">返回分类 / Back to categories</text>
+    <text x="28" y="5602" class="micro">Motion: card/sheet slide 260ms · Reduced motion: fade only 120ms</text>
+  </g>
+
+  <!-- 09 Agent primitives -->
+  <g aria-label="Chat bubbles, session rows, partial errors, and generating skeleton">
+    <rect x="12" y="5632" width="396" height="650" rx="16" class="section-bg"/>
+    <text x="28" y="5662" class="section-no">09 · CHAT + SESSION PRIMITIVES</text>
+    <text x="28" y="5690" class="section-title">Plain text assistance, no AI theater</text>
+    <text x="28" y="5722" class="caption">助手 / ASSISTANT</text>
+    <rect x="28" y="5736" width="292" height="86" rx="12" class="surface-subtle"/>
+    <text x="44" y="5766" class="body">本月支出较上月减少。</text><text x="44" y="5790" class="body">Monthly spending is lower.</text><text x="44" y="5810" class="micro">Sender + message announced once</text>
+    <text x="334" y="5850" class="caption">我 / ME</text>
+    <rect x="102" y="5862" width="290" height="72" rx="12" class="cyan"/>
+    <text x="120" y="5892" class="body cyan-ink">Show the category summary.</text><text x="120" y="5916" class="micro cyan-ink">User · sent</text>
+    <text x="28" y="5966" class="caption">PARTIAL RESPONSE RETAINED</text>
+    <rect x="28" y="5980" width="344" height="108" rx="12" class="red"/>
+    <text x="44" y="6010" class="body red-ink">已收到部分回复，连接已中断。</text><text x="44" y="6034" class="body red-ink">Partial reply retained after interruption.</text><text x="44" y="6062" class="micro red-ink">Assistant · partial · error · Retry available</text>
+    <text x="28" y="6124" class="caption">SESSION GROUP · DENSE ROWS</text>
+    <rect x="28" y="6138" width="364" height="120" rx="12" class="surface"/>
+    <rect x="36" y="6146" width="348" height="48" rx="8" class="cyan"/><text x="50" y="6176" class="body-medium cyan-ink">八月概览 / August overview</text><text x="306" y="6176" class="micro cyan-ink">Selected</text>
+    <line x1="44" y1="6202" x2="376" y2="6202" class="divider"/>
+    <text x="50" y="6232" class="body-medium disabled-ink">记录整理 / Record review</text><text x="302" y="6232" class="micro">Disabled</text><text x="50" y="6250" class="micro">Rename available as accessibility action</text>
+  </g>
+
+  <!-- 10 Feedback -->
+  <g aria-label="Skeleton, inline error, empty state, and undo Snackbar">
+    <rect x="12" y="6298" width="396" height="414" rx="16" class="section-bg"/>
+    <text x="28" y="6328" class="section-no">10 · SYSTEM FEEDBACK</text>
+    <text x="28" y="6356" class="section-title">Loading, error, empty, undo</text>
+    <rect x="28" y="6380" width="172" height="118" rx="12" class="surface"/>
+    <text x="42" y="6406" class="caption">SKELETON · ASYNC ONLY</text>
+    <rect x="42" y="6422" width="88" height="12" rx="6" class="skeleton-strong"/><rect x="42" y="6444" width="142" height="12" rx="6" class="skeleton"/><rect x="42" y="6466" width="116" height="12" rx="6" class="skeleton"/>
+    <text x="42" y="6490" class="micro">Reduced motion: static</text>
+    <rect x="212" y="6380" width="180" height="124" rx="12" class="red"/>
+    <use href="#i-error" x="226" y="6398" width="22" height="22" class="color-red"/><text x="258" y="6415" class="body-medium red-ink">Request failed</text><text x="226" y="6442" class="support red-ink">Check connection.</text>
+    <rect x="226" y="6450" width="150" height="48" rx="8" class="retry"/><text x="274" y="6480" class="caption red-ink">Retry</text>
+    <rect x="28" y="6514" width="364" height="84" rx="12" class="surface"/>
+    <text x="44" y="6542" class="body-medium">No sessions yet</text><text x="44" y="6564" class="support">Create one when you want to start.</text><rect x="280" y="6530" width="96" height="52" rx="10" class="surface-subtle"/><text x="298" y="6560" class="caption">New session</text>
+    <rect x="28" y="6616" width="364" height="64" rx="12" class="ink-fill" filter="url(#shadow-rest)"/>
+    <text x="44" y="6654" class="body white">记录已删除 / Record deleted</text><rect x="290" y="6624" width="86" height="48" rx="10" class="snackbar-action"/><text x="310" y="6654" class="caption white">撤销 / Undo</text>
+    <text x="28" y="6702" class="micro">Polite live region · announces restoration once · never covers fixed UI</text>
+  </g>
+
+  <!-- 11 Accessibility / large text -->
+  <g aria-label="Per-primitive accessibility, state, reduced-motion, and enlarged-text evidence">
+    <rect x="12" y="6728" width="396" height="952" rx="16" class="section-bg"/>
+    <text x="28" y="6758" class="section-no">11 · ACCESSIBILITY / STATE / MOTION LEDGER</text>
+    <text x="28" y="6786" class="section-title">Evidence per primitive family</text>
+    <text x="28" y="6810" class="caption">ROLE · NAME · STATE · VALUE · ACTION · ≥48dp</text>
+
+    <rect x="28" y="6830" width="364" height="72" rx="10" class="cyan"/>
+    <text x="42" y="6854" class="body-medium cyan-ink">Navigation</text>
+    <text x="42" y="6874" class="micro cyan-ink">Collection · destination · selected · Activate</text>
+    <text x="42" y="6892" class="micro cyan-ink">Default / press / focus / selected / disabled · reduce: marker fade</text>
+
+    <rect x="28" y="6912" width="364" height="72" rx="10" class="surface"/>
+    <text x="42" y="6936" class="body-medium">Header actions + FAB</text>
+    <text x="42" y="6956" class="micro">Heading; Button · verb-object name · action</text>
+    <text x="42" y="6974" class="micro">Default / press / focus / disabled · reduce: color change only</text>
+
+    <rect x="28" y="6994" width="364" height="80" rx="10" class="surface"/>
+    <text x="42" y="7018" class="body-medium">Summary · asset · settings · record rows</text>
+    <text x="42" y="7038" class="micro">Group/row role · signed value · current state · Open/Edit/Delete</text>
+    <text x="42" y="7056" class="micro">Actionable only: press / focus · other states: see specimens</text>
+    <text x="42" y="7070" class="micro">Reduce: no row entrance · immediate status swap</text>
+
+    <rect x="28" y="7084" width="364" height="80" rx="10" class="surface"/>
+    <text x="42" y="7108" class="body-medium">Segments · filters · fields · keypad</text>
+    <text x="42" y="7128" class="micro">Tab/radio/EditText/Button · selected/value/error · Change/Input</text>
+    <text x="42" y="7146" class="micro">Default / press / focus / selected / disabled · keys ≥48dp</text>
+    <text x="42" y="7160" class="micro">Reduce: indicator fade; key surface change without scale</text>
+
+    <rect x="28" y="7174" width="364" height="80" rx="10" class="surface"/>
+    <text x="42" y="7198" class="body-medium">Sheet · dialog</text>
+    <text x="42" y="7218" class="micro">Modal dialog · heading/value · selection/error · Confirm/Dismiss</text>
+    <text x="42" y="7236" class="micro">Focus trap · Back dismiss · return focus to trigger</text>
+    <text x="42" y="7250" class="micro">Reduce: 120ms fade only; no translation</text>
+
+    <rect x="28" y="7264" width="364" height="80" rx="10" class="surface"/>
+    <text x="42" y="7288" class="body-medium">Chat · sessions</text>
+    <text x="42" y="7308" class="micro">Sender + message; session Button · selected · Switch/Rename</text>
+    <text x="42" y="7326" class="micro">Partial/error retained; streaming announcements throttled</text>
+    <text x="42" y="7340" class="micro">Reduce: content/status crossfade only</text>
+
+    <rect x="28" y="7354" width="364" height="80" rx="10" class="surface"/>
+    <text x="42" y="7378" class="body-medium">Skeleton · empty · inline error · Snackbar</text>
+    <text x="42" y="7398" class="micro">Status/live region · state/result · Retry/Add/Undo</text>
+    <text x="42" y="7416" class="micro">Skeleton hidden; owner announces once; Undo announces restoration once</text>
+    <text x="42" y="7430" class="micro">Reduce: skeleton static; Snackbar fade only</text>
+
+    <rect x="28" y="7444" width="364" height="24" rx="8" class="cyan-flat"/>
+    <text x="40" y="7461" class="micro cyan-ink">ACTUAL 200% TEXT · REFLOW / STACK</text>
+    <text x="28" y="7506" class="text-200">家庭与日常</text>
+    <text x="28" y="7542" class="text-200">维护支出</text>
+    <text x="28" y="7582" class="text-200">Household</text>
+    <text x="28" y="7618" class="text-200">maintenance and</text>
+    <text x="28" y="7654" class="text-200">recurring essentials</text>
+  </g>
+
+  <text x="20" y="7710" class="micro">Primitive gate only · local SVG · no product screens</text>
+  <text x="20" y="7728" class="micro">Connected ADB QA not run · runtime proof deferred</text>
+</svg>

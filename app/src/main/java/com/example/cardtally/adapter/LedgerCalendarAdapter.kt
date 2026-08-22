@@ -39,6 +39,8 @@ class LedgerCalendarAdapter(
         private val fillLeft: View = itemView.findViewById(R.id.day_fill_left)
         private val fillRight: View = itemView.findViewById(R.id.day_fill_right)
         private val value: TextView = itemView.findViewById(R.id.text_day_value)
+        private val income: TextView = itemView.findViewById(R.id.text_day_income)
+        private val expense: TextView = itemView.findViewById(R.id.text_day_expense)
         private val todayDot: View = itemView.findViewById(R.id.view_today_dot)
 
         fun bind(day: LedgerCalendarDay, onDayClicked: (LedgerCalendarDay) -> Unit) {
@@ -50,15 +52,23 @@ class LedgerCalendarAdapter(
                 fillLeft.isVisible = false
                 fillRight.isVisible = false
                 todayDot.isVisible = false
+                income.isVisible = false
+                expense.isVisible = false
                 value.setTextColor(ThemeColorHelper.resolveThemeAwareResource(context, android.R.color.transparent))
                 return
             }
 
             value.text = day.dayOfMonth.toString()
+            income.isVisible = day.income > 0.0
+            expense.isVisible = day.expense > 0.0
+            income.text = String.format(java.util.Locale.US, "+%.0f", day.income)
+            expense.text = String.format(java.util.Locale.US, "-%.0f", day.expense)
             value.isSelected = day.isRangeBoundary
-            fillLeft.isVisible = day.isInSelectedRange && (!day.isRangeStart || day.isRangeEnd)
-            fillRight.isVisible = day.isInSelectedRange && (!day.isRangeEnd || day.isRangeStart)
-            todayDot.isVisible = day.isToday && !day.isRangeBoundary
+            // The calendar uses a single selected-day state only. Range fills and
+            // the generic today marker are intentionally hidden on this page.
+            fillLeft.isVisible = false
+            fillRight.isVisible = false
+            todayDot.isVisible = false
             value.setTextColor(
                 if (day.isRangeBoundary) {
                     ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimary)

@@ -173,9 +173,19 @@ class ArchivedAssetsFragment : Fragment() {
             .setTitle("删除资产")
             .setMessage("确定要删除\"${asset.name}\"吗？")
             .setPositiveButton("确定") { _, _ ->
-                databaseHelper.deleteAsset(asset.id)
-                Toast.makeText(requireContext(), "删除成功", Toast.LENGTH_SHORT).show()
-                loadAssets()
+                try {
+                    databaseHelper.deleteArchivedAsset(asset.id)
+                    Toast.makeText(requireContext(), "删除成功", Toast.LENGTH_SHORT).show()
+                    loadAssets()
+                } catch (error: DatabaseHelper.AssetOperationException) {
+                    val message = when (error.error) {
+                        DatabaseHelper.AssetOperationError.IN_USE_BY_RECORDS ->
+                            "该资产仍有关联记录，无法永久删除"
+                        DatabaseHelper.AssetOperationError.NOT_ARCHIVED ->
+                            "仅已归档资产可以永久删除"
+                    }
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                }
             }
             .setNegativeButton("取消", null)
             .show()

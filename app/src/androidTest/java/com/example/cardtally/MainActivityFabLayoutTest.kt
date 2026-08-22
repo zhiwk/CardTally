@@ -33,11 +33,11 @@ class MainActivityFabLayoutTest {
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             instrumentation.waitForIdleSync()
-            assertEquals(expectedGap, measureCurrentFabGap(scenario, "home"))
+            assertEquals(expectedGap, measureCurrentFabGap(scenario, "ledger"))
 
             scenario.onActivity { activity ->
                 val bottomNavigation = activity.findViewById<BottomNavigationView>(R.id.bottom_navigation)
-                bottomNavigation.selectedItemId = R.id.nav_statistics
+                bottomNavigation.selectedItemId = R.id.nav_ledger
             }
             instrumentation.waitForIdleSync()
             assertEquals(expectedGap, measureCurrentFabGap(scenario, "statistics"))

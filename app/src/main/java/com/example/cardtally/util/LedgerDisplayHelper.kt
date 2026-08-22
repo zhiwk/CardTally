@@ -7,11 +7,12 @@ object LedgerDisplayHelper {
     fun formatDateHeader(date: String, locale: Locale = Locale.getDefault()): String {
         val parsed = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date) ?: return date
         if (locale.language == Locale.CHINESE.language) {
-            return SimpleDateFormat("M月d日 EEEE", locale).format(parsed)
+            return SimpleDateFormat("yyyy年M月d日 EEEE", locale).format(parsed)
         }
         val weekday = SimpleDateFormat("EEEE", locale).format(parsed)
         val day = SimpleDateFormat("d", locale).format(parsed).toInt()
-        return "$weekday, ${day}${ordinalSuffix(day)}"
+        val year = SimpleDateFormat("yyyy", locale).format(parsed)
+        return "$weekday, ${day}${ordinalSuffix(day)}, $year"
     }
 
     fun formatEntriesMeta(count: Int, locale: Locale = Locale.getDefault()): String {

@@ -6,26 +6,18 @@
 
 ## 2026-04-06 已落地状态
 
-- 主题资源已更新为 `The Curated Chronicle / 静奢理财日记` 风格，涉及：
+- 旧的 `The Curated Chronicle / 静奢理财日记` 视觉方向已废弃；当前视觉契约为根目录 `DESIGN.md`。
   - `app/src/main/res/values/colors_light.xml`
   - `app/src/main/res/values/styles.xml`
   - `app/src/main/res/drawable/bg_circle_primary_container.xml`
   - `app/src/main/res/drawable/bg_summary_item.xml`
 - 底部导航已加入 `AI Agent` 入口，并新增 `AgentFragment.kt` 与 `fragment_agent.xml`
 - 以下页面已完成一轮明显的 UI / 信息层重设计：
-  - `HomeFragment` / `fragment_home.xml`
   - `AddRecordFragment` / `fragment_add_record.xml`
   - `AssetFragment` / `fragment_asset.xml` / `item_asset.xml`
   - `StatisticsFragment` / `fragment_statistics.xml` / `item_statistics.xml`
   - `SettingsFragment` / `fragment_settings.xml`
-- `docs/design/assets/stitch/` 中已有以下页面的 Stitch 导出参考：
-  - `add record`
-  - `agent`
-  - `assets`
-  - `bottom navigation`
-  - `home`
-  - `me`
-  - `records`
+- 旧版 Stitch 设计导出与“静奢理财日记”视觉指南已移除；当前视觉入口为根目录 `DESIGN.md`。
 
 ## 2026-04-06 本地构建修复
 
@@ -37,8 +29,8 @@
 ## 2026-04-07 最新代码现实
 
 - `MainActivity` 继续统一承载浮动底部导航，不在页面内部重复实现导航
-- 底部导航文案已调整为中文：`首页 / 账本 / 资产 / AI 助手 / 我的`
-- `home / assets / agent / me / records` 已根据新的 Stitch 设计调整了底部安全区与主操作位置
+- 底部导航文案已调整为中文：`账单 / 统计 / 资产 / AI 助手 / 我的`
+- `home / assets / agent / me / records` 的当前实现仍需以源码复核，不再以历史 Stitch 导出作为视觉依据
 - `Agent` 页底部输入区已上移，避免与活动级底部导航重叠
 - `EditRecordFragment` 已不再维护独立 UX 布局，而是直接复用 `fragment_add_record.xml`
 - `fragment_edit_record.xml` 已移除，新增记录与编辑记录现在共享同一套录入 UX 基准
@@ -51,7 +43,7 @@
 - 但真机从“我的”页切换中英文时仍会轻微闪屏；当前只能算“减轻”，不能算“解决”
 - 该问题后续期望方案是更平滑的淡入淡出过渡；如果继续处理，优先沿 `SettingsFragment -> LanguageHelper -> MainActivity/activity_main.xml` 这条链路排查
 - "我的"页已新增 `AI 助理` 分组，包含 AI 入口显示开关与 `MiniMax 配置` 二级设置页
-- AI 显示开关当前会控制首页 Agent 卡片与底部 `AI 助手` tab 的可见性，并在关闭时阻止继续停留在 Agent 页面
+- AI 显示开关当前会控制底部 `AI 助手` tab 的可见性，并在关闭时阻止继续停留在 Agent 页面
 - `AgentFragment` 已从静态示例页切换为 MiniMax BYOK 聊天页；当前请求默认携带 `stream=true`
 - AI 客户端会按实际响应内容识别流式 / 非流式返回：如果收到 SSE / chunk 形态内容，则增量刷新当前 Assistant 气泡；如果返回完整 JSON，则回退为一次性解析完整回复
 - `AgentChatAdapter` 已支持对当前流式消息做 payload 级内容刷新，避免每个 chunk 都走整列表重绘
@@ -73,7 +65,7 @@
 
 ## 2026-04-10 最新代码现实
 
-- 底部导航当前由 `MainActivity` 统一控制一级页 / 二级页显隐；`nav_shell` 会在 `Home / Statistics / Asset / Agent / Settings` 等一级页显示，在新增 / 编辑 / 配置等二级页隐藏
+- 底部导航当前由 `MainActivity` 统一控制一级页 / 二级页显隐；`nav_shell` 会在 `Ledger / Statistics / Asset / Agent / Settings` 等一级页显示，在新增 / 编辑 / 配置等二级页隐藏
 - `AgentFragment` 当前在会话抽屉展开时会临时隐藏 `nav_shell`，关闭抽屉后恢复，避免抽屉与底部导航叠层冲突
 - Agent 页底部输入区当前已改为与 `nav_shell` 使用同样的左右边距；输入壳静态高度为 `56dp`，发送按钮为 `48dp`，用于保持与浮动底部导航更一致的容器比例
 - 底部导航 active indicator 已切换为透明，不再依赖浅白色块高亮当前 tab
@@ -114,18 +106,18 @@
 - 当周期为 `ALL / CUSTOM` 时，图表模式会回到饼图，右上图表切换控件会隐藏但保留占位，避免“趋势概览”副标题发生纵向跳动
 - 当周期为 `CUSTOM` 时，顶部 `周 / 月 / 年 / 全部` 按钮当前允许无选中态，不再强制高亮某个预设周期
 - 从账本明细进入“记一笔”后返回，当前会重新绑定 `recyclerRecords.adapter`，避免因 Fragment View 重建导致列表空白
-- 账本明细记录项当前已向首页最近记录卡片样式收敛：保留按日期分组与编辑/删除交互，但视觉语言、间距和信息排布已更接近首页
+- 账本明细记录项保留按日期分组与编辑/删除交互，视觉语言、间距和信息排布以当前账本实现为准
 
 ## 2026-04-16 录入页最新现实
 
 - `AddRecordFragment` / `EditRecordFragment` 当前继续共享 `fragment_add_record.xml`
-- “记一笔 / 编辑记录”主页面已改为 Stitch 风格的极简录入壳：金额区、支出/收入切换、信息卡、底部保存区
+- “记一笔 / 编辑记录”主页面当前结构仍以源码为准，后续视觉重做遵循根目录 `DESIGN.md`
 - 日期选择已从系统直接弹窗切换为底部抽屉中的 `DatePicker`
 - 资产选择已从页内 `Spinner` 切换为底部抽屉列表，当前由 `RecordAssetSheetAdapter` 渲染
 - 分类选择已从页内网格切换为树形底部抽屉，当前由 `RecordCategoryTreeAdapter` 渲染，并支持任意深度展开
 - 当前录入页仍只允许选择**叶子分类**，并继续保存 `category_id`、`category_name_snapshot`、`category_path_snapshot`
 - `AddRecordFragment` / `EditRecordFragment` 当前已统一通过 `nav_shell` 控制二级页进入时隐藏底部导航，而不是单独操作 `bottom_navigation`
-- 普通入口进入“记一笔”时，返回会回到发起页面；如果开启“快捷记账”后冷启动直接进入“记一笔”，当前返回会落到首页
+- 普通入口进入“记一笔”时，返回会回到发起页面；如果开启“快捷记账”后冷启动直接进入“记一笔”，当前返回会落到账本页
 - 当前录入页的下一步精修重点已收敛为：分类抽屉视觉层级、资产抽屉信息呈现、金额区与底部保存区留白
 
 ## 2026-04-16 协作技能最新现实

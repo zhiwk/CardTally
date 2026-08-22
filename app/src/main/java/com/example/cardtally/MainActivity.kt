@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         
         bottomNavigationView.setOnItemSelectedListener { item ->
             val selectedFragment: Fragment? = when (item.itemId) {
-                R.id.nav_home -> HomeFragment()
+                R.id.nav_ledger -> LedgerFragment()
                 R.id.nav_asset -> AssetFragment()
                 R.id.nav_statistics -> StatisticsFragment()
                 R.id.nav_agent -> AgentFragment()
@@ -72,11 +72,13 @@ class MainActivity : AppCompatActivity() {
             } ?: false
         }
 
+        bottomNavigationView.menu.findItem(R.id.nav_ledger).isChecked = true
+
         if (savedInstanceState == null) {
             val initialFragment = if (QuickAddHelper.getQuickAdd(this)) {
                 AddRecordFragment()
             } else {
-                HomeFragment()
+                LedgerFragment()
             }
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, initialFragment)
@@ -89,9 +91,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyTheme() {
-        val themeMode = ThemeHelper.getTheme(this)
-        val themeResId = ThemeHelper.getThemeResId(themeMode)
-        setTheme(themeResId)
+        ThemeHelper.getTheme(this)
+        setTheme(R.style.Theme_CardTally_Light)
     }
 
     private fun handlePendingLocaleTransition() {
@@ -134,7 +135,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateBottomNavigationForFragment(fragment: Fragment) {
-        val isTopLevel = fragment is HomeFragment ||
+        val isTopLevel = fragment is LedgerFragment ||
             fragment is AssetFragment ||
             fragment is StatisticsFragment ||
             fragment is AgentFragment ||

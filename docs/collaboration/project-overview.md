@@ -23,7 +23,7 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 
 - `app/src/main/java/com/example/cardtally/`
 - `MainActivity.kt`：主 Activity
-- `*Fragment.kt`：页面级逻辑，例如 `HomeFragment`、`AddRecordFragment`、`EditRecordFragment`、`AddAssetFragment`、`EditAssetFragment`、`StatisticsFragment`、`SettingsFragment`、`SearchFragment`、`AgentFragment`、`AssetFragment`；其中当前“账本”一级页仍由 `StatisticsFragment` 承载，并在页内切换 `统计 / 明细` 两种视图
+- `*Fragment.kt`：页面级逻辑，例如 `AddRecordFragment`、`EditRecordFragment`、`AddAssetFragment`、`EditAssetFragment`、`StatisticsFragment`、`SettingsFragment`、`SearchFragment`、`AgentFragment`、`AssetFragment`；其中当前“账本”一级页由 `StatisticsFragment` 承载，并在页内切换 `统计 / 明细` 两种视图
 - `adapter/`：RecyclerView 相关适配器；当前除通用列表外，也包含录入页抽屉相关适配器，如 `RecordAssetSheetAdapter`、`RecordCategoryTreeAdapter`
 - `database/`：SQLite 数据访问，核心在 `DatabaseHelper.kt`
 - `model/`：数据模型，包括记录、资产，以及 AI 助手会话 / 消息模型
@@ -40,10 +40,10 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 ### 文档与规划
 
 - `docs/requirements/plans/`：产品重开、信息架构、实现计划
-- `docs/design/guidelines/`：视觉和 Stitch 设计约束
+- `DESIGN.md`：当前视觉和交互设计约束
 - `docs/requirements/decisions/`：业务规则决策文档
 - `docs/archive/`：历史执行计划与归档草案
-- `docs/design/assets/stitch/`：Stitch 导出参考
+- `docs/design/assets/primitive-showcase/`：当前设计原语与状态展示
 
 ## 当前架构现实
 

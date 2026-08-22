@@ -21,6 +21,7 @@ import com.example.cardtally.adapter.IconPickerAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.CategoryHierarchySettingsHelper
+import com.example.cardtally.util.MaterialSymbolCatalog
 import com.google.android.material.tabs.TabLayout
 
 class CategoryManageFragment : Fragment() {
@@ -39,25 +40,7 @@ class CategoryManageFragment : Fragment() {
         override fun toString(): String = label
     }
 
-    private val availableIcons = listOf(
-        "ic_category_food",
-        "ic_category_transport",
-        "ic_category_shopping",
-        "ic_category_entertainment",
-        "ic_category_medical",
-        "ic_category_education",
-        "ic_category_housing",
-        "ic_category_communication",
-        "ic_category_salary",
-        "ic_category_bonus",
-        "ic_category_other",
-        "ic_category_clothing",
-        "ic_category_beauty",
-        "ic_category_sports",
-        "ic_category_travel",
-        "ic_category_pet",
-        "ic_category_gift"
-    )
+    private val availableIcons: List<String> = MaterialSymbolCatalog.icons
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -103,8 +86,6 @@ class CategoryManageFragment : Fragment() {
 
     private fun loadCategories() {
         val categories = databaseHelper.getCategoryTreeByType(currentType)
-        val categoryDepths = calculateCategoryDepths(categories)
-
         if (categories.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
             recyclerCategories.visibility = View.GONE
@@ -117,7 +98,6 @@ class CategoryManageFragment : Fragment() {
         if (adapter == null) {
             adapter = CategoryAdapter(
                 categories = categories,
-                categoryDepths = categoryDepths,
                 listener = object : CategoryAdapter.OnCategoryActionListener {
                     override fun onEdit(category: Category) {
                         showCategoryDialog(category)
@@ -126,11 +106,15 @@ class CategoryManageFragment : Fragment() {
                     override fun onDelete(category: Category) {
                         showDeleteDialog(category)
                     }
+
+                    override fun onAddChild(parent: Category) {
+                        showCategoryDialog(category = null, initialParentId = parent.id)
+                    }
                 }
             )
             recyclerCategories.adapter = adapter
         } else {
-            adapter?.updateCategories(categories, categoryDepths)
+            adapter?.updateCategories(categories)
         }
     }
 
@@ -236,7 +220,7 @@ class CategoryManageFragment : Fragment() {
         }
     }
 
-    private fun showCategoryDialog(category: Category?) {
+    private fun showCategoryDialog(category: Category?, initialParentId: Long? = null) {
         val isEditing = category != null
         val dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_add_category, null)
@@ -253,13 +237,13 @@ class CategoryManageFragment : Fragment() {
         editName.setText(category?.name.orEmpty())
         bindCategoryIcon(imageIcon, selectedIcon)
 
-        val selectedParentIndex = category?.parentId?.let { parentId ->
+        val selectedParentIndex = (category?.parentId ?: initialParentId)?.let { parentId ->
             parentOptions.indexOfFirst { it.category?.id == parentId }
         } ?: 0
         spinnerParent.setSelection(selectedParentIndex.coerceAtLeast(0))
 
         imageIcon.setOnClickListener {
-            showIconPickerDialog { icon ->
+            showIconPickerDialog(selectedIcon) { icon ->
                 selectedIcon = icon
                 bindCategoryIcon(imageIcon, selectedIcon)
             }
@@ -323,7 +307,10 @@ class CategoryManageFragment : Fragment() {
         dialog.show()
     }
 
-    private fun showIconPickerDialog(onIconSelected: (String?) -> Unit) {
+    private fun showIconPickerDialog(
+        selectedIcon: String?,
+        onIconSelected: (String?) -> Unit
+    ) {
         val builder = AlertDialog.Builder(requireContext())
         builder.setTitle(R.string.category_icon_picker_title)
 
@@ -331,12 +318,25 @@ class CategoryManageFragment : Fragment() {
         builder.setView(view)
 
         val recyclerIcons = view.findViewById<RecyclerView>(R.id.recycler_icons)
-        val iconAdapter = IconPickerAdapter(availableIcons, null) { icon ->
+        val iconAdapter = IconPickerAdapter(availableIcons, selectedIcon) { icon ->
             onIconSelected(icon)
         }
+        view.findViewById<EditText>(R.id.edit_icon_search).addTextChangedListener(
+            object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    iconAdapter.filter(s?.toString().orEmpty())
+                }
+                override fun afterTextChanged(s: android.text.Editable?) = Unit
+            }
+        )
         recyclerIcons.adapter = iconAdapter
 
         val dialog = builder.create()
+        iconAdapter.setOnIconSelected { icon ->
+            onIconSelected(icon)
+            dialog.dismiss()
+        }
         dialog.show()
     }
 

@@ -3,8 +3,8 @@
     <string name="app_name_en">CardTally</string>
     <string name="hello_world">Hello</string>
 
-    <string name="nav_home">Home</string>
-    <string name="nav_ledger">Ledger</string>
+    <string name="nav_ledger">Bills</string>
+    <string name="nav_statistics">Statistics</string>
     <string name="nav_assets">Assets</string>
     <string name="nav_agent">AI Agent</string>
     <string name="nav_me">Profile</string>
@@ -21,6 +21,15 @@
     <string name="ledger_mode_sheet_subtitle">Choose the ledger perspective you want to read right now.</string>
     <string name="ledger_empty_statistics">No statistics yet</string>
     <string name="ledger_empty_records">No records yet</string>
+    <string name="ledger_book_current">Current ledger: Daily ledger</string>
+    <string name="ledger_book_name">Daily ledger</string>
+    <string name="ledger_month_label">Month %1$d</string>
+    <string name="ledger_month_summary">This month</string>
+    <string name="ledger_month_summary_same_year">%1$d summary</string>
+    <string name="ledger_month_summary_other_year">%1$d/%2$02d</string>
+    <string name="ledger_balance">Balance</string>
+    <string name="ledger_book_switch_content_description">Switch ledger</string>
+    <string name="ledger_calendar_content_description">Choose month</string>
     <string name="ledger_period_week">Week</string>
     <string name="ledger_period_month">Month</string>
     <string name="ledger_period_year">Year</string>
@@ -45,13 +54,35 @@
     <string name="ledger_chart_mode_line">LINE</string>
     <string name="ledger_chart_mode_pie">PIE</string>
     <string name="ledger_chart_total_label">TOTAL</string>
-    <string name="ledger_records_section_title">Ledger Details</string>
+    <string name="ledger_chart_other">Other</string>
+    <string name="ledger_records_section_title">Details</string>
     <string name="ledger_summary_total_expense">Period Expense</string>
     <string name="ledger_summary_total_income">Period Income</string>
     <string name="ledger_summary_total_balance">Period Balance</string>
     <string name="ledger_summary_supporting_statistics">A quiet look at where this period moved and settled.</string>
     <string name="ledger_summary_badge_count">%1$d segments</string>
-    <string name="ledger_day_total">TOTAL: %1$s¥%2$.2f</string>
+    <string name="ledger_day_total">Total: %1$s¥%2$.2f</string>
+    <string name="ledger_day_income_expense">Expense: ¥%1$.2f  Income: ¥%2$.2f</string>
+    <string name="search_hint">Category, note, or amount</string>
+    <string name="search_all_time">All time ▼</string>
+    <string name="search_totals">Expense: ¥%1$.2f  Income: ¥%2$.2f</string>
+    <string name="search_no_results">No matching records</string>
+    <string name="search_date_range_title">Select date range</string>
+    <string name="search_range_all">All</string>
+    <string name="search_range_this_month">This month</string>
+    <string name="search_range_last_month">Last month</string>
+    <string name="search_range_this_week">This week</string>
+    <string name="search_range_three_months">3 months</string>
+    <string name="search_range_six_months">6 months</string>
+    <string name="search_range_this_year">This year</string>
+    <string name="search_range_last_year">Last year</string>
+    <string name="search_start_date">Start date</string>
+    <string name="search_end_date">End date</string>
+    <string name="dialog_done">Done</string>
+    <string name="ledger_previous_month_hint">Release to view %1$s</string>
+    <string name="ledger_next_month_hint">Release to view %1$s</string>
+    <string name="ledger_month_label_same_year">%1$d</string>
+    <string name="ledger_month_label_other_year">%1$d/%2$02d</string>
     <string name="ledger_statistics_entries_meta">%1$d ENTRIES</string>
     <string name="ledger_period_confirm">Confirm Range</string>
     <string name="ledger_period_reset">Reset</string>
@@ -65,6 +96,7 @@
     <string name="weekday_saturday_short">Sa</string>
     <string name="weekday_sunday_short">Su</string>
     <string name="categories">Categories</string>
+    <string name="category_manage_hint">Manage parent and child categories by money flow</string>
     <string name="budget">Budget</string>
     <string name="settings">Settings</string>
 
@@ -91,6 +123,7 @@
     <string name="record_date_display">%1$d/%2$d</string>
     <string name="record_category_unselected">Choose a category</string>
     <string name="record_asset_sheet_title">Select Asset</string>
+    <string name="calendar_day_summary">Expense: ¥%1$.2f  Income: ¥%2$.2f</string>
     <string name="record_asset_sheet_subtitle">Which account are you using for this entry?</string>
     <string name="record_asset_sheet_none_subtitle">Do not attach an asset</string>
     <string name="record_asset_sheet_none_amount">-</string>
@@ -103,6 +136,10 @@
     <string name="record_date_confirm">Confirm Date</string>
 
     <string name="asset_title_add">Add Asset</string>
+    <string name="asset_total_label">Total assets</string>
+    <string name="asset_accounts_title">Accounts</string>
+    <string name="asset_empty">No assets yet. Tap plus to add one.</string>
+    <string name="asset_archive_content_description">View archived assets</string>
     <string name="asset_title_edit">Edit Asset</string>
     <string name="asset_helper_copy">Record the balance I hold now</string>
     <string name="asset_name_label">Asset Name</string>
@@ -114,8 +151,7 @@
     <string name="asset_type_wechat">WeChat</string>
     <string name="asset_save_cta">Save Asset</string>
     <string name="asset_update_cta">Update Asset</string>
-    <string name="asset_delete_cta">Delete Asset</string>
-    <string name="asset_footer_note">CURATED DAILY LOG</string>
+    <string name="asset_delete_cta">Archive Asset</string>
     <string name="asset_toast_add_success">Added successfully</string>
     <string name="asset_toast_add_failed">Add failed</string>
 
@@ -133,7 +169,6 @@
     <string name="toast_update_success">Updated successfully</string>
     <string name="toast_update_failed">Update failed</string>
     <string name="toast_delete_success">Deleted successfully</string>
-    <string name="toast_theme_changed">Theme updated</string>
 
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_confirm">Confirm</string>
@@ -146,28 +181,8 @@
     <string name="delete_record_message">Are you sure you want to delete this record?</string>
     <string name="delete_selected_records_message">Are you sure you want to delete %1$d selected records?</string>
 
-    <string name="home_date_pattern">MMM dd EEE</string>
-    <string name="home_date_placeholder">Mar 27 Thu</string>
-    <string name="home_daily_log">CURATED DAILY LOG</string>
-    <string name="home_total_balance_label">TOTAL NET WORTH</string>
-    <string name="home_current_balance">CURRENT BALANCE</string>
     <string name="home_monthly_income">MONTHLY INCOME</string>
     <string name="home_monthly_expense">MONTHLY EXPENSE</string>
-    <string name="home_monthly_spend">MONTHLY SPEND</string>
-    <string name="home_daily_average">DAILY AVG</string>
-    <string name="home_agent_title">Your Financial Concierge</string>
-    <string name="home_agent_caption">FINANCIAL CONCIERGE</string>
-    <string name="home_agent_subtitle">&quot;You've stayed 12% under budget this week. Consider moving $500 to Vault.&quot;</string>
-    <string name="home_recent_entries">Recent Entries</string>
-    <string name="home_view_archive">VIEW ARCHIVE</string>
-    <string name="home_empty">Like a blank journal page,
-waiting for your first entry.</string>
-    <string name="home_empty_records_hint">No recent entries yet. Tap the bottom-right button to add one.</string>
-    <string name="home_record_today">Today</string>
-    <string name="home_record_yesterday">Yesterday</string>
-    <string name="home_recent_record_date_pattern">MMM d</string>
-    <string name="home_record_edit">Edit record</string>
-    <string name="home_record_delete">Delete record</string>
 
     <string name="agent_title">AI Assistant</string>
     <string name="agent_role_assistant">Assistant</string>
@@ -225,13 +240,12 @@ waiting for your first entry.</string>
     <string name="settings_profile_title">My Profile</string>
     <string name="settings_profile_tier">THE CONNOISSEUR TIER</string>
     <string name="settings_aesthetic_preferences">Aesthetic Preferences</string>
-    <string name="settings_theme_preferences">Theme Preferences</string>
     <string name="settings_language">Language</string>
     <string name="settings_journal_shortcut">Journal Shortcut</string>
     <string name="settings_journal_shortcut_hint">Direct access to new entries</string>
     <string name="settings_ai_assistant_group">AI Assistant</string>
     <string name="settings_ai_assistant_toggle">Show AI surfaces</string>
-    <string name="settings_ai_assistant_toggle_hint">Controls the Home card and bottom AI tab</string>
+    <string name="settings_ai_assistant_toggle_hint">Controls the AI Assistant entry and tab</string>
     <string name="settings_ai_api_key">API Configuration</string>
     <string name="settings_ai_api_key_status_not_set">Needs setup</string>
     <string name="settings_ai_api_key_status_saved">Ready</string>
@@ -244,13 +258,16 @@ waiting for your first entry.</string>
     <string name="settings_category_max_depth_invalid">Enter a valid depth value</string>
     <string name="settings_category_max_depth_too_small">Current categories already use %1$d levels. Save a value at or above that depth.</string>
     <string name="settings_account_assets">Account Assets</string>
+    <string name="settings_scroll_top_fab">Show back-to-top button</string>
+    <string name="settings_scroll_top_fab_hint">Show after scrolling the ledger</string>
+    <string name="content_description_scroll_top">Back to top</string>
     <string name="settings_about_section">The Chronicle</string>
     <string name="settings_story_title">The Chronicle Story</string>
     <string name="settings_story_body">Discover the philosophy behind your financial diary and our commitment to quiet luxury and data sovereignty.</string>
     <string name="settings_member_footer">MEMBER SINCE 2026 • CARDTALLY V4.2.1</string>
 
     <string name="category_empty">No categories yet</string>
-    <string name="category_add_cta">Add Category</string>
+    <string name="category_add_cta">Add top-level category</string>
     <string name="category_add_title">Add Category</string>
     <string name="category_edit_title">Edit Category</string>
     <string name="category_delete_title">Delete Category</string>
@@ -263,6 +280,10 @@ waiting for your first entry.</string>
     <string name="category_dialog_icon_label">Icon</string>
     <string name="category_dialog_icon_hint">Tap the icon to choose</string>
     <string name="category_icon_picker_title">Choose Icon</string>
+    <string name="category_icon_search_hint">Search icons, e.g. transport, food, home</string>
+    <string name="category_add_child_cta">Add subcategory</string>
+    <string name="category_expand_content_description">Expand or collapse subcategories</string>
+    <string name="category_drag_content_description">Drag to reorder</string>
     <string name="category_action_edit">Edit category</string>
     <string name="category_action_delete">Delete category</string>
     <string name="category_error_empty_name">Category name cannot be empty</string>
@@ -285,14 +306,6 @@ waiting for your first entry.</string>
         <item>en</item>
     </string-array>
 
-    <string name="theme_settings_title">Theme Settings</string>
-    <string name="theme_select_label">Choose Theme</string>
-    <string name="theme_basic_label">Base Themes</string>
-    <string name="theme_light">Light Theme</string>
-    <string name="theme_dark">Dark Theme</string>
-    <string name="theme_system">Follow System</string>
-    <string name="theme_hint">Note: Restart the app after changing the theme for full effect.</string>
-
     <string name="ai_settings_title">API Configuration</string>
     <string name="ai_settings_api_key_group">API Configuration</string>
     <string name="ai_settings_api_key_description">Save the API chat configuration used on this device. The API key stays on-device, while the model and full request URL remain editable.</string>
@@ -309,9 +322,4 @@ Default request URL: https://api.minimax.io/v1/text/chatcompletion_v2</string>
     <string name="ai_settings_save">Save</string>
     <string name="toast_ai_api_key_saved">API settings saved</string>
 
-    <string-array name="theme_names">
-        <item>@string/theme_light</item>
-        <item>@string/theme_dark</item>
-        <item>@string/theme_system</item>
-    </string-array>
 </resources>

@@ -25,7 +25,9 @@ data class LedgerCalendarDay(
     val isRangeStart: Boolean,
     val isRangeEnd: Boolean,
     val isInSelectedRange: Boolean,
-    val isToday: Boolean
+    val isToday: Boolean,
+    val income: Double = 0.0,
+    val expense: Double = 0.0
 )
 
 object LedgerPeriodHelper {

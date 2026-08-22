@@ -7,14 +7,17 @@ import android.widget.ImageView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
+import com.example.cardtally.util.MaterialSymbolCatalog
 
 class IconPickerAdapter(
-    private val icons: List<String>,
+    private val allIcons: List<String>,
     private val selectedIcon: String?,
     private val onIconSelected: (String?) -> Unit
 ) : RecyclerView.Adapter<IconPickerAdapter.IconViewHolder>() {
 
+    private var icons: List<String> = allIcons
     private var selectedPosition = -1
+    private var selectionListener: ((String?) -> Unit)? = onIconSelected
 
     init {
         if (selectedIcon != null) {
@@ -31,14 +34,11 @@ class IconPickerAdapter(
     override fun onBindViewHolder(holder: IconViewHolder, position: Int) {
         val iconName = icons[position]
         
-        val resourceId = holder.itemView.context.resources.getIdentifier(
-            iconName,
-            "drawable",
-            holder.itemView.context.packageName
-        )
-        
+        val resourceId = MaterialSymbolCatalog.resourceId(iconName)
         if (resourceId != 0) {
             holder.imageIcon.setImageResource(resourceId)
+        } else {
+            holder.imageIcon.setImageDrawable(null)
         }
 
         if (position == selectedPosition) {
@@ -50,13 +50,28 @@ class IconPickerAdapter(
         holder.itemView.setOnClickListener {
             val previousPosition = selectedPosition
             selectedPosition = holder.adapterPosition
-            notifyItemChanged(previousPosition)
-            notifyItemChanged(selectedPosition)
-            onIconSelected(iconName)
+            if (previousPosition >= 0) notifyItemChanged(previousPosition)
+            if (selectedPosition >= 0) notifyItemChanged(selectedPosition)
+            selectionListener?.invoke(iconName)
         }
     }
 
     override fun getItemCount(): Int = icons.size
+
+    fun filter(query: String) {
+        val normalizedQuery = query.trim().lowercase()
+        icons = if (normalizedQuery.isEmpty()) {
+            allIcons
+        } else {
+            allIcons.filter { it.lowercase().contains(normalizedQuery) }
+        }
+        selectedPosition = icons.indexOf(selectedIcon)
+        notifyDataSetChanged()
+    }
+
+    fun setOnIconSelected(listener: (String?) -> Unit) {
+        selectionListener = listener
+    }
 
     class IconViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val cardView: CardView = itemView.findViewById(R.id.card_view)

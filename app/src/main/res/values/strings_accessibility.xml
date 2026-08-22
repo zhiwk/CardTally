@@ -6,12 +6,10 @@
     <string name="content_description_edit">编辑记录</string>
     <string name="content_description_delete">删除记录</string>
     <string name="content_description_search">搜索记录</string>
-    <string name="content_description_home">首页</string>
     <string name="content_description_statistics">统计分析</string>
     <string name="content_description_settings">设置</string>
     <string name="content_description_categories">分类管理</string>
     <string name="content_description_assets">资产管理</string>
-    <string name="content_description_theme">主题设置</string>
     <string name="content_description_export">导出数据</string>
     <string name="content_description_budget">预算管理</string>
     <string name="content_description_prev_month">上个月</string>
@@ -39,9 +37,6 @@
     <string name="content_description_budget_used">已用预算</string>
     <string name="content_description_budget_total">总预算</string>
     <string name="content_description_budget_remaining">剩余预算</string>
-    <string name="content_description_light_theme">浅色主题</string>
-    <string name="content_description_dark_theme">深色主题</string>
-    <string name="content_description_system_theme">跟随系统</string>
     <string name="content_description_category_statistics">按分类统计</string>
     <string name="content_description_time_statistics">按时间统计</string>
     <string name="content_description_empty_records">暂无记录</string>

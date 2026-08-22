@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/colorBackground"
+    android:background="@color/surface_container"
     tools:context=".StatisticsFragment">
 
     <androidx.core.widget.NestedScrollView
@@ -34,7 +34,7 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/nav_ledger"
+                    android:contentDescription="@string/nav_statistics"
                     android:src="@drawable/ic_menu"
                     app:tint="?attr/colorPrimary" />
 
@@ -44,7 +44,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="@string/nav_ledger"
+                    android:text="@string/nav_statistics"
                     android:textColor="?attr/colorPrimary"
                     android:textSize="24sp"
                     android:textStyle="italic"
@@ -164,7 +164,7 @@
                     android:textColor="@color/editorial_text_muted"
                     android:textSize="14sp"
                     android:textStyle="italic"
-                    android:fontFamily="serif"
+                    android:fontFamily="sans-serif-medium"
                     android:alpha="0.8"
                     android:letterSpacing="0.02"
                     tools:text="Apr 1, 2026 - Apr 30, 2026" />
@@ -234,7 +234,7 @@
                                         android:layout_marginTop="6dp"
                                         android:textColor="?attr/colorPrimary"
                                         android:textSize="34sp"
-                                        android:fontFamily="serif"
+                        android:fontFamily="sans-serif-medium"
                                         tools:text="¥4,280.00" />
 
                                     <TextView
@@ -287,7 +287,7 @@
                                     android:layout_marginTop="4dp"
                                     android:textColor="@color/income_primary"
                                     android:textSize="18sp"
-                                    android:fontFamily="serif"
+                                    android:fontFamily="sans-serif-medium"
                                     tools:text="¥12,300.00" />
                             </LinearLayout>
 
@@ -311,7 +311,7 @@
                                     android:layout_marginTop="4dp"
                                     android:textColor="@color/expense_primary"
                                     android:textSize="18sp"
-                                    android:fontFamily="serif"
+                                android:fontFamily="sans-serif-medium"
                                     tools:text="¥8,020.00" />
                             </LinearLayout>
                             </LinearLayout>
@@ -511,7 +511,7 @@
                             android:textColor="@color/editorial_text_muted"
                             android:textSize="20sp"
                             android:textStyle="italic"
-                            android:fontFamily="serif"
+                            android:fontFamily="sans-serif-medium"
                             tools:text="真正的宽裕，是在清醒记录里仍能保有从容。" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>

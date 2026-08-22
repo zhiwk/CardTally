@@ -5,7 +5,10 @@
     android:layout_height="wrap_content"
     android:gravity="bottom"
     android:orientation="horizontal"
-    android:paddingTop="26dp"
+    android:background="@android:color/transparent"
+    android:paddingStart="16dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
     android:paddingBottom="12dp">
 
     <TextView
@@ -13,10 +16,9 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:fontFamily="serif"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="22sp"
-        android:textStyle="italic"
+        android:textSize="11sp"
+        android:textStyle="bold"
         tools:text="Tuesday, 14th" />
 
     <TextView

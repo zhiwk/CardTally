@@ -219,13 +219,12 @@ class DateGroupAdapter(
 
         fun bind(dateGroup: DateGroup) {
             textDate.text = LedgerDisplayHelper.formatDateHeader(dateGroup.date)
-            val total = dateGroup.records.sumOf { record ->
-                if (record.type == 1) record.amount else -record.amount
-            }
+            val expense = dateGroup.records.filter { it.type == 0 }.sumOf { it.amount }
+            val income = dateGroup.records.filter { it.type == 1 }.sumOf { it.amount }
             textDateTotal.text = itemView.context.getString(
-                R.string.ledger_day_total,
-                if (total >= 0) "+" else "-",
-                kotlin.math.abs(total)
+                R.string.ledger_day_income_expense,
+                expense,
+                income
             )
         }
     }
@@ -238,6 +237,7 @@ class DateGroupAdapter(
         private val textCategory: TextView = itemView.findViewById(R.id.text_category)
         private val textTime: TextView = itemView.findViewById(R.id.text_time)
         private val textDescription: TextView = itemView.findViewById(R.id.text_description)
+        private val textAsset: TextView = itemView.findViewById(R.id.text_asset)
         private val textAmount: TextView = itemView.findViewById(R.id.text_amount)
         private val btnEdit: ImageButton = itemView.findViewById(R.id.btn_edit)
         private val btnDelete: ImageButton = itemView.findViewById(R.id.btn_delete)
@@ -269,7 +269,9 @@ class DateGroupAdapter(
                 ?: record.category
             val categoryLabel = record.categoryPathSnapshot?.takeIf { it.isNotBlank() } ?: record.category
             textCategory.text = title
-            textTime.text = buildSubtitle(record, categoryLabel)
+            textTime.text = buildSubtitle(record)
+            textAsset.text = record.assetSource?.takeIf { it.isNotBlank() }.orEmpty()
+            textAsset.visibility = if (textAsset.text.isNullOrBlank()) View.GONE else View.VISIBLE
             imageIcon.setImageResource(categoryIcons[record.category] ?: R.drawable.ic_category_other)
 
             textDescription.visibility = View.GONE
@@ -334,15 +336,12 @@ class DateGroupAdapter(
             }
         }
 
-        private fun buildSubtitle(record: Record, categoryLabel: String): String {
-            val leadingLabel = record.assetSource?.takeIf { it.isNotBlank() }
-                ?: categoryLabel.substringAfterLast('/')
-            val typeLabel = if (record.type == 1) {
+        private fun buildSubtitle(record: Record): String {
+            return if (record.type == 1) {
                 itemView.context.getString(R.string.record_type_income)
             } else {
                 itemView.context.getString(R.string.record_type_expense)
             }
-            return "$leadingLabel • $typeLabel"
         }
     }
 }

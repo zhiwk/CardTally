@@ -30,83 +30,13 @@
         <item name="colorOnErrorContainer">@color/onErrorContainer_light</item>
         <item name="colorPlaceholder">@color/placeholder_light</item>
         <item name="android:windowBackground">@color/background_light</item>
+        <item name="android:statusBarColor">@color/background_light</item>
+        <item name="android:navigationBarColor">@color/background_light</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowAnimationStyle">@style/Theme.CardTally.WindowAnimation</item>
         <item name="android:textColorPrimary">@color/onBackground_light</item>
         <item name="android:textColorSecondary">@color/onSurface_light</item>
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-    </style>
-
-    <style name="Theme.CardTally.Dark" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">@color/primary_dark</item>
-        <item name="colorPrimaryVariant">@color/primaryVariant_dark</item>
-        <item name="colorOnPrimary">@color/onPrimary_dark</item>
-        <item name="colorPrimaryContainer">@color/primaryContainer_dark</item>
-        <item name="colorOnPrimaryContainer">@color/onPrimaryContainer_dark</item>
-        <item name="colorSecondary">@color/secondary_dark</item>
-        <item name="colorSecondaryVariant">@color/secondaryVariant_dark</item>
-        <item name="colorOnSecondary">@color/onSecondary_dark</item>
-        <item name="colorSecondaryContainer">@color/secondaryContainer_dark</item>
-        <item name="colorOnSecondaryContainer">@color/onSecondaryContainer_dark</item>
-        <item name="android:colorBackground">@color/background_dark</item>
-        <item name="colorOnBackground">@color/onBackground_dark</item>
-        <item name="colorSurface">@color/surface_dark</item>
-        <item name="colorOnSurface">@color/onSurface_dark</item>
-        <item name="colorSurfaceVariant">@color/surfaceVariant_dark</item>
-        <item name="colorOnSurfaceVariant">@color/onSurfaceVariant_dark</item>
-        <item name="colorSurfaceContainerLowest">@color/surface_container_lowest_dark</item>
-        <item name="colorSurfaceContainerLow">@color/surface_container_low_dark</item>
-        <item name="colorSurfaceContainer">@color/surface_container_dark</item>
-        <item name="colorSurfaceContainerHigh">@color/surface_container_high_dark</item>
-        <item name="colorSurfaceContainerHighest">@color/surface_container_highest_dark</item>
-        <item name="colorOutline">@color/outline_dark</item>
-        <item name="colorOutlineVariant">@color/outlineVariant_dark</item>
-        <item name="colorError">@color/error_dark</item>
-        <item name="colorOnError">@color/onError_dark</item>
-        <item name="colorErrorContainer">@color/errorContainer_dark</item>
-        <item name="colorOnErrorContainer">@color/onErrorContainer_dark</item>
-        <item name="colorPlaceholder">@color/placeholder_dark</item>
-        <item name="android:windowBackground">@color/background_dark</item>
-        <item name="android:windowAnimationStyle">@style/Theme.CardTally.WindowAnimation</item>
-        <item name="android:textColorPrimary">@color/onBackground_dark</item>
-        <item name="android:textColorSecondary">@color/onSurface_dark</item>
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-    </style>
-
-    <style name="Theme.CardTally.System" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/primary_system</item>
-        <item name="colorPrimaryVariant">@color/primaryVariant_system</item>
-        <item name="colorOnPrimary">@color/onPrimary_system</item>
-        <item name="colorPrimaryContainer">@color/primaryContainer_system</item>
-        <item name="colorOnPrimaryContainer">@color/onPrimaryContainer_system</item>
-        <item name="colorSecondary">@color/secondary_system</item>
-        <item name="colorSecondaryVariant">@color/secondaryVariant_system</item>
-        <item name="colorOnSecondary">@color/onSecondary_system</item>
-        <item name="colorSecondaryContainer">@color/secondaryContainer_system</item>
-        <item name="colorOnSecondaryContainer">@color/onSecondaryContainer_system</item>
-        <item name="android:colorBackground">@color/background_system</item>
-        <item name="colorOnBackground">@color/onBackground_system</item>
-        <item name="colorSurface">@color/surface_system</item>
-        <item name="colorOnSurface">@color/onSurface_system</item>
-        <item name="colorSurfaceVariant">@color/surfaceVariant_system</item>
-        <item name="colorOnSurfaceVariant">@color/onSurfaceVariant_system</item>
-        <item name="colorSurfaceContainerLowest">@color/surfaceContainerLowest_system</item>
-        <item name="colorSurfaceContainerLow">@color/surfaceContainerLow_system</item>
-        <item name="colorSurfaceContainer">@color/surfaceContainer_system</item>
-        <item name="colorSurfaceContainerHigh">@color/surfaceContainerHigh_system</item>
-        <item name="colorSurfaceContainerHighest">@color/surfaceContainerHighest_system</item>
-        <item name="colorOutline">@color/outline_system</item>
-        <item name="colorOutlineVariant">@color/outlineVariant_system</item>
-        <item name="colorError">@color/error_system</item>
-        <item name="colorOnError">@color/onError_system</item>
-        <item name="colorErrorContainer">@color/errorContainer_system</item>
-        <item name="colorOnErrorContainer">@color/onErrorContainer_system</item>
-        <item name="colorPlaceholder">@color/placeholder_system</item>
-        <item name="android:windowBackground">@color/background_system</item>
-        <item name="android:windowAnimationStyle">@style/Theme.CardTally.WindowAnimation</item>
-        <item name="android:textColorPrimary">@color/onBackground_system</item>
-        <item name="android:textColorSecondary">@color/onSurface_system</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
@@ -125,8 +55,8 @@
         <item name="cornerFamilyTopRight">rounded</item>
         <item name="cornerFamilyBottomLeft">rounded</item>
         <item name="cornerFamilyBottomRight">rounded</item>
-        <item name="cornerSizeTopLeft">22dp</item>
-        <item name="cornerSizeTopRight">22dp</item>
+        <item name="cornerSizeTopLeft">20dp</item>
+        <item name="cornerSizeTopRight">20dp</item>
         <item name="cornerSizeBottomLeft">0dp</item>
         <item name="cornerSizeBottomRight">0dp</item>
     </style>
@@ -136,11 +66,21 @@
         <item name="cornerSize">18dp</item>
     </style>
 
+    <style name="ShapeAppearanceOverlay.CardTally.FabCircle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
     <style name="App.Custom.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">?attr/colorSurfaceContainerHigh</item>
+        <item name="android:color">@android:color/transparent</item>
         <item name="android:width">74dp</item>
         <item name="android:height">40dp</item>
         <item name="android:radius">16dp</item>
+    </style>
+
+    <style name="ThemeOverlay.CardTally.NumberPicker" parent="ThemeOverlay.Material3">
+        <item name="android:colorAccent">@color/primary_light</item>
+        <item name="android:textColorPrimary">@color/onSurface_light</item>
     </style>
 
 </resources>

@@ -15,6 +15,7 @@ import com.example.cardtally.util.CategoryHierarchySettingsHelper
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 
 class DatabaseHelper(
     private val appContext: Context
@@ -34,9 +35,20 @@ class DatabaseHelper(
         val error: CategoryOperationError
     ) : IllegalArgumentException(error.name)
 
+    enum class AssetOperationError {
+        NOT_ARCHIVED,
+        IN_USE_BY_RECORDS
+    }
+
+    class AssetOperationException(
+        val error: AssetOperationError
+    ) : IllegalArgumentException(error.name)
+
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
-        private const val DATABASE_VERSION = 10
+        private const val DATABASE_VERSION = 11
+        const val MAX_RECORD_QUERY_LIMIT = 200
+        const val RECORD_UNDO_WINDOW_MS = 10_000L
 
         private const val TABLE_RECORDS = "records"
         private const val COLUMN_ID = "id"
@@ -50,6 +62,11 @@ class DatabaseHelper(
         private const val COLUMN_DESCRIPTION = "description"
         private const val COLUMN_ASSET_SOURCE = "asset_source"
         private const val COLUMN_SORT_ORDER = "sort_order"
+
+        private const val TABLE_RECORD_DELETION_UNDO = "record_deletion_undo"
+        private const val COLUMN_UNDO_TOKEN = "undo_token"
+        private const val COLUMN_UNDO_EXPIRES_AT = "expires_at"
+        private const val COLUMN_UNDO_BALANCE_DELTA = "balance_delta"
 
         private const val TABLE_CATEGORIES = "categories"
         private const val COLUMN_CATEGORY_ID = "id"
@@ -109,6 +126,23 @@ class DatabaseHelper(
             "$COLUMN_ASSET_TYPE INTEGER NOT NULL, " +
             "$COLUMN_ASSET_IS_ARCHIVED INTEGER DEFAULT 0)"
 
+        private const val CREATE_TABLE_RECORD_DELETION_UNDO =
+            "CREATE TABLE $TABLE_RECORD_DELETION_UNDO (" +
+            "$COLUMN_UNDO_TOKEN TEXT PRIMARY KEY, " +
+            "$COLUMN_UNDO_EXPIRES_AT INTEGER NOT NULL, " +
+            "$COLUMN_UNDO_BALANCE_DELTA REAL NOT NULL, " +
+            "$COLUMN_ID INTEGER NOT NULL, " +
+            "$COLUMN_DATE TEXT NOT NULL, " +
+            "$COLUMN_AMOUNT REAL NOT NULL, " +
+            "$COLUMN_CATEGORY TEXT NOT NULL, " +
+            "$COLUMN_RECORD_CATEGORY_ID INTEGER, " +
+            "$COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT TEXT, " +
+            "$COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT TEXT, " +
+            "$COLUMN_TYPE INTEGER NOT NULL, " +
+            "$COLUMN_DESCRIPTION TEXT, " +
+            "$COLUMN_ASSET_SOURCE TEXT, " +
+            "$COLUMN_SORT_ORDER INTEGER NOT NULL)"
+
         private const val CREATE_TABLE_AI_CHAT_SESSIONS =
             "CREATE TABLE $TABLE_AI_CHAT_SESSIONS (" +
             "$COLUMN_AI_CHAT_SESSION_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -132,10 +166,26 @@ class DatabaseHelper(
             "CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_session_created_at ON $TABLE_AI_CHAT_MESSAGES($COLUMN_AI_CHAT_MESSAGE_SESSION_ID, $COLUMN_AI_CHAT_MESSAGE_CREATED_AT ASC)"
     }
 
+    data class RecordPageCursor(
+        val sortOrder: Int,
+        val recordId: Long
+    )
+
+    data class RecordPage(
+        val records: List<Record>,
+        val nextCursor: RecordPageCursor?
+    )
+
+    data class RecordDeletionToken(
+        val value: String,
+        val expiresAtEpochMs: Long
+    )
+
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(CREATE_TABLE_RECORDS)
         db.execSQL(CREATE_TABLE_CATEGORIES)
         db.execSQL(CREATE_TABLE_ASSETS)
+        db.execSQL(CREATE_TABLE_RECORD_DELETION_UNDO)
         db.execSQL(CREATE_TABLE_AI_CHAT_SESSIONS)
         db.execSQL(CREATE_TABLE_AI_CHAT_MESSAGES)
         db.execSQL(CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT)
@@ -199,6 +249,9 @@ class DatabaseHelper(
                 alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT TEXT"
             )
             backfillLegacyRecordCategorySnapshots(db)
+        }
+        if (oldVersion < 11) {
+            db.execSQL(CREATE_TABLE_RECORD_DELETION_UNDO)
         }
     }
 
@@ -475,12 +528,18 @@ class DatabaseHelper(
 
     private fun categoryIsReferencedByRecordId(db: SQLiteDatabase, id: Long): Boolean {
         val cursor = db.rawQuery(
-            "SELECT COUNT(*) FROM $TABLE_RECORDS WHERE $COLUMN_RECORD_CATEGORY_ID = ?",
-            arrayOf(id.toString())
+            "SELECT 1 FROM (" +
+                "SELECT $COLUMN_RECORD_CATEGORY_ID FROM $TABLE_RECORDS " +
+                "WHERE $COLUMN_RECORD_CATEGORY_ID = ? " +
+                "UNION ALL " +
+                "SELECT $COLUMN_RECORD_CATEGORY_ID FROM $TABLE_RECORD_DELETION_UNDO " +
+                "WHERE $COLUMN_RECORD_CATEGORY_ID = ? AND $COLUMN_UNDO_EXPIRES_AT > ?" +
+                ") LIMIT 1",
+            arrayOf(id.toString(), id.toString(), System.currentTimeMillis().toString())
         )
 
         cursor.use {
-            return it.moveToFirst() && it.getInt(0) > 0
+            return it.moveToFirst()
         }
     }
 
@@ -570,17 +629,164 @@ class DatabaseHelper(
         return record
     }
 
-    fun deleteRecord(id: Long) {
+    fun deleteRecord(
+        id: Long,
+        deletedAtEpochMs: Long = System.currentTimeMillis()
+    ): RecordDeletionToken? {
         val db = writableDatabase
-        
-        val record = getRecordByIdInternal(db, id)
-        
-        db.delete(TABLE_RECORDS, "$COLUMN_ID = ?", arrayOf(id.toString()))
-        
-        val assetSource = record?.assetSource
-        if (record != null && !assetSource.isNullOrEmpty()) {
-            updateAssetAmount(db, assetSource, record.amount, record.type != 1)
+        db.beginTransaction()
+        try {
+            db.delete(
+                TABLE_RECORD_DELETION_UNDO,
+                "$COLUMN_UNDO_EXPIRES_AT <= ?",
+                arrayOf(deletedAtEpochMs.toString())
+            )
+            val record = getRecordByIdInternal(db, id)
+            if (record == null) {
+                db.setTransactionSuccessful()
+                return null
+            }
+
+            val assetSource = record.assetSource
+            val requestedBalanceDelta = if (record.type == 1) -record.amount else record.amount
+            val appliedBalanceDelta = if (
+                assetSource.isNullOrEmpty() ||
+                !db.adjustAssetBalance(assetSource, requestedBalanceDelta, activeOnly = true)
+            ) {
+                0.0
+            } else {
+                requestedBalanceDelta
+            }
+            val token = RecordDeletionToken(
+                value = UUID.randomUUID().toString(),
+                expiresAtEpochMs = deletedAtEpochMs + RECORD_UNDO_WINDOW_MS
+            )
+            val undoValues = createRecordDeletionUndoValues(record, token, appliedBalanceDelta)
+            check(db.insertOrThrow(TABLE_RECORD_DELETION_UNDO, null, undoValues) != -1L)
+            check(db.delete(TABLE_RECORDS, "$COLUMN_ID = ?", arrayOf(id.toString())) == 1)
+
+            db.setTransactionSuccessful()
+            return token
+        } finally {
+            db.endTransaction()
         }
+    }
+
+    fun undoRecordDeletion(
+        token: RecordDeletionToken,
+        nowEpochMs: Long = System.currentTimeMillis()
+    ): Boolean {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val cursor = db.rawQuery(
+                "SELECT * FROM $TABLE_RECORD_DELETION_UNDO WHERE $COLUMN_UNDO_TOKEN = ?",
+                arrayOf(token.value)
+            )
+            val undoEntry = cursor.use {
+                if (!it.moveToFirst()) {
+                    null
+                } else {
+                    RecordDeletionUndoEntry(
+                        record = createRecordFromCursor(it),
+                        expiresAtEpochMs = it.getLong(it.getColumnIndexOrThrow(COLUMN_UNDO_EXPIRES_AT)),
+                        balanceDelta = it.getDouble(it.getColumnIndexOrThrow(COLUMN_UNDO_BALANCE_DELTA))
+                    )
+                }
+            }
+            if (undoEntry == null) {
+                db.setTransactionSuccessful()
+                return false
+            }
+            if (nowEpochMs >= undoEntry.expiresAtEpochMs) {
+                db.delete(TABLE_RECORD_DELETION_UNDO, "$COLUMN_UNDO_TOKEN = ?", arrayOf(token.value))
+                db.setTransactionSuccessful()
+                return false
+            }
+
+            val recordValues = createRecordValues(undoEntry.record).apply {
+                put(COLUMN_ID, undoEntry.record.id)
+                put(COLUMN_SORT_ORDER, undoEntry.record.sortOrder)
+                putNullable(COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT, undoEntry.record.categoryNameSnapshot)
+                putNullable(COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT, undoEntry.record.categoryPathSnapshot)
+            }
+            db.insertOrThrow(TABLE_RECORDS, null, recordValues)
+            val assetSource = undoEntry.record.assetSource
+            if (!assetSource.isNullOrEmpty() && undoEntry.balanceDelta != 0.0) {
+                check(db.adjustAssetBalance(assetSource, -undoEntry.balanceDelta, activeOnly = false))
+            }
+            check(
+                db.delete(
+                    TABLE_RECORD_DELETION_UNDO,
+                    "$COLUMN_UNDO_TOKEN = ?",
+                    arrayOf(token.value)
+                ) == 1
+            )
+
+            db.setTransactionSuccessful()
+            return true
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    private data class RecordDeletionUndoEntry(
+        val record: Record,
+        val expiresAtEpochMs: Long,
+        val balanceDelta: Double
+    )
+
+    private fun createRecordDeletionUndoValues(
+        record: Record,
+        token: RecordDeletionToken,
+        balanceDelta: Double
+    ): ContentValues {
+        return ContentValues().apply {
+            put(COLUMN_UNDO_TOKEN, token.value)
+            put(COLUMN_UNDO_EXPIRES_AT, token.expiresAtEpochMs)
+            put(COLUMN_UNDO_BALANCE_DELTA, balanceDelta)
+            put(COLUMN_ID, record.id)
+            put(COLUMN_DATE, record.date)
+            put(COLUMN_AMOUNT, record.amount)
+            put(COLUMN_CATEGORY, record.category)
+            putNullable(COLUMN_RECORD_CATEGORY_ID, record.categoryId)
+            putNullable(COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT, record.categoryNameSnapshot)
+            putNullable(COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT, record.categoryPathSnapshot)
+            put(COLUMN_TYPE, record.type)
+            putNullable(COLUMN_DESCRIPTION, record.description)
+            putNullable(COLUMN_ASSET_SOURCE, record.assetSource)
+            put(COLUMN_SORT_ORDER, record.sortOrder)
+        }
+    }
+
+    private fun ContentValues.putNullable(columnName: String, value: String?) {
+        if (value == null) putNull(columnName) else put(columnName, value)
+    }
+
+    private fun ContentValues.putNullable(columnName: String, value: Long?) {
+        if (value == null) putNull(columnName) else put(columnName, value)
+    }
+
+    private fun SQLiteDatabase.adjustAssetBalance(
+        assetName: String,
+        delta: Double,
+        activeOnly: Boolean
+    ): Boolean {
+        val archiveClause = if (activeOnly) " AND $COLUMN_ASSET_IS_ARCHIVED = 0" else ""
+        val cursor = rawQuery(
+            "SELECT 1 FROM $TABLE_ASSETS WHERE $COLUMN_ASSET_NAME = ?$archiveClause LIMIT 1",
+            arrayOf(assetName)
+        )
+        val assetExists = cursor.use { it.moveToFirst() }
+        if (!assetExists) {
+            return false
+        }
+        execSQL(
+            "UPDATE $TABLE_ASSETS SET $COLUMN_ASSET_AMOUNT = $COLUMN_ASSET_AMOUNT + ? " +
+                "WHERE $COLUMN_ASSET_NAME = ?$archiveClause",
+            arrayOf(delta, assetName)
+        )
+        return true
     }
 
     private fun updateAssetAmount(db: SQLiteDatabase, assetName: String, amount: Double, isAdd: Boolean) {
@@ -624,9 +830,9 @@ class DatabaseHelper(
         }
     }
 
-    fun getCurrentDate(): String {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        return sdf.format(Date())
+    fun getCurrentDate(nowMillis: Long = System.currentTimeMillis()): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        return sdf.format(Date(nowMillis))
     }
 
     fun addCategory(category: Category): Long {
@@ -840,25 +1046,45 @@ class DatabaseHelper(
         return records
     }
 
-    fun getLatestRecordDayRecords(): List<Record> {
+    fun getTodayRecordsPage(
+        todayDate: String = getCurrentDate(),
+        after: RecordPageCursor? = null
+    ): RecordPage {
         val records = mutableListOf<Record>()
-        val selectQuery =
-            "SELECT * FROM $TABLE_RECORDS " +
-                "WHERE $COLUMN_DATE = (SELECT MAX($COLUMN_DATE) FROM $TABLE_RECORDS) " +
-                "ORDER BY $COLUMN_SORT_ORDER ASC"
+        val query: String
+        val arguments: Array<String>
+        if (after == null) {
+            query =
+                "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_DATE = ? " +
+                    "ORDER BY $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC LIMIT $MAX_RECORD_QUERY_LIMIT"
+            arguments = arrayOf(todayDate)
+        } else {
+            query =
+                "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_DATE = ? " +
+                    "AND ($COLUMN_SORT_ORDER > ? OR ($COLUMN_SORT_ORDER = ? AND $COLUMN_ID > ?)) " +
+                    "ORDER BY $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC LIMIT $MAX_RECORD_QUERY_LIMIT"
+            arguments = arrayOf(
+                todayDate,
+                after.sortOrder.toString(),
+                after.sortOrder.toString(),
+                after.recordId.toString()
+            )
+        }
 
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, null)
-
+        val cursor = readableDatabase.rawQuery(query, arguments)
         if (cursor.moveToFirst()) {
             do {
                 records.add(createRecordFromCursor(cursor))
             } while (cursor.moveToNext())
         }
-
         cursor.close()
-        db.close()
-        return records
+
+        val nextCursor = if (records.size == MAX_RECORD_QUERY_LIMIT) {
+            records.last().let { RecordPageCursor(it.sortOrder, it.id) }
+        } else {
+            null
+        }
+        return RecordPage(records, nextCursor)
     }
 
     fun getRecordsByAssetSource(assetSource: String): List<Record> {
@@ -1036,10 +1262,48 @@ class DatabaseHelper(
         return rowsAffected
     }
 
-    fun deleteAsset(id: Long) {
+    fun deleteArchivedAsset(id: Long): Boolean {
         val db = writableDatabase
-        db.delete(TABLE_ASSETS, "$COLUMN_ASSET_ID = ?", arrayOf(id.toString()))
-        db.close()
+        db.beginTransaction()
+        try {
+            val cursor = db.rawQuery(
+                "SELECT $COLUMN_ASSET_NAME, $COLUMN_ASSET_IS_ARCHIVED FROM $TABLE_ASSETS " +
+                    "WHERE $COLUMN_ASSET_ID = ?",
+                arrayOf(id.toString())
+            )
+            val asset = cursor.use {
+                if (!it.moveToFirst()) null else Pair(it.getString(0), it.getInt(1) == 1)
+            }
+            if (asset == null) {
+                db.setTransactionSuccessful()
+                return false
+            }
+            if (!asset.second) {
+                throw AssetOperationException(AssetOperationError.NOT_ARCHIVED)
+            }
+            if (assetNameIsReferenced(db, asset.first)) {
+                throw AssetOperationException(AssetOperationError.IN_USE_BY_RECORDS)
+            }
+
+            val deleted = db.delete(TABLE_ASSETS, "$COLUMN_ASSET_ID = ?", arrayOf(id.toString())) == 1
+            db.setTransactionSuccessful()
+            return deleted
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    private fun assetNameIsReferenced(db: SQLiteDatabase, assetName: String): Boolean {
+        val cursor = db.rawQuery(
+            "SELECT 1 FROM (" +
+                "SELECT $COLUMN_ASSET_SOURCE FROM $TABLE_RECORDS WHERE $COLUMN_ASSET_SOURCE = ? " +
+                "UNION ALL " +
+                "SELECT $COLUMN_ASSET_SOURCE FROM $TABLE_RECORD_DELETION_UNDO " +
+                "WHERE $COLUMN_ASSET_SOURCE = ? AND $COLUMN_UNDO_EXPIRES_AT > ?" +
+                ") LIMIT 1",
+            arrayOf(assetName, assetName, System.currentTimeMillis().toString())
+        )
+        return cursor.use { it.moveToFirst() }
     }
 
     fun getTotalAssets(): Double {

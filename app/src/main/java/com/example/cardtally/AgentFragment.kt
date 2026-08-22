@@ -26,6 +26,8 @@ import com.example.cardtally.model.AiChatRole
 import com.example.cardtally.network.MiniMaxChatResult
 import com.example.cardtally.network.MiniMaxClient
 import com.example.cardtally.network.MiniMaxErrorType
+import com.example.cardtally.state.AgentScreenState
+import com.example.cardtally.state.InFlightAiLifecycle
 import com.example.cardtally.util.AgentSessionTitleHelper
 import com.example.cardtally.util.AiAssistantSettingsHelper
 import com.example.cardtally.util.FloatingNavLayoutHelper
@@ -53,6 +55,7 @@ class AgentFragment : Fragment() {
 
     private lateinit var databaseHelper: DatabaseHelper
     private val miniMaxClient = MiniMaxClient()
+    private val requestLifecycle = InFlightAiLifecycle(miniMaxClient::cancel)
     private val chatMessages = mutableListOf<AiChatMessage>()
     private lateinit var chatAdapter: AgentChatAdapter
     private lateinit var sessionAdapter: AgentSessionAdapter
@@ -62,6 +65,7 @@ class AgentFragment : Fragment() {
     private var currentSessionId = 0L
     private var isSessionDrawerOpen = false
     private var suppressNextTerminalCallback = false
+    private var restoredAgentState: AgentScreenState? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -150,9 +154,17 @@ class AgentFragment : Fragment() {
 
         configureSessionDrawerWidth()
         applyComposerGapAboveBottomNav()
-        initializeChatState()
+        restoredAgentState = AgentScreenState.readFrom(savedInstanceState)
+        initializeChatState(restoredAgentState!!)
+        editMessage.setText(restoredAgentState!!.composerText)
         refreshChatUi()
+        view.post { restoreAgentViewState() }
         return view
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        currentAgentState().writeTo(outState)
     }
 
     override fun onResume() {
@@ -160,10 +172,12 @@ class AgentFragment : Fragment() {
         (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(isSessionDrawerOpen)
         applyComposerGapAboveBottomNav()
 
-        if (!AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext())) {
+        if (!AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext()) ||
+            !AiAssistantSettingsHelper.isMiniMaxConfigComplete(requireContext())) {
+            forceStopStreamingIfNeeded()
             requireActivity()
                 .findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-                .selectedItemId = R.id.nav_home
+                .selectedItemId = R.id.nav_ledger
             return
         }
 
@@ -178,7 +192,10 @@ class AgentFragment : Fragment() {
         if (hasActiveStream) {
             persistCurrentAssistantDraftBeforeForcedStop()
             suppressNextTerminalCallback = true
-            miniMaxClient.cancel()
+            requestLifecycle.cancelAndReset()
+            hasActiveStream = false
+            isSending = false
+            updateSendingState(sending = false, streaming = false)
         }
         super.onDestroyView()
     }
@@ -212,9 +229,11 @@ class AgentFragment : Fragment() {
 
     private fun sendCurrentMessage() {
         if (isSending) {
-            // If already sending, treat as cancel - let the callback handle cleanup
             if (hasActiveStream) {
-                miniMaxClient.cancel()
+                requestLifecycle.cancelAndReset()
+                hasActiveStream = false
+                isSending = false
+                updateSendingState(sending = false, streaming = false)
             }
             return
         }
@@ -256,6 +275,7 @@ class AgentFragment : Fragment() {
 
         isSending = true
         hasActiveStream = true
+        requestLifecycle.markStarted()
         updateSendingState(isSending, hasActiveStream)
 
         miniMaxClient.sendChat(
@@ -289,6 +309,7 @@ class AgentFragment : Fragment() {
                     }
 
                     is MiniMaxChatResult.StreamingDone -> {
+                        requestLifecycle.markFinished()
                         hasActiveStream = false
                         isSending = false
                         val finalMessage = AiChatMessage(
@@ -305,6 +326,7 @@ class AgentFragment : Fragment() {
                     }
 
                     is MiniMaxChatResult.Success -> {
+                        requestLifecycle.markFinished()
                         hasActiveStream = false
                         isSending = false
                         val finalMessage = AiChatMessage(
@@ -321,6 +343,7 @@ class AgentFragment : Fragment() {
                     }
 
                     is MiniMaxChatResult.Failure -> {
+                        requestLifecycle.markFinished()
                         hasActiveStream = false
                         isSending = false
                         val finalMessage = handleErrorResult(result)
@@ -412,10 +435,11 @@ class AgentFragment : Fragment() {
         }
     }
 
-    private fun initializeChatState() {
+    private fun initializeChatState(restoredState: AgentScreenState) {
         val sessions = databaseHelper.getAiChatSessions()
         val savedSessionId = AiAssistantSettingsHelper.getActiveSessionId(requireContext())
-        currentSessionId = sessions.firstOrNull { it.id == savedSessionId }?.id
+        currentSessionId = sessions.firstOrNull { it.id == restoredState.activeSessionId }?.id
+            ?: sessions.firstOrNull { it.id == savedSessionId }?.id
             ?: sessions.firstOrNull()?.id
             ?: createSessionInternal(AgentSessionTitleHelper.createDefaultTitle())
 
@@ -587,7 +611,7 @@ class AgentFragment : Fragment() {
         suppressNextTerminalCallback = true
         hasActiveStream = false
         isSending = false
-        miniMaxClient.cancel()
+        requestLifecycle.cancelAndReset()
         updateSendingState(isSending, hasActiveStream)
     }
 
@@ -697,6 +721,40 @@ class AgentFragment : Fragment() {
     private fun renderMessages() {
         chatAdapter.submitMessages(chatMessages)
         scrollToBottom()
+    }
+
+    private fun currentAgentState(): AgentScreenState {
+        val messageScroll = recyclerScrollState(recyclerMessages)
+        val sessionScroll = recyclerScrollState(recyclerSessions)
+        return AgentScreenState(
+            activeSessionId = currentSessionId,
+            composerText = editMessage.text.toString(),
+            isSessionDrawerOpen = isSessionDrawerOpen,
+            messageScrollPosition = messageScroll?.first ?: 0,
+            messageScrollOffset = messageScroll?.second ?: 0,
+            sessionScrollPosition = sessionScroll?.first ?: 0,
+            sessionScrollOffset = sessionScroll?.second ?: 0
+        )
+    }
+
+    private fun restoreAgentViewState() {
+        val state = restoredAgentState ?: return
+        (recyclerMessages.layoutManager as LinearLayoutManager)
+            .scrollToPositionWithOffset(state.messageScrollPosition, state.messageScrollOffset)
+        (recyclerSessions.layoutManager as LinearLayoutManager)
+            .scrollToPositionWithOffset(state.sessionScrollPosition, state.sessionScrollOffset)
+        if (state.isSessionDrawerOpen &&
+            AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext()) &&
+            AiAssistantSettingsHelper.isMiniMaxConfigComplete(requireContext())) {
+            openSessionDrawer()
+        }
+    }
+
+    private fun recyclerScrollState(recyclerView: RecyclerView): Pair<Int, Int>? {
+        val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return null
+        val position = layoutManager.findFirstVisibleItemPosition()
+        if (position == RecyclerView.NO_POSITION) return null
+        return position to (layoutManager.findViewByPosition(position)?.top ?: 0)
     }
 
     private fun getErrorMessage(result: MiniMaxChatResult.Failure): String {

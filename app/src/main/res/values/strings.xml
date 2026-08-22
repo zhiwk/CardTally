@@ -3,8 +3,8 @@
     <string name="app_name_en">CardTally</string>
     <string name="hello_world">你好</string>
 
-    <string name="nav_home">首页</string>
-    <string name="nav_ledger">账本</string>
+    <string name="nav_ledger">账单</string>
+    <string name="nav_statistics">统计</string>
     <string name="nav_assets">资产</string>
     <string name="nav_agent">AI 助手</string>
     <string name="nav_me">我的</string>
@@ -21,6 +21,16 @@
     <string name="ledger_mode_sheet_subtitle">选择此刻更想阅读的账本视角</string>
     <string name="ledger_empty_statistics">暂无统计内容</string>
     <string name="ledger_empty_records">还没有记账记录</string>
+    <string name="ledger_book_current">当前账本：日常账本</string>
+    <string name="ledger_book_name">日常账本</string>
+    <string name="ledger_month_label">%1$d月</string>
+    <string name="ledger_month_summary">本月统计</string>
+    <string name="ledger_month_summary_same_year">%1$d月统计</string>
+    <string name="ledger_month_summary_other_year">%1$d年%2$d月</string>
+    <string name="ledger_balance">结余</string>
+    <string name="ledger_book_switch_content_description">切换账本</string>
+    <string name="ledger_calendar_content_description">选择月份</string>
+    <string name="calendar_day_summary">支出：¥%1$.2f  收入：¥%2$.2f</string>
     <string name="ledger_period_week">周</string>
     <string name="ledger_period_month">月</string>
     <string name="ledger_period_year">年</string>
@@ -45,13 +55,35 @@
     <string name="ledger_chart_mode_line">LINE</string>
     <string name="ledger_chart_mode_pie">PIE</string>
     <string name="ledger_chart_total_label">TOTAL</string>
-    <string name="ledger_records_section_title">账目明细</string>
+    <string name="ledger_chart_other">其他</string>
+    <string name="ledger_records_section_title">明细</string>
     <string name="ledger_summary_total_expense">本期支出</string>
     <string name="ledger_summary_total_income">本期收入</string>
     <string name="ledger_summary_total_balance">本期结余</string>
     <string name="ledger_summary_supporting_statistics">安静整理这一段时间的流向与重心</string>
     <string name="ledger_summary_badge_count">%1$d 个分类</string>
-    <string name="ledger_day_total">TOTAL: %1$s¥%2$.2f</string>
+    <string name="ledger_day_total">合计：%1$s¥%2$.2f</string>
+    <string name="ledger_day_income_expense">支出：¥%1$.2f  收入：¥%2$.2f</string>
+    <string name="search_hint">请输入类别/备注/金额</string>
+    <string name="search_all_time">不限时间 ▼</string>
+    <string name="search_totals">总支出：¥%1$.2f  总收入：¥%2$.2f</string>
+    <string name="search_no_results">未找到匹配的记录</string>
+    <string name="search_date_range_title">选择日期范围</string>
+    <string name="search_range_all">全部</string>
+    <string name="search_range_this_month">本月</string>
+    <string name="search_range_last_month">上月</string>
+    <string name="search_range_this_week">本周</string>
+    <string name="search_range_three_months">近三月</string>
+    <string name="search_range_six_months">近半年</string>
+    <string name="search_range_this_year">今年</string>
+    <string name="search_range_last_year">去年</string>
+    <string name="search_start_date">开始时间</string>
+    <string name="search_end_date">结束时间</string>
+    <string name="dialog_done">完成</string>
+    <string name="ledger_previous_month_hint">松开查看%1$s账单</string>
+    <string name="ledger_next_month_hint">松开查看%1$s账单</string>
+    <string name="ledger_month_label_same_year">%1$d月</string>
+    <string name="ledger_month_label_other_year">%1$d年%2$d月</string>
     <string name="ledger_statistics_entries_meta">%1$d 笔记录</string>
     <string name="ledger_period_confirm">确认周期</string>
     <string name="ledger_period_reset">重置</string>
@@ -65,6 +97,7 @@
     <string name="weekday_saturday_short">六</string>
     <string name="weekday_sunday_short">日</string>
     <string name="categories">分类管理</string>
+    <string name="category_manage_hint">按收支类型管理一级分类与二级分类</string>
     <string name="budget">预算管理</string>
     <string name="settings">设置</string>
 
@@ -103,6 +136,10 @@
     <string name="record_date_confirm">确认日期</string>
 
     <string name="asset_title_add">添加资产</string>
+    <string name="asset_total_label">总资产</string>
+    <string name="asset_accounts_title">账户</string>
+    <string name="asset_empty">还没有资产，点击加号添加</string>
+    <string name="asset_archive_content_description">查看已归档资产</string>
     <string name="asset_title_edit">编辑资产</string>
     <string name="asset_helper_copy">记下此刻我持有的余额</string>
     <string name="asset_name_label">资产名称</string>
@@ -114,8 +151,7 @@
     <string name="asset_type_wechat">微信</string>
     <string name="asset_save_cta">保存资产</string>
     <string name="asset_update_cta">更新资产</string>
-    <string name="asset_delete_cta">删除资产</string>
-    <string name="asset_footer_note">静奢理财日记</string>
+    <string name="asset_delete_cta">归档资产</string>
     <string name="asset_toast_add_success">添加成功</string>
     <string name="asset_toast_add_failed">添加失败</string>
 
@@ -133,7 +169,6 @@
     <string name="toast_update_success">更新成功</string>
     <string name="toast_update_failed">更新失败</string>
     <string name="toast_delete_success">删除成功</string>
-    <string name="toast_theme_changed">主题已更改</string>
 
     <string name="dialog_cancel">取消</string>
     <string name="dialog_confirm">确定</string>
@@ -146,28 +181,8 @@
     <string name="delete_record_message">确定要删除这条记录吗？</string>
     <string name="delete_selected_records_message">确定要删除选中的 %1$d 条记录吗？</string>
 
-    <string name="home_date_pattern">M月dd日 E</string>
-    <string name="home_date_placeholder">3月27日 周四</string>
-    <string name="home_daily_log">静奢理财日记</string>
-    <string name="home_total_balance_label">总净值</string>
-    <string name="home_current_balance">当前结余</string>
     <string name="home_monthly_income">本月收入</string>
     <string name="home_monthly_expense">本月支出</string>
-    <string name="home_monthly_spend">本月支出</string>
-    <string name="home_daily_average">日均支出</string>
-    <string name="home_agent_title">您的专属财务管家</string>
-    <string name="home_agent_caption">FINANCIAL CONCIERGE</string>
-    <string name="home_agent_subtitle">“本周你的支出依然克制，不妨把多出的 500 元收进储蓄账户。”</string>
-    <string name="home_recent_entries">最近记录</string>
-    <string name="home_view_archive">查看归档</string>
-    <string name="home_empty">就像空无一字的首页
-等待您的第一笔记录</string>
-    <string name="home_empty_records_hint">最近还没有记账，点击右下角按钮添加记录</string>
-    <string name="home_record_today">今天</string>
-    <string name="home_record_yesterday">昨天</string>
-    <string name="home_recent_record_date_pattern">M月d日</string>
-    <string name="home_record_edit">编辑记录</string>
-    <string name="home_record_delete">删除记录</string>
 
     <string name="agent_title">AI 助手</string>
     <string name="agent_role_assistant">Assistant</string>
@@ -225,13 +240,12 @@
     <string name="settings_profile_title">我的档案</string>
     <string name="settings_profile_tier">静奢记账用户</string>
     <string name="settings_aesthetic_preferences">偏好设置</string>
-    <string name="settings_theme_preferences">主题偏好</string>
     <string name="settings_language">语言</string>
     <string name="settings_journal_shortcut">快捷记账</string>
     <string name="settings_journal_shortcut_hint">直接进入记一笔</string>
     <string name="settings_ai_assistant_group">AI 助理</string>
     <string name="settings_ai_assistant_toggle">显示 AI 入口</string>
-    <string name="settings_ai_assistant_toggle_hint">控制首页卡片与底部 AI 标签</string>
+    <string name="settings_ai_assistant_toggle_hint">控制 AI 助手入口与底部标签</string>
     <string name="settings_ai_api_key">API 配置</string>
     <string name="settings_ai_api_key_status_not_set">待配置</string>
     <string name="settings_ai_api_key_status_saved">已就绪</string>
@@ -244,13 +258,16 @@
     <string name="settings_category_max_depth_invalid">请输入有效的层级数</string>
     <string name="settings_category_max_depth_too_small">当前分类已使用到 %1$d 级，不能保存更小的上限</string>
     <string name="settings_account_assets">账户资产</string>
+    <string name="settings_scroll_top_fab">显示回到顶部按钮</string>
+    <string name="settings_scroll_top_fab_hint">账单页下滑后显示</string>
+    <string name="content_description_scroll_top">回到顶部</string>
     <string name="settings_about_section">The Chronicle</string>
     <string name="settings_story_title">The Chronicle Story</string>
     <string name="settings_story_body">了解你的理财日记背后的理念，以及我们对静奢体验与数据主权的坚持。</string>
     <string name="settings_member_footer">MEMBER SINCE 2026 • CARDTALLY V4.2.1</string>
 
     <string name="category_empty">暂无分类</string>
-    <string name="category_add_cta">添加分类</string>
+    <string name="category_add_cta">添加一级分类</string>
     <string name="category_add_title">添加分类</string>
     <string name="category_edit_title">编辑分类</string>
     <string name="category_delete_title">删除分类</string>
@@ -263,6 +280,10 @@
     <string name="category_dialog_icon_label">图标</string>
     <string name="category_dialog_icon_hint">点击图标可选择</string>
     <string name="category_icon_picker_title">选择图标</string>
+    <string name="category_icon_search_hint">搜索图标，例如：交通、餐饮、home</string>
+    <string name="category_add_child_cta">添加二级分类</string>
+    <string name="category_expand_content_description">展开或收起二级分类</string>
+    <string name="category_drag_content_description">拖动排序</string>
     <string name="category_action_edit">编辑分类</string>
     <string name="category_action_delete">删除分类</string>
     <string name="category_error_empty_name">分类名称不能为空</string>
@@ -285,14 +306,6 @@
         <item>en</item>
     </string-array>
 
-    <string name="theme_settings_title">主题设置</string>
-    <string name="theme_select_label">选择主题</string>
-    <string name="theme_basic_label">基础主题</string>
-    <string name="theme_light">浅色主题</string>
-    <string name="theme_dark">深色主题</string>
-    <string name="theme_system">跟随系统</string>
-    <string name="theme_hint">提示：更改主题后需要重启应用才能生效</string>
-
     <string name="ai_settings_title">API 配置</string>
     <string name="ai_settings_api_key_group">API 配置</string>
     <string name="ai_settings_api_key_description">在此保存当前设备使用的 API 对话配置。API Key 仅保存在本机，模型与完整请求 URL 可按需调整。</string>
@@ -309,9 +322,4 @@
     <string name="ai_settings_save">保存</string>
     <string name="toast_ai_api_key_saved">API 设置已保存</string>
 
-    <string-array name="theme_names">
-        <item>@string/theme_light</item>
-        <item>@string/theme_dark</item>
-        <item>@string/theme_system</item>
-    </string-array>
 </resources>
