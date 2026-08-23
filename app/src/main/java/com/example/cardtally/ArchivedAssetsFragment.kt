@@ -32,6 +32,9 @@ class ArchivedAssetsFragment : Fragment() {
         recyclerAssets = view.findViewById(R.id.recycler_assets)
         textEmpty = view.findViewById(R.id.text_empty)
         textTotalAmount = view.findViewById(R.id.text_total_amount)
+        view.findViewById<View>(R.id.btn_back).setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
 
         databaseHelper = DatabaseHelper(requireContext())
 

@@ -48,7 +48,9 @@
     <string name="ledger_period_label_all">ALL RECORDS</string>
     <string name="ledger_period_label_custom">CUSTOM RANGE</string>
     <string name="ledger_statistics_section_title">Spending Segments</string>
-    <string name="ledger_chart_title">Trend Overview</string>
+    <string name="ledger_chart_title">Expense Chart</string>
+    <string name="ledger_chart_title_expense">Expense Chart</string>
+    <string name="ledger_chart_title_income">Income Chart</string>
     <string name="ledger_chart_subtitle_pie">Read the category weight of this period at a glance.</string>
     <string name="ledger_chart_subtitle_line">Read the rhythm of amount movement across this period.</string>
     <string name="ledger_chart_mode_line">LINE</string>
@@ -143,7 +145,6 @@
     <string name="asset_empty">No assets yet. Tap plus to add one.</string>
     <string name="asset_archive_content_description">View archived assets</string>
     <string name="asset_title_edit">Edit Asset</string>
-    <string name="asset_helper_copy">Record the balance I hold now</string>
     <string name="asset_name_label">Asset Name</string>
     <string name="asset_name_hint">e.g., CMB Savings Card</string>
     <string name="asset_type_label">Asset Type</string>
@@ -151,6 +152,11 @@
     <string name="asset_type_bank">Bank Card</string>
     <string name="asset_type_alipay">Alipay</string>
     <string name="asset_type_wechat">WeChat</string>
+    <string name="asset_type_select_title">New Account</string>
+    <string name="asset_type_cash_subtitle">Cash account</string>
+    <string name="asset_type_bank_subtitle">Bank card account</string>
+    <string name="asset_type_alipay_subtitle">Alipay account</string>
+    <string name="asset_type_wechat_subtitle">WeChat account</string>
     <string name="asset_save_cta">Save Asset</string>
     <string name="asset_update_cta">Update Asset</string>
     <string name="asset_delete_cta">Archive Asset</string>

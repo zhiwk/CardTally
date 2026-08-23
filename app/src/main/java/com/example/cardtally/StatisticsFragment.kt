@@ -40,6 +40,7 @@ import com.example.cardtally.view.LedgerLineChartView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import java.util.Calendar
 
 class StatisticsFragment : Fragment() {
     private lateinit var togglePeriodPreset: MaterialButtonToggleGroup
@@ -70,6 +71,7 @@ class StatisticsFragment : Fragment() {
     private lateinit var layoutRecordsContent: View
     private lateinit var layoutRangeSelector: View
     private lateinit var textStatisticsSectionTitle: TextView
+    private lateinit var textChartTitle: TextView
     private lateinit var databaseHelper: DatabaseHelper
     private lateinit var statisticsAdapter: StatisticsAdapter
     private var recordsAdapter: DateGroupAdapter? = null
@@ -78,7 +80,7 @@ class StatisticsFragment : Fragment() {
     private var currentStatsType = TYPE_EXPENSE
     private var currentPeriodPreset = LedgerPeriodPreset.WEEK
     private var currentRange = LedgerPeriodHelper.resolveRange(LedgerPeriodPreset.WEEK)
-    private var currentChartMode = CHART_MODE_PIE
+    private var currentChartMode = CHART_MODE_LINE
     private var openFilterSurface = FilterSurface.NONE
     private var restoredLedgerState: LedgerScreenState? = null
 
@@ -113,6 +115,7 @@ class StatisticsFragment : Fragment() {
         textSummaryIncome = view.findViewById(R.id.text_summary_income)
         textSummaryBalance = view.findViewById(R.id.text_summary_balance)
         textStatisticsSectionTitle = view.findViewById(R.id.text_statistics_section_title)
+        textChartTitle = view.findViewById(R.id.text_chart_title)
         textChartSubtitle = view.findViewById(R.id.text_chart_subtitle)
         recyclerStatistics = view.findViewById(R.id.recycler_statistics)
         recyclerRecords = view.findViewById(R.id.recycler_records)
@@ -181,6 +184,7 @@ class StatisticsFragment : Fragment() {
                 clearTopPeriodToggleSelection()
                 currentPeriodPreset = LedgerPeriodPreset.CUSTOM
                 currentRange = LedgerDateRange(null, null)
+                currentChartMode = CHART_MODE_PIE
                 renderCurrentView()
                 return@addOnButtonCheckedListener
             }
@@ -190,6 +194,7 @@ class StatisticsFragment : Fragment() {
                 else -> LedgerPeriodPreset.MONTH
             }
             currentRange = resolveRangeFromPreset(currentPeriodPreset)
+            currentChartMode = CHART_MODE_LINE
             renderCurrentView()
         }
 
@@ -256,6 +261,10 @@ class StatisticsFragment : Fragment() {
             currentRange.startDate.isNullOrBlank() || currentRange.endDate.isNullOrBlank() -> getString(R.string.ledger_period_all_range)
             else -> LedgerPeriodHelper.formatRangeLabel(currentRange)
         }
+        textChartTitle.text = getString(
+            if (currentStatsType == TYPE_EXPENSE) R.string.ledger_chart_title_expense
+            else R.string.ledger_chart_title_income
+        )
         updateToggleVisuals()
         updateChartModeUi()
         updateTypeTabs()
@@ -466,7 +475,8 @@ class StatisticsFragment : Fragment() {
         val slices = summary.slices.mapIndexed { index, slice ->
             LedgerDonutChartView.Slice(
                 value = slice.amount.toFloat(),
-                color = palette[index % palette.size]
+                color = palette[index % palette.size],
+                label = slice.label.substringAfter(": ", slice.label).substringAfter("· ", slice.label)
             )
         }
 
@@ -554,7 +564,7 @@ class StatisticsFragment : Fragment() {
                 currentPeriodPreset == LedgerPeriodPreset.YEAR
 
         viewStatisticsChart.visibility = if (isPie && currentViewMode == VIEW_MODE_STATISTICS) View.VISIBLE else View.GONE
-        layoutChartLegend.visibility = if (isPie && currentViewMode == VIEW_MODE_STATISTICS) View.VISIBLE else View.GONE
+        layoutChartLegend.visibility = View.GONE
         viewStatisticsLineChart.visibility = if (!isPie && currentViewMode == VIEW_MODE_STATISTICS && showLineChart) View.VISIBLE else View.GONE
         layoutLineAxis.visibility = if (!isPie && currentViewMode == VIEW_MODE_STATISTICS && showLineChart) View.VISIBLE else View.GONE
         textChartSubtitle.text = if (isPie) {
@@ -574,31 +584,50 @@ class StatisticsFragment : Fragment() {
     }
 
     private fun bindLineAxis(dates: List<String>) {
+        layoutLineAxis.removeAllViews()
         if (dates.isEmpty()) {
-            textAxisStart.text = ""
-            textAxisMid.text = ""
-            textAxisEnd.text = ""
             return
         }
-        val middleIndex = dates.size / 2
-        val formattedStart = if (currentPeriodPreset == LedgerPeriodPreset.YEAR) {
-            LedgerDisplayHelper.formatMonthLabel(dates.first())
-        } else {
-            LedgerDisplayHelper.formatDayOnlyLabel(dates.first())
+
+        val labels = when (currentPeriodPreset) {
+            LedgerPeriodPreset.WEEK -> dates.map(::formatWeekAxisLabel)
+            LedgerPeriodPreset.MONTH -> {
+                val lastDay = dates.size
+                listOf(1, 5, 10, 15, 20, 25, lastDay)
+                    .distinct()
+                    .filter { it in 1..lastDay }
+                    .map(Int::toString)
+            }
+            LedgerPeriodPreset.YEAR -> dates.map { "${it.substring(5, 7).toInt()}月" }
+            else -> emptyList()
         }
-        val formattedMid = if (currentPeriodPreset == LedgerPeriodPreset.YEAR) {
-            LedgerDisplayHelper.formatMonthLabel(dates[middleIndex])
-        } else {
-            LedgerDisplayHelper.formatDayOnlyLabel(dates[middleIndex])
+
+        labels.forEach { labelText ->
+            val label = TextView(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                gravity = android.view.Gravity.CENTER
+                text = labelText
+                setTextColor(ThemeColorHelper.resolveThemeAwareResource(this@StatisticsFragment.requireContext(), R.color.editorial_text_muted))
+                textSize = 9f
+                maxLines = 1
+            }
+            layoutLineAxis.addView(label)
         }
-        val formattedEnd = if (currentPeriodPreset == LedgerPeriodPreset.YEAR) {
-            LedgerDisplayHelper.formatMonthLabel(dates.last())
-        } else {
-            LedgerDisplayHelper.formatDayOnlyLabel(dates.last())
+    }
+
+    private fun formatWeekAxisLabel(date: String): String {
+        val calendar = Calendar.getInstance().apply {
+            time = LedgerPeriodHelper.parseIsoDate(date)
         }
-        textAxisStart.text = formattedStart
-        textAxisMid.text = formattedMid
-        textAxisEnd.text = formattedEnd
+        return when (calendar.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "周一"
+            Calendar.TUESDAY -> "周二"
+            Calendar.WEDNESDAY -> "周三"
+            Calendar.THURSDAY -> "周四"
+            Calendar.FRIDAY -> "周五"
+            Calendar.SATURDAY -> "周六"
+            else -> "周日"
+        }
     }
 
     private fun showModeMenu() {
@@ -949,7 +978,13 @@ class StatisticsFragment : Fragment() {
             PeriodPreset.CUSTOM -> LedgerDateRange(state.customStartDate, state.customEndDate)
             else -> LedgerPeriodHelper.resolveRange(currentPeriodPreset)
         }
-        currentChartMode = if (state.chartMode == ChartMode.LINE) CHART_MODE_LINE else CHART_MODE_PIE
+        currentChartMode = if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM || currentPeriodPreset == LedgerPeriodPreset.ALL) {
+            CHART_MODE_PIE
+        } else if (state.chartMode == ChartMode.LINE) {
+            CHART_MODE_LINE
+        } else {
+            CHART_MODE_PIE
+        }
         openFilterSurface = state.openFilterSurface
     }
 

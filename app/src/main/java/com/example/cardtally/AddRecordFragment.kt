@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.DatePicker
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -16,11 +15,13 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.AssetSheetItem
 import com.example.cardtally.adapter.RecordAssetSheetAdapter
 import com.example.cardtally.adapter.RecordCategoryTreeAdapter
 import com.example.cardtally.adapter.IconPickerAdapter
+import com.example.cardtally.adapter.LedgerCalendarAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
@@ -29,6 +30,8 @@ import com.example.cardtally.state.RecordFormState
 import com.example.cardtally.state.RecordSheet
 import com.example.cardtally.state.RecordType
 import com.example.cardtally.state.StableIdResolver
+import com.example.cardtally.util.LedgerDateRange
+import com.example.cardtally.util.LedgerPeriodHelper
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.MaterialSymbolCatalog
 import com.example.cardtally.util.AmountKeypadController
@@ -238,32 +241,72 @@ open class AddRecordFragment : Fragment() {
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_date, null)
         dialog.setContentView(sheetView)
 
-        val datePicker = sheetView.findViewById<DatePicker>(R.id.date_picker)
         val btnCloseSheet = sheetView.findViewById<ImageButton>(R.id.btn_close_sheet)
         val btnConfirmDate = sheetView.findViewById<View>(R.id.btn_confirm_date)
         val textSelectToday = sheetView.findViewById<TextView>(R.id.text_select_today)
+        val monthTitle = sheetView.findViewById<TextView>(R.id.text_date_month_title)
+        val selectionValue = sheetView.findViewById<TextView>(R.id.text_date_selection_value)
+        val recyclerCalendar = sheetView.findViewById<RecyclerView>(R.id.recycler_date_calendar)
+        val btnPrevMonth = sheetView.findViewById<ImageButton>(R.id.btn_date_prev_month)
+        val btnNextMonth = sheetView.findViewById<ImageButton>(R.id.btn_date_next_month)
 
-        val parts = selectedDate.split("-")
-        datePicker.updateDate(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt())
+        var localDate = selectedDate
+        var displayYear = localDate.substring(0, 4).toInt()
+        var displayMonth = localDate.substring(5, 7).toInt() - 1
+        lateinit var adapter: LedgerCalendarAdapter
+
+        fun renderCalendar() {
+            monthTitle.text = LedgerPeriodHelper.formatMonthTitle(displayYear, displayMonth)
+            selectionValue.text = formatDisplayDate(localDate)
+            adapter.submitList(
+                LedgerPeriodHelper.buildMonthCells(
+                    displayYear,
+                    displayMonth,
+                    LedgerDateRange(localDate, localDate)
+                )
+            )
+        }
+
+        adapter = LedgerCalendarAdapter(singleSelection = true) { day ->
+            val picked = day.isoDate ?: return@LedgerCalendarAdapter
+            localDate = picked
+            displayYear = picked.substring(0, 4).toInt()
+            displayMonth = picked.substring(5, 7).toInt() - 1
+            renderCalendar()
+        }
+        recyclerCalendar.layoutManager = GridLayoutManager(requireContext(), 7)
+        recyclerCalendar.adapter = adapter
+        renderCalendar()
 
         dialog.setOnDismissListener { openSheet = RecordSheet.NONE }
         btnCloseSheet.setOnClickListener { dialog.dismiss() }
         textSelectToday.setOnClickListener {
             val calendar = Calendar.getInstance()
-            datePicker.updateDate(
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            )
-        }
-        btnConfirmDate.setOnClickListener {
-            selectedDate = String.format(
+            localDate = String.format(
                 Locale.US,
                 "%04d-%02d-%02d",
-                datePicker.year,
-                datePicker.month + 1,
-                datePicker.dayOfMonth
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.DAY_OF_MONTH)
             )
+            displayYear = calendar.get(Calendar.YEAR)
+            displayMonth = calendar.get(Calendar.MONTH)
+            renderCalendar()
+        }
+        btnPrevMonth.setOnClickListener {
+            val shifted = LedgerPeriodHelper.shiftMonth(displayYear, displayMonth, -1)
+            displayYear = shifted.first
+            displayMonth = shifted.second
+            renderCalendar()
+        }
+        btnNextMonth.setOnClickListener {
+            val shifted = LedgerPeriodHelper.shiftMonth(displayYear, displayMonth, 1)
+            displayYear = shifted.first
+            displayMonth = shifted.second
+            renderCalendar()
+        }
+        btnConfirmDate.setOnClickListener {
+            selectedDate = localDate
             updateDisplayedDate()
             dialog.dismiss()
         }

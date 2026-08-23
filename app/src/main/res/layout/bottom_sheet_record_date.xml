@@ -56,12 +56,91 @@
             app:tint="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
 
-    <DatePicker
-        android:id="@+id/date_picker"
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:calendarViewShown="false"
-        android:datePickerMode="spinner" />
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="8dp"
+        app:cardBackgroundColor="@color/surface_container_highest"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@android:color/transparent">
+
+        <TextView
+            android:id="@+id/text_date_selection_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="10dp"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:fontFamily="serif" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btn_date_prev_month"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ledger_period_previous_month"
+                android:src="@drawable/ic_chevron_left"
+                app:tint="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/text_date_month_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="18sp"
+                android:fontFamily="serif" />
+
+            <ImageButton
+                android:id="@+id/btn_date_next_month"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ledger_period_next_month"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="?attr/colorOnSurface" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_monday_short" android:textColor="@color/editorial_text_muted" android:textSize="10sp" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_tuesday_short" android:textColor="@color/editorial_text_muted" android:textSize="10sp" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_wednesday_short" android:textColor="@color/editorial_text_muted" android:textSize="10sp" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_thursday_short" android:textColor="@color/editorial_text_muted" android:textSize="10sp" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_friday_short" android:textColor="@color/editorial_text_muted" android:textSize="10sp" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_saturday_short" android:textColor="@color/editorial_text_muted" android:textSize="10sp" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_sunday_short" android:textColor="@color/editorial_text_muted" android:textSize="10sp" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_date_calendar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:nestedScrollingEnabled="false" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

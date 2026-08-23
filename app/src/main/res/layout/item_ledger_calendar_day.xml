@@ -11,7 +11,7 @@
         android:id="@+id/day_fill_left"
         android:layout_width="match_parent"
         android:layout_height="28dp"
-        android:layout_gravity="center_horizontal|top"
+        android:layout_gravity="end|top"
         android:background="@color/surface_container_highest"
         android:visibility="gone" />
 
@@ -19,7 +19,7 @@
         android:id="@+id/day_fill_right"
         android:layout_width="match_parent"
         android:layout_height="28dp"
-        android:layout_gravity="center_horizontal|top"
+        android:layout_gravity="start|top"
         android:background="@color/surface_container_highest"
         android:visibility="gone" />
 

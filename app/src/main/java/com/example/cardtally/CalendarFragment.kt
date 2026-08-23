@@ -67,7 +67,7 @@ class CalendarFragment : Fragment() {
             showMonthPicker()
         }
 
-        calendarAdapter = LedgerCalendarAdapter { day ->
+        calendarAdapter = LedgerCalendarAdapter(singleSelection = true) { day ->
             day.isoDate?.let {
                 selectedDate = it
                 renderMonth()

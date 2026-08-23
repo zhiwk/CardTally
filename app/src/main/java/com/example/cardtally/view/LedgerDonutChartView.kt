@@ -15,23 +15,26 @@ class LedgerDonutChartView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
-    data class Slice(val value: Float, val color: Int)
+    data class Slice(val value: Float, val color: Int, val label: String = "")
 
     private val slicePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.BUTT
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textAlign = Paint.Align.CENTER
+        textAlign = Paint.Align.LEFT
         color = ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_text_muted)
-        textSize = 28f
+        textSize = 10f * resources.displayMetrics.density
         isFakeBoldText = true
-        letterSpacing = 0.08f
     }
     private val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
         color = ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary)
-        textSize = 52f
+        textSize = 14f * resources.displayMetrics.density
+    }
+    private val leaderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 2f
     }
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -73,7 +76,49 @@ class LedgerDonutChartView @JvmOverloads constructor(
             startAngle += sweep
         }
 
-        canvas.drawText(totalLabel, width / 2f, height / 2f - 12f, labelPaint)
-        canvas.drawText(totalValue, width / 2f, height / 2f + 34f, valuePaint)
+        labelPaint.textAlign = Paint.Align.CENTER
+        canvas.drawText(totalLabel, width / 2f, height / 2f - 18f, labelPaint)
+        canvas.drawText(totalValue, width / 2f, height / 2f + 22f, valuePaint)
+        labelPaint.textAlign = Paint.Align.LEFT
+
+        if (total > 0f) {
+            drawTopLabels(canvas, total, radius, centerX, centerY, startAngle)
+        }
+    }
+
+    private fun drawTopLabels(
+        canvas: Canvas,
+        total: Float,
+        radius: Float,
+        centerX: Float,
+        centerY: Float,
+        ignoredEndAngle: Float
+    ) {
+        var angle = -90f
+        slices.take(3).forEach { slice ->
+            val sweep = (slice.value / total) * 360f
+            val middleAngle = Math.toRadians((angle + sweep / 2f).toDouble())
+            val cos = kotlin.math.cos(middleAngle).toFloat()
+            val sin = kotlin.math.sin(middleAngle).toFloat()
+            val startX = centerX + cos * radius
+            val startY = centerY + sin * radius
+            val elbowX = centerX + cos * (radius + 8f)
+            val elbowY = centerY + sin * (radius + 8f)
+            val rightSide = when {
+                kotlin.math.abs(cos) > 0.25f -> cos >= 0f
+                sin >= 0f -> true
+                else -> false
+            }
+            val textX = if (rightSide) width - 4f else 4f
+            val lineEndX = if (rightSide) textX - 4f else textX + 4f
+            leaderPaint.color = slice.color
+            canvas.drawLine(startX, startY, elbowX, elbowY, leaderPaint)
+            canvas.drawLine(elbowX, elbowY, lineEndX, elbowY, leaderPaint)
+            labelPaint.textAlign = if (rightSide) Paint.Align.RIGHT else Paint.Align.LEFT
+            val percentage = (slice.value / total * 100f).let { String.format(java.util.Locale.US, "%.1f%%", it) }
+            val label = if (slice.label.isBlank()) percentage else "${slice.label} $percentage"
+            canvas.drawText(label, textX, elbowY + labelPaint.textSize / 3f, labelPaint)
+            angle += sweep
+        }
     }
 }

@@ -10,6 +10,20 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/content_description_back"
+            android:padding="8dp"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="?attr/colorOnSurface"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <TextView
             android:id="@+id/text_title"
             android:layout_width="wrap_content"
@@ -17,9 +31,9 @@
             android:text="归档资产"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="28dp"
-            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="24dp"
+            app:layout_constraintStart_toEndOf="@id/btn_back"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView

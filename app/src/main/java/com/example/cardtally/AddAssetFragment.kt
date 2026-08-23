@@ -17,6 +17,18 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.chip.ChipGroup
 
 class AddAssetFragment : Fragment() {
+    companion object {
+        private const val KEY_ASSET_TYPE = "asset_type"
+
+        fun newInstance(type: AssetType): AddAssetFragment {
+            return AddAssetFragment().apply {
+                arguments = Bundle().apply {
+                    putString(KEY_ASSET_TYPE, type.token)
+                }
+            }
+        }
+    }
+
     private lateinit var editAmount: EditText
     private lateinit var editName: EditText
     private lateinit var chipGroupType: ChipGroup
@@ -37,7 +49,15 @@ class AddAssetFragment : Fragment() {
         btnSave = view.findViewById(R.id.btn_save)
 
         databaseHelper = DatabaseHelper(requireContext())
-        applyState(AssetFormState.readFrom(savedInstanceState, AssetFormState.DEFAULT))
+        val initialType = arguments?.getString(KEY_ASSET_TYPE)
+            ?.let { token -> AssetType.values().firstOrNull { it.token == token } }
+            ?: AssetType.CASH
+        applyState(
+            AssetFormState.readFrom(
+                savedInstanceState,
+                AssetFormState("", "", initialType)
+            )
+        )
 
         btnBack.setOnClickListener {
             parentFragmentManager.popBackStack()

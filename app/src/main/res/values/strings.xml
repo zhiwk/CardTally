@@ -50,7 +50,9 @@
     <string name="ledger_period_label_all">全部记录</string>
     <string name="ledger_period_label_custom">自定义周期</string>
     <string name="ledger_statistics_section_title">分类分布</string>
-    <string name="ledger_chart_title">趋势概览</string>
+    <string name="ledger_chart_title">支出统计图</string>
+    <string name="ledger_chart_title_expense">支出统计图</string>
+    <string name="ledger_chart_title_income">收入统计图</string>
     <string name="ledger_chart_subtitle_pie">按当前周期阅读流向与分类重心</string>
     <string name="ledger_chart_subtitle_line">按当前周期阅读金额波动的节奏</string>
     <string name="ledger_chart_mode_line">LINE</string>
@@ -144,7 +146,6 @@
     <string name="asset_empty">还没有资产，点击加号添加</string>
     <string name="asset_archive_content_description">查看已归档资产</string>
     <string name="asset_title_edit">编辑资产</string>
-    <string name="asset_helper_copy">记下此刻我持有的余额</string>
     <string name="asset_name_label">资产名称</string>
     <string name="asset_name_hint">例如：招商银行储蓄卡</string>
     <string name="asset_type_label">资产类型</string>
@@ -152,6 +153,11 @@
     <string name="asset_type_bank">银行卡</string>
     <string name="asset_type_alipay">支付宝</string>
     <string name="asset_type_wechat">微信</string>
+    <string name="asset_type_select_title">新建账户</string>
+    <string name="asset_type_cash_subtitle">现金账户</string>
+    <string name="asset_type_bank_subtitle">银行卡账户</string>
+    <string name="asset_type_alipay_subtitle">支付宝账户</string>
+    <string name="asset_type_wechat_subtitle">微信账户</string>
     <string name="asset_save_cta">保存资产</string>
     <string name="asset_update_cta">更新资产</string>
     <string name="asset_delete_cta">归档资产</string>

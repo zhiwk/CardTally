@@ -449,11 +449,12 @@
                             android:layout_marginTop="6dp"
                             android:textColor="@color/editorial_text_muted"
                             android:textSize="11sp"
+                            android:visibility="gone"
                             tools:text="按当前周期阅读流向与波动" />
 
                         <FrameLayout
                             android:layout_width="match_parent"
-                            android:layout_height="240dp"
+                            android:layout_height="120dp"
                             android:layout_marginTop="12dp">
 
                             <com.example.cardtally.view.LedgerLineChartView
