@@ -44,6 +44,9 @@ class LedgerFragment : Fragment() {
     ): View {
         val view = inflater.inflate(R.layout.fragment_ledger, container, false)
         databaseHelper = DatabaseHelper(requireContext())
+        val categoryIconsById = databaseHelper.getAllCategories()
+            .filter { !it.icon.isNullOrEmpty() }
+            .associate { it.id to it.icon.orEmpty() }
         textEmpty = view.findViewById(R.id.text_empty)
         recyclerRecords = view.findViewById(R.id.recycler_records)
         recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
@@ -60,7 +63,7 @@ class LedgerFragment : Fragment() {
             override fun onDeleteSelected(records: List<Record>) = Unit
             override fun onEnterMultiSelectMode(record: Record) = Unit
             override fun onToggleMultiSelect(record: Record) = Unit
-        }, ::bindHeader)
+        }, ::bindHeader, categoryIconsById)
         recyclerRecords.adapter = recordsAdapter
         recyclerRecords.post { if (isAdded) render() }
         fabScrollTop = view.findViewById(R.id.fab_scroll_top)

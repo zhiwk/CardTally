@@ -14,53 +14,59 @@
         android:orientation="horizontal">
 
         <androidx.cardview.widget.CardView
-            android:layout_width="60dp"
-            android:layout_height="match_parent"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_marginEnd="8dp"
+            android:layout_gravity="center_vertical"
             app:cardBackgroundColor="@color/warning_container"
-            app:cardCornerRadius="24dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="0dp">
 
             <ImageButton
                 android:id="@+id/btn_archive"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@android:color/transparent"
+                android:padding="10dp"
                 android:src="@drawable/ic_archive"
                 app:tint="@color/warning_primary" />
 
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
-            android:layout_width="60dp"
-            android:layout_height="match_parent"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_marginEnd="8dp"
+            android:layout_gravity="center_vertical"
             app:cardBackgroundColor="@color/success_container"
-            app:cardCornerRadius="24dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="0dp">
 
             <ImageButton
                 android:id="@+id/btn_edit"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@android:color/transparent"
+                android:padding="10dp"
                 android:src="@drawable/ic_edit"
                 app:tint="@color/success_primary" />
 
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
-            android:layout_width="60dp"
-            android:layout_height="match_parent"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_vertical"
             app:cardBackgroundColor="@color/error_container"
-            app:cardCornerRadius="24dp"
+            app:cardCornerRadius="20dp"
             app:cardElevation="0dp">
 
             <ImageButton
                 android:id="@+id/btn_delete"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@android:color/transparent"
+                android:padding="10dp"
                 android:src="@drawable/ic_delete"
                 app:tint="@color/error_primary" />
 
@@ -72,8 +78,8 @@
         android:id="@+id/card_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardBackgroundColor="@color/surface_container_low"
-        app:cardCornerRadius="24dp"
+        app:cardBackgroundColor="@color/surface_light"
+        app:cardCornerRadius="12dp"
         app:cardElevation="0dp"
         app:strokeWidth="0dp">
 
@@ -82,19 +88,20 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="24dp">
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp">
 
             <FrameLayout
                 android:id="@+id/icon_container"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:background="@drawable/bg_circle_primary_container"
                 android:backgroundTint="#FFFFFF">
                 
                 <ImageView
                     android:id="@+id/image_asset_icon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_asset"
                     app:tint="?attr/colorPrimary"/>
@@ -104,7 +111,7 @@
                 android:id="@+id/layout_asset_info"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
+                android:layout_marginStart="12dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
@@ -135,7 +142,7 @@
                 android:layout_height="wrap_content"
                 android:text="¥ 84,200.00"
                 android:textColor="?attr/colorPrimary"
-                android:textSize="20sp"
+                    android:textSize="15sp"
                 android:fontFamily="sans-serif-medium" />
 
         </LinearLayout>

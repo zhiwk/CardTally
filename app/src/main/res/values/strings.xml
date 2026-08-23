@@ -35,6 +35,7 @@
     <string name="ledger_period_month">月</string>
     <string name="ledger_period_year">年</string>
     <string name="ledger_period_all">全部</string>
+    <string name="ledger_period_custom_short">自定义</string>
     <string name="ledger_period_custom">自定义周期</string>
     <string name="ledger_period_sheet_subtitle">把这一段财务叙事留在刚好的时间里</string>
     <string name="ledger_period_sheet_hint">切换到“自定义周期”后，可在日历中选择开始与结束日期。</string>
@@ -119,6 +120,8 @@
     <string name="record_category_label">分类</string>
     <string name="record_cancel">取消</string>
     <string name="record_save_entry">保存记录</string>
+    <string name="record_save_and_add">再记一笔</string>
+    <string name="record_keypad_hide">收起数字键盘</string>
     <string name="record_update">更新</string>
     <string name="record_editor_prompt">“这一刻，值得被记下一笔。”</string>
     <string name="record_date_display">%1$d月%2$d日</string>
@@ -272,6 +275,7 @@
     <string name="category_edit_title">编辑分类</string>
     <string name="category_delete_title">删除分类</string>
     <string name="category_delete_message">确定要删除“%1$s”吗？</string>
+    <string name="category_remove">移除</string>
     <string name="category_add_success">添加成功</string>
     <string name="category_add_failed">添加失败</string>
     <string name="category_dialog_name_hint">请输入分类名称</string>
@@ -281,7 +285,7 @@
     <string name="category_dialog_icon_hint">点击图标可选择</string>
     <string name="category_icon_picker_title">选择图标</string>
     <string name="category_icon_search_hint">搜索图标，例如：交通、餐饮、home</string>
-    <string name="category_add_child_cta">添加二级分类</string>
+    <string name="category_add_child_cta">添加分类</string>
     <string name="category_expand_content_description">展开或收起二级分类</string>
     <string name="category_drag_content_description">拖动排序</string>
     <string name="category_action_edit">编辑分类</string>

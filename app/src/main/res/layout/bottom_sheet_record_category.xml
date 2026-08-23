@@ -65,13 +65,4 @@
         android:paddingHorizontal="24dp"
         android:paddingTop="8dp" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_confirm_category"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="16dp"
-        android:text="@string/record_category_confirm"
-        app:cornerRadius="28dp" />
-
 </LinearLayout>

@@ -64,9 +64,9 @@ class LedgerCalendarAdapter(
             income.text = String.format(java.util.Locale.US, "+%.0f", day.income)
             expense.text = String.format(java.util.Locale.US, "-%.0f", day.expense)
             value.isSelected = day.isRangeBoundary
-            // The calendar uses a single selected-day state only. Range fills and
-            // the generic today marker are intentionally hidden on this page.
-            fillLeft.isVisible = false
+            // The selected range uses a flat band with the same 28dp height as
+            // the circular date marker; the boundary dates remain circular.
+            fillLeft.isVisible = day.isInSelectedRange
             fillRight.isVisible = false
             todayDot.isVisible = false
             value.setTextColor(

@@ -1,21 +1,15 @@
 package com.example.cardtally
 
-import android.app.AlertDialog
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.Switch
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
-import com.example.cardtally.model.Category
 import com.example.cardtally.util.AiAssistantSettingsHelper
 import com.example.cardtally.util.AssetDisplayHelper
-import com.example.cardtally.util.CategoryHierarchySettingsHelper
 import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.QuickAddHelper
 import com.example.cardtally.util.ScrollTopFabHelper
@@ -29,10 +23,8 @@ class SettingsFragment : Fragment() {
     private lateinit var switchShowAsset: Switch
     private lateinit var switchScrollTopFab: Switch
     private lateinit var cardCategory: View
-    private lateinit var cardCategoryMaxDepth: View
     private lateinit var cardLanguage: View
     private lateinit var textAiApiKeyStatus: TextView
-    private lateinit var textCategoryMaxDepth: TextView
     private lateinit var textCurrentLanguage: TextView
     private lateinit var databaseHelper: DatabaseHelper
 
@@ -51,10 +43,8 @@ class SettingsFragment : Fragment() {
         switchShowAsset = view.findViewById(R.id.switch_show_asset)
         switchScrollTopFab = view.findViewById(R.id.switch_scroll_top_fab)
         cardCategory = view.findViewById(R.id.card_category)
-        cardCategoryMaxDepth = view.findViewById(R.id.card_category_max_depth)
         cardLanguage = view.findViewById(R.id.card_language)
         textAiApiKeyStatus = view.findViewById(R.id.text_ai_api_key_status)
-        textCategoryMaxDepth = view.findViewById(R.id.text_category_max_depth)
         textCurrentLanguage = view.findViewById(R.id.text_current_language)
         databaseHelper = DatabaseHelper(requireContext())
 
@@ -63,7 +53,6 @@ class SettingsFragment : Fragment() {
         switchShowAsset.isChecked = AssetDisplayHelper.getShowAsset(requireContext())
         switchScrollTopFab.isChecked = ScrollTopFabHelper.isEnabled(requireContext())
 
-        updateCategoryMaxDepthText()
         updateCurrentLanguageText()
         updateAiApiKeyStatus()
 
@@ -98,12 +87,11 @@ class SettingsFragment : Fragment() {
                 .commit()
         }
 
-        cardCategoryMaxDepth.setOnClickListener {
-            showCategoryMaxDepthDialog()
-        }
-
         cardLanguage.setOnClickListener {
-            showLanguageDialog()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, LanguageSettingsFragment())
+                .addToBackStack(null)
+                .commit()
         }
 
         return view
@@ -114,7 +102,6 @@ class SettingsFragment : Fragment() {
         if (view == null || !::switchQuickAdd.isInitialized || !::switchScrollTopFab.isInitialized) {
             return
         }
-        updateCategoryMaxDepthText()
         updateCurrentLanguageText()
         updateAiApiKeyStatus()
         switchQuickAdd.isChecked = QuickAddHelper.getQuickAdd(requireContext())
@@ -130,14 +117,6 @@ class SettingsFragment : Fragment() {
         super.onDestroyView()
     }
 
-    private fun updateCategoryMaxDepthText() {
-        if (!::textCategoryMaxDepth.isInitialized || !isAdded) return
-        textCategoryMaxDepth.text = getString(
-            R.string.settings_category_max_depth_value,
-            CategoryHierarchySettingsHelper.getCategoryMaxDepth(requireContext())
-        )
-    }
-
     private fun updateCurrentLanguageText() {
         if (!::textCurrentLanguage.isInitialized || !isAdded) return
         textCurrentLanguage.text = LanguageHelper.getCurrentLanguageDisplayName(requireContext())
@@ -150,106 +129,6 @@ class SettingsFragment : Fragment() {
         } else {
             getString(R.string.settings_ai_api_key_status_not_set)
         }
-    }
-
-    private fun showLanguageDialog() {
-        val languageEntries = resources.getStringArray(R.array.supported_language_entries)
-        val languageValues = resources.getStringArray(R.array.supported_language_values)
-        val currentLanguageTag = LanguageHelper.getCurrentLanguageTag(requireContext())
-        val checkedIndex = languageValues.indexOf(currentLanguageTag).takeIf { it >= 0 } ?: 0
-
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.language_dialog_title)
-            .setSingleChoiceItems(languageEntries, checkedIndex) { dialog, which ->
-                val selectedLanguage = languageValues[which]
-                dialog.dismiss()
-                if (selectedLanguage != currentLanguageTag) {
-                    view?.post {
-                        if (isAdded) {
-                            LanguageHelper.updateLanguage(requireContext(), selectedLanguage)
-                        }
-                    }
-                }
-            }
-            .setNegativeButton(R.string.dialog_cancel, null)
-            .show()
-    }
-
-    private fun showCategoryMaxDepthDialog() {
-        val context = requireContext()
-        val currentValue = CategoryHierarchySettingsHelper.getCategoryMaxDepth(context)
-        val input = EditText(context).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            setText(currentValue.toString())
-            setSelection(text.length)
-        }
-
-        val dialog = AlertDialog.Builder(context)
-            .setTitle(R.string.settings_category_max_depth_dialog_title)
-            .setMessage(R.string.settings_category_max_depth_dialog_message)
-            .setView(input)
-            .setNegativeButton(R.string.dialog_cancel, null)
-            .setPositiveButton(R.string.dialog_confirm, null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val rawValue = input.text.toString().trim().toIntOrNull()
-                if (rawValue == null) {
-                    Toast.makeText(
-                        context,
-                        R.string.settings_category_max_depth_invalid,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return@setOnClickListener
-                }
-
-                val sanitizedDepth = CategoryHierarchySettingsHelper.sanitizeCategoryMaxDepth(rawValue)
-                val currentMaxDepth = getCurrentCategoryDepthFromDatabase()
-                if (sanitizedDepth < currentMaxDepth) {
-                    Toast.makeText(
-                        context,
-                        getString(R.string.settings_category_max_depth_too_small, currentMaxDepth),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return@setOnClickListener
-                }
-
-                CategoryHierarchySettingsHelper.saveCategoryMaxDepth(context, sanitizedDepth)
-                updateCategoryMaxDepthText()
-                dialog.dismiss()
-            }
-        }
-
-        dialog.show()
-    }
-
-    private fun getCurrentCategoryDepthFromDatabase(): Int {
-        val categories = databaseHelper.getAllCategories()
-        if (categories.isEmpty()) {
-            return 1
-        }
-
-        val categoriesById = categories.associateBy { it.id }
-        val depthCache = mutableMapOf<Long, Int>()
-
-        fun resolveDepth(category: Category, visiting: MutableSet<Long> = mutableSetOf()): Int {
-            depthCache[category.id]?.let { return it }
-            if (!visiting.add(category.id)) {
-                return 1
-            }
-
-            val depth = category.parentId
-                ?.let { parentId -> categoriesById[parentId] }
-                ?.let { parent -> resolveDepth(parent, visiting) + 1 }
-                ?: 1
-
-            visiting.remove(category.id)
-            depthCache[category.id] = depth
-            return depth
-        }
-
-        return categories.maxOf { resolveDepth(it) }
     }
 
     private fun updateBottomNavigation() {

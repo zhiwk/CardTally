@@ -6,15 +6,14 @@ import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.CategoryAdapter
 import com.example.cardtally.adapter.IconPickerAdapter
@@ -33,13 +32,6 @@ class CategoryManageFragment : Fragment() {
     private var adapter: CategoryAdapter? = null
     private var currentType = 0
 
-    private data class ParentOption(
-        val category: Category?,
-        val label: String
-    ) {
-        override fun toString(): String = label
-    }
-
     private val availableIcons: List<String> = MaterialSymbolCatalog.icons
 
     override fun onCreateView(
@@ -53,9 +45,36 @@ class CategoryManageFragment : Fragment() {
         recyclerCategories = view.findViewById(R.id.recycler_categories)
         textEmpty = view.findViewById(R.id.text_empty)
         btnAdd = view.findViewById(R.id.btn_add)
+        view.findViewById<View>(R.id.btn_back).setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
 
         databaseHelper = DatabaseHelper(requireContext())
         recyclerCategories.layoutManager = LinearLayoutManager(requireContext())
+        val reorderCallback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN,
+            0
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val from = viewHolder.adapterPosition
+                val to = target.adapterPosition
+                if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                adapter?.moveParent(from, to)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                adapter?.parentIdsInOrder()?.let(databaseHelper::updateCategorySortOrders)
+            }
+        }
+        ItemTouchHelper(reorderCallback).attachToRecyclerView(recyclerCategories)
 
         loadCategories()
 
@@ -110,6 +129,10 @@ class CategoryManageFragment : Fragment() {
                     override fun onAddChild(parent: Category) {
                         showCategoryDialog(category = null, initialParentId = parent.id)
                     }
+
+                    override fun onChildOrderChanged(children: List<Category>) {
+                        databaseHelper.updateCategorySortOrders(children.map { it.id })
+                    }
                 }
             )
             recyclerCategories.adapter = adapter
@@ -118,74 +141,13 @@ class CategoryManageFragment : Fragment() {
         }
     }
 
-    private fun calculateCategoryDepths(categories: List<Category>): Map<Long, Int> {
-        val categoriesById = categories.associateBy { it.id }
-        val depthCache = mutableMapOf<Long, Int>()
-
-        fun resolveDepth(category: Category, visiting: MutableSet<Long> = mutableSetOf()): Int {
-            depthCache[category.id]?.let { return it }
-            if (!visiting.add(category.id)) {
-                return 0
-            }
-
-            val depth = category.parentId
-                ?.let { parentId -> categoriesById[parentId] }
-                ?.let { parent -> resolveDepth(parent, visiting) + 1 }
-                ?: 0
-
-            visiting.remove(category.id)
-            depthCache[category.id] = depth
-            return depth
-        }
-
-        return categories.associate { category -> category.id to resolveDepth(category) }
-    }
-
-    private fun buildParentOptions(category: Category?): List<ParentOption> {
-        val categories = databaseHelper.getCategoryTreeByType(currentType)
-        val categoryDepths = calculateCategoryDepths(categories)
-        val excludedIds = category?.let { currentCategory ->
-            buildSet {
-                add(currentCategory.id)
-                collectDescendantIds(currentCategory.id, categories, this)
-            }
-        } ?: emptySet()
-
-        val options = mutableListOf(ParentOption(null, getString(R.string.category_parent_none)))
-        categories.forEach { candidate ->
-            if (candidate.id !in excludedIds) {
-                val depth = categoryDepths[candidate.id] ?: 0
-                options.add(ParentOption(candidate, "    ".repeat(depth) + candidate.name))
-            }
-        }
-        return options
-    }
-
-    private fun collectDescendantIds(
-        categoryId: Long,
-        categories: List<Category>,
-        descendants: MutableSet<Long>
-    ) {
-        categories
-            .filter { it.parentId == categoryId }
-            .forEach { child ->
-                if (descendants.add(child.id)) {
-                    collectDescendantIds(child.id, categories, descendants)
-                }
-            }
-    }
-
     private fun bindCategoryIcon(imageView: ImageView, icon: String?) {
         if (icon.isNullOrEmpty()) {
             imageView.setImageResource(R.drawable.ic_category_other)
             return
         }
 
-        val resourceId = requireContext().resources.getIdentifier(
-            icon,
-            "drawable",
-            requireContext().packageName
-        )
+        val resourceId = MaterialSymbolCatalog.resourceId(icon)
         if (resourceId != 0) {
             imageView.setImageResource(resourceId)
         } else {
@@ -226,21 +188,9 @@ class CategoryManageFragment : Fragment() {
             .inflate(R.layout.dialog_add_category, null)
         val editName = dialogView.findViewById<EditText>(R.id.edit_category_name)
         val imageIcon = dialogView.findViewById<ImageView>(R.id.image_category_icon)
-        val spinnerParent = dialogView.findViewById<Spinner>(R.id.spinner_parent_category)
-        val parentOptions = buildParentOptions(category)
-        val parentAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_small, parentOptions)
-
-        parentAdapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-        spinnerParent.adapter = parentAdapter
-
         var selectedIcon = category?.icon
         editName.setText(category?.name.orEmpty())
         bindCategoryIcon(imageIcon, selectedIcon)
-
-        val selectedParentIndex = (category?.parentId ?: initialParentId)?.let { parentId ->
-            parentOptions.indexOfFirst { it.category?.id == parentId }
-        } ?: 0
-        spinnerParent.setSelection(selectedParentIndex.coerceAtLeast(0))
 
         imageIcon.setOnClickListener {
             showIconPickerDialog(selectedIcon) { icon ->
@@ -249,12 +199,18 @@ class CategoryManageFragment : Fragment() {
             }
         }
 
-        val dialog = AlertDialog.Builder(requireContext())
+        val dialogBuilder = AlertDialog.Builder(requireContext())
             .setTitle(if (isEditing) R.string.category_edit_title else R.string.category_add_title)
             .setView(dialogView)
             .setNegativeButton(R.string.dialog_cancel, null)
             .setPositiveButton(R.string.dialog_confirm, null)
-            .create()
+        // A child category can be removed from the left side of the action row.
+        // Parent categories keep the simpler edit flow because deleting them may
+        // affect their children and is handled separately by the category list.
+        if (isEditing && category?.parentId != null) {
+            dialogBuilder.setNeutralButton(R.string.category_remove, null)
+        }
+        val dialog = dialogBuilder.create()
 
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
@@ -268,10 +224,7 @@ class CategoryManageFragment : Fragment() {
                     this.name = name
                     this.type = currentType
                     this.icon = selectedIcon
-                    this.parentId = parentOptions
-                        .getOrNull(spinnerParent.selectedItemPosition)
-                        ?.category
-                        ?.id
+                    this.parentId = category?.parentId ?: initialParentId
                 }
 
                 try {
@@ -301,6 +254,12 @@ class CategoryManageFragment : Fragment() {
 
                 loadCategories()
                 dialog.dismiss()
+            }
+            if (isEditing && category?.parentId != null) {
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setOnClickListener {
+                    showDeleteDialog(category)
+                    dialog.dismiss()
+                }
             }
         }
 

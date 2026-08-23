@@ -1,6 +1,8 @@
 package com.example.cardtally
 
+import android.app.AlertDialog
 import android.os.Bundle
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,6 +10,7 @@ import android.widget.Button
 import android.widget.DatePicker
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -17,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.AssetSheetItem
 import com.example.cardtally.adapter.RecordAssetSheetAdapter
 import com.example.cardtally.adapter.RecordCategoryTreeAdapter
+import com.example.cardtally.adapter.IconPickerAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
@@ -26,15 +30,22 @@ import com.example.cardtally.state.RecordSheet
 import com.example.cardtally.state.RecordType
 import com.example.cardtally.state.StableIdResolver
 import com.example.cardtally.util.ThemeColorHelper
+import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.AmountKeypadController
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.util.Calendar
 import java.util.Locale
 
-class AddRecordFragment : Fragment() {
+open class AddRecordFragment : Fragment() {
+    companion object {
+        private const val KEY_RECORD_ID = "record_id"
+    }
+
     private lateinit var textDate: TextView
     private lateinit var textAssetValue: TextView
     private lateinit var textCategoryValue: TextView
+    private lateinit var imageCategoryIcon: ImageView
     private lateinit var editAmount: EditText
     private lateinit var editDescription: EditText
     private lateinit var btnExpense: Button
@@ -42,6 +53,7 @@ class AddRecordFragment : Fragment() {
     private lateinit var btnClose: View
     private lateinit var btnCancel: View
     private lateinit var btnSave: View
+    private lateinit var btnSaveAndAdd: View
     private lateinit var rowDate: View
     private lateinit var rowAsset: View
     private lateinit var rowCategory: View
@@ -57,6 +69,17 @@ class AddRecordFragment : Fragment() {
     private var openSheet = RecordSheet.NONE
     private var pendingCategoryId: Long? = null
     private lateinit var backPressedCallback: OnBackPressedCallback
+    private var editingRecordId: Long? = null
+    private var editingRecord: Record? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        editingRecordId = when {
+            savedInstanceState?.containsKey(KEY_RECORD_ID) == true -> savedInstanceState.getLong(KEY_RECORD_ID)
+            arguments?.containsKey(KEY_RECORD_ID) == true -> arguments?.getLong(KEY_RECORD_ID)
+            else -> null
+        }?.takeIf { it > 0L }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -68,6 +91,7 @@ class AddRecordFragment : Fragment() {
         textDate = view.findViewById(R.id.text_date)
         textAssetValue = view.findViewById(R.id.text_asset_value)
         textCategoryValue = view.findViewById(R.id.text_category_value)
+        imageCategoryIcon = view.findViewById(R.id.image_category_icon)
         editAmount = view.findViewById(R.id.edit_amount)
         editDescription = view.findViewById(R.id.edit_description)
         btnExpense = view.findViewById(R.id.btn_expense)
@@ -75,13 +99,30 @@ class AddRecordFragment : Fragment() {
         btnClose = view.findViewById(R.id.btn_close)
         btnCancel = view.findViewById(R.id.btn_cancel)
         btnSave = view.findViewById(R.id.btn_save)
+        btnSaveAndAdd = view.findViewById(R.id.btn_save_and_add)
+        val amountKeypad = view.findViewById<View>(R.id.layout_amount_keypad)
+        AmountKeypadController(requireContext(), editAmount, amountKeypad, view.findViewById(R.id.layout_buttons)) {
+            editAmount.clearFocus()
+        }.also { it.bind() }
         rowDate = view.findViewById(R.id.row_date)
         rowAsset = view.findViewById(R.id.row_asset)
         rowCategory = view.findViewById(R.id.row_category)
 
         databaseHelper = DatabaseHelper(requireContext())
 
-        val defaultState = RecordFormState.DEFAULT.copy(selectedDate = databaseHelper.getCurrentDate())
+        editingRecord = editingRecordId?.let(databaseHelper::getRecordById)
+        val defaultState = editingRecord?.let { record ->
+            RecordFormState(
+                amountBuffer = String.format(Locale.US, "%.2f", record.amount),
+                recordType = if (record.type == 1) RecordType.INCOME else RecordType.EXPENSE,
+                selectedDate = record.date,
+                selectedAssetId = databaseHelper.getAllAssets().firstOrNull { it.name == record.assetSource }?.id,
+                selectedCategoryId = record.categoryId,
+                description = record.description.orEmpty(),
+                openSheet = RecordSheet.NONE,
+                pendingCategoryId = null
+            )
+        } ?: RecordFormState.DEFAULT.copy(selectedDate = databaseHelper.getCurrentDate())
         val restoredState = RecordFormState.readFrom(savedInstanceState, defaultState)
         currentType = if (restoredState.recordType == RecordType.INCOME) 1 else 0
         selectedDate = restoredState.selectedDate
@@ -89,14 +130,19 @@ class AddRecordFragment : Fragment() {
         pendingCategoryId = restoredState.pendingCategoryId
         editAmount.setText(restoredState.amountBuffer)
         editDescription.setText(restoredState.description)
-        setupAmountInputBehavior()
 
-        loadCategories(currentType)
-        loadAssets()
+        loadCategories(currentType, restoredState.selectedCategoryId)
+        loadAssets(restoredState.selectedAssetId)
         if (savedInstanceState != null) {
             restoreSelections(restoredState)
         }
         updateDisplayedDate()
+        view.findViewById<TextView>(R.id.text_title).text = getString(
+            if (isEditing()) R.string.record_title_edit else R.string.record_title_new
+        )
+        if (isEditing()) {
+            view.findViewById<TextView>(R.id.text_save_label).text = getString(R.string.record_update)
+        }
         updateTypeStyle()
         setupBackNavigation()
 
@@ -108,7 +154,7 @@ class AddRecordFragment : Fragment() {
             if (currentType != 0) {
                 currentType = 0
                 updateTypeStyle()
-                loadCategories(0)
+                loadCategories(0, null)
             }
         }
 
@@ -116,13 +162,14 @@ class AddRecordFragment : Fragment() {
             if (currentType != 1) {
                 currentType = 1
                 updateTypeStyle()
-                loadCategories(1)
+                loadCategories(1, null)
             }
         }
 
         btnClose.setOnClickListener { navigateBack() }
         btnCancel.setOnClickListener { navigateBack() }
         btnSave.setOnClickListener { saveRecord(true) }
+        btnSaveAndAdd.setOnClickListener { saveRecord(false, true) }
 
         view.post { restoreOpenSheet() }
         return view
@@ -140,6 +187,7 @@ class AddRecordFragment : Fragment() {
             openSheet = openSheet,
             pendingCategoryId = pendingCategoryId
         ).writeTo(outState)
+        editingRecordId?.let { outState.putLong(KEY_RECORD_ID, it) }
     }
 
     override fun onResume() {
@@ -154,49 +202,33 @@ class AddRecordFragment : Fragment() {
 
     private fun updateTypeStyle() {
         if (currentType == 0) {
-            btnExpense.setBackgroundResource(R.drawable.shape_button_primary)
-            btnExpense.setTextColor(
-                ThemeColorHelper.resolveColor(
-                    requireContext(),
-                    com.google.android.material.R.attr.colorOnPrimary
-                )
-            )
-
+            btnExpense.setBackgroundResource(R.drawable.bg_record_type_tab_selected)
+            btnExpense.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface))
+            btnExpense.isSelected = true
             btnIncome.setBackgroundResource(android.R.color.transparent)
-            btnIncome.setTextColor(
-                ThemeColorHelper.resolveColor(
-                    requireContext(),
-                    com.google.android.material.R.attr.colorOnSurfaceVariant
-                )
-            )
+            btnIncome.setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted))
+            btnIncome.isSelected = false
         } else {
             btnExpense.setBackgroundResource(android.R.color.transparent)
-            btnExpense.setTextColor(
-                ThemeColorHelper.resolveColor(
-                    requireContext(),
-                    com.google.android.material.R.attr.colorOnSurfaceVariant
-                )
-            )
-
-            btnIncome.setBackgroundResource(R.drawable.shape_button_primary)
-            btnIncome.setTextColor(
-                ThemeColorHelper.resolveColor(
-                    requireContext(),
-                    com.google.android.material.R.attr.colorOnPrimary
-                )
-            )
+            btnExpense.setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted))
+            btnExpense.isSelected = false
+            btnIncome.setBackgroundResource(R.drawable.bg_record_type_tab_selected)
+            btnIncome.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface))
+            btnIncome.isSelected = true
         }
     }
 
-    private fun loadCategories(type: Int) {
+    private fun loadCategories(type: Int, selectedCategoryId: Long? = null) {
         currentCategories = databaseHelper.getCategoryTreeByType(type).toMutableList()
-        selectedCategory = currentCategories.firstOrNull { isLeafCategory(it) }
+        selectedCategory = selectedCategoryId?.let { id ->
+            currentCategories.firstOrNull { it.id == id && isLeafCategory(it) }
+        } ?: currentCategories.firstOrNull { isLeafCategory(it) }
         updateCategorySummary()
     }
 
-    private fun loadAssets() {
+    private fun loadAssets(selectedAssetId: Long? = null) {
         currentAssets = databaseHelper.getAllAssets().toMutableList()
-        selectedAsset = null
+        selectedAsset = selectedAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
         updateAssetSummary()
     }
 
@@ -268,17 +300,32 @@ class AddRecordFragment : Fragment() {
         val btnCloseSheet = sheetView.findViewById<ImageButton>(R.id.btn_close_sheet)
         val recyclerCategories = sheetView.findViewById<RecyclerView>(R.id.recycler_categories)
         val textBreadcrumb = sheetView.findViewById<TextView>(R.id.text_category_breadcrumb)
-        val btnConfirm = sheetView.findViewById<View>(R.id.btn_confirm_category)
 
         var pendingCategory = pendingCategoryId?.let { id -> currentCategories.firstOrNull { it.id == id } }
             ?: selectedCategory
         pendingCategoryId = pendingCategory?.id
-        categoryAdapter = RecordCategoryTreeAdapter(currentCategories, pendingCategoryId) { category ->
-            pendingCategory = category
-            pendingCategoryId = category.id
-            textBreadcrumb.text = category.id.let(databaseHelper::buildCategoryPathLabel)
-                ?: getString(R.string.record_category_sheet_breadcrumb_empty)
-        }
+        categoryAdapter = RecordCategoryTreeAdapter(
+            currentCategories,
+            pendingCategoryId,
+            onCategorySelected = { category ->
+                pendingCategory = category
+                pendingCategoryId = category.id
+                textBreadcrumb.text = category.id.let(databaseHelper::buildCategoryPathLabel)
+                    ?: getString(R.string.record_category_sheet_breadcrumb_empty)
+                selectedCategory = category
+                updateCategorySummary()
+                dialog.dismiss()
+            },
+            onAddChild = { parent ->
+                showAddChildCategoryDialog(parent) { created ->
+                    currentCategories = databaseHelper.getCategoryTreeByType(currentType).toMutableList()
+                    selectedCategory = created
+                    pendingCategoryId = created.id
+                    updateCategorySummary()
+                    dialog.dismiss()
+                }
+            }
+        )
 
         recyclerCategories.layoutManager = LinearLayoutManager(requireContext())
         recyclerCategories.adapter = categoryAdapter
@@ -290,14 +337,79 @@ class AddRecordFragment : Fragment() {
             pendingCategoryId = null
         }
         btnCloseSheet.setOnClickListener { dialog.dismiss() }
-        btnConfirm.setOnClickListener {
-            val category = pendingCategory
-            if (category == null || !isLeafCategory(category)) {
-                Toast.makeText(requireContext(), getString(R.string.validation_select_category), Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+        dialog.show()
+    }
+
+    private fun showAddChildCategoryDialog(parent: Category, onCreated: (Category) -> Unit) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_category, null)
+        val editName = dialogView.findViewById<EditText>(R.id.edit_category_name)
+        val imageIcon = dialogView.findViewById<ImageView>(R.id.image_category_icon)
+        var selectedIcon: String? = null
+        bindCategoryIcon(imageIcon, selectedIcon)
+        imageIcon.setOnClickListener {
+            showIconPickerDialog(selectedIcon) { icon ->
+                selectedIcon = icon
+                bindCategoryIcon(imageIcon, selectedIcon)
             }
-            selectedCategory = category
-            updateCategorySummary()
+        }
+
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.category_add_title)
+            .setView(dialogView)
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .setPositiveButton(R.string.dialog_confirm, null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val name = editName.text.toString().trim()
+                if (TextUtils.isEmpty(name)) {
+                    Toast.makeText(requireContext(), R.string.category_error_empty_name, Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                val category = Category(
+                    name = name,
+                    type = currentType,
+                    icon = selectedIcon,
+                    parentId = parent.id
+                )
+                try {
+                    val id = databaseHelper.addCategory(category)
+                    if (id == -1L) {
+                        Toast.makeText(requireContext(), R.string.category_add_failed, Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
+                    category.id = id
+                    onCreated(category)
+                    dialog.dismiss()
+                } catch (exception: DatabaseHelper.CategoryOperationException) {
+                    Toast.makeText(requireContext(), exception.message ?: getString(R.string.category_add_failed), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun bindCategoryIcon(imageView: ImageView, icon: String?) {
+        val resourceId = icon?.let { name ->
+            MaterialSymbolCatalog.resourceId(name).takeIf { it != 0 }
+                ?: requireContext().resources.getIdentifier(name, "drawable", requireContext().packageName)
+        }?.takeIf { it != 0 } ?: R.drawable.ic_category_other
+        imageView.setImageResource(resourceId)
+    }
+
+    private fun showIconPickerDialog(selectedIcon: String?, onIconSelected: (String?) -> Unit) {
+        val view = layoutInflater.inflate(R.layout.dialog_icon_picker, null)
+        val recyclerIcons = view.findViewById<RecyclerView>(R.id.recycler_icons)
+        val iconAdapter = IconPickerAdapter(MaterialSymbolCatalog.icons, selectedIcon) { icon ->
+            onIconSelected(icon)
+        }
+        recyclerIcons.adapter = iconAdapter
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.category_icon_picker_title)
+            .setView(view)
+            .create()
+        iconAdapter.setOnIconSelected { icon ->
+            onIconSelected(icon)
             dialog.dismiss()
         }
         dialog.show()
@@ -323,6 +435,7 @@ class AddRecordFragment : Fragment() {
     private fun updateCategorySummary() {
         textCategoryValue.text = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel)
             ?: getString(R.string.record_category_unselected)
+        bindCategoryIcon(imageCategoryIcon, selectedCategory?.icon)
     }
 
     private fun buildAssetSheetItems(): List<AssetSheetItem> {
@@ -382,7 +495,7 @@ class AddRecordFragment : Fragment() {
         }
     }
 
-    private fun saveRecord(shouldReturn: Boolean) {
+    private fun saveRecord(shouldReturn: Boolean, openNewEntry: Boolean = false) {
         val amountStr = editAmount.text.toString().trim()
         val category = selectedCategory?.name
         val description = editDescription.text.toString().trim()
@@ -425,39 +538,42 @@ class AddRecordFragment : Fragment() {
             description = description,
             assetSource = selectedAsset?.name
         )
-        val id = databaseHelper.addRecord(record)
+        val success = if (isEditing()) {
+            val existing = editingRecord ?: return
+            record.id = existing.id
+            record.sortOrder = existing.sortOrder
+            databaseHelper.updateRecord(record) > 0
+        } else {
+            databaseHelper.addRecord(record) != -1L
+        }
 
-        if (id != -1L) {
-            Toast.makeText(requireContext(), getString(R.string.toast_save_success), Toast.LENGTH_SHORT).show()
-            if (shouldReturn) {
+        if (success) {
+            Toast.makeText(
+                requireContext(),
+                getString(if (isEditing()) R.string.toast_update_success else R.string.toast_save_success),
+                Toast.LENGTH_SHORT
+            ).show()
+            if (openNewEntry) {
+                openFreshRecord()
+            } else if (shouldReturn) {
                 navigateBack()
             } else {
                 clearAmountAndDescription()
             }
         } else {
-            Toast.makeText(requireContext(), getString(R.string.toast_save_failed), Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                getString(if (isEditing()) R.string.toast_update_failed else R.string.toast_save_failed),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
+
+    private fun isEditing(): Boolean = editingRecordId != null && editingRecord != null
 
     private fun clearAmountAndDescription() {
         editAmount.setText(getString(R.string.amount_default))
         editDescription.setText("")
-    }
-
-    private fun setupAmountInputBehavior() {
-        editAmount.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) {
-                selectAmountIfStillDefault()
-            }
-        }
-        editAmount.setOnClickListener { selectAmountIfStillDefault() }
-    }
-
-    private fun selectAmountIfStillDefault() {
-        if (editAmount.text.toString() != getString(R.string.amount_default)) {
-            return
-        }
-        editAmount.post { editAmount.selectAll() }
     }
 
     private fun setupBackNavigation() {
@@ -467,6 +583,12 @@ class AddRecordFragment : Fragment() {
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+    }
+
+    private fun openFreshRecord() {
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, AddRecordFragment())
+            .commit()
     }
 
     private fun navigateBack() {

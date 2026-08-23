@@ -13,12 +13,14 @@ import com.example.cardtally.R
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.LedgerDisplayHelper
+import com.example.cardtally.util.MaterialSymbolCatalog
 import com.example.cardtally.util.SwipeToEditDeleteHelper
 import com.example.cardtally.util.ThemeColorHelper
 
 class DateGroupAdapter(
     private var dateGroups: List<DateGroup>,
-    private val listener: OnRecordActionListener
+    private val listener: OnRecordActionListener,
+    private val categoryIconsById: Map<Long, String> = emptyMap()
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -261,7 +263,8 @@ class DateGroupAdapter(
             record: Record,
             listener: OnRecordActionListener,
             isMultiSelect: Boolean,
-            isSelected: Boolean
+            isSelected: Boolean,
+            categoryIconsById: Map<Long, String> = emptyMap()
         ) {
             currentRecord = record
             val title = record.description?.takeIf { it.isNotBlank() }
@@ -272,7 +275,12 @@ class DateGroupAdapter(
             textTime.text = buildSubtitle(record)
             textAsset.text = record.assetSource?.takeIf { it.isNotBlank() }.orEmpty()
             textAsset.visibility = if (textAsset.text.isNullOrBlank()) View.GONE else View.VISIBLE
-            imageIcon.setImageResource(categoryIcons[record.category] ?: R.drawable.ic_category_other)
+            val iconName = record.categoryId?.let(categoryIconsById::get)
+            val iconResource = iconName?.let { MaterialSymbolCatalog.resourceId(it) }
+                ?.takeIf { it != 0 }
+                ?: categoryIcons[record.category]
+                ?: R.drawable.ic_category_other
+            imageIcon.setImageResource(iconResource)
 
             textDescription.visibility = View.GONE
 

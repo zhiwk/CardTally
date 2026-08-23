@@ -10,12 +10,21 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.ThemeColorHelper
+import com.example.cardtally.util.MaterialSymbolCatalog
 
 class CategorySelectorAdapter(
     private var categories: List<Category>,
     private var selectedCategory: Category?,
     private val onCategorySelected: (Category) -> Unit
 ) : RecyclerView.Adapter<CategorySelectorAdapter.CategoryViewHolder>() {
+
+    // Records may only reference leaf categories. Keep this adapter safe as well as
+    // the tree selector, because older callers can still pass a flat category list.
+    private val leafCategories: List<Category>
+        get() {
+            val parentIds = categories.mapNotNull { it.parentId }.toSet()
+            return categories.filter { it.id !in parentIds }
+        }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -24,15 +33,12 @@ class CategorySelectorAdapter(
     }
 
     override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) {
-        val category = categories[position]
+        val category = leafCategories[position]
         holder.textName.text = category.name
 
-        if (category.icon != null) {
-            val resourceId = holder.itemView.context.resources.getIdentifier(
-                category.icon,
-                "drawable",
-                holder.itemView.context.packageName
-            )
+        val iconName = category.icon
+        if (!iconName.isNullOrEmpty()) {
+            val resourceId = MaterialSymbolCatalog.resourceId(iconName)
             if (resourceId != 0) {
                 holder.imageIcon.setImageResource(resourceId)
             } else {
@@ -71,7 +77,7 @@ class CategorySelectorAdapter(
         }
     }
 
-    override fun getItemCount(): Int = categories.size
+    override fun getItemCount(): Int = leafCategories.size
 
     fun updateCategories(newCategories: List<Category>) {
         categories = newCategories

@@ -5,5 +5,6 @@ data class Category(
     var name: String = "",
     var type: Int = 0,
     var icon: String? = null,
-    var parentId: Long? = null
+    var parentId: Long? = null,
+    var sortOrder: Int = 0
 )

@@ -14,7 +14,8 @@ import com.example.cardtally.util.LedgerDisplayHelper
 class LedgerDateGroupAdapter(
     private var groups: List<DateGroup>,
     private val listener: DateGroupAdapter.OnRecordActionListener,
-    private val onHeaderBound: (View) -> Unit
+    private val onHeaderBound: (View) -> Unit,
+    private val categoryIconsById: Map<Long, String> = emptyMap()
 ) : RecyclerView.Adapter<LedgerDateGroupAdapter.GroupViewHolder>() {
 
     private companion object {
@@ -74,7 +75,7 @@ class LedgerDateGroupAdapter(
         }
 
         override fun onBindViewHolder(holder: DateGroupAdapter.RecordViewHolder, position: Int) {
-            holder.bind(records[position], listener, false, false)
+            holder.bind(records[position], listener, false, false, categoryIconsById)
         }
 
         override fun getItemCount(): Int = records.size

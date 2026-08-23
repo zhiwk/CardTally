@@ -46,7 +46,7 @@ class DatabaseHelper(
 
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
-        private const val DATABASE_VERSION = 11
+        private const val DATABASE_VERSION = 14
         const val MAX_RECORD_QUERY_LIMIT = 200
         const val RECORD_UNDO_WINDOW_MS = 10_000L
 
@@ -74,6 +74,7 @@ class DatabaseHelper(
         private const val COLUMN_CATEGORY_TYPE = "type"
         private const val COLUMN_CATEGORY_ICON = "icon"
         private const val COLUMN_CATEGORY_PARENT_ID = "parent_id"
+        private const val COLUMN_CATEGORY_SORT_ORDER = "sort_order"
 
         private const val TABLE_ASSETS = "assets"
         private const val COLUMN_ASSET_ID = "id"
@@ -116,7 +117,8 @@ class DatabaseHelper(
             "$COLUMN_CATEGORY_NAME TEXT NOT NULL, " +
             "$COLUMN_CATEGORY_TYPE INTEGER NOT NULL, " +
             "$COLUMN_CATEGORY_ICON TEXT, " +
-            "$COLUMN_CATEGORY_PARENT_ID INTEGER)"
+            "$COLUMN_CATEGORY_PARENT_ID INTEGER, " +
+            "$COLUMN_CATEGORY_SORT_ORDER INTEGER NOT NULL DEFAULT 0)"
 
         private const val CREATE_TABLE_ASSETS =
             "CREATE TABLE $TABLE_ASSETS (" +
@@ -253,45 +255,62 @@ class DatabaseHelper(
         if (oldVersion < 11) {
             db.execSQL(CREATE_TABLE_RECORD_DELETION_UNDO)
         }
+        if (oldVersion < 12) {
+            replaceUnusedDefaultExpenseCategories(db)
+        }
+        if (oldVersion < 13) {
+            ensureColumn(
+                db = db,
+                tableName = TABLE_CATEGORIES,
+                columnName = COLUMN_CATEGORY_SORT_ORDER,
+                alterStatement = "ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_CATEGORY_SORT_ORDER INTEGER NOT NULL DEFAULT 0"
+            )
+            initializeCategorySortOrders(db)
+        }
+        if (oldVersion < 14) {
+            replaceDefaultIncomeCategories(db)
+        }
     }
 
     private fun insertDefaultCategories(db: SQLiteDatabase) {
-        val expenseCategories = listOf(
-            Pair("餐饮", "ic_category_food"),
-            Pair("交通", "ic_category_transport"),
-            Pair("购物", "ic_category_shopping"),
-            Pair("娱乐", "ic_category_entertainment"),
-            Pair("医疗", "ic_category_medical"),
-            Pair("教育", "ic_category_education"),
-            Pair("住房", "ic_category_housing"),
-            Pair("其他", "ic_category_other")
+        val expenseParents = listOf(
+            "购物" to "ic_category_shopping",
+            "餐饮" to "ic_category_food",
+            "居住" to "ic_category_housing",
+            "交通" to "ic_category_transport"
         )
-        
-        val incomeCategories = listOf(
-            Pair("工资", "ic_category_salary"),
-            Pair("奖金", "ic_category_bonus"),
-            Pair("投资", null),
-            Pair("兼职", null),
-            Pair("其他", "ic_category_other")
-        )
-
-        for ((category, icon) in expenseCategories) {
+        val parentIds = mutableMapOf<String, Long>()
+        for ((index, categoryAndIcon) in expenseParents.withIndex()) {
+            val (category, icon) = categoryAndIcon
             val values = ContentValues().apply {
                 put(COLUMN_CATEGORY_NAME, category)
                 put(COLUMN_CATEGORY_TYPE, 0)
                 put(COLUMN_CATEGORY_ICON, icon)
+                put(COLUMN_CATEGORY_SORT_ORDER, index)
             }
-            db.insert(TABLE_CATEGORIES, null, values)
+            parentIds[category] = db.insertOrThrow(TABLE_CATEGORIES, null, values)
         }
 
-        for ((category, icon) in incomeCategories) {
-            val values = ContentValues().apply {
-                put(COLUMN_CATEGORY_NAME, category)
-                put(COLUMN_CATEGORY_TYPE, 1)
-                put(COLUMN_CATEGORY_ICON, icon)
+        val expenseChildren = mapOf(
+            "购物" to listOf("服饰" to "ms_rounded_checkroom", "家电" to "ms_rounded_devices", "数码" to "ms_rounded_devices"),
+            "餐饮" to listOf("早午晚餐" to "ms_rounded_lunch_dining"),
+            "居住" to listOf("房租" to "ms_rounded_home", "酒店" to "ms_rounded_hotel"),
+            "交通" to listOf("短途" to "ms_rounded_directions_car", "飞机高铁" to "ms_rounded_flight")
+        )
+        for ((parentName, children) in expenseChildren) {
+            val parentId = parentIds[parentName] ?: continue
+            for ((category, icon) in children) {
+                val values = ContentValues().apply {
+                    put(COLUMN_CATEGORY_NAME, category)
+                    put(COLUMN_CATEGORY_TYPE, 0)
+                    put(COLUMN_CATEGORY_ICON, icon)
+                    put(COLUMN_CATEGORY_PARENT_ID, parentId)
+                }
+                db.insertOrThrow(TABLE_CATEGORIES, null, values)
             }
-            db.insert(TABLE_CATEGORIES, null, values)
         }
+
+        insertDefaultIncomeCategories(db)
     }
 
     private fun updateCategoriesWithIcons(db: SQLiteDatabase) {
@@ -408,7 +427,8 @@ class DatabaseHelper(
             name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_NAME)),
             type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE)),
             icon = getNullableString(cursor, COLUMN_CATEGORY_ICON),
-            parentId = getNullableLong(cursor, COLUMN_CATEGORY_PARENT_ID)
+            parentId = getNullableLong(cursor, COLUMN_CATEGORY_PARENT_ID),
+            sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_SORT_ORDER))
         )
     }
 
@@ -445,7 +465,10 @@ class DatabaseHelper(
     private fun getCategoriesByTypeInternal(db: SQLiteDatabase, type: Int): List<Category> {
         val categories = mutableListOf<Category>()
         val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_TYPE = ? ORDER BY $COLUMN_CATEGORY_NAME COLLATE NOCASE ASC, $COLUMN_CATEGORY_ID ASC",
+            "SELECT * FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_TYPE = ? " +
+                "ORDER BY CASE WHEN $COLUMN_CATEGORY_PARENT_ID IS NULL THEN 0 ELSE 1 END, " +
+                "$COLUMN_CATEGORY_PARENT_ID, $COLUMN_CATEGORY_SORT_ORDER ASC, " +
+                "$COLUMN_CATEGORY_NAME COLLATE NOCASE ASC, $COLUMN_CATEGORY_ID ASC",
             arrayOf(type.toString())
         )
 
@@ -672,6 +695,160 @@ class DatabaseHelper(
         }
     }
 
+    private fun replaceUnusedDefaultExpenseCategories(db: SQLiteDatabase) {
+        val hasRecords = db.rawQuery("SELECT 1 FROM $TABLE_RECORDS LIMIT 1", null).use { it.moveToFirst() }
+        if (hasRecords) return
+
+        db.delete(TABLE_CATEGORIES, "$COLUMN_CATEGORY_TYPE = ?", arrayOf("0"))
+        insertDefaultExpenseCategories(db)
+    }
+
+    private fun insertDefaultExpenseCategories(db: SQLiteDatabase) {
+        val values = ContentValues()
+        val parents = listOf(
+            "购物" to "ic_category_shopping",
+            "餐饮" to "ic_category_food",
+            "居住" to "ic_category_housing",
+            "交通" to "ic_category_transport"
+        )
+        val parentIds = mutableMapOf<String, Long>()
+        parents.forEachIndexed { index, (name, icon) ->
+            values.clear()
+            values.put(COLUMN_CATEGORY_NAME, name)
+            values.put(COLUMN_CATEGORY_TYPE, 0)
+            values.put(COLUMN_CATEGORY_ICON, icon)
+            values.put(COLUMN_CATEGORY_SORT_ORDER, index)
+            parentIds[name] = db.insertOrThrow(TABLE_CATEGORIES, null, values)
+        }
+        val children = mapOf(
+            "购物" to listOf("服饰" to "ms_rounded_checkroom", "家电" to "ms_rounded_devices", "数码" to "ms_rounded_devices"),
+            "餐饮" to listOf("早午晚餐" to "ms_rounded_lunch_dining"),
+            "居住" to listOf("房租" to "ms_rounded_home", "酒店" to "ms_rounded_hotel"),
+            "交通" to listOf("短途" to "ms_rounded_directions_car", "飞机高铁" to "ms_rounded_flight")
+        )
+        children.forEach { (parent, items) ->
+            items.forEach { (name, icon) ->
+                values.clear()
+                values.put(COLUMN_CATEGORY_NAME, name)
+                values.put(COLUMN_CATEGORY_TYPE, 0)
+                values.put(COLUMN_CATEGORY_ICON, icon)
+                values.put(COLUMN_CATEGORY_PARENT_ID, parentIds[parent])
+                db.insertOrThrow(TABLE_CATEGORIES, null, values)
+            }
+        }
+    }
+
+    private fun insertDefaultIncomeCategories(db: SQLiteDatabase) {
+        val parents = listOf(
+            "工作" to "ms_rounded_work",
+            "理财" to "ms_rounded_account_balance"
+        )
+        val parentIds = mutableMapOf<String, Long>()
+        parents.forEachIndexed { index, (name, icon) ->
+            val parentId = findCategoryId(db, name, 1, null) ?: db.insertOrThrow(
+                TABLE_CATEGORIES,
+                null,
+                ContentValues().apply {
+                    put(COLUMN_CATEGORY_NAME, name)
+                    put(COLUMN_CATEGORY_TYPE, 1)
+                    put(COLUMN_CATEGORY_ICON, icon)
+                    put(COLUMN_CATEGORY_SORT_ORDER, index)
+                }
+            )
+            parentIds[name] = parentId
+        }
+
+        val children = mapOf(
+            "工作" to listOf("工资" to "ic_category_salary", "报销" to "ms_rounded_receipt_long"),
+            "理财" to listOf(
+                "股票" to "ms_rounded_show_chart",
+                "基金" to "ms_rounded_pie_chart",
+                "黄金" to "ms_rounded_savings"
+            )
+        )
+        children.forEach { (parentName, items) ->
+            items.forEachIndexed { index, (name, icon) ->
+                val parentId = parentIds[parentName] ?: return@forEachIndexed
+                if (findCategoryId(db, name, 1, parentId) == null) {
+                    db.insertOrThrow(
+                        TABLE_CATEGORIES,
+                        null,
+                        ContentValues().apply {
+                            put(COLUMN_CATEGORY_NAME, name)
+                            put(COLUMN_CATEGORY_TYPE, 1)
+                            put(COLUMN_CATEGORY_ICON, icon)
+                            put(COLUMN_CATEGORY_PARENT_ID, parentId)
+                            put(COLUMN_CATEGORY_SORT_ORDER, index)
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private fun replaceDefaultIncomeCategories(db: SQLiteDatabase) {
+        val hasIncomeRecords = db.rawQuery(
+            "SELECT 1 FROM $TABLE_RECORDS WHERE $COLUMN_TYPE = 1 LIMIT 1",
+            null
+        ).use { it.moveToFirst() }
+
+        if (!hasIncomeRecords) {
+            db.delete(TABLE_CATEGORIES, "$COLUMN_CATEGORY_TYPE = ?", arrayOf("1"))
+            insertDefaultIncomeCategories(db)
+            return
+        }
+
+        val oldDefaultNames = listOf("工资", "奖金", "投资", "兼职", "其他")
+        oldDefaultNames.forEach { name ->
+            val cursor = db.rawQuery(
+                "SELECT $COLUMN_CATEGORY_ID FROM $TABLE_CATEGORIES " +
+                    "WHERE $COLUMN_CATEGORY_TYPE = 1 AND $COLUMN_CATEGORY_NAME = ?",
+                arrayOf(name)
+            )
+            cursor.use {
+                if (it.moveToFirst()) {
+                    do {
+                        val id = it.getLong(0)
+                        if (!categoryHasChildren(db, id) && !categoryIsReferencedByRecordId(db, id)) {
+                            db.delete(TABLE_CATEGORIES, "$COLUMN_CATEGORY_ID = ?", arrayOf(id.toString()))
+                        }
+                    } while (it.moveToNext())
+                }
+            }
+        }
+        insertDefaultIncomeCategories(db)
+    }
+
+    private fun findCategoryId(
+        db: SQLiteDatabase,
+        name: String,
+        type: Int,
+        parentId: Long?
+    ): Long? {
+        val selection = if (parentId == null) {
+            "$COLUMN_CATEGORY_NAME = ? AND $COLUMN_CATEGORY_TYPE = ? AND $COLUMN_CATEGORY_PARENT_ID IS NULL"
+        } else {
+            "$COLUMN_CATEGORY_NAME = ? AND $COLUMN_CATEGORY_TYPE = ? AND $COLUMN_CATEGORY_PARENT_ID = ?"
+        }
+        val args = if (parentId == null) {
+            arrayOf(name, type.toString())
+        } else {
+            arrayOf(name, type.toString(), parentId.toString())
+        }
+        return db.query(
+            TABLE_CATEGORIES,
+            arrayOf(COLUMN_CATEGORY_ID),
+            selection,
+            args,
+            null,
+            null,
+            null,
+            "1"
+        ).use { cursor ->
+            if (cursor.moveToFirst()) cursor.getLong(0) else null
+        }
+    }
+
     fun undoRecordDeletion(
         token: RecordDeletionToken,
         nowEpochMs: Long = System.currentTimeMillis()
@@ -847,11 +1024,84 @@ class DatabaseHelper(
             } else {
                 putNull(COLUMN_CATEGORY_PARENT_ID)
             }
+            put(COLUMN_CATEGORY_SORT_ORDER, nextCategorySortOrder(db, category.type, category.parentId))
         }
 
         val id = db.insert(TABLE_CATEGORIES, null, values)
         db.close()
         return id
+    }
+
+    fun updateCategorySortOrders(categoryIds: List<Long>) {
+        if (categoryIds.isEmpty()) return
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            categoryIds.forEachIndexed { index, id ->
+                val values = ContentValues().apply {
+                    put(COLUMN_CATEGORY_SORT_ORDER, index)
+                }
+                db.update(
+                    TABLE_CATEGORIES,
+                    values,
+                    "$COLUMN_CATEGORY_ID = ?",
+                    arrayOf(id.toString())
+                )
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+            db.close()
+        }
+    }
+
+    private fun nextCategorySortOrder(db: SQLiteDatabase, type: Int, parentId: Long?): Int {
+        val selection = if (parentId == null) {
+            "$COLUMN_CATEGORY_TYPE = ? AND $COLUMN_CATEGORY_PARENT_ID IS NULL"
+        } else {
+            "$COLUMN_CATEGORY_TYPE = ? AND $COLUMN_CATEGORY_PARENT_ID = ?"
+        }
+        val args = if (parentId == null) {
+            arrayOf(type.toString())
+        } else {
+            arrayOf(type.toString(), parentId.toString())
+        }
+        return db.query(
+            TABLE_CATEGORIES,
+            arrayOf("MAX($COLUMN_CATEGORY_SORT_ORDER)"),
+            selection,
+            args,
+            null,
+            null,
+            null
+        ).use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getInt(0) + 1 else 0
+        }
+    }
+
+    private fun initializeCategorySortOrders(db: SQLiteDatabase) {
+        val cursor = db.rawQuery(
+            "SELECT $COLUMN_CATEGORY_ID, $COLUMN_CATEGORY_TYPE, $COLUMN_CATEGORY_PARENT_ID " +
+                "FROM $TABLE_CATEGORIES ORDER BY $COLUMN_CATEGORY_TYPE, " +
+                "$COLUMN_CATEGORY_PARENT_ID, $COLUMN_CATEGORY_NAME COLLATE NOCASE, $COLUMN_CATEGORY_ID",
+            null
+        )
+        val nextByGroup = mutableMapOf<String, Int>()
+        cursor.use {
+            if (it.moveToFirst()) {
+                do {
+                    val id = it.getLong(0)
+                    val type = it.getInt(1)
+                    val parentId = getNullableLong(it, COLUMN_CATEGORY_PARENT_ID)
+                    val groupKey = "$type:${parentId ?: "root"}"
+                    val values = ContentValues().apply {
+                        put(COLUMN_CATEGORY_SORT_ORDER, nextByGroup.getOrDefault(groupKey, 0))
+                    }
+                    db.update(TABLE_CATEGORIES, values, "$COLUMN_CATEGORY_ID = ?", arrayOf(id.toString()))
+                    nextByGroup[groupKey] = values.getAsInteger(COLUMN_CATEGORY_SORT_ORDER) + 1
+                } while (it.moveToNext())
+            }
+        }
     }
 
     fun getCategoriesByType(type: Int): List<Category> {

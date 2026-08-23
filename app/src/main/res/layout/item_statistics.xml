@@ -4,31 +4,31 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="14dp"
-    app:cardBackgroundColor="@color/editorial_surface_lowest"
-    app:cardCornerRadius="24dp"
+    android:layout_marginBottom="4dp"
+    app:cardBackgroundColor="@color/surface_light"
+    app:cardCornerRadius="12dp"
     app:cardElevation="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:minHeight="92dp"
+        android:minHeight="72dp"
         android:orientation="horizontal"
-        android:paddingHorizontal="20dp"
-        android:paddingVertical="16dp">
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp">
 
         <FrameLayout
             android:id="@+id/icon_container"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="@drawable/bg_circle_primary_container"
             android:backgroundTint="@color/surface_container_high">
 
             <ImageView
                 android:id="@+id/image_icon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_book"
                 app:tint="?attr/colorPrimary" />
@@ -38,7 +38,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="18dp"
+            android:layout_marginStart="12dp"
             android:orientation="vertical">
 
             <TextView
@@ -54,9 +54,9 @@
                 android:id="@+id/text_meta"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:textColor="@color/editorial_text_muted"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 tools:text="Evenings spent with friends" />
         </LinearLayout>
 
@@ -72,21 +72,18 @@
                 android:layout_height="wrap_content"
                 android:gravity="end"
                 android:textColor="?attr/colorPrimary"
-                android:textSize="24sp"
-                android:textStyle="italic"
-                android:fontFamily="serif"
+                android:textSize="16sp"
+                android:textStyle="normal"
                 tools:text="¥100.00" />
 
             <TextView
                 android:id="@+id/text_amount_meta"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:gravity="end"
                 android:textColor="@color/editorial_text_muted"
-                android:textSize="9sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"
+                android:textSize="10sp"
                 tools:text="12 ENTRIES" />
         </LinearLayout>
     </LinearLayout>

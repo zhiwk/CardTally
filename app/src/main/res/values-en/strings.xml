@@ -118,6 +118,8 @@
     <string name="record_category_label">CATEGORY</string>
     <string name="record_cancel">CANCEL</string>
     <string name="record_save_entry">SAVE ENTRY</string>
+    <string name="record_save_and_add">SAVE &amp; ADD</string>
+    <string name="record_keypad_hide">Hide numeric keypad</string>
     <string name="record_update">UPDATE</string>
     <string name="record_editor_prompt">&quot;A small moment is still worth recording.&quot;</string>
     <string name="record_date_display">%1$d/%2$d</string>
@@ -272,6 +274,7 @@
     <string name="category_edit_title">Edit Category</string>
     <string name="category_delete_title">Delete Category</string>
     <string name="category_delete_message">Are you sure you want to delete "%1$s"?</string>
+    <string name="category_remove">Remove</string>
     <string name="category_add_success">Added successfully</string>
     <string name="category_add_failed">Add failed</string>
     <string name="category_dialog_name_hint">Enter a category name</string>
@@ -281,7 +284,7 @@
     <string name="category_dialog_icon_hint">Tap the icon to choose</string>
     <string name="category_icon_picker_title">Choose Icon</string>
     <string name="category_icon_search_hint">Search icons, e.g. transport, food, home</string>
-    <string name="category_add_child_cta">Add subcategory</string>
+    <string name="category_add_child_cta">Add category</string>
     <string name="category_expand_content_description">Expand or collapse subcategories</string>
     <string name="category_drag_content_description">Drag to reorder</string>
     <string name="category_action_edit">Edit category</string>

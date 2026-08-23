@@ -45,10 +45,16 @@ class SearchFragment : Fragment() {
     private var rangeLabel = ""
 
     companion object {
-        fun newInstance(keyword: String): SearchFragment {
+        fun newInstance(
+            keyword: String,
+            rangeStart: String? = null,
+            rangeEnd: String? = null
+        ): SearchFragment {
             val fragment = SearchFragment()
             val args = Bundle()
             args.putString("keyword", keyword)
+            rangeStart?.let { args.putString("range_start", it) }
+            rangeEnd?.let { args.putString("range_end", it) }
             fragment.arguments = args
             return fragment
         }
@@ -58,6 +64,13 @@ class SearchFragment : Fragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             searchKeyword = it.getString("keyword", "")
+            rangeStart = it.getString("range_start")
+            rangeEnd = it.getString("range_end")
+            rangeLabel = if (rangeStart != null && rangeEnd != null) {
+                formatRangeLabel("$rangeStart - $rangeEnd")
+            } else {
+                ""
+            }
         }
     }
 
@@ -74,6 +87,9 @@ class SearchFragment : Fragment() {
         layoutSummary = view.findViewById(R.id.layout_search_summary)
         textTotals = view.findViewById(R.id.text_search_totals)
         textFilter = view.findViewById(R.id.text_search_filter)
+        if (rangeLabel.isNotBlank()) {
+            textFilter.text = formatRangeLabel(rangeLabel)
+        }
         textFilter.setOnClickListener { showDateRangeDialog() }
 
         databaseHelper = DatabaseHelper(requireContext())
@@ -170,6 +186,9 @@ class SearchFragment : Fragment() {
             recyclerRecords.visibility = View.VISIBLE
 
             val dateGroups = groupRecordsByDate(filteredRecords)
+            val categoryIconsById = databaseHelper.getAllCategories()
+                .filter { !it.icon.isNullOrEmpty() }
+                .associate { it.id to it.icon.orEmpty() }
 
             if (adapter == null) {
                 adapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
@@ -196,7 +215,7 @@ class SearchFragment : Fragment() {
 
                     override fun onToggleMultiSelect(record: Record) {
                     }
-                })
+                }, categoryIconsById)
                 recyclerRecords.adapter = adapter
             } else {
                 adapter?.updateDateGroups(dateGroups)
@@ -303,12 +322,33 @@ class SearchFragment : Fragment() {
         endButton.setOnClickListener { pickDate(false) }
         content.findViewById<TextView>(R.id.button_range_cancel).setOnClickListener { dialog.dismiss() }
         content.findViewById<TextView>(R.id.button_range_done).setOnClickListener {
-            textFilter.text = if (rangeLabel.isBlank()) getString(R.string.search_all_time) else rangeLabel
+            textFilter.text = if (rangeLabel.isBlank()) {
+                getString(R.string.search_all_time)
+            } else {
+                formatRangeLabel(rangeLabel)
+            }
             dialog.dismiss()
             searchRecords()
         }
         dialog.setContentView(content)
         dialog.show()
+    }
+
+    private fun formatRangeLabel(label: String): String {
+        val parts = label.split(" - ")
+        if (parts.size != 2 || parts.any { !it.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) }) {
+            return label
+        }
+        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val start = parser.parse(parts[0]) ?: return label
+        val end = parser.parse(parts[1]) ?: return label
+        val sameYear = parts[0].take(4) == parts[1].take(4)
+        val startFormat = SimpleDateFormat(
+            if (sameYear) "M月d日" else "yyyy年M月d日",
+            Locale.CHINA
+        )
+        val endFormat = SimpleDateFormat("M月d日", Locale.CHINA)
+        return "${startFormat.format(start)} - ${endFormat.format(end)}"
     }
 
     private fun showDeleteDialog(record: Record) {

@@ -175,9 +175,9 @@ class AgentFragment : Fragment() {
         if (!AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext()) ||
             !AiAssistantSettingsHelper.isMiniMaxConfigComplete(requireContext())) {
             forceStopStreamingIfNeeded()
-            requireActivity()
-                .findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-                .selectedItemId = R.id.nav_ledger
+            // Keep the user on the assistant page and show the configuration
+            // state instead of replacing the Fragment from onResume().
+            refreshChatUi()
             return
         }
 

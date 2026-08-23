@@ -45,20 +45,20 @@ class StatisticsFragment : Fragment() {
     private lateinit var togglePeriodPreset: MaterialButtonToggleGroup
     private lateinit var textEmpty: TextView
     private lateinit var textRangeValue: TextView
+    private lateinit var textTypeExpense: MaterialButton
+    private lateinit var textTypeIncome: MaterialButton
+    private lateinit var indicatorTypeExpense: View
+    private lateinit var indicatorTypeIncome: View
     private lateinit var textViewModeHint: TextView
-    private lateinit var textSummaryLabel: TextView
-    private lateinit var textSummaryAmount: TextView
-    private lateinit var textSummarySupporting: TextView
-    private lateinit var textSummaryBadge: TextView
-    private lateinit var textSummaryIncome: TextView
     private lateinit var textSummaryExpense: TextView
-    private lateinit var textStatisticsInsight: TextView
+    private lateinit var textSummaryIncome: TextView
+    private lateinit var textSummaryBalance: TextView
     private lateinit var textChartSubtitle: TextView
     private lateinit var recyclerStatistics: RecyclerView
     private lateinit var recyclerRecords: RecyclerView
     private lateinit var viewStatisticsChart: LedgerDonutChartView
     private lateinit var viewStatisticsLineChart: LedgerLineChartView
-    private lateinit var toggleChartMode: MaterialButtonToggleGroup
+    private lateinit var toggleChartMode: ImageButton
     private lateinit var layoutChartLegend: LinearLayout
     private lateinit var layoutLineAxis: LinearLayout
     private lateinit var textAxisStart: TextView
@@ -76,8 +76,8 @@ class StatisticsFragment : Fragment() {
 
     private var currentViewMode = VIEW_MODE_STATISTICS
     private var currentStatsType = TYPE_EXPENSE
-    private var currentPeriodPreset = LedgerPeriodPreset.MONTH
-    private var currentRange = LedgerPeriodHelper.resolveRange(LedgerPeriodPreset.MONTH)
+    private var currentPeriodPreset = LedgerPeriodPreset.WEEK
+    private var currentRange = LedgerPeriodHelper.resolveRange(LedgerPeriodPreset.WEEK)
     private var currentChartMode = CHART_MODE_PIE
     private var openFilterSurface = FilterSurface.NONE
     private var restoredLedgerState: LedgerScreenState? = null
@@ -104,15 +104,15 @@ class StatisticsFragment : Fragment() {
         togglePeriodPreset = view.findViewById(R.id.toggle_period_preset)
         textEmpty = view.findViewById(R.id.text_empty)
         textRangeValue = view.findViewById(R.id.text_range_value)
+        textTypeExpense = view.findViewById(R.id.text_type_expense)
+        textTypeIncome = view.findViewById(R.id.text_type_income)
+        indicatorTypeExpense = view.findViewById(R.id.indicator_type_expense)
+        indicatorTypeIncome = view.findViewById(R.id.indicator_type_income)
         textViewModeHint = view.findViewById(R.id.text_view_mode_hint)
-        textSummaryLabel = view.findViewById(R.id.text_summary_label)
-        textSummaryAmount = view.findViewById(R.id.text_summary_amount)
-        textSummarySupporting = view.findViewById(R.id.text_summary_supporting)
-        textSummaryBadge = view.findViewById(R.id.text_summary_badge)
-        textSummaryIncome = view.findViewById(R.id.text_summary_income)
         textSummaryExpense = view.findViewById(R.id.text_summary_expense)
+        textSummaryIncome = view.findViewById(R.id.text_summary_income)
+        textSummaryBalance = view.findViewById(R.id.text_summary_balance)
         textStatisticsSectionTitle = view.findViewById(R.id.text_statistics_section_title)
-        textStatisticsInsight = view.findViewById(R.id.text_statistics_insight)
         textChartSubtitle = view.findViewById(R.id.text_chart_subtitle)
         recyclerStatistics = view.findViewById(R.id.recycler_statistics)
         recyclerRecords = view.findViewById(R.id.recycler_records)
@@ -129,31 +129,64 @@ class StatisticsFragment : Fragment() {
         layoutStatisticsContent = view.findViewById(R.id.layout_statistics_content)
         layoutRecordsContent = view.findViewById(R.id.layout_records_content)
         layoutRangeSelector = view.findViewById(R.id.layout_range_selector)
+        val btnRangePrevious = view.findViewById<ImageButton>(R.id.btn_range_previous)
+        val btnRangeNext = view.findViewById<ImageButton>(R.id.btn_range_next)
 
         databaseHelper = DatabaseHelper(requireContext())
         restoredLedgerState = LedgerScreenState.readFrom(savedInstanceState, resolveStartupView())
         applyLedgerState(restoredLedgerState!!)
         currentViewMode = VIEW_MODE_STATISTICS
         layoutModeSelector.visibility = View.GONE
+        view.findViewById<View>(R.id.layout_statistics_legacy_header).visibility = View.GONE
         view.findViewById<ImageButton>(R.id.btn_ledger_menu).visibility = View.GONE
+        textTypeExpense.setOnClickListener {
+            if (currentStatsType != TYPE_EXPENSE) {
+                currentStatsType = TYPE_EXPENSE
+                renderCurrentView()
+            }
+        }
+        textTypeIncome.setOnClickListener {
+            if (currentStatsType != TYPE_INCOME) {
+                currentStatsType = TYPE_INCOME
+                renderCurrentView()
+            }
+        }
+        btnRangePrevious.setOnClickListener { shiftCurrentRange(-1) }
+        btnRangeNext.setOnClickListener { shiftCurrentRange(1) }
         recyclerStatistics.layoutManager = LinearLayoutManager(requireContext())
         recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
-        statisticsAdapter = StatisticsAdapter()
+        statisticsAdapter = StatisticsAdapter { category ->
+            val searchFragment = SearchFragment.newInstance(
+                keyword = category,
+                rangeStart = currentQueryRange()?.startDate,
+                rangeEnd = currentQueryRange()?.endDate
+            )
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, searchFragment)
+                .addToBackStack(null)
+                .commit()
+        }
         recyclerStatistics.adapter = statisticsAdapter
 
         view.findViewById<ImageButton>(R.id.btn_ledger_menu).isEnabled = false
-        toggleChartMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (!isChecked) return@addOnButtonCheckedListener
-            currentChartMode = if (checkedId == R.id.btn_chart_line) CHART_MODE_LINE else CHART_MODE_PIE
+        toggleChartMode.setOnClickListener {
+            currentChartMode = if (currentChartMode == CHART_MODE_LINE) CHART_MODE_PIE else CHART_MODE_LINE
             updateChartModeUi()
         }
 
         togglePeriodPreset.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
+            if (checkedId == R.id.btn_period_all) {
+                if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM) return@addOnButtonCheckedListener
+                clearTopPeriodToggleSelection()
+                currentPeriodPreset = LedgerPeriodPreset.CUSTOM
+                currentRange = LedgerDateRange(null, null)
+                renderCurrentView()
+                return@addOnButtonCheckedListener
+            }
             currentPeriodPreset = when (checkedId) {
                 R.id.btn_period_week -> LedgerPeriodPreset.WEEK
                 R.id.btn_period_year -> LedgerPeriodPreset.YEAR
-                R.id.btn_period_all -> LedgerPeriodPreset.ALL
                 else -> LedgerPeriodPreset.MONTH
             }
             currentRange = resolveRangeFromPreset(currentPeriodPreset)
@@ -174,8 +207,6 @@ class StatisticsFragment : Fragment() {
         }
 
         checkPeriodToggle(togglePeriodPreset, currentPeriodPreset, false)
-        toggleChartMode.check(if (currentChartMode == CHART_MODE_LINE) R.id.btn_chart_line else R.id.btn_chart_pie)
-
         if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM) {
             clearTopPeriodToggleSelection()
         }
@@ -227,6 +258,49 @@ class StatisticsFragment : Fragment() {
         }
         updateToggleVisuals()
         updateChartModeUi()
+        updateTypeTabs()
+    }
+
+    private fun updateTypeTabs() {
+        val active = ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface)
+        val inactive = ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted)
+        val background = ThemeColorHelper.resolveThemeAwareResource(
+            requireContext(),
+            R.color.surface_light
+        )
+        textTypeExpense.setTextColor(if (currentStatsType == TYPE_EXPENSE) active else inactive)
+        textTypeIncome.setTextColor(if (currentStatsType == TYPE_INCOME) active else inactive)
+        textTypeExpense.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            background
+        )
+        textTypeIncome.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            background
+        )
+        indicatorTypeExpense.visibility = if (currentStatsType == TYPE_EXPENSE) View.VISIBLE else View.GONE
+        indicatorTypeIncome.visibility = if (currentStatsType == TYPE_INCOME) View.VISIBLE else View.GONE
+        textTypeExpense.paint.isFakeBoldText = currentStatsType == TYPE_EXPENSE
+        textTypeIncome.paint.isFakeBoldText = currentStatsType == TYPE_INCOME
+    }
+
+    private fun shiftCurrentRange(direction: Int) {
+        if (currentPeriodPreset == LedgerPeriodPreset.ALL || currentPeriodPreset == LedgerPeriodPreset.CUSTOM) {
+            showCustomPeriodSheet()
+            return
+        }
+        val start = currentRange.startDate ?: return
+        val baseMillis = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            .parse(start)?.time ?: return
+        val calendar = java.util.Calendar.getInstance().apply {
+            timeInMillis = baseMillis
+            when (currentPeriodPreset) {
+                LedgerPeriodPreset.MONTH -> add(java.util.Calendar.MONTH, direction)
+                LedgerPeriodPreset.YEAR -> add(java.util.Calendar.YEAR, direction)
+                LedgerPeriodPreset.WEEK -> add(java.util.Calendar.DAY_OF_YEAR, direction * 7)
+                else -> Unit
+            }
+        }
+        currentRange = LedgerPeriodHelper.resolveRange(currentPeriodPreset, calendar.timeInMillis)
+        renderCurrentView()
     }
 
     private fun loadCategoryStatistics() {
@@ -247,7 +321,22 @@ class StatisticsFragment : Fragment() {
             databaseHelper.getCategoryStatisticsByDateRange(currentStatsType, range.startDate!!, range.endDate!!)
         }
         val categoryRecords = filteredRecordsForType(range, currentStatsType)
-        val entryCounts = categoryRecords.groupingBy { it.category }.eachCount()
+        // Keep aliases for legacy records: current records use `category`, while
+        // older records may only have the category name snapshot populated.
+        // The statistics query groups by `category`, so either value must resolve
+        // to the same visible category when the count is rendered.
+        val entryCounts = mutableMapOf<String, Int>()
+        categoryRecords.forEach { record ->
+            setOfNotNull(
+                record.category.takeIf { it.isNotBlank() },
+                record.categoryNameSnapshot?.takeIf { it.isNotBlank() }
+            ).forEach { categoryName ->
+                entryCounts[categoryName] = (entryCounts[categoryName] ?: 0) + 1
+            }
+        }
+        val categoryIcons = databaseHelper.getAllCategories()
+            .filter { !it.icon.isNullOrBlank() }
+            .associate { it.name to it.icon!! }
 
         val normalizedStats = stats.mapKeys { (label, _) ->
             if (currentStatsType == TYPE_EXPENSE) {
@@ -259,30 +348,17 @@ class StatisticsFragment : Fragment() {
             if (currentStatsType == TYPE_EXPENSE) -amount else amount
         }
 
-        textSummaryLabel.text = if (currentStatsType == TYPE_EXPENSE) {
-            getString(R.string.ledger_summary_total_expense)
-        } else {
-            getString(R.string.ledger_summary_total_income)
-        }
-        textSummaryAmount.text = getString(
-            R.string.currency_amount,
-            if (currentStatsType == TYPE_EXPENSE) expenseTotal else incomeTotal
-        )
-        textSummarySupporting.text = getString(R.string.ledger_summary_supporting_statistics)
-        textSummaryBadge.text = getString(R.string.ledger_summary_badge_count, normalizedStats.size)
-        textSummaryIncome.text = getString(R.string.currency_amount, incomeTotal)
         textSummaryExpense.text = getString(R.string.currency_amount, expenseTotal)
+        textSummaryIncome.text = getString(R.string.currency_amount, incomeTotal)
+        textSummaryBalance.text = getString(
+            R.string.currency_amount,
+            incomeTotal - expenseTotal
+        )
         textStatisticsSectionTitle.text = if (currentStatsType == TYPE_EXPENSE) {
             getString(R.string.ledger_statistics_section_title)
         } else {
-            getString(R.string.record_type_income) + " · " + getString(R.string.ledger_statistics_section_title)
+            getString(R.string.ledger_statistics_section_title)
         }
-        textStatisticsInsight.text = if (currentStatsType == TYPE_EXPENSE) {
-            getString(R.string.ledger_statistics_insight_expense)
-        } else {
-            getString(R.string.ledger_statistics_insight_income)
-        }
-
         if (normalizedStats.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
             recyclerStatistics.visibility = View.GONE
@@ -298,7 +374,7 @@ class StatisticsFragment : Fragment() {
         } else {
             textEmpty.visibility = View.GONE
             recyclerStatistics.visibility = View.VISIBLE
-            statisticsAdapter.updateData(normalizedStats, entryCounts)
+            statisticsAdapter.updateData(normalizedStats, entryCounts, categoryIcons)
             bindChart(normalizedStats, entryCounts, categoryRecords)
         }
     }
@@ -487,15 +563,14 @@ class StatisticsFragment : Fragment() {
             getString(R.string.ledger_chart_subtitle_line)
         }
 
-        updateToggleButtonState(toggleChartMode.findViewById(R.id.btn_chart_line), currentChartMode == CHART_MODE_LINE)
-        updateToggleButtonState(toggleChartMode.findViewById(R.id.btn_chart_pie), currentChartMode == CHART_MODE_PIE)
+        toggleChartMode.setImageResource(
+            if (isPie) R.drawable.ms_rounded_pie_chart else R.drawable.ms_rounded_multiline_chart
+        )
         val showChartToggle = currentViewMode == VIEW_MODE_STATISTICS &&
                 currentPeriodPreset != LedgerPeriodPreset.CUSTOM &&
                 currentPeriodPreset != LedgerPeriodPreset.ALL
         toggleChartMode.visibility = if (showChartToggle) View.VISIBLE else View.INVISIBLE
         toggleChartMode.isEnabled = showChartToggle
-        toggleChartMode.findViewById<MaterialButton>(R.id.btn_chart_line).isEnabled = showChartToggle
-        toggleChartMode.findViewById<MaterialButton>(R.id.btn_chart_pie).isEnabled = showChartToggle
     }
 
     private fun bindLineAxis(dates: List<String>) {
@@ -713,7 +788,7 @@ class StatisticsFragment : Fragment() {
                 toggleChartMode.visibility = View.VISIBLE
             }
             if (localPreset == LedgerPeriodPreset.CUSTOM) {
-                clearTopPeriodToggleSelection()
+                checkPeriodToggle(togglePeriodPreset, LedgerPeriodPreset.CUSTOM, false)
             } else {
                 checkPeriodToggle(togglePeriodPreset, localPreset, false)
             }
@@ -735,6 +810,10 @@ class StatisticsFragment : Fragment() {
             canApplyPeriodSelection(localPreset, localRange),
             btnApply
         )
+        dialog.setOnShowListener {
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        }
         dialog.show()
     }
 
@@ -796,16 +875,12 @@ class StatisticsFragment : Fragment() {
         preset: LedgerPeriodPreset,
         isSheet: Boolean
     ) {
-        if (!isSheet && preset == LedgerPeriodPreset.CUSTOM) {
-            clearTopPeriodToggleSelection()
-            return
-        }
         val checkedId = when (preset) {
             LedgerPeriodPreset.WEEK -> if (isSheet) -1 else R.id.btn_period_week
             LedgerPeriodPreset.MONTH -> if (isSheet) -1 else R.id.btn_period_month
             LedgerPeriodPreset.YEAR -> if (isSheet) -1 else R.id.btn_period_year
-            LedgerPeriodPreset.ALL -> if (isSheet) -1 else R.id.btn_period_all
-            LedgerPeriodPreset.CUSTOM -> -1
+            LedgerPeriodPreset.ALL -> -1
+            LedgerPeriodPreset.CUSTOM -> if (isSheet) -1 else R.id.btn_period_all
         }
         if (checkedId != -1) {
             group.check(checkedId)
@@ -825,11 +900,7 @@ class StatisticsFragment : Fragment() {
 
     private fun updateToggleButtonState(button: MaterialButton, selected: Boolean) {
         val context = button.context
-        val background = if (selected) {
-            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondaryContainer)
-        } else {
-            ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_container_high)
-        }
+        val background = ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_light)
         val textColor = if (selected) {
             ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSecondaryContainer)
         } else {
@@ -837,6 +908,7 @@ class StatisticsFragment : Fragment() {
         }
         button.backgroundTintList = android.content.res.ColorStateList.valueOf(background)
         button.setTextColor(textColor)
+        button.isSelected = selected
     }
 
     private fun groupRecordsByDate(records: List<Record>): List<DateGroup> {
@@ -943,7 +1015,9 @@ class StatisticsFragment : Fragment() {
             R.id.btn_period_all
         )
         buttonIds.forEach { buttonId ->
-            updateToggleButtonState(group.findViewById(buttonId), group.checkedButtonId == buttonId)
+            val selected = group.checkedButtonId == buttonId ||
+                    (buttonId == R.id.btn_period_all && currentPeriodPreset == LedgerPeriodPreset.CUSTOM)
+            updateToggleButtonState(group.findViewById(buttonId), selected)
         }
     }
 

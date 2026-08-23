@@ -1,6 +1,8 @@
 package com.example.cardtally.util
 
 import android.animation.ValueAnimator
+import android.os.Handler
+import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -8,6 +10,7 @@ import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import com.example.cardtally.R
+import java.lang.ref.WeakReference
 import kotlin.math.abs
 
 class SwipeToEditDeleteHelper(
@@ -27,11 +30,13 @@ class SwipeToEditDeleteHelper(
     private var isSwiping = false
     private var isOpen = false
     private var isTracking = false
+    private var isLongPressTriggered = false
+    private val handler = Handler(Looper.getMainLooper())
+    private var longPressRunnable: Runnable? = null
     
     private val touchSlop: Int
-    private val maxSwipeDistance: Int
+    private var maxSwipeDistance: Int
     private val minVelocity: Float
-    private val edgeSlop: Int
     
     private val decelerateInterpolator = DecelerateInterpolator(1.5f)
     private val overshootInterpolator = OvershootInterpolator(0.5f)
@@ -45,12 +50,16 @@ class SwipeToEditDeleteHelper(
             layoutActions.findViewById<View>(R.id.btn_archive)
         ).size.coerceAtLeast(1)
         val density = cardContent.context.resources.displayMetrics.density
-        val buttonWidth = 40 * density
-        val buttonGap = 6 * density
-        val trailingGap = 8 * density
-        maxSwipeDistance = (buttonWidth * buttonCount + buttonGap * (buttonCount - 1) + trailingGap).toInt()
+        val fallbackButtonWidth = 80 * density
+        maxSwipeDistance = (fallbackButtonWidth * buttonCount).toInt()
         minVelocity = ViewConfiguration.get(cardContent.context).scaledMinimumFlingVelocity * 2f
-        edgeSlop = (20 * cardContent.context.resources.displayMetrics.density).toInt()
+
+        cardContent.translationX = 0f
+        layoutActions.post {
+            if (layoutActions.width > 0) {
+                maxSwipeDistance = layoutActions.width
+            }
+        }
         
         cardContent.setOnTouchListener { v, event ->
             handleTouchEvent(v, event)
@@ -83,6 +92,12 @@ class SwipeToEditDeleteHelper(
                 velocityX = 0f
                 isSwiping = false
                 isTracking = true
+                isLongPressTriggered = false
+                longPressRunnable = Runnable {
+                    if (isTracking && !isSwiping) {
+                        isLongPressTriggered = true
+                    }
+                }.also { handler.postDelayed(it, ViewConfiguration.getLongPressTimeout().toLong()) }
                 return true
             }
             
@@ -103,9 +118,9 @@ class SwipeToEditDeleteHelper(
                 lastTouchTime = currentTime
                 
                 if (!isSwiping && (abs(deltaX) > touchSlop || abs(deltaY) > touchSlop)) {
+                    cancelLongPress()
                     val isHorizontalSwipe = abs(deltaX) > abs(deltaY)
                     val isSwipeLeft = deltaX < 0
-                    val isFromEdge = initialTouchX < edgeSlop
                     val isSwipeRight = deltaX > 0
                     
                     if (isHorizontalSwipe && isSwipeLeft) {
@@ -114,9 +129,17 @@ class SwipeToEditDeleteHelper(
                         if (parent is ViewGroup) {
                             parent.requestDisallowInterceptTouchEvent(true)
                         }
-                    } else if (isHorizontalSwipe && isSwipeRight && isFromEdge) {
-                        isTracking = false
-                        return false
+                    } else if (isHorizontalSwipe && isSwipeRight &&
+                        (initialTranslationX < 0f || cardContent.translationX < 0f)
+                    ) {
+                        // A right swipe is meaningful only when this row is open.
+                        // It closes the revealed actions instead of being handed
+                        // back to the parent list as a no-op gesture.
+                        isSwiping = true
+                        val parent = cardContent.parent
+                        if (parent is ViewGroup) {
+                            parent.requestDisallowInterceptTouchEvent(true)
+                        }
                     } else if (isHorizontalSwipe && isSwipeRight) {
                         isTracking = false
                         return false
@@ -142,6 +165,7 @@ class SwipeToEditDeleteHelper(
             
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 isTracking = false
+                cancelLongPress()
                 if (isSwiping) {
                     val currentX = cardContent.translationX
                     
@@ -165,6 +189,11 @@ class SwipeToEditDeleteHelper(
                     close(false)
                     return true
                 }
+
+                if (isLongPressTriggered) {
+                    isLongPressTriggered = false
+                    return true
+                }
                 
                 val deltaX = abs(event.rawX - initialTouchX)
                 val deltaY = abs(event.rawY - initialTouchY)
@@ -177,14 +206,22 @@ class SwipeToEditDeleteHelper(
         return true
     }
 
+    private fun cancelLongPress() {
+        longPressRunnable?.let(handler::removeCallbacks)
+        longPressRunnable = null
+    }
+
     private fun open() {
-        animateTo(-maxSwipeDistance.toFloat(), true)
+        activeHelperRef?.get()?.takeIf { it !== this }?.close(false)
+        activeHelperRef = WeakReference(this)
         isOpen = true
+        animateTo(-maxSwipeDistance.toFloat(), true)
     }
 
     private fun close(withOvershoot: Boolean) {
         animateTo(0f, withOvershoot)
         isOpen = false
+        if (activeHelperRef?.get() === this) activeHelperRef = null
     }
 
     private fun animateTo(targetX: Float, withOvershoot: Boolean) {
@@ -209,4 +246,8 @@ class SwipeToEditDeleteHelper(
     }
 
     fun isOpen(): Boolean = isOpen
+
+    companion object {
+        private var activeHelperRef: WeakReference<SwipeToEditDeleteHelper>? = null
+    }
 }

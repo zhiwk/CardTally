@@ -59,25 +59,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_marginBottom="28dp"
-                android:gravity="center_horizontal">
-                
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/record_amount_label"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textSize="10sp"
-                    android:alpha="0.6"
-                    android:letterSpacing="0.2"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="8dp"/>
+                android:layout_marginBottom="16dp"
+                android:gravity="start">
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="start|center_vertical">
                     
                     <TextView
                         android:layout_width="wrap_content"
@@ -90,7 +79,7 @@
                     <EditText
                         android:id="@+id/edit_amount"
                         android:layout_width="220dp"
-                        android:layout_height="72dp"
+                        android:layout_height="64dp"
                         android:background="@null"
                         android:text="@string/amount_default"
                         android:textColor="?attr/colorPrimary"
@@ -102,50 +91,43 @@
                         android:importantForAutofill="no"/>
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/text_prompt"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="@string/record_editor_prompt"
-                    android:textColor="?attr/colorPrimary"
-                    android:textSize="13sp"
-                    android:textStyle="normal"
-                    android:alpha="0.68" />
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_summary_item"
-                android:backgroundTint="@color/surface_container_lowest"
                 android:orientation="horizontal"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="28dp"
-                android:padding="4dp">
+                android:layout_marginBottom="20dp"
+                android:padding="0dp"
+                android:background="@drawable/bg_summary_item"
+                android:backgroundTint="@color/surface_light"
+                android:minHeight="48dp">
                 
                 <Button
                     android:id="@+id/btn_expense"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:background="@drawable/shape_button_primary"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
                     android:text="@string/record_type_expense"
                     android:textColor="?attr/colorOnPrimary"
                     android:textAllCaps="false"
                     android:textSize="14sp"
-                    android:paddingHorizontal="32dp"
+                    android:paddingHorizontal="16dp"
+                    android:layout_weight="1"
                     android:minWidth="0dp"/>
                     
                 <Button
                     android:id="@+id/btn_income"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
                     android:background="@android:color/transparent"
                     android:text="@string/record_type_income"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:textAllCaps="false"
                     android:textSize="14sp"
-                    android:paddingHorizontal="32dp"
+                    android:paddingHorizontal="16dp"
+                    android:layout_weight="1"
                     android:minWidth="0dp"/>
             </LinearLayout>
 
@@ -298,12 +280,14 @@
                         android:paddingVertical="4dp">
 
                         <FrameLayout
+                            android:id="@+id/category_icon_container"
                             android:layout_width="40dp"
                             android:layout_height="40dp"
                             android:background="@drawable/bg_circle_primary_container"
                             android:backgroundTint="?attr/colorTertiaryContainer">
 
                             <ImageView
+                                android:id="@+id/image_category_icon"
                                 android:layout_width="20dp"
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
@@ -456,6 +440,35 @@
                 android:fontFamily="sans-serif-medium"/>
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/btn_save_and_add"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_summary_item"
+            android:padding="4dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_add"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/record_save_and_add"
+                android:textSize="11sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
     </LinearLayout>
+
+    <include layout="@layout/layout_amount_keypad" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

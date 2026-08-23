@@ -76,7 +76,7 @@ data class LedgerScreenState(
         fun defaults(startupView: LedgerViewState) = LedgerScreenState(
             startupView,
             if (startupView == LedgerViewState.STATISTICS_INCOME) StatisticsType.INCOME else StatisticsType.EXPENSE,
-            PeriodPreset.MONTH,
+            PeriodPreset.WEEK,
             null,
             null,
             ChartMode.PIE,

@@ -23,12 +23,17 @@ class AiAssistantSettingsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_ai_assistant_settings, container, false)
+        view.findViewById<TextView>(R.id.text_title).text = getString(R.string.ai_settings_title)
 
         editAiApiKey = view.findViewById(R.id.edit_ai_api_key)
         editAiModel = view.findViewById(R.id.edit_ai_model)
         editAiRequestUrl = view.findViewById(R.id.edit_ai_base_url)
         buttonSaveAiApiKey = view.findViewById(R.id.button_save_ai_api_key)
         textAiSettingsStatus = view.findViewById(R.id.text_ai_settings_status)
+
+        view.findViewById<View>(R.id.btn_back).setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
 
         bindSavedValues()
 

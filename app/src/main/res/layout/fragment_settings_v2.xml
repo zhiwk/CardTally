@@ -87,13 +87,6 @@
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/settings_category_organization" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
                     <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_arrow_right" app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-                <LinearLayout android:id="@+id/card_category_max_depth" android:layout_width="match_parent" android:layout_height="64dp" android:gravity="center_vertical" android:orientation="horizontal">
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/settings_category_max_depth" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
-                        <TextView android:id="@+id/text_category_max_depth" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="13sp" />
-                    </LinearLayout>
-                    <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_arrow_right" app:tint="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
                 <LinearLayout android:id="@+id/card_show_asset" android:layout_width="match_parent" android:layout_height="64dp" android:gravity="center_vertical" android:orientation="horizontal">
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/settings_account_assets" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
                     <Switch android:id="@+id/switch_show_asset" android:layout_width="wrap_content" android:layout_height="wrap_content" />

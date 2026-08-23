@@ -3905,16 +3905,22 @@ object MaterialSymbolCatalog {
     )
 
     fun resourceId(iconName: String): Int {
+        // Keep icon names written by older database seeds compatible with the
+        // bundled catalog. The old monetization_on name was never packaged.
+        val normalizedName = when (iconName) {
+            "ms_rounded_monetization_on" -> "ms_rounded_savings"
+            else -> iconName
+        }
         return when {
-            MaterialSymbolResourceIds01.ids.containsKey(iconName) -> MaterialSymbolResourceIds01.ids[iconName] ?: 0
-            MaterialSymbolResourceIds02.ids.containsKey(iconName) -> MaterialSymbolResourceIds02.ids[iconName] ?: 0
-            MaterialSymbolResourceIds03.ids.containsKey(iconName) -> MaterialSymbolResourceIds03.ids[iconName] ?: 0
-            MaterialSymbolResourceIds04.ids.containsKey(iconName) -> MaterialSymbolResourceIds04.ids[iconName] ?: 0
-            MaterialSymbolResourceIds05.ids.containsKey(iconName) -> MaterialSymbolResourceIds05.ids[iconName] ?: 0
-            MaterialSymbolResourceIds06.ids.containsKey(iconName) -> MaterialSymbolResourceIds06.ids[iconName] ?: 0
-            MaterialSymbolResourceIds07.ids.containsKey(iconName) -> MaterialSymbolResourceIds07.ids[iconName] ?: 0
-            MaterialSymbolResourceIds08.ids.containsKey(iconName) -> MaterialSymbolResourceIds08.ids[iconName] ?: 0
-            MaterialSymbolResourceIds09.ids.containsKey(iconName) -> MaterialSymbolResourceIds09.ids[iconName] ?: 0
+            MaterialSymbolResourceIds01.ids.containsKey(normalizedName) -> MaterialSymbolResourceIds01.ids[normalizedName] ?: 0
+            MaterialSymbolResourceIds02.ids.containsKey(normalizedName) -> MaterialSymbolResourceIds02.ids[normalizedName] ?: 0
+            MaterialSymbolResourceIds03.ids.containsKey(normalizedName) -> MaterialSymbolResourceIds03.ids[normalizedName] ?: 0
+            MaterialSymbolResourceIds04.ids.containsKey(normalizedName) -> MaterialSymbolResourceIds04.ids[normalizedName] ?: 0
+            MaterialSymbolResourceIds05.ids.containsKey(normalizedName) -> MaterialSymbolResourceIds05.ids[normalizedName] ?: 0
+            MaterialSymbolResourceIds06.ids.containsKey(normalizedName) -> MaterialSymbolResourceIds06.ids[normalizedName] ?: 0
+            MaterialSymbolResourceIds07.ids.containsKey(normalizedName) -> MaterialSymbolResourceIds07.ids[normalizedName] ?: 0
+            MaterialSymbolResourceIds08.ids.containsKey(normalizedName) -> MaterialSymbolResourceIds08.ids[normalizedName] ?: 0
+            MaterialSymbolResourceIds09.ids.containsKey(normalizedName) -> MaterialSymbolResourceIds09.ids[normalizedName] ?: 0
             else -> 0
         }
     }

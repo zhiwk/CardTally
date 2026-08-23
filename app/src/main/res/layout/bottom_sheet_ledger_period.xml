@@ -5,9 +5,9 @@
     android:layout_height="wrap_content"
     android:background="@color/surface_container_low"
     android:orientation="vertical"
-    android:paddingHorizontal="24dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="24dp">
+    android:paddingHorizontal="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="12dp">
 
     <View
         android:layout_width="48dp"
@@ -18,38 +18,51 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_active_range"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            app:cardBackgroundColor="@color/surface_container_highest"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@android:color/transparent">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/ledger_period_custom"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="30sp"
-                android:textStyle="italic"
-                android:fontFamily="serif" />
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="10dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/ledger_period_sheet_subtitle"
-                android:textColor="@color/editorial_text_muted"
-                android:textSize="14sp" />
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/text_period_selection_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/text_period_selection_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="14sp"
+                    android:textStyle="italic"
+                    android:fontFamily="serif"
+                    android:alpha="0.8"
+                    android:letterSpacing="0.02" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <ImageButton
             android:id="@+id/btn_close_period_sheet"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:layout_marginStart="8dp"
             android:background="@drawable/bg_circle_primary_container"
             android:backgroundTint="@color/surface_container"
             android:contentDescription="@string/dialog_cancel"
@@ -58,61 +71,18 @@
             app:tint="@color/editorial_text_muted" />
     </LinearLayout>
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_active_range"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        app:cardBackgroundColor="@color/surface_container_highest"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="0dp"
-        app:strokeColor="@android:color/transparent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:id="@+id/text_period_selection_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ledger_period_active_selection"
-                android:textColor="@color/editorial_text_muted"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.12" />
-
-            <TextView
-                android:id="@+id/text_period_selection_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="14sp"
-                android:textStyle="italic"
-                android:fontFamily="serif"
-                android:alpha="0.8"
-                android:letterSpacing="0.02" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    
-
     <LinearLayout
         android:id="@+id/layout_period_calendar_section"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="8dp"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/text_period_sheet_hint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="4dp"
             android:text="@string/ledger_period_sheet_hint"
             android:textColor="@color/editorial_text_muted"
             android:textSize="11sp"
@@ -126,8 +96,8 @@
 
             <ImageButton
                 android:id="@+id/btn_period_prev_month"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/ledger_period_previous_month"
                 android:src="@drawable/ic_chevron_left"
@@ -140,13 +110,13 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:textColor="?attr/colorOnSurface"
-                android:textSize="22sp"
+                android:textSize="18sp"
                 android:fontFamily="serif" />
 
             <ImageButton
                 android:id="@+id/btn_period_next_month"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/ledger_period_next_month"
                 android:src="@drawable/ic_chevron_right"
@@ -156,7 +126,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="4dp"
             android:orientation="horizontal">
 
         <TextView
@@ -234,20 +204,20 @@
             android:id="@+id/recycler_period_calendar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="4dp"
             android:nestedScrollingEnabled="false" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="8dp"
         android:orientation="vertical">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_period_apply"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="44dp"
             android:text="@string/ledger_period_confirm"
             app:backgroundTint="?attr/colorPrimary"
             app:cornerRadius="24dp"
@@ -257,8 +227,8 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_period_clear"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="44dp"
+            android:layout_marginTop="8dp"
             android:text="@string/ledger_period_reset"
             app:backgroundTint="?attr/colorSecondaryContainer"
             app:cornerRadius="24dp"
