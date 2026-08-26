@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/background_light">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp"
+        android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="12dp">
+        <ImageButton android:id="@+id/button_ledger_setup_back" android:layout_width="40dp" android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/content_description_back"
+            android:padding="8dp" android:src="@drawable/ic_arrow_back" android:tint="?attr/colorOnSurface" />
+        <TextView android:id="@+id/ledger_setup_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:text="@string/ledger_setup_title" android:textColor="?attr/colorOnSurface" android:textSize="22sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:fillViewport="true" android:clipToPadding="false" android:paddingBottom="24dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/ledger_setup_name_label" android:textColor="?attr/colorOnSurface" android:textSize="14sp" />
+            <EditText android:id="@+id/ledger_setup_name" android:layout_width="match_parent" android:layout_height="52dp"
+                android:layout_marginTop="6dp" android:hint="@string/ledger_setup_name_hint" android:inputType="textCapSentences"
+                android:paddingStart="14dp" android:paddingEnd="14dp" android:background="@drawable/bg_input_surface"
+                android:textColor="?attr/colorOnSurface" android:textColorHint="?attr/colorOnSurfaceVariant" />
+
+            <LinearLayout android:id="@+id/ledger_setup_icon_picker" android:layout_width="match_parent" android:layout_height="56dp"
+                android:layout_marginTop="12dp" android:gravity="center_vertical" android:orientation="horizontal"
+                android:background="@color/surface_light" android:paddingStart="14dp" android:paddingEnd="14dp">
+                <ImageView android:id="@+id/ledger_setup_icon" android:layout_width="32dp" android:layout_height="32dp"
+                    android:tint="?attr/colorOnSurface" />
+                <TextView android:id="@+id/ledger_setup_icon_label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp" android:textColor="?attr/colorOnSurface" android:textSize="15sp" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›"
+                    android:textColor="?attr/colorOnSurfaceVariant" android:textSize="24sp" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginTop="16dp"
+                android:gravity="center_vertical" android:orientation="horizontal" android:background="@color/surface_light"
+                android:paddingStart="14dp" android:paddingEnd="8dp">
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="@string/ledger_setup_share_assets" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="@string/ledger_setup_share_assets_hint" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="13sp" />
+                </LinearLayout>
+                <Switch android:id="@+id/ledger_setup_share_assets" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <TextView android:id="@+id/ledger_setup_choose_ledger" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp"
+                android:text="@string/ledger_setup_choose_ledger" android:textColor="?attr/colorOnSurface" android:textSize="14sp" />
+            <LinearLayout android:id="@+id/ledger_setup_asset_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:orientation="vertical" android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+
+    <Button android:id="@+id/button_ledger_setup_save" android:layout_width="match_parent" android:layout_height="52dp"
+        android:layout_marginStart="16dp" android:layout_marginEnd="16dp" android:layout_marginBottom="16dp"
+        android:text="@string/ledger_setup_save" android:textColor="@android:color/white" android:backgroundTint="?attr/colorPrimary" />
+</LinearLayout>

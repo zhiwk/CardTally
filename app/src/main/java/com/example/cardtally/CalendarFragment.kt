@@ -44,7 +44,25 @@ class CalendarFragment : Fragment() {
             ?: SimpleDateFormat("yyyy-MM", Locale.US).format(Calendar.getInstance().time)
         year = initialMonth.substring(0, 4).toInt()
         month = initialMonth.substring(5, 7).toInt() - 1
-        selectedDate = "$initialMonth-01"
+        val today = Calendar.getInstance()
+        val todayMonth = SimpleDateFormat("yyyy-MM", Locale.US).format(today.time)
+        selectedDate = if (todayMonth == initialMonth) {
+            SimpleDateFormat("yyyy-MM-dd", Locale.US).format(today.time)
+        } else {
+            "$initialMonth-01"
+        }
+        savedInstanceState?.let {
+            year = it.getInt(STATE_YEAR, year)
+            month = it.getInt(STATE_MONTH, month)
+            selectedDate = it.getString(STATE_DATE, selectedDate)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt(STATE_YEAR, year)
+        outState.putInt(STATE_MONTH, month)
+        outState.putString(STATE_DATE, selectedDate)
+        super.onSaveInstanceState(outState)
     }
 
     override fun onCreateView(
@@ -196,6 +214,9 @@ class CalendarFragment : Fragment() {
 
     companion object {
         private const val ARG_MONTH = "arg_month"
+        private const val STATE_YEAR = "calendar_year"
+        private const val STATE_MONTH = "calendar_month"
+        private const val STATE_DATE = "calendar_selected_date"
 
         fun newInstance(month: String): CalendarFragment = CalendarFragment().apply {
             arguments = Bundle().apply { putString(ARG_MONTH, month) }

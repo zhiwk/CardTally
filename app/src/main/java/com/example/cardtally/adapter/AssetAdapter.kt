@@ -12,13 +12,18 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Asset
+import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.LedgerSession
 import com.example.cardtally.util.SwipeToEditDeleteHelper
 import com.example.cardtally.util.ThemeColorHelper
 
 class AssetAdapter(
     private var assets: List<Asset>,
-    private val listener: OnAssetActionListener
+    private val listener: OnAssetActionListener,
+    private val archivedMode: Boolean = false
 ) : RecyclerView.Adapter<AssetAdapter.AssetViewHolder>() {
+
+    private var amountsVisible = true
 
     interface OnAssetActionListener {
         fun onClick(asset: Asset)
@@ -37,16 +42,41 @@ class AssetAdapter(
         val asset = assets[position]
         val context = holder.itemView.context
         holder.textAssetName.text = asset.name
-        holder.textAssetAmount.text = String.format("¥%.2f", asset.amount)
+        holder.textAssetAmount.text = if (amountsVisible) {
+            String.format("¥%.2f", asset.amount)
+        } else {
+            "***"
+        }
+        holder.iconAssetPinned.visibility = if (asset.isPinned) View.VISIBLE else View.GONE
+        val canManage = asset.ledgerId == LedgerSession.getCurrentId(context)
+        holder.actionEditContainer.visibility = if (archivedMode || !canManage) View.GONE else View.VISIBLE
+        holder.actionPinContainer.visibility = if (archivedMode || !canManage) View.GONE else View.VISIBLE
+        holder.btnArchive.setImageResource(
+            if (archivedMode) R.drawable.ms_rounded_unarchive else R.drawable.ic_archive
+        )
+        holder.btnArchive.contentDescription = if (archivedMode) "取消归档" else "归档资产"
+        holder.actionArchiveContainer.visibility = if (!canManage && !archivedMode) View.GONE else View.VISIBLE
 
-        val presentation = when (asset.type) {
+        val fallbackPresentation = when (asset.type) {
             0 -> AssetPresentation("现金", R.drawable.ic_asset, R.color.warning_primary, R.color.warning_container)
             1 -> AssetPresentation("银行卡", R.drawable.ic_asset, null, R.color.surface_container_lowest)
             2 -> AssetPresentation("支付宝", R.drawable.ic_asset, null, R.color.surface_container_lowest)
             3 -> AssetPresentation("微信", R.drawable.ic_asset, null, R.color.surface_container_lowest)
             else -> AssetPresentation("其他", R.drawable.ic_asset, null, R.color.surface_container_lowest)
         }
-        holder.textAssetType.text = presentation.label
+        val selectedIcon = asset.categoryIconName
+            .takeIf { it.isNotBlank() }
+            ?.let(MaterialSymbolCatalog::resourceId)
+            ?.takeIf { it != 0 }
+        val presentation = fallbackPresentation.copy(
+            label = asset.categoryLabel.takeIf { it.isNotBlank() } ?: fallbackPresentation.label,
+            iconRes = selectedIcon ?: fallbackPresentation.iconRes
+        )
+        holder.textAssetType.text = if (asset.includeInTotal) {
+            presentation.label
+        } else {
+            "${presentation.label} · 不计入"
+        }
         holder.imageAssetIcon.setImageResource(presentation.iconRes)
         holder.imageAssetIcon.setColorFilter(
             presentation.iconTint?.let { ThemeColorHelper.resolveThemeAwareResource(context, it) }
@@ -68,12 +98,18 @@ class AssetAdapter(
         holder.btnArchive.setOnClickListener {
             listener.onArchive(asset)
         }
+        holder.btnDelete.contentDescription = if (asset.isPinned) "取消置顶资产" else "置顶资产"
     }
 
     override fun getItemCount(): Int = assets.size
 
     fun updateAssets(newAssets: List<Asset>) {
         assets = newAssets
+        notifyDataSetChanged()
+    }
+
+    fun setAmountsVisible(visible: Boolean) {
+        amountsVisible = visible
         notifyDataSetChanged()
     }
 
@@ -93,9 +129,13 @@ class AssetAdapter(
         val textAssetName: TextView = itemView.findViewById(R.id.text_asset_name)
         val textAssetAmount: TextView = itemView.findViewById(R.id.text_asset_amount)
         val textAssetType: TextView = itemView.findViewById(R.id.text_asset_type)
+        val iconAssetPinned: ImageView = itemView.findViewById(R.id.icon_asset_pinned)
         val btnArchive: ImageButton = itemView.findViewById(R.id.btn_archive)
         val btnEdit: ImageButton = itemView.findViewById(R.id.btn_edit)
         val btnDelete: ImageButton = itemView.findViewById(R.id.btn_delete)
+        val actionArchiveContainer: View = btnArchive.parent as View
+        val actionEditContainer: View = btnEdit.parent as View
+        val actionPinContainer: View = btnDelete.parent as View
         var swipeHelper: SwipeToEditDeleteHelper? = null
     }
 }

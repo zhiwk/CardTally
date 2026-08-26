@@ -264,7 +264,8 @@ class DateGroupAdapter(
             listener: OnRecordActionListener,
             isMultiSelect: Boolean,
             isSelected: Boolean,
-            categoryIconsById: Map<Long, String> = emptyMap()
+            categoryIconsById: Map<Long, String> = emptyMap(),
+            showTypeSubtitle: Boolean = true
         ) {
             currentRecord = record
             val title = record.description?.takeIf { it.isNotBlank() }
@@ -273,10 +274,20 @@ class DateGroupAdapter(
             val categoryLabel = record.categoryPathSnapshot?.takeIf { it.isNotBlank() } ?: record.category
             textCategory.text = title
             textTime.text = buildSubtitle(record)
-            textAsset.text = record.assetSource?.takeIf { it.isNotBlank() }.orEmpty()
+            textTime.visibility = if (showTypeSubtitle) View.VISIBLE else View.GONE
+            textAsset.text = if (record.type == 2) {
+                listOfNotNull(
+                    record.assetSource?.takeIf { it.isNotBlank() },
+                    record.destinationAssetSource?.takeIf { it.isNotBlank() }
+                ).joinToString(" → ")
+            } else {
+                record.assetSource?.takeIf { it.isNotBlank() }.orEmpty()
+            }
             textAsset.visibility = if (textAsset.text.isNullOrBlank()) View.GONE else View.VISIBLE
             val iconName = record.categoryId?.let(categoryIconsById::get)
-            val iconResource = iconName?.let { MaterialSymbolCatalog.resourceId(it) }
+            val iconResource = if (record.type == 2) {
+                R.drawable.ic_asset
+            } else iconName?.let { MaterialSymbolCatalog.resourceId(it) }
                 ?.takeIf { it != 0 }
                 ?: categoryIcons[record.category]
                 ?: R.drawable.ic_category_other
@@ -298,7 +309,10 @@ class DateGroupAdapter(
                     ?: ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_low)
             )
 
-            val amountText = if (record.type == 0) {
+            val amountText = if (record.type == 2) {
+                textAmount.setTextColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.onSurface_light))
+                String.format("¥%.2f", record.amount)
+            } else if (record.type == 0) {
                 textAmount.setTextColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.expense_primary))
                 String.format("-¥%.2f", record.amount)
             } else {
@@ -345,7 +359,9 @@ class DateGroupAdapter(
         }
 
         private fun buildSubtitle(record: Record): String {
-            return if (record.type == 1) {
+            return if (record.type == 2) {
+                "转账"
+            } else if (record.type == 1) {
                 itemView.context.getString(R.string.record_type_income)
             } else {
                 itemView.context.getString(R.string.record_type_expense)

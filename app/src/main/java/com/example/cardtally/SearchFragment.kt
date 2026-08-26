@@ -45,6 +45,10 @@ class SearchFragment : Fragment() {
     private var rangeLabel = ""
 
     companion object {
+        private const val STATE_KEYWORD = "search_keyword"
+        private const val STATE_START = "search_start"
+        private const val STATE_END = "search_end"
+        private const val STATE_LABEL = "search_label"
         fun newInstance(
             keyword: String,
             rangeStart: String? = null,
@@ -72,6 +76,20 @@ class SearchFragment : Fragment() {
                 ""
             }
         }
+        savedInstanceState?.let {
+            searchKeyword = it.getString(STATE_KEYWORD, searchKeyword)
+            rangeStart = it.getString(STATE_START, rangeStart)
+            rangeEnd = it.getString(STATE_END, rangeEnd)
+            rangeLabel = it.getString(STATE_LABEL, rangeLabel)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(STATE_KEYWORD, searchKeyword)
+        outState.putString(STATE_START, rangeStart)
+        outState.putString(STATE_END, rangeEnd)
+        outState.putString(STATE_LABEL, rangeLabel)
+        super.onSaveInstanceState(outState)
     }
 
     override fun onCreateView(

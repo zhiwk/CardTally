@@ -1,10 +1,13 @@
 package com.example.cardtally
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.ImageButton
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,14 +28,18 @@ class AssetRecordsFragment : Fragment() {
     private var assetName: String = ""
     private var assetAmount: Double = 0.0
     private var assetType: Int = 0
+    private var assetCategoryLabel: String = ""
+    private var assetId: Long = 0L
 
     companion object {
-        fun newInstance(assetName: String, assetAmount: Double, assetType: Int): AssetRecordsFragment {
+        fun newInstance(assetName: String, assetAmount: Double, assetType: Int, assetId: Long = 0L, assetCategoryLabel: String = ""): AssetRecordsFragment {
             val fragment = AssetRecordsFragment()
             val args = Bundle()
             args.putString("asset_name", assetName)
             args.putDouble("asset_amount", assetAmount)
             args.putInt("asset_type", assetType)
+            args.putLong("asset_id", assetId)
+            args.putString("asset_category_label", assetCategoryLabel)
             fragment.arguments = args
             return fragment
         }
@@ -44,6 +51,8 @@ class AssetRecordsFragment : Fragment() {
             assetName = it.getString("asset_name", "")
             assetAmount = it.getDouble("asset_amount", 0.0)
             assetType = it.getInt("asset_type", 0)
+            assetId = it.getLong("asset_id", 0L)
+            assetCategoryLabel = it.getString("asset_category_label", "")
         }
     }
 
@@ -59,18 +68,87 @@ class AssetRecordsFragment : Fragment() {
         textEmpty = view.findViewById(R.id.text_empty)
         recyclerRecords = view.findViewById(R.id.recycler_records)
 
-        databaseHelper = DatabaseHelper(requireContext())
+        view.findViewById<ImageButton>(R.id.btn_back).setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
+        view.findViewById<ImageButton>(R.id.btn_edit_asset).setOnClickListener {
+            if (assetId != 0L) {
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, AddAssetFragment.newEditInstance(assetId))
+                    .addToBackStack(null)
+                    .commit()
+            }
+        }
+        view.findViewById<ImageButton>(R.id.btn_pin_asset).setOnClickListener {
+            if (assetId != 0L) {
+                databaseHelper.setAssetPinned(assetId, true)
+                Toast.makeText(requireContext(), "已置顶", Toast.LENGTH_SHORT).show()
+            }
+        }
+        view.findViewById<ImageButton>(R.id.btn_archive_asset).setOnClickListener {
+            if (assetId != 0L) {
+                AlertDialog.Builder(requireContext())
+                    .setTitle("归档资产")
+                    .setMessage("确定归档“$assetName”吗？")
+                    .setNegativeButton("取消", null)
+                    .setPositiveButton("归档") { _, _ ->
+                        databaseHelper.archiveAsset(assetId)
+                        Toast.makeText(requireContext(), "已归档", Toast.LENGTH_SHORT).show()
+                        parentFragmentManager.popBackStack()
+                    }
+                    .show()
+            }
+        }
+        view.findViewById<ImageButton>(R.id.btn_delete_asset).setOnClickListener {
+            if (assetId != 0L) {
+                AlertDialog.Builder(requireContext())
+                    .setTitle("删除资产")
+                    .setMessage("确定删除“$assetName”吗？")
+                    .setNegativeButton("取消", null)
+                    .setPositiveButton("删除") { _, _ ->
+                        try {
+                            if (databaseHelper.deleteAsset(assetId)) {
+                                Toast.makeText(requireContext(), "已删除", Toast.LENGTH_SHORT).show()
+                                parentFragmentManager.popBackStack()
+                            } else {
+                                Toast.makeText(requireContext(), "删除失败", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (error: DatabaseHelper.AssetOperationException) {
+                            Toast.makeText(requireContext(), "该资产仍有关联账单，无法删除", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    .show()
+            }
+        }
+        view.findViewById<View>(R.id.action_transfer).setOnClickListener {
+            Toast.makeText(requireContext(), "转账功能暂未配置", Toast.LENGTH_SHORT).show()
+        }
+        view.findViewById<View>(R.id.action_record).setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, AddRecordFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+        view.findViewById<TextView>(R.id.text_asset_balance).text = String.format("¥%.2f", assetAmount)
 
-        textTitle.text = assetName
+        databaseHelper = DatabaseHelper(requireContext())
+        val canManage = assetId == 0L || databaseHelper.canManageAsset(assetId)
+        view.findViewById<ImageButton>(R.id.btn_edit_asset).visibility = if (canManage) View.VISIBLE else View.GONE
+        view.findViewById<ImageButton>(R.id.btn_pin_asset).visibility = if (canManage) View.VISIBLE else View.GONE
+        view.findViewById<ImageButton>(R.id.btn_archive_asset).visibility = if (canManage) View.VISIBLE else View.GONE
+        view.findViewById<ImageButton>(R.id.btn_delete_asset).visibility = if (canManage) View.VISIBLE else View.GONE
+
+        textTitle.text = "账户详情"
         
-        val typeText = when (assetType) {
+        val fallbackTypeText = when (assetType) {
             0 -> "现金"
             1 -> "银行卡"
             2 -> "支付宝"
             3 -> "微信"
             else -> "其他"
         }
-        textAssetInfo.text = String.format("%s · ¥%.2f", typeText, assetAmount)
+        val typeText = assetCategoryLabel.ifBlank { fallbackTypeText }
+        textAssetInfo.text = String.format("%s · %s", typeText, assetName)
 
         recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
 
@@ -91,7 +169,11 @@ class AssetRecordsFragment : Fragment() {
     }
 
     private fun loadRecords() {
-        val records = databaseHelper.getRecordsByAssetSource(assetName)
+        val records = if (assetId != 0L) {
+            databaseHelper.getRecordsByAssetId(assetId)
+        } else {
+            databaseHelper.getRecordsByAssetSource(assetName)
+        }
 
         if (records.isEmpty()) {
             textEmpty.visibility = View.VISIBLE

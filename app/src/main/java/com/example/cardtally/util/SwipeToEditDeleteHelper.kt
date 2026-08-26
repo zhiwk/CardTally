@@ -19,6 +19,7 @@ class SwipeToEditDeleteHelper(
     private val onEdit: () -> Unit,
     private val onDelete: () -> Unit,
     private val onArchive: (() -> Unit)? = null,
+    private val onFork: (() -> Unit)? = null,
     private val onClick: (() -> Unit)? = null
 ) {
     private var initialTouchX = 0f
@@ -48,7 +49,8 @@ class SwipeToEditDeleteHelper(
             layoutActions.findViewById<View>(R.id.btn_edit),
             layoutActions.findViewById<View>(R.id.btn_delete),
             layoutActions.findViewById<View>(R.id.btn_archive)
-        ).size.coerceAtLeast(1)
+            ,layoutActions.findViewById<View>(R.id.btn_fork)
+        ).count { it.visibility != View.GONE }.coerceAtLeast(1)
         val density = cardContent.context.resources.displayMetrics.density
         val fallbackButtonWidth = 80 * density
         maxSwipeDistance = (fallbackButtonWidth * buttonCount).toInt()
@@ -77,6 +79,11 @@ class SwipeToEditDeleteHelper(
         
         layoutActions.findViewById<View>(R.id.btn_archive)?.setOnClickListener {
             onArchive?.invoke()
+            close(true)
+        }
+
+        layoutActions.findViewById<View>(R.id.btn_fork)?.setOnClickListener {
+            onFork?.invoke()
             close(true)
         }
     }

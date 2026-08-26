@@ -95,7 +95,7 @@ class ArchivedAssetsFragment : Fragment() {
                         Toast.makeText(requireContext(), "已恢复", Toast.LENGTH_SHORT).show()
                         loadAssets()
                     }
-                })
+                }, archivedMode = true)
                 recyclerAssets.adapter = adapter
             } else {
                 adapter?.updateAssets(assets)

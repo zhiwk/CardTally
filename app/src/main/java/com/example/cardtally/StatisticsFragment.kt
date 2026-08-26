@@ -68,6 +68,7 @@ class StatisticsFragment : Fragment() {
     private lateinit var fabAdd: View
     private lateinit var layoutModeSelector: View
     private lateinit var layoutStatisticsContent: View
+    private lateinit var cardStatisticsRanking: View
     private lateinit var layoutRecordsContent: View
     private lateinit var layoutRangeSelector: View
     private lateinit var textStatisticsSectionTitle: TextView
@@ -130,6 +131,7 @@ class StatisticsFragment : Fragment() {
         fabAdd = view.findViewById(R.id.fab_add)
         layoutModeSelector = view.findViewById(R.id.layout_mode_selector)
         layoutStatisticsContent = view.findViewById(R.id.layout_statistics_content)
+        cardStatisticsRanking = view.findViewById(R.id.card_statistics_ranking)
         layoutRecordsContent = view.findViewById(R.id.layout_records_content)
         layoutRangeSelector = view.findViewById(R.id.layout_range_selector)
         val btnRangePrevious = view.findViewById<ImageButton>(R.id.btn_range_previous)
@@ -363,13 +365,16 @@ class StatisticsFragment : Fragment() {
             R.string.currency_amount,
             incomeTotal - expenseTotal
         )
-        textStatisticsSectionTitle.text = if (currentStatsType == TYPE_EXPENSE) {
-            getString(R.string.ledger_statistics_section_title)
-        } else {
-            getString(R.string.ledger_statistics_section_title)
-        }
+        textStatisticsSectionTitle.text = getString(
+            if (currentStatsType == TYPE_EXPENSE) {
+                R.string.ledger_statistics_ranking_expense
+            } else {
+                R.string.ledger_statistics_ranking_income
+            }
+        )
         if (normalizedStats.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
+            cardStatisticsRanking.visibility = View.GONE
             recyclerStatistics.visibility = View.GONE
             textEmpty.text = getString(R.string.ledger_empty_statistics)
             layoutChartLegend.removeAllViews()
@@ -378,10 +383,14 @@ class StatisticsFragment : Fragment() {
                 getString(R.string.ledger_chart_total_label),
                 getString(R.string.currency_amount, 0.0)
             )
-            viewStatisticsLineChart.submitData(emptyList())
-            bindLineAxis(emptyList())
+            val emptyChartDates = buildChartAxisDates()
+            viewStatisticsLineChart.submitData(
+                emptyChartDates.map { LedgerLineChartView.Point(0f, it) }
+            )
+            bindLineAxis(emptyChartDates)
         } else {
             textEmpty.visibility = View.GONE
+            cardStatisticsRanking.visibility = View.VISIBLE
             recyclerStatistics.visibility = View.VISIBLE
             statisticsAdapter.updateData(normalizedStats, entryCounts, categoryIcons)
             bindChart(normalizedStats, entryCounts, categoryRecords)
@@ -528,7 +537,9 @@ class StatisticsFragment : Fragment() {
                 dateLabelToAmount = dateLabelToAmountBuilder
             }
 
-            val linePoints = dateLabelToAmount.values.map { LedgerLineChartView.Point(it) }
+            val linePoints = dateLabelToAmount.map { (date, amount) ->
+                LedgerLineChartView.Point(amount, date)
+            }
             viewStatisticsLineChart.submitData(linePoints)
             bindLineAxis(dateLabelToAmount.keys.toList())
         } else {
@@ -549,7 +560,18 @@ class StatisticsFragment : Fragment() {
                 entryCounts[normalizedLabel] ?: 0
             }
             val displayLabel = slice.label.substringAfter(": ", slice.label).substringAfter("· ", slice.label)
-            label.text = displayLabel.uppercase() + "  ·  " + LedgerDisplayHelper.formatEntriesMeta(entryCount)
+            val percentage = if (summary.completeTotal == 0.0) {
+                0.0
+            } else {
+                slice.amount / summary.completeTotal * 100.0
+            }
+            label.text = String.format(
+                java.util.Locale.getDefault(),
+                "%s  %.1f%%  ·  %s",
+                displayLabel,
+                percentage,
+                LedgerDisplayHelper.formatEntriesMeta(entryCount)
+            )
             value.text = getString(R.string.currency_amount, slice.amount)
             layoutChartLegend.addView(legendView)
         }
@@ -565,6 +587,13 @@ class StatisticsFragment : Fragment() {
 
         viewStatisticsChart.visibility = if (isPie && currentViewMode == VIEW_MODE_STATISTICS) View.VISIBLE else View.GONE
         layoutChartLegend.visibility = View.GONE
+        (viewStatisticsChart.parent as? View)?.let { chartContainer ->
+            val targetHeight = if (isPie) 220 else 120
+            chartContainer.layoutParams = chartContainer.layoutParams.apply {
+                height = (targetHeight * resources.displayMetrics.density).toInt()
+            }
+            chartContainer.requestLayout()
+        }
         viewStatisticsLineChart.visibility = if (!isPie && currentViewMode == VIEW_MODE_STATISTICS && showLineChart) View.VISIBLE else View.GONE
         layoutLineAxis.visibility = if (!isPie && currentViewMode == VIEW_MODE_STATISTICS && showLineChart) View.VISIBLE else View.GONE
         textChartSubtitle.text = if (isPie) {
@@ -613,6 +642,26 @@ class StatisticsFragment : Fragment() {
             }
             layoutLineAxis.addView(label)
         }
+    }
+
+    /** Returns the complete horizontal axis even when the selected period has no records. */
+    private fun buildChartAxisDates(): List<String> {
+        val start = currentRange.startDate ?: return emptyList()
+        val end = currentRange.endDate ?: return emptyList()
+        if (currentPeriodPreset == LedgerPeriodPreset.YEAR) {
+            val year = start.substring(0, 4)
+            return (1..12).map { month -> String.format(java.util.Locale.US, "%s-%02d", year, month) }
+        }
+
+        val startCalendar = LedgerPeriodHelper.parseIsoDate(start)
+        val endCalendar = LedgerPeriodHelper.parseIsoDate(end)
+        val dates = mutableListOf<String>()
+        val calendar = Calendar.getInstance().apply { time = startCalendar }
+        while (!calendar.time.after(endCalendar)) {
+            dates += LedgerPeriodHelper.formatIsoDateForExternal(calendar.time)
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+        }
+        return dates
     }
 
     private fun formatWeekAxisLabel(date: String): String {

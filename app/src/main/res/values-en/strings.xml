@@ -14,7 +14,25 @@
     <string name="statistics_expense_prefix">Expense: %1$s</string>
     <string name="statistics_income_prefix">Income: %1$s</string>
     <string name="ledger_view_statistics">Statistics</string>
+    <string name="ledger_management_edit">Edit ledger</string>
+    <string name="ledger_management_title">Ledger / Asset Management</string>
+    <string name="ledger_management_ledgers_page_title">Ledger management</string>
+    <string name="ledger_management_assets_page_title">Asset management</string>
+    <string name="ledger_management_asset_pool_meta">%1$d assets · ¥%2$.2f</string>
+    <string name="ledger_management_asset_pool_shared">Shared asset pool</string>
+    <string name="ledger_management_asset_pool_current">Current ledger</string>
+    <string name="ledger_management_asset_pool_independent">Independent asset pool</string>
+    <string name="ledger_management_add_asset">Add asset</string>
+    <string name="ledger_management_merge_title">Merge ledger</string>
+    <string name="ledger_management_merge_message">Merge “%1$s” into the current ledger? Its records, categories, and assets will be moved. This cannot be undone.</string>
+    <string name="ledger_management_merge_confirm">Merge</string>
+    <string name="ledger_management_merge_done">Ledger merged</string>
+    <string name="ledger_setup_share_assets">Share assets from another ledger</string>
+    <string name="ledger_setup_share_assets_hint">Choose a ledger-level asset relationship</string>
+    <string name="ledger_setup_choose_ledger">Choose the asset source ledger</string>
     <string name="ledger_view_records">Records</string>
+    <string name="ledger_setup_edit_title">Edit ledger</string>
+    <string name="ledger_setup_update">Save changes</string>
     <string name="ledger_mode_statistics_expense">Statistics (Expense)</string>
     <string name="ledger_mode_statistics_income">Statistics (Income)</string>
     <string name="ledger_mode_sheet_title">Display Mode</string>
@@ -114,6 +132,7 @@
     <string name="record_when_label">When</string>
     <string name="record_date_placeholder">2026-04-07</string>
     <string name="record_asset_label">Asset</string>
+    <string name="record_transfer_from_asset">From asset</string>
     <string name="record_asset_none">None</string>
     <string name="record_detail_label">Detail</string>
     <string name="record_detail_hint">Add a note...</string>
@@ -162,6 +181,7 @@
     <string name="asset_delete_cta">Archive Asset</string>
     <string name="asset_toast_add_success">Added successfully</string>
     <string name="asset_toast_add_failed">Add failed</string>
+    <string name="ledger_setup_updated">Ledger updated</string>
 
     <string name="validation_select_date">Please select a date</string>
     <string name="validation_enter_amount">Please enter an amount</string>

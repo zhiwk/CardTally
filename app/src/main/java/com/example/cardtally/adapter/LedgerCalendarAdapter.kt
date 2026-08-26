@@ -11,6 +11,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.util.LedgerCalendarDay
 import com.example.cardtally.util.ThemeColorHelper
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class LedgerCalendarAdapter(
     private val singleSelection: Boolean = false,
@@ -41,6 +44,7 @@ class LedgerCalendarAdapter(
         private val container: View = itemView.findViewById(R.id.day_container)
         private val fillLeft: View = itemView.findViewById(R.id.day_fill_left)
         private val fillRight: View = itemView.findViewById(R.id.day_fill_right)
+        private val selectedBackground: View = itemView.findViewById(R.id.day_selected_background)
         private val value: TextView = itemView.findViewById(R.id.text_day_value)
         private val income: TextView = itemView.findViewById(R.id.text_day_income)
         private val expense: TextView = itemView.findViewById(R.id.text_day_expense)
@@ -58,6 +62,7 @@ class LedgerCalendarAdapter(
                 value.isSelected = false
                 fillLeft.isVisible = false
                 fillRight.isVisible = false
+                selectedBackground.isVisible = false
                 todayDot.isVisible = false
                 income.isVisible = false
                 expense.isVisible = false
@@ -68,10 +73,15 @@ class LedgerCalendarAdapter(
             value.text = day.dayOfMonth.toString()
             positionRangeFill(fillLeft, Gravity.END)
             positionRangeFill(fillRight, Gravity.START)
-            income.isVisible = day.income > 0.0
-            expense.isVisible = day.expense > 0.0
-            income.text = String.format(java.util.Locale.US, "+%.0f", day.income)
-            expense.text = String.format(java.util.Locale.US, "-%.0f", day.expense)
+            // Show a complete zero-based daily accounting row for today and
+            // earlier dates. Future dates remain visually empty because they
+            // do not have a settled daily result yet.
+            val todayIsoDate = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            val hasSettledDailyTotal = day.isoDate <= todayIsoDate
+            income.isVisible = hasSettledDailyTotal
+            expense.isVisible = hasSettledDailyTotal
+            income.text = String.format(java.util.Locale.US, "+%.2f", day.income)
+            expense.text = String.format(java.util.Locale.US, "-%.2f", day.expense)
             value.isSelected = day.isRangeBoundary
             // The selected range uses a flat band with the same 28dp height as
             // the circular date marker; the boundary dates remain circular.
@@ -80,14 +90,24 @@ class LedgerCalendarAdapter(
             // Middle dates show both halves and therefore form one band.
             fillLeft.isVisible = !singleSelection && day.isInSelectedRange && !day.isRangeEnd
             fillRight.isVisible = !singleSelection && day.isInSelectedRange && !day.isRangeStart
+            selectedBackground.isVisible = singleSelection && day.isRangeBoundary
+            value.background = if (singleSelection) {
+                null
+            } else {
+                androidx.appcompat.content.res.AppCompatResources.getDrawable(
+                    context,
+                    R.drawable.bg_ledger_calendar_day_bubble
+                )
+            }
             todayDot.isVisible = false
-            value.setTextColor(
-                if (day.isRangeBoundary) {
-                    ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimary)
-                } else {
-                    ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface)
-                }
-            )
+            val selectedColor = if (day.isRangeBoundary && singleSelection) {
+                ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimary)
+            } else {
+                ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface)
+            }
+            income.setTextColor(if (day.isRangeBoundary && singleSelection) selectedColor else ThemeColorHelper.resolveThemeAwareResource(context, R.color.income_primary))
+            expense.setTextColor(if (day.isRangeBoundary && singleSelection) selectedColor else ThemeColorHelper.resolveThemeAwareResource(context, R.color.expense_primary))
+            value.setTextColor(selectedColor)
             container.isClickable = true
             container.setOnClickListener { onDayClicked(day) }
         }

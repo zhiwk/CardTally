@@ -90,7 +90,7 @@
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recycler_calendar_days"
                         android:layout_width="match_parent"
-                        android:layout_height="312dp"
+                        android:layout_height="384dp"
                         android:nestedScrollingEnabled="false" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

@@ -25,6 +25,7 @@ import java.util.Calendar
 import java.util.Locale
 
 class LedgerFragment : Fragment() {
+    companion object { private const val STATE_MONTH = "ledger_month" }
     private lateinit var databaseHelper: DatabaseHelper
     private lateinit var textMonth: TextView
     private lateinit var textIncome: TextView
@@ -36,6 +37,16 @@ class LedgerFragment : Fragment() {
     private lateinit var recordsAdapter: LedgerDateGroupAdapter
     private lateinit var fabScrollTop: FloatingActionButton
     private var currentMonth = SimpleDateFormat("yyyy-MM", Locale.US).format(Calendar.getInstance().time)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        currentMonth = savedInstanceState?.getString(STATE_MONTH) ?: currentMonth
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(STATE_MONTH, currentMonth)
+        super.onSaveInstanceState(outState)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,6 +61,9 @@ class LedgerFragment : Fragment() {
         textEmpty = view.findViewById(R.id.text_empty)
         recyclerRecords = view.findViewById(R.id.recycler_records)
         recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
+        // 月份切换只更新数据，不对包含顶部栏和统计卡片的首个条目做位移动画。
+        // 否则 RecyclerView 会把整组内容一起平移，造成顶部栏和统计卡片抖动。
+        recyclerRecords.itemAnimator = null
         recordsAdapter = LedgerDateGroupAdapter(emptyList(), object : DateGroupAdapter.OnRecordActionListener {
             override fun onEdit(record: Record) {
                 parentFragmentManager.beginTransaction()
@@ -136,7 +150,7 @@ class LedgerFragment : Fragment() {
         val records = databaseHelper.getRecordsByDateRange(range.first, range.second)
         val income = records.filter { it.type == 1 }.sumOf { it.amount }
         val expense = records.filter { it.type == 0 }.sumOf { it.amount }
-        textMonth.text = getString(R.string.ledger_book_name)
+        textMonth.text = databaseHelper.getCurrentLedger()?.name ?: getString(R.string.ledger_book_name)
         textMonthSummaryTitle.text = monthSummaryTitle(currentMonth)
         textIncome.text = getString(R.string.currency_amount, income)
         textExpense.text = getString(R.string.currency_amount, expense)
@@ -223,18 +237,6 @@ class LedgerFragment : Fragment() {
         currentMonth = SimpleDateFormat("yyyy-MM", Locale.US).format(calendar.time)
         recyclerRecords.scrollToPosition(0)
         render()
-        val contentView = if (recyclerRecords.visibility == View.VISIBLE) {
-            recyclerRecords
-        } else {
-            textEmpty
-        }
-        contentView.translationY = if (offset < 0) -8.dp.toFloat() else 8.dp.toFloat()
-        contentView.alpha = 0.7f
-        contentView.animate()
-            .translationY(0f)
-            .alpha(1f)
-            .setDuration(160L)
-            .start()
         updateScrollTopFab(false)
     }
 
@@ -250,7 +252,10 @@ class LedgerFragment : Fragment() {
         header.findViewById<ImageButton>(R.id.button_month_previous).setOnClickListener { switchMonth(-1) }
         header.findViewById<ImageButton>(R.id.button_month_next).setOnClickListener { switchMonth(1) }
         header.findViewById<ImageButton>(R.id.button_ledger_switch).setOnClickListener {
-            Toast.makeText(requireContext(), getString(R.string.ledger_book_current), Toast.LENGTH_SHORT).show()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, LedgerManagementFragment.newLedgerSelectorInstance())
+                .addToBackStack(null)
+                .commit()
         }
         header.findViewById<ImageButton>(R.id.button_ledger_search).setOnClickListener {
             parentFragmentManager.beginTransaction().replace(R.id.fragment_container, SearchFragment()).addToBackStack(null).commit()

@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
@@ -16,6 +17,7 @@ class StatisticsAdapter(
 ) : RecyclerView.Adapter<StatisticsAdapter.StatisticsViewHolder>() {
 
     private val items = mutableListOf<StatisticsItem>()
+    private var totalAmount = 0.0
 
     fun updateData(
         data: Map<String, Double>,
@@ -23,6 +25,7 @@ class StatisticsAdapter(
         categoryIcons: Map<String, String> = emptyMap()
     ) {
         items.clear()
+        totalAmount = data.values.sumOf { kotlin.math.abs(it) }
         data.entries
             .sortedByDescending { (_, amount) -> kotlin.math.abs(amount) }
             .forEach { (label, amount) ->
@@ -64,10 +67,10 @@ class StatisticsAdapter(
     override fun onBindViewHolder(holder: StatisticsViewHolder, position: Int) {
         val item = items[position]
         val context = holder.itemView.context
-        holder.textLabel.text = item.label
+        val normalizedLabel = item.label.substringAfter("· ", item.label).substringAfter(": ", item.label)
+        holder.textLabel.text = normalizedLabel
         holder.textAmount.text = String.format("¥%.2f", kotlin.math.abs(item.amount))
 
-        val normalizedLabel = item.label.substringAfter("· ", item.label).substringAfter(": ", item.label)
         holder.itemView.setOnClickListener { onCategoryClick(normalizedLabel) }
 
         val iconRes = resolveIconResource(normalizedLabel, item.iconName)
@@ -92,16 +95,11 @@ class StatisticsAdapter(
         holder.iconContainer.backgroundTintList = ColorStateList.valueOf(
             iconBackground
         )
-        holder.textMeta.text = if (item.amount >= 0) {
-            holder.itemView.context.getString(R.string.record_type_income)
-        } else {
-            holder.itemView.context.getString(R.string.record_type_expense)
-        }
-        holder.textAmountMeta.text = if (item.entryCount > 0) {
-            holder.itemView.context.getString(R.string.ledger_statistics_entries_meta, item.entryCount)
-        } else {
-            ""
-        }
+        val percentage = if (totalAmount == 0.0) 0.0 else kotlin.math.abs(item.amount) / totalAmount * 100.0
+        holder.textMeta.text = String.format("%.2f%%", percentage)
+        holder.textAmountMeta.visibility = View.GONE
+        holder.progressBar.progress = percentage.coerceIn(0.0, 100.0).toInt()
+        holder.progressBar.progressTintList = ColorStateList.valueOf(amountColor)
         holder.textAmount.setTextColor(amountColor)
     }
 
@@ -114,6 +112,7 @@ class StatisticsAdapter(
         val textMeta: TextView = itemView.findViewById(R.id.text_meta)
         val textAmount: TextView = itemView.findViewById(R.id.text_amount)
         val textAmountMeta: TextView = itemView.findViewById(R.id.text_amount_meta)
+        val progressBar: ProgressBar = itemView.findViewById(R.id.progress_bar)
     }
 
     private data class StatisticsItem(

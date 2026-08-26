@@ -75,7 +75,14 @@ class LedgerDateGroupAdapter(
         }
 
         override fun onBindViewHolder(holder: DateGroupAdapter.RecordViewHolder, position: Int) {
-            holder.bind(records[position], listener, false, false, categoryIconsById)
+            holder.bind(
+                records[position],
+                listener,
+                false,
+                false,
+                categoryIconsById,
+                showTypeSubtitle = false
+            )
         }
 
         override fun getItemCount(): Int = records.size

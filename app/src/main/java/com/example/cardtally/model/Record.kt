@@ -10,6 +10,11 @@ data class Record(
     var categoryPathSnapshot: String? = null,
     var type: Int = 0,
     var description: String? = null,
+    var assetId: Long? = null,
+    var destinationAssetId: Long? = null,
     var assetSource: String? = null,
+    var destinationAssetSource: String? = null,
+    var photoUri: String? = null,
+    var photoUris: List<String> = emptyList(),
     var sortOrder: Int = 0
 )

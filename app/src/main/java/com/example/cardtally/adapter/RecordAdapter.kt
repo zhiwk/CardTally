@@ -28,9 +28,14 @@ class RecordAdapter(
     override fun onBindViewHolder(holder: RecordViewHolder, position: Int) {
         val record = records[position]
         holder.textDate.text = record.date
-        holder.textCategory.text = record.category
+        holder.textCategory.text = if (record.type == 2) {
+            listOfNotNull(record.assetSource, record.destinationAssetSource).joinToString(" → ")
+        } else record.category
 
-        val amountText = if (record.type == 0) {
+        val amountText = if (record.type == 2) {
+            holder.textAmount.setTextColor(0xFF444444.toInt())
+            String.format("%.2f", record.amount)
+        } else if (record.type == 0) {
             holder.textAmount.setTextColor(0xFFF44336.toInt())
             String.format("-%.2f", record.amount)
         } else {

@@ -24,7 +24,7 @@
             android:background="@drawable/bg_circle_primary_container"
             android:backgroundTint="@color/success_container"
             android:contentDescription="编辑"
-            android:padding="10dp"
+            android:padding="13dp"
             android:src="@drawable/ic_edit"
             app:tint="@color/success_primary" />
 
@@ -35,7 +35,7 @@
             android:background="@drawable/bg_circle_primary_container"
             android:backgroundTint="@color/error_container"
             android:contentDescription="删除"
-            android:padding="10dp"
+            android:padding="13dp"
             android:src="@drawable/ic_delete"
             app:tint="?attr/colorOnErrorContainer" />
 

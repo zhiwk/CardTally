@@ -1,6 +1,10 @@
 package com.example.cardtally
 
 import android.app.AlertDialog
+import android.app.Dialog
+import android.graphics.Color
+import android.net.Uri
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.LayoutInflater
@@ -10,9 +14,15 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.FrameLayout
+import android.view.Gravity
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.OnBackPressedCallback
+import androidx.core.content.FileProvider
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.GridLayoutManager
@@ -35,10 +45,13 @@ import com.example.cardtally.util.LedgerPeriodHelper
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.MaterialSymbolCatalog
 import com.example.cardtally.util.AmountKeypadController
+import com.example.cardtally.util.RecordPhotoSettingsHelper
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.util.Calendar
 import java.util.Locale
+import java.io.File
+import kotlin.math.roundToInt
 
 open class AddRecordFragment : Fragment() {
     companion object {
@@ -51,15 +64,25 @@ open class AddRecordFragment : Fragment() {
     private lateinit var imageCategoryIcon: ImageView
     private lateinit var editAmount: EditText
     private lateinit var editDescription: EditText
+    private lateinit var btnTakePhoto: ImageButton
+    private lateinit var cardPhotoPreview: View
+    private lateinit var layoutPhotoThumbnails: LinearLayout
     private lateinit var btnExpense: Button
     private lateinit var btnIncome: Button
+    private lateinit var btnTransfer: Button
     private lateinit var btnClose: View
     private lateinit var btnCancel: View
     private lateinit var btnSave: View
     private lateinit var btnSaveAndAdd: View
     private lateinit var rowDate: View
     private lateinit var rowAsset: View
+    private lateinit var rowDestinationAsset: View
+    private lateinit var dividerDestinationAsset: View
+    private lateinit var dividerBeforeDate: View
+    private lateinit var dividerAfterCategory: View
+    private lateinit var textAssetLabel: TextView
     private lateinit var rowCategory: View
+    private lateinit var textDestinationAssetValue: TextView
     private lateinit var databaseHelper: DatabaseHelper
 
     private var categoryAdapter: RecordCategoryTreeAdapter? = null
@@ -69,11 +92,28 @@ open class AddRecordFragment : Fragment() {
     private var selectedDate: String = ""
     private var selectedCategory: Category? = null
     private var selectedAsset: Asset? = null
+    private var selectedDestinationAsset: Asset? = null
     private var openSheet = RecordSheet.NONE
     private var pendingCategoryId: Long? = null
     private lateinit var backPressedCallback: OnBackPressedCallback
     private var editingRecordId: Long? = null
     private var editingRecord: Record? = null
+    private var photoUris = mutableListOf<String>()
+    private var savedPhotoUris = emptyList<String>()
+    private var pendingPhotoUri: Uri? = null
+
+    private val takePhotoLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        val uri = pendingPhotoUri
+        if (success && uri != null) {
+            photoUris.add(uri.toString())
+            showPhotoPreview()
+        } else if (uri != null) {
+            requireContext().contentResolver.delete(uri, null, null)
+        }
+        pendingPhotoUri = null
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,8 +137,12 @@ open class AddRecordFragment : Fragment() {
         imageCategoryIcon = view.findViewById(R.id.image_category_icon)
         editAmount = view.findViewById(R.id.edit_amount)
         editDescription = view.findViewById(R.id.edit_description)
+        btnTakePhoto = view.findViewById(R.id.btn_take_photo)
+        cardPhotoPreview = view.findViewById(R.id.card_photo_preview)
+        layoutPhotoThumbnails = view.findViewById(R.id.layout_photo_thumbnails)
         btnExpense = view.findViewById(R.id.btn_expense)
         btnIncome = view.findViewById(R.id.btn_income)
+        btnTransfer = view.findViewById(R.id.btn_transfer)
         btnClose = view.findViewById(R.id.btn_close)
         btnCancel = view.findViewById(R.id.btn_cancel)
         btnSave = view.findViewById(R.id.btn_save)
@@ -109,7 +153,13 @@ open class AddRecordFragment : Fragment() {
         }.also { it.bind() }
         rowDate = view.findViewById(R.id.row_date)
         rowAsset = view.findViewById(R.id.row_asset)
+        rowDestinationAsset = view.findViewById(R.id.row_destination_asset)
+        dividerDestinationAsset = view.findViewById(R.id.divider_destination_asset)
+        dividerBeforeDate = view.findViewById(R.id.divider_before_date)
+        dividerAfterCategory = view.findViewById(R.id.divider_after_category)
+        textAssetLabel = view.findViewById(R.id.text_asset_label)
         rowCategory = view.findViewById(R.id.row_category)
+        textDestinationAssetValue = view.findViewById(R.id.text_destination_asset_value)
 
         databaseHelper = DatabaseHelper(requireContext())
 
@@ -117,25 +167,41 @@ open class AddRecordFragment : Fragment() {
         val defaultState = editingRecord?.let { record ->
             RecordFormState(
                 amountBuffer = String.format(Locale.US, "%.2f", record.amount),
-                recordType = if (record.type == 1) RecordType.INCOME else RecordType.EXPENSE,
+                recordType = when (record.type) {
+                    1 -> RecordType.INCOME
+                    2 -> RecordType.TRANSFER
+                    else -> RecordType.EXPENSE
+                },
                 selectedDate = record.date,
-                selectedAssetId = databaseHelper.getAllAssets().firstOrNull { it.name == record.assetSource }?.id,
+                selectedAssetId = record.assetId,
+                selectedDestinationAssetId = record.destinationAssetId,
                 selectedCategoryId = record.categoryId,
                 description = record.description.orEmpty(),
+                photoUri = record.photoUri,
+                photoUris = record.photoUris,
                 openSheet = RecordSheet.NONE,
                 pendingCategoryId = null
             )
         } ?: RecordFormState.DEFAULT.copy(selectedDate = databaseHelper.getCurrentDate())
         val restoredState = RecordFormState.readFrom(savedInstanceState, defaultState)
-        currentType = if (restoredState.recordType == RecordType.INCOME) 1 else 0
+        currentType = when (restoredState.recordType) {
+            RecordType.INCOME -> 1
+            RecordType.TRANSFER -> 2
+            else -> 0
+        }
         selectedDate = restoredState.selectedDate
         openSheet = restoredState.openSheet
         pendingCategoryId = restoredState.pendingCategoryId
         editAmount.setText(restoredState.amountBuffer)
         editDescription.setText(restoredState.description)
+        photoUris = restoredState.photoUris.toMutableList().ifEmpty {
+            restoredState.photoUri?.let { mutableListOf(it) } ?: mutableListOf()
+        }
+        savedPhotoUris = editingRecord?.photoUris ?: emptyList()
+        showPhotoPreview()
 
         loadCategories(currentType, restoredState.selectedCategoryId)
-        loadAssets(restoredState.selectedAssetId)
+        loadAssets(restoredState.selectedAssetId, restoredState.selectedDestinationAssetId)
         if (savedInstanceState != null) {
             restoreSelections(restoredState)
         }
@@ -151,7 +217,9 @@ open class AddRecordFragment : Fragment() {
 
         rowDate.setOnClickListener { showDateSheet() }
         rowAsset.setOnClickListener { showAssetSheet() }
+        rowDestinationAsset.setOnClickListener { showAssetSheet(selectDestination = true) }
         rowCategory.setOnClickListener { showCategorySheet() }
+        btnTakePhoto.setOnClickListener { takePhoto() }
 
         btnExpense.setOnClickListener {
             if (currentType != 0) {
@@ -182,11 +250,18 @@ open class AddRecordFragment : Fragment() {
         super.onSaveInstanceState(outState)
         RecordFormState(
             amountBuffer = editAmount.text.toString(),
-            recordType = if (currentType == 1) RecordType.INCOME else RecordType.EXPENSE,
+            recordType = when (currentType) {
+                1 -> RecordType.INCOME
+                2 -> RecordType.TRANSFER
+                else -> RecordType.EXPENSE
+            },
             selectedDate = selectedDate,
             selectedAssetId = selectedAsset?.id,
+            selectedDestinationAssetId = selectedDestinationAsset?.id,
             selectedCategoryId = selectedCategory?.id,
             description = editDescription.text.toString(),
+            photoUri = photoUris.firstOrNull(),
+            photoUris = photoUris,
             openSheet = openSheet,
             pendingCategoryId = pendingCategoryId
         ).writeTo(outState)
@@ -204,24 +279,64 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun updateTypeStyle() {
-        if (currentType == 0) {
-            btnExpense.setBackgroundResource(R.drawable.bg_record_type_tab_selected)
-            btnExpense.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface))
-            btnExpense.isSelected = true
-            btnIncome.setBackgroundResource(android.R.color.transparent)
-            btnIncome.setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted))
-            btnIncome.isSelected = false
+        val buttons = listOf(btnExpense, btnIncome, btnTransfer)
+        buttons.forEach { button ->
+            button.setBackgroundResource(android.R.color.transparent)
+            button.setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted))
+            button.isSelected = false
+        }
+
+        btnTransfer.setOnClickListener {
+            if (currentType != 2) {
+                currentType = 2
+                selectedCategory = null
+                updateTypeStyle()
+            }
+        }
+        val selectedButton = when (currentType) {
+            1 -> btnIncome
+            2 -> btnTransfer
+            else -> btnExpense
+        }
+        selectedButton.setBackgroundResource(R.drawable.bg_record_type_tab_selected)
+        selectedButton.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface))
+        selectedButton.isSelected = true
+        updateTransferRows()
+        if (currentType == 2) {
+            rowCategory.visibility = View.GONE
         } else {
-            btnExpense.setBackgroundResource(android.R.color.transparent)
-            btnExpense.setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted))
-            btnExpense.isSelected = false
-            btnIncome.setBackgroundResource(R.drawable.bg_record_type_tab_selected)
-            btnIncome.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface))
-            btnIncome.isSelected = true
+            rowCategory.visibility = View.VISIBLE
         }
     }
 
+    private fun updateTransferRows() {
+        val visible = currentType == 2
+        val fields = rowAsset.parent as ViewGroup
+        fields.removeView(rowAsset)
+        fields.removeView(dividerBeforeDate)
+        if (visible) {
+            val destinationIndex = fields.indexOfChild(rowDestinationAsset)
+            fields.addView(rowAsset, (destinationIndex + 2).coerceAtMost(fields.childCount))
+            fields.addView(dividerBeforeDate, (fields.indexOfChild(rowAsset) + 1).coerceAtMost(fields.childCount))
+        } else {
+            val dateIndex = fields.indexOfChild(rowDate)
+            fields.addView(dividerBeforeDate, (dateIndex + 1).coerceAtMost(fields.childCount))
+            fields.addView(rowAsset, (dateIndex + 2).coerceAtMost(fields.childCount))
+        }
+        rowDestinationAsset.visibility = if (visible) View.VISIBLE else View.GONE
+        dividerDestinationAsset.visibility = if (visible) View.VISIBLE else View.GONE
+        dividerAfterCategory.visibility = if (visible) View.GONE else View.VISIBLE
+        textAssetLabel.setText(if (visible) R.string.record_transfer_from_asset else R.string.record_asset_label)
+        textDestinationAssetValue.text = selectedDestinationAsset?.name ?: "请选择"
+    }
+
     private fun loadCategories(type: Int, selectedCategoryId: Long? = null) {
+        if (type == 2) {
+            currentCategories = mutableListOf()
+            selectedCategory = null
+            updateCategorySummary()
+            return
+        }
         currentCategories = databaseHelper.getCategoryTreeByType(type).toMutableList()
         selectedCategory = selectedCategoryId?.let { id ->
             currentCategories.firstOrNull { it.id == id && isLeafCategory(it) }
@@ -229,10 +344,12 @@ open class AddRecordFragment : Fragment() {
         updateCategorySummary()
     }
 
-    private fun loadAssets(selectedAssetId: Long? = null) {
+    private fun loadAssets(selectedAssetId: Long? = null, selectedDestinationAssetId: Long? = null) {
         currentAssets = databaseHelper.getAllAssets().toMutableList()
         selectedAsset = selectedAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
+        selectedDestinationAsset = selectedDestinationAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
         updateAssetSummary()
+        updateTransferRows()
     }
 
     private fun showDateSheet() {
@@ -313,7 +430,7 @@ open class AddRecordFragment : Fragment() {
         dialog.show()
     }
 
-    private fun showAssetSheet() {
+    private fun showAssetSheet(selectDestination: Boolean = false) {
         openSheet = RecordSheet.ASSET
         val dialog = BottomSheetDialog(requireContext())
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_assets, null)
@@ -321,9 +438,15 @@ open class AddRecordFragment : Fragment() {
 
         val btnCloseSheet = sheetView.findViewById<ImageButton>(R.id.btn_close_sheet)
         val recyclerAssets = sheetView.findViewById<RecyclerView>(R.id.recycler_assets)
-        val adapter = RecordAssetSheetAdapter(buildAssetSheetItems(), selectedAsset?.id) { item ->
-            selectedAsset = item.asset
+        val selectedId = if (selectDestination) selectedDestinationAsset?.id else selectedAsset?.id
+        val adapter = RecordAssetSheetAdapter(buildAssetSheetItems(), selectedId) { item ->
+            if (selectDestination) {
+                selectedDestinationAsset = item.asset
+            } else {
+                selectedAsset = item.asset
+            }
             updateAssetSummary()
+            updateTransferRows()
             dialog.dismiss()
         }
 
@@ -522,10 +645,13 @@ open class AddRecordFragment : Fragment() {
     private fun restoreSelections(state: RecordFormState) {
         val assetId = StableIdResolver.resolve(state.selectedAssetId, currentAssets.mapTo(mutableSetOf()) { it.id })
         selectedAsset = assetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
+        val destinationAssetId = StableIdResolver.resolve(state.selectedDestinationAssetId, currentAssets.mapTo(mutableSetOf()) { it.id })
+        selectedDestinationAsset = destinationAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
         val categoryId = StableIdResolver.resolve(state.selectedCategoryId, currentCategories.mapTo(mutableSetOf()) { it.id })
         selectedCategory = categoryId?.let { id -> currentCategories.firstOrNull { it.id == id && isLeafCategory(it) } }
         pendingCategoryId = state.pendingCategoryId?.takeIf { id -> currentCategories.any { it.id == id && isLeafCategory(it) } }
         updateAssetSummary()
+        updateTransferRows()
         updateCategorySummary()
     }
 
@@ -540,7 +666,7 @@ open class AddRecordFragment : Fragment() {
 
     private fun saveRecord(shouldReturn: Boolean, openNewEntry: Boolean = false) {
         val amountStr = editAmount.text.toString().trim()
-        val category = selectedCategory?.name
+        val category = if (currentType == 2) "资产转资产" else selectedCategory?.name
         val description = editDescription.text.toString().trim()
 
         if (selectedDate.isEmpty()) {
@@ -553,9 +679,8 @@ open class AddRecordFragment : Fragment() {
             return
         }
 
-        val amount = try {
-            amountStr.toDouble()
-        } catch (_: NumberFormatException) {
+        val amount = evaluateAmountExpression(amountStr)
+        if (amount == null) {
             Toast.makeText(requireContext(), getString(R.string.validation_enter_valid_amount), Toast.LENGTH_SHORT).show()
             return
         }
@@ -579,7 +704,12 @@ open class AddRecordFragment : Fragment() {
             categoryPathSnapshot = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel) ?: category,
             type = currentType,
             description = description,
-            assetSource = selectedAsset?.name
+            assetId = selectedAsset?.id,
+            destinationAssetId = selectedDestinationAsset?.id,
+            assetSource = selectedAsset?.name,
+            destinationAssetSource = selectedDestinationAsset?.name,
+            photoUri = photoUris.firstOrNull(),
+            photoUris = photoUris
         )
         val success = if (isEditing()) {
             val existing = editingRecord ?: return
@@ -591,6 +721,11 @@ open class AddRecordFragment : Fragment() {
         }
 
         if (success) {
+            val oldPhotoUris = editingRecord?.photoUris.orEmpty()
+            if (isEditing()) {
+                deletePhotoUris(oldPhotoUris - photoUris.toSet())
+            }
+            savedPhotoUris = photoUris.toList()
             Toast.makeText(
                 requireContext(),
                 getString(if (isEditing()) R.string.toast_update_success else R.string.toast_save_success),
@@ -614,9 +749,135 @@ open class AddRecordFragment : Fragment() {
 
     private fun isEditing(): Boolean = editingRecordId != null && editingRecord != null
 
+    /** Supports simple left-to-right expressions such as 12+3-1.5. */
+    private fun evaluateAmountExpression(expression: String): Double? {
+        val normalized = expression.replace(" ", "")
+        if (normalized.isEmpty() || !normalized.matches(Regex("\\d+(\\.\\d+)?([+-]\\d+(\\.\\d+)?)*"))) {
+            return null
+        }
+        val tokens = normalized.split(Regex("(?=[+-])|(?<=[+-])"))
+        var result = tokens.firstOrNull()?.toDoubleOrNull() ?: return null
+        var index = 1
+        while (index + 1 < tokens.size) {
+            val operand = tokens[index + 1].toDoubleOrNull() ?: return null
+            result = when (tokens[index]) {
+                "+" -> result + operand
+                "-" -> result - operand
+                else -> return null
+            }
+            index += 2
+        }
+        return result
+    }
+
     private fun clearAmountAndDescription() {
         editAmount.setText(getString(R.string.amount_default))
         editDescription.setText("")
+        savedPhotoUris = photoUris.toList()
+        photoUris.clear()
+        cardPhotoPreview.visibility = View.GONE
+        layoutPhotoThumbnails.removeAllViews()
+    }
+
+    private fun takePhoto() {
+        val maxPhotos = RecordPhotoSettingsHelper.getMaxPhotos(requireContext())
+        if (photoUris.size >= maxPhotos) {
+            Toast.makeText(requireContext(), "当前记录最多添加${maxPhotos}张图片", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (currentType == 2) {
+            if (selectedAsset == null || selectedDestinationAsset == null) {
+                Toast.makeText(requireContext(), "请选择转出和转入资产", Toast.LENGTH_SHORT).show()
+                return
+            }
+            if (selectedAsset?.id == selectedDestinationAsset?.id) {
+                Toast.makeText(requireContext(), "转出和转入资产不能相同", Toast.LENGTH_SHORT).show()
+                return
+            }
+        }
+        val directory = File(requireContext().filesDir, "record_photos").apply { mkdirs() }
+        val photoFile = File(directory, "record_${System.currentTimeMillis()}.jpg")
+        pendingPhotoUri = FileProvider.getUriForFile(
+            requireContext(),
+            "${requireContext().packageName}.fileprovider",
+            photoFile
+        )
+        takePhotoLauncher.launch(pendingPhotoUri)
+    }
+
+    private fun showPhotoPreview() {
+        layoutPhotoThumbnails.removeAllViews()
+        if (photoUris.isEmpty()) {
+            cardPhotoPreview.visibility = View.GONE
+            return
+        }
+        photoUris.forEachIndexed { index, uriString ->
+            val frame = FrameLayout(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(88.dp(), 88.dp()).apply {
+                    if (index > 0) marginStart = 8.dp()
+                }
+            }
+            val image = ImageView(requireContext()).apply {
+                layoutParams = FrameLayout.LayoutParams(-1, -1)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                contentDescription = "查看第${index + 1}张照片"
+                setImageURI(Uri.parse(uriString))
+                setOnClickListener { showPhotoFullScreen(uriString) }
+            }
+            val remove = ImageButton(requireContext()).apply {
+                layoutParams = FrameLayout.LayoutParams(24.dp(), 24.dp(), Gravity.TOP or Gravity.END)
+                background = ContextCompat.getDrawable(requireContext(), R.drawable.bg_circle_primary_container)
+                setImageResource(R.drawable.ic_close)
+                imageTintList = ColorStateList.valueOf(
+                    ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.error_primary)
+                )
+                contentDescription = "删除第${index + 1}张照片"
+                setPadding(4.dp(), 4.dp(), 4.dp(), 4.dp())
+                setOnClickListener {
+                    photoUris.removeAt(index)
+                    showPhotoPreview()
+                }
+            }
+            frame.addView(image)
+            frame.addView(remove)
+            layoutPhotoThumbnails.addView(frame)
+        }
+        cardPhotoPreview.visibility = View.VISIBLE
+    }
+
+    private fun showPhotoFullScreen(uriString: String) {
+        val uri = Uri.parse(uriString)
+        val dialog = Dialog(requireContext())
+        val imageView = ImageView(requireContext()).apply {
+            setBackgroundColor(Color.BLACK)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setImageURI(uri)
+            setOnClickListener { dialog.dismiss() }
+            contentDescription = "全屏查看照片，点击关闭"
+        }
+        dialog.setContentView(imageView)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.black)
+        dialog.show()
+        dialog.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+    }
+
+    private fun Int.dp(): Int = (this * resources.displayMetrics.density).roundToInt()
+
+    private fun deletePhotoUris(uris: Collection<String>) {
+        uris.forEach { uriString ->
+            runCatching {
+                requireContext().contentResolver.delete(Uri.parse(uriString), null, null)
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        deletePhotoUris(photoUris.filterNot { it in savedPhotoUris })
+        super.onDestroyView()
     }
 
     private fun setupBackNavigation() {

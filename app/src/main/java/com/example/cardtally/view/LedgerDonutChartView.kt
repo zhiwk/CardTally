@@ -55,12 +55,12 @@ class LedgerDonutChartView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val size = min(width, height).toFloat()
-        val stroke = size * 0.11f
-        val padding = stroke * 1.3f
         val centerX = width / 2f
         val centerY = height / 2f
-        val radius = (min(width, height) / 2f) - padding
+        // Keep the donut visually subordinate to its labels. The previous radius
+        // used almost the whole chart height, leaving no safe area for callouts.
+        val radius = min(width, height) * 0.23f
+        val stroke = radius * 0.28f
         arcBounds.set(centerX - radius, centerY - radius, centerX + radius, centerY + radius)
         slicePaint.strokeWidth = stroke
         trackPaint.strokeWidth = stroke
@@ -82,18 +82,26 @@ class LedgerDonutChartView @JvmOverloads constructor(
         labelPaint.textAlign = Paint.Align.LEFT
 
         if (total > 0f) {
-            drawTopLabels(canvas, total, radius, centerX, centerY, startAngle)
+            drawCalloutLabels(canvas, total, radius, centerX, centerY)
         }
     }
 
-    private fun drawTopLabels(
+    private data class Callout(
+        val slice: Slice,
+        val startX: Float,
+        val startY: Float,
+        val desiredY: Float,
+        val rightSide: Boolean
+    )
+
+    private fun drawCalloutLabels(
         canvas: Canvas,
         total: Float,
         radius: Float,
         centerX: Float,
-        centerY: Float,
-        ignoredEndAngle: Float
+        centerY: Float
     ) {
+        val callouts = mutableListOf<Callout>()
         var angle = -90f
         slices.take(3).forEach { slice ->
             val sweep = (slice.value / total) * 360f
@@ -102,23 +110,45 @@ class LedgerDonutChartView @JvmOverloads constructor(
             val sin = kotlin.math.sin(middleAngle).toFloat()
             val startX = centerX + cos * radius
             val startY = centerY + sin * radius
-            val elbowX = centerX + cos * (radius + 8f)
-            val elbowY = centerY + sin * (radius + 8f)
-            val rightSide = when {
-                kotlin.math.abs(cos) > 0.25f -> cos >= 0f
-                sin >= 0f -> true
-                else -> false
-            }
-            val textX = if (rightSide) width - 4f else 4f
-            val lineEndX = if (rightSide) textX - 4f else textX + 4f
-            leaderPaint.color = slice.color
-            canvas.drawLine(startX, startY, elbowX, elbowY, leaderPaint)
-            canvas.drawLine(elbowX, elbowY, lineEndX, elbowY, leaderPaint)
-            labelPaint.textAlign = if (rightSide) Paint.Align.RIGHT else Paint.Align.LEFT
-            val percentage = (slice.value / total * 100f).let { String.format(java.util.Locale.US, "%.1f%%", it) }
-            val label = if (slice.label.isBlank()) percentage else "${slice.label} $percentage"
-            canvas.drawText(label, textX, elbowY + labelPaint.textSize / 3f, labelPaint)
+            callouts += Callout(
+                slice = slice,
+                startX = startX,
+                startY = startY,
+                desiredY = centerY + sin * (radius + 14f),
+                rightSide = cos >= 0f
+            )
             angle += sweep
         }
+
+        // Resolve labels independently on both sides. This keeps the leader lines
+        // readable when two small categories have nearly identical angles.
+        val minimumGap = labelPaint.textSize + 5f
+        callouts.groupBy { it.rightSide }.values.forEach { sideCallouts ->
+            var previousY = Float.NEGATIVE_INFINITY
+            sideCallouts.sortedBy { it.desiredY }.forEach { callout ->
+                val y = maxOf(callout.desiredY, previousY + minimumGap)
+                    .coerceIn(labelPaint.textSize, height - 2f)
+                previousY = y
+
+                val elbowX = centerX + if (callout.rightSide) radius + 12f else -(radius + 12f)
+                val textX = if (callout.rightSide) width - 6f else 6f
+                val lineEndX = if (callout.rightSide) textX - 4f else textX + 4f
+                leaderPaint.color = callout.slice.color
+                canvas.drawLine(callout.startX, callout.startY, elbowX, y, leaderPaint)
+                canvas.drawLine(elbowX, y, lineEndX, y, leaderPaint)
+
+                labelPaint.textAlign = if (callout.rightSide) Paint.Align.RIGHT else Paint.Align.LEFT
+                val percentage = (callout.slice.value / total * 100f)
+                    .let { String.format(java.util.Locale.US, "%.1f%%", it) }
+                val amount = String.format(java.util.Locale.US, "¥%.2f", callout.slice.value)
+                val label = if (callout.slice.label.isBlank()) {
+                    "$percentage · $amount"
+                } else {
+                    "${callout.slice.label} · $percentage · $amount"
+                }
+                canvas.drawText(label, textX, y + labelPaint.textSize / 3f, labelPaint)
+            }
+        }
+        labelPaint.textAlign = Paint.Align.LEFT
     }
 }

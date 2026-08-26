@@ -3,57 +3,106 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/surface_container">
-
+    android:background="@color/background_light"
+    android:orientation="vertical">
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="56dp"
         android:gravity="center_vertical"
-        android:paddingHorizontal="16dp">
-
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp">
         <ImageButton
             android:id="@+id/btn_back"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:padding="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/content_description_back"
             android:src="@drawable/ic_arrow_back"
             app:tint="?attr/colorOnSurface" />
-
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="@string/asset_type_select_title"
+            android:text="选择资产类型"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
-
-        <View
-            android:layout_width="40dp"
-            android:layout_height="40dp" />
+        <View android:layout_width="40dp" android:layout_height="40dp" />
     </LinearLayout>
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fillViewport="true">
-
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingBottom="24dp">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="?attr/colorSurface"
-            android:paddingHorizontal="20dp">
+            android:paddingHorizontal="16dp">
 
-            <include layout="@layout/item_asset_type_select_cash" />
-            <include layout="@layout/item_asset_type_select_bank" />
-            <include layout="@layout/item_asset_type_select_alipay" />
-            <include layout="@layout/item_asset_type_select_wechat" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:layout_marginBottom="8dp" android:text="资金账户" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                    <include android:id="@+id/row_cash" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_bank" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_alipay" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_wechat" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_qq" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_jd" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_other_fund" layout="@layout/item_asset_type_option" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:layout_marginBottom="8dp" android:text="信用账户" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                    <include android:id="@+id/row_credit_card" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_huabei" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_baitiao" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_credit_other" layout="@layout/item_asset_type_option" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:layout_marginBottom="8dp" android:text="充值账户" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                    <include android:id="@+id/row_transport_card" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_meal_card" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_phone_card" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_membership_card" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_deposit" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_recharge_other" layout="@layout/item_asset_type_option" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:layout_marginBottom="8dp" android:text="理财账户" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                    <include android:id="@+id/row_stock" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_fund" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_gold" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_invest_other" layout="@layout/item_asset_type_option" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:layout_marginBottom="8dp" android:text="应收账户" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                    <include android:id="@+id/row_lend" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_receivable_other" layout="@layout/item_asset_type_option" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:layout_marginBottom="8dp" android:text="应付账户" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                    <include android:id="@+id/row_borrow" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_payable_other" layout="@layout/item_asset_type_option" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

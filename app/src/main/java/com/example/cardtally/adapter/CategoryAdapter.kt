@@ -100,10 +100,9 @@ class CategoryAdapter(
         children: List<Category>
     ) {
         val context = holder.itemView.context
-        var row = createChildRow(context)
-        holder.layoutChildren.addView(row)
+        var row: LinearLayout? = null
         children.forEachIndexed { index, child ->
-            if (index > 0 && index % CHILDREN_PER_ROW == 0) {
+            if (index % CHILDREN_PER_ROW == 0) {
                 row = createChildRow(context)
                 holder.layoutChildren.addView(row)
             }
@@ -122,17 +121,23 @@ class CategoryAdapter(
                 childView.startDragAndDrop(data, DragShadowBuilder(childView), childView, 0)
                 true
             }
-            row.addView(childView)
+            row?.addView(childView)
         }
 
-        if (children.size % CHILDREN_PER_ROW == 0) {
+        if (children.isEmpty() || children.size % CHILDREN_PER_ROW == 0) {
             row = createChildRow(context)
             holder.layoutChildren.addView(row)
         }
         val addView = LayoutInflater.from(context)
             .inflate(R.layout.item_category_child, row, false)
         bindAddChild(addView, parent)
-        row.addView(addView)
+        row?.addView(addView)
+        while ((row?.childCount ?: 0) < CHILDREN_PER_ROW) {
+            row?.addView(LayoutInflater.from(context).inflate(R.layout.item_category_child, row, false).apply {
+                visibility = View.INVISIBLE
+                isClickable = false
+            })
+        }
         holder.layoutChildren.setOnDragListener { view, event ->
             val draggedView = event.localState as? View ?: return@setOnDragListener true
             val draggedCategory = draggedView.tag as? Category ?: return@setOnDragListener true
