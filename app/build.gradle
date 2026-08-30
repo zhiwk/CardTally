@@ -35,7 +35,9 @@ android {
         variant.outputs.all { output ->
             def outputFile = output.outputFile
             if (outputFile != null && outputFile.name.endsWith('.apk')) {
-                def fileName = "CardTally-${variant.buildType.name}.apk"
+                def fileName = variant.buildType.name == 'debug'
+                        ? 'app-debug.apk'
+                        : "CardTally-${variant.buildType.name}.apk"
                 outputFileName = fileName
             }
         }

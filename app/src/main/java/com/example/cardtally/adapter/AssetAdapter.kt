@@ -12,15 +12,17 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Asset
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.LedgerSession
 import com.example.cardtally.util.SwipeToEditDeleteHelper
 import com.example.cardtally.util.ThemeColorHelper
+import com.example.cardtally.util.AssetTypeIconCatalog
 
 class AssetAdapter(
     private var assets: List<Asset>,
     private val listener: OnAssetActionListener,
-    private val archivedMode: Boolean = false
+    private val archivedMode: Boolean = false,
+    private val showAmount: Boolean = true
 ) : RecyclerView.Adapter<AssetAdapter.AssetViewHolder>() {
 
     private var amountsVisible = true
@@ -47,12 +49,25 @@ class AssetAdapter(
         } else {
             "***"
         }
+        holder.textAssetAmount.visibility = if (showAmount) View.VISIBLE else View.GONE
+        (holder.itemView.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+            val margin = if (archivedMode) (16 * context.resources.displayMetrics.density).toInt() else 0
+            params.leftMargin = margin
+            params.rightMargin = margin
+            params.bottomMargin = if (archivedMode) (8 * context.resources.displayMetrics.density).toInt() else 0
+            holder.itemView.layoutParams = params
+        }
+        holder.cardContent.radius = if (archivedMode) {
+            12 * context.resources.displayMetrics.density
+        } else {
+            0f
+        }
         holder.iconAssetPinned.visibility = if (asset.isPinned) View.VISIBLE else View.GONE
         val canManage = asset.ledgerId == LedgerSession.getCurrentId(context)
         holder.actionEditContainer.visibility = if (archivedMode || !canManage) View.GONE else View.VISIBLE
         holder.actionPinContainer.visibility = if (archivedMode || !canManage) View.GONE else View.VISIBLE
         holder.btnArchive.setImageResource(
-            if (archivedMode) R.drawable.ms_rounded_unarchive else R.drawable.ic_archive
+            if (archivedMode) R.drawable.tabler_archive else R.drawable.ic_archive
         )
         holder.btnArchive.contentDescription = if (archivedMode) "取消归档" else "归档资产"
         holder.actionArchiveContainer.visibility = if (!canManage && !archivedMode) View.GONE else View.VISIBLE
@@ -66,11 +81,15 @@ class AssetAdapter(
         }
         val selectedIcon = asset.categoryIconName
             .takeIf { it.isNotBlank() }
-            ?.let(MaterialSymbolCatalog::resourceId)
+            ?.takeUnless {
+                it == "tabler_category" || it == "ic_category_other" || it == "ic_asset"
+            }
+            ?.let(TablerIconCatalog::resourceId)
             ?.takeIf { it != 0 }
+        val standardIcon = AssetTypeIconCatalog.resourceForLabel(asset.categoryLabel)
         val presentation = fallbackPresentation.copy(
             label = asset.categoryLabel.takeIf { it.isNotBlank() } ?: fallbackPresentation.label,
-            iconRes = selectedIcon ?: fallbackPresentation.iconRes
+            iconRes = standardIcon ?: selectedIcon ?: fallbackPresentation.iconRes
         )
         holder.textAssetType.text = if (asset.includeInTotal) {
             presentation.label

@@ -122,7 +122,7 @@ class AmountKeypadController(
     fun show() {
         val inputMethod = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethod.hideSoftInputFromWindow(amount.windowToken, 0)
-        if (amount.text.toString() == "0.00") {
+        if (amount.text.toString() == context.getString(com.example.cardtally.R.string.amount_default)) {
             amount.setText("")
             amount.setSelection(0)
         }
@@ -133,6 +133,9 @@ class AmountKeypadController(
     fun hide() {
         keypad.visibility = View.GONE
         normalActions.visibility = View.VISIBLE
+        if (amount.text.isNullOrBlank()) {
+            amount.setText(context.getString(com.example.cardtally.R.string.amount_default))
+        }
         amount.clearFocus()
     }
 }

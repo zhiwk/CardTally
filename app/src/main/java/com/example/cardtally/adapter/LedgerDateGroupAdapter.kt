@@ -81,7 +81,9 @@ class LedgerDateGroupAdapter(
                 false,
                 false,
                 categoryIconsById,
-                showTypeSubtitle = false
+                showTypeSubtitle = false,
+                roundTopCorners = position == 0,
+                roundBottomCorners = position == records.lastIndex
             )
         }
 

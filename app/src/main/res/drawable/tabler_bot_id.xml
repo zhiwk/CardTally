@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+        <path android:fillColor="@android:color/transparent" android:strokeColor="#FF17181A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M7 10.5c0 -.828 .746 -1.5 1.667 -1.5h6.666c.92 0 1.667 .672 1.667 1.5v3c0 .828 -.746 1.5 -1.667 1.5h-6.666c-.92 0 -1.667 -.672 -1.667 -1.5v-3"/>
+        <path android:fillColor="@android:color/transparent" android:strokeColor="#FF17181A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M12 7v2"/>
+        <path android:fillColor="@android:color/transparent" android:strokeColor="#FF17181A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M10 12v.01"/>
+        <path android:fillColor="@android:color/transparent" android:strokeColor="#FF17181A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M14 12v.01"/>
+        <path android:fillColor="@android:color/transparent" android:strokeColor="#FF17181A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M4 8v-2a2 2 0 0 1 2 -2h2"/>
+        <path android:fillColor="@android:color/transparent" android:strokeColor="#FF17181A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M4 16v2a2 2 0 0 0 2 2h2"/>
+        <path android:fillColor="@android:color/transparent" android:strokeColor="#FF17181A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M16 4h2a2 2 0 0 1 2 2v2"/>
+        <path android:fillColor="@android:color/transparent" android:strokeColor="#FF17181A" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M16 20h2a2 2 0 0 0 2 -2v-2"/>
+</vector>

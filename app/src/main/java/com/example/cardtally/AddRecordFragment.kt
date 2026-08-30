@@ -3,6 +3,7 @@ package com.example.cardtally
 import android.app.AlertDialog
 import android.app.Dialog
 import android.graphics.Color
+import android.graphics.Typeface
 import android.net.Uri
 import android.content.res.ColorStateList
 import android.os.Bundle
@@ -43,7 +44,7 @@ import com.example.cardtally.state.StableIdResolver
 import com.example.cardtally.util.LedgerDateRange
 import com.example.cardtally.util.LedgerPeriodHelper
 import com.example.cardtally.util.ThemeColorHelper
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.AmountKeypadController
 import com.example.cardtally.util.RecordPhotoSettingsHelper
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -71,7 +72,6 @@ open class AddRecordFragment : Fragment() {
     private lateinit var btnIncome: Button
     private lateinit var btnTransfer: Button
     private lateinit var btnClose: View
-    private lateinit var btnCancel: View
     private lateinit var btnSave: View
     private lateinit var btnSaveAndAdd: View
     private lateinit var rowDate: View
@@ -84,6 +84,7 @@ open class AddRecordFragment : Fragment() {
     private lateinit var rowCategory: View
     private lateinit var textDestinationAssetValue: TextView
     private lateinit var databaseHelper: DatabaseHelper
+    private lateinit var amountKeypadController: AmountKeypadController
 
     private var categoryAdapter: RecordCategoryTreeAdapter? = null
     private var currentCategories = mutableListOf<Category>()
@@ -144,11 +145,10 @@ open class AddRecordFragment : Fragment() {
         btnIncome = view.findViewById(R.id.btn_income)
         btnTransfer = view.findViewById(R.id.btn_transfer)
         btnClose = view.findViewById(R.id.btn_close)
-        btnCancel = view.findViewById(R.id.btn_cancel)
         btnSave = view.findViewById(R.id.btn_save)
         btnSaveAndAdd = view.findViewById(R.id.btn_save_and_add)
         val amountKeypad = view.findViewById<View>(R.id.layout_amount_keypad)
-        AmountKeypadController(requireContext(), editAmount, amountKeypad, view.findViewById(R.id.layout_buttons)) {
+        amountKeypadController = AmountKeypadController(requireContext(), editAmount, amountKeypad, view.findViewById(R.id.layout_buttons)) {
             editAmount.clearFocus()
         }.also { it.bind() }
         rowDate = view.findViewById(R.id.row_date)
@@ -238,7 +238,6 @@ open class AddRecordFragment : Fragment() {
         }
 
         btnClose.setOnClickListener { navigateBack() }
-        btnCancel.setOnClickListener { navigateBack() }
         btnSave.setOnClickListener { saveRecord(true) }
         btnSaveAndAdd.setOnClickListener { saveRecord(false, true) }
 
@@ -283,6 +282,7 @@ open class AddRecordFragment : Fragment() {
         buttons.forEach { button ->
             button.setBackgroundResource(android.R.color.transparent)
             button.setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted))
+            button.setTypeface(null, Typeface.NORMAL)
             button.isSelected = false
         }
 
@@ -300,6 +300,7 @@ open class AddRecordFragment : Fragment() {
         }
         selectedButton.setBackgroundResource(R.drawable.bg_record_type_tab_selected)
         selectedButton.setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface))
+        selectedButton.setTypeface(null, Typeface.BOLD)
         selectedButton.isSelected = true
         updateTransferRows()
         if (currentType == 2) {
@@ -327,7 +328,8 @@ open class AddRecordFragment : Fragment() {
         dividerDestinationAsset.visibility = if (visible) View.VISIBLE else View.GONE
         dividerAfterCategory.visibility = if (visible) View.GONE else View.VISIBLE
         textAssetLabel.setText(if (visible) R.string.record_transfer_from_asset else R.string.record_asset_label)
-        textDestinationAssetValue.text = selectedDestinationAsset?.name ?: "请选择"
+        textAssetValue.text = selectedAsset?.name ?: if (visible) getString(R.string.record_asset_select) else getString(R.string.record_asset_none)
+        textDestinationAssetValue.text = selectedDestinationAsset?.name ?: getString(R.string.record_asset_select)
     }
 
     private fun loadCategories(type: Int, selectedCategoryId: Long? = null) {
@@ -352,7 +354,14 @@ open class AddRecordFragment : Fragment() {
         updateTransferRows()
     }
 
+    private fun hideAmountKeypad() {
+        if (::amountKeypadController.isInitialized) {
+            amountKeypadController.hide()
+        }
+    }
+
     private fun showDateSheet() {
+        hideAmountKeypad()
         openSheet = RecordSheet.DATE
         val dialog = BottomSheetDialog(requireContext())
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_date, null)
@@ -384,7 +393,7 @@ open class AddRecordFragment : Fragment() {
             )
         }
 
-        adapter = LedgerCalendarAdapter(singleSelection = true) { day ->
+        adapter = LedgerCalendarAdapter(singleSelection = true, compact = true, showAmounts = false) { day ->
             val picked = day.isoDate ?: return@LedgerCalendarAdapter
             localDate = picked
             displayYear = picked.substring(0, 4).toInt()
@@ -427,10 +436,15 @@ open class AddRecordFragment : Fragment() {
             updateDisplayedDate()
             dialog.dismiss()
         }
+        dialog.setOnShowListener {
+            dialog.behavior.skipCollapsed = true
+            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        }
         dialog.show()
     }
 
     private fun showAssetSheet(selectDestination: Boolean = false) {
+        hideAmountKeypad()
         openSheet = RecordSheet.ASSET
         val dialog = BottomSheetDialog(requireContext())
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_assets, null)
@@ -458,6 +472,7 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun showCategorySheet() {
+        hideAmountKeypad()
         openSheet = RecordSheet.CATEGORY
         val dialog = BottomSheetDialog(requireContext())
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_category, null)
@@ -465,7 +480,6 @@ open class AddRecordFragment : Fragment() {
 
         val btnCloseSheet = sheetView.findViewById<ImageButton>(R.id.btn_close_sheet)
         val recyclerCategories = sheetView.findViewById<RecyclerView>(R.id.recycler_categories)
-        val textBreadcrumb = sheetView.findViewById<TextView>(R.id.text_category_breadcrumb)
 
         var pendingCategory = pendingCategoryId?.let { id -> currentCategories.firstOrNull { it.id == id } }
             ?: selectedCategory
@@ -476,8 +490,6 @@ open class AddRecordFragment : Fragment() {
             onCategorySelected = { category ->
                 pendingCategory = category
                 pendingCategoryId = category.id
-                textBreadcrumb.text = category.id.let(databaseHelper::buildCategoryPathLabel)
-                    ?: getString(R.string.record_category_sheet_breadcrumb_empty)
                 selectedCategory = category
                 updateCategorySummary()
                 dialog.dismiss()
@@ -495,8 +507,6 @@ open class AddRecordFragment : Fragment() {
 
         recyclerCategories.layoutManager = LinearLayoutManager(requireContext())
         recyclerCategories.adapter = categoryAdapter
-        textBreadcrumb.text = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel)
-            ?: getString(R.string.record_category_sheet_breadcrumb_empty)
 
         dialog.setOnDismissListener {
             openSheet = RecordSheet.NONE
@@ -557,7 +567,7 @@ open class AddRecordFragment : Fragment() {
 
     private fun bindCategoryIcon(imageView: ImageView, icon: String?) {
         val resourceId = icon?.let { name ->
-            MaterialSymbolCatalog.resourceId(name).takeIf { it != 0 }
+            TablerIconCatalog.resourceId(name).takeIf { it != 0 }
                 ?: requireContext().resources.getIdentifier(name, "drawable", requireContext().packageName)
         }?.takeIf { it != 0 } ?: R.drawable.ic_category_other
         imageView.setImageResource(resourceId)
@@ -566,7 +576,7 @@ open class AddRecordFragment : Fragment() {
     private fun showIconPickerDialog(selectedIcon: String?, onIconSelected: (String?) -> Unit) {
         val view = layoutInflater.inflate(R.layout.dialog_icon_picker, null)
         val recyclerIcons = view.findViewById<RecyclerView>(R.id.recycler_icons)
-        val iconAdapter = IconPickerAdapter(MaterialSymbolCatalog.icons, selectedIcon) { icon ->
+        val iconAdapter = IconPickerAdapter(TablerIconCatalog.icons, selectedIcon) { icon ->
             onIconSelected(icon)
         }
         recyclerIcons.adapter = iconAdapter
@@ -595,7 +605,8 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun updateAssetSummary() {
-        textAssetValue.text = selectedAsset?.name ?: getString(R.string.record_asset_none)
+        textAssetValue.text = selectedAsset?.name
+            ?: if (currentType == 2) getString(R.string.record_asset_select) else getString(R.string.record_asset_none)
     }
 
     private fun updateCategorySummary() {
@@ -605,26 +616,14 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun buildAssetSheetItems(): List<AssetSheetItem> {
-        val noneItem = AssetSheetItem(
-            id = null,
-            asset = null,
-            title = getString(R.string.record_asset_none),
-            subtitle = getString(R.string.record_asset_sheet_none_subtitle),
-            amountLabel = getString(R.string.record_asset_sheet_none_amount)
-        )
-        return buildList {
-            add(noneItem)
-            currentAssets.forEach { asset ->
-                add(
-                    AssetSheetItem(
-                        id = asset.id,
-                        asset = asset,
-                        title = asset.name,
-                        subtitle = getAssetTypeLabel(asset.type),
-                        amountLabel = getString(R.string.currency_amount, asset.amount)
-                    )
-                )
-            }
+        return currentAssets.map { asset ->
+            AssetSheetItem(
+                id = asset.id,
+                asset = asset,
+                title = asset.name,
+                subtitle = getAssetTypeLabel(asset.type),
+                amountLabel = getString(R.string.currency_amount, asset.amount)
+            )
         }
     }
 

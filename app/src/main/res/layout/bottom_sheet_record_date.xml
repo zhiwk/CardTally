@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_nav_sheet"
+    android:background="@color/background_light"
     android:orientation="vertical"
     android:paddingTop="12dp"
     android:paddingBottom="24dp">
@@ -35,7 +35,6 @@
                 android:text="@string/record_date_sheet_title"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="26sp"
-                android:textStyle="italic"
                 android:fontFamily="serif" />
 
             <TextView
@@ -61,10 +60,11 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="8dp"
-        app:cardBackgroundColor="@color/surface_container_highest"
+        app:cardBackgroundColor="@color/surface_light"
         app:cardCornerRadius="20dp"
         app:cardElevation="0dp"
-        app:strokeColor="@android:color/transparent">
+        app:strokeColor="@color/outline_light"
+        app:strokeWidth="1dp">
 
         <TextView
             android:id="@+id/text_date_selection_value"
@@ -74,7 +74,6 @@
             android:padding="10dp"
             android:textColor="?attr/colorOnSurface"
             android:textSize="14sp"
-            android:textStyle="italic"
             android:fontFamily="serif" />
     </com.google.android.material.card.MaterialCardView>
 

@@ -7,10 +7,11 @@
     android:layout_weight="1"
     android:gravity="center_horizontal"
     android:orientation="vertical">
-    <FrameLayout
+        <FrameLayout
+            android:id="@+id/child_icon_container"
             android:layout_width="36dp"
             android:layout_height="36dp"
-        android:background="@drawable/bg_category_child_icon">
+             android:background="@drawable/bg_circle_primary_container">
         <ImageView
             android:id="@+id/image_child_icon"
             android:layout_width="24dp"
@@ -23,7 +24,7 @@
             android:layout_height="14dp"
             android:layout_gravity="top|start"
             android:contentDescription="@string/category_drag_content_description"
-            android:src="@drawable/ms_rounded_drag_indicator"
+            android:src="@drawable/tabler_grip_vertical"
             android:tint="@color/onSurfaceVariant_light" />
     </FrameLayout>
     <TextView

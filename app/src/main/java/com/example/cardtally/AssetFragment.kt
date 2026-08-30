@@ -270,8 +270,8 @@ class AssetFragment : Fragment() {
     private fun updateVisibilityToggle() {
         if (!::btnToggleAssetVisibility.isInitialized) return
         btnToggleAssetVisibility.setImageResource(
-            if (amountsVisible) R.drawable.ms_rounded_visibility
-            else R.drawable.ms_rounded_visibility_off
+            if (amountsVisible) R.drawable.tabler_eye
+            else R.drawable.tabler_eye_off
         )
         btnToggleAssetVisibility.contentDescription = if (amountsVisible) {
             "隐藏资产余额"

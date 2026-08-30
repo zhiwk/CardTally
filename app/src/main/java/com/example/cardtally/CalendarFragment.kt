@@ -33,6 +33,7 @@ class CalendarFragment : Fragment() {
     private lateinit var textEmpty: TextView
     private lateinit var calendarAdapter: LedgerCalendarAdapter
     private lateinit var recordsRecycler: RecyclerView
+    private lateinit var recordsCard: View
     private var monthRecords: List<Record> = emptyList()
     private var year = Calendar.getInstance().get(Calendar.YEAR)
     private var month = Calendar.getInstance().get(Calendar.MONTH)
@@ -77,6 +78,7 @@ class CalendarFragment : Fragment() {
         textSelectedSummary = view.findViewById(R.id.text_selected_summary)
         textEmpty = view.findViewById(R.id.text_calendar_empty)
         recordsRecycler = view.findViewById(R.id.recycler_calendar_records)
+        recordsCard = view.findViewById(R.id.card_calendar_records)
 
         view.findViewById<ImageButton>(R.id.button_calendar_back).setOnClickListener {
             parentFragmentManager.popBackStack()
@@ -139,7 +141,7 @@ class CalendarFragment : Fragment() {
         textSelectedDate.text = selectedDate
         textSelectedSummary.text = getString(R.string.calendar_day_summary, expense, income)
         textEmpty.visibility = if (records.isEmpty()) View.VISIBLE else View.GONE
-        recordsRecycler.visibility = if (records.isEmpty()) View.GONE else View.VISIBLE
+        recordsCard.visibility = if (records.isEmpty()) View.GONE else View.VISIBLE
         if (records.isEmpty()) return
 
         recordsRecycler.adapter = CalendarRecordAdapter(

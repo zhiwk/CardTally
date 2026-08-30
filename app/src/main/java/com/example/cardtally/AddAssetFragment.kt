@@ -266,10 +266,10 @@ class AddAssetFragment : Fragment() {
 
     private fun updateTypePresentation(view: View, state: AssetFormState) {
         val (fallbackLabel, fallbackIcon) = when (state.assetType) {
-            AssetType.CASH -> "现金" to R.drawable.ms_rounded_attach_money
-            AssetType.BANK -> "银行卡" to R.drawable.ms_rounded_account_balance
-            AssetType.ALIPAY -> "支付宝" to R.drawable.ms_rounded_payments
-            AssetType.WECHAT -> "微信钱包" to R.drawable.ms_rounded_account_balance_wallet
+            AssetType.CASH -> "现金" to R.drawable.tabler_cash
+            AssetType.BANK -> "银行卡" to R.drawable.tabler_building_bank
+            AssetType.ALIPAY -> "支付宝" to R.drawable.tabler_wallet
+            AssetType.WECHAT -> "微信钱包" to R.drawable.tabler_wallet
         }
         val label = state.assetTypeLabel.ifBlank { fallbackLabel }
         val icon = state.assetTypeIconName.takeIf { it.isNotBlank() }?.let {

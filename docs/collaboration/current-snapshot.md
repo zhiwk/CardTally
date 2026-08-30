@@ -131,3 +131,46 @@
 
 - `local.properties` 属于本机环境文件；当前构建依赖其中的 `sdk.dir` 或等效 Android SDK 环境变量，不要提交该文件
 - Android Gradle 验证在同一工作区内默认串行执行；不要并行跑任何 `gradlew` / Gradle 任务，尤其不要并行跑 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 这类共享 `app/build/` 产物的任务，避免因中间产物互踩、命令结果被错误消费、或 `Tool execution aborted` 而误判
+
+## 2026-08-29 交接快照
+
+以下是当前工作区最近一轮 UI、分类图标和录入交互修改的实现事实。后续 agent 仍需回到源码确认细节，不要只依据本节文字。
+
+### 分类图标与列表
+
+- 分类图标系统已迁移到 Tabler Icons：`TablerIconCatalog` 负责资源映射；旧的 `MaterialSymbolCatalog` 及其资源已移除。
+- 分类管理、分类选择、账单记录、统计排行、搜索结果和资产选择等涉及分类的列表，当前优先使用分类保存的图标名，并保留名称 / ID 兼容回退。
+- 一级分类管理页面已使用实际绑定图标，不再统一显示占位四格图标。
+- 搜索记录条目已补齐分类图标解析：优先分类 ID 图标，通用占位图标时按分类名称回退。
+
+### 录入页与编辑页
+
+- `EditRecordFragment` 继续复用 `fragment_add_record.xml`；“记一笔”和“编辑记录”使用同一套录入壳和底部抽屉交互。
+- 支出 / 收入 / 转账切换卡片使用独立的 `bg_record_type_tabs.xml`，填充色为不透明 `#FFFFFF`，不再使用 `bg_summary_item.xml` 的半透明填充；选中态仍通过文字加粗和底部指示线表达。
+- 录入页主信息卡片使用 `@color/surface_light`（浅色为 `#FFFFFF`），描边宽度为 `0dp`；内部行分隔线仍保留。
+- 金额输入当前源码行为：未编辑时默认显示 `0.00`；进入金额输入时清空该默认值；退出输入且仍为空时恢复 `0.00`。如果后续要完全改成“添加备注”式占位提示，需要继续修改 `AmountKeypadController` 与金额字段资源，当前尚未完成该改法。
+- 点击日期、资产或分类前，`AddRecordFragment` 会先通过 `AmountKeypadController` 收起金额键盘，避免键盘与 BottomSheet 叠加。
+- 编辑账本时已隐藏共用资产、独立资产、资产来源账本及资产来源列表；新建账本仍保留资产关系设置。
+
+### 日期与资产 BottomSheet
+
+- 资产选择 BottomSheet 已移除“无”选项；新建记录首次打开时不默认选中任何资产。
+- 资产条目使用白色 `12dp` 圆角卡片、无描边、账单条目风格的图标 / 间距 / 字体；选中状态使用勾选标记而非边框强调。
+- 日期选择 BottomSheet 的 compact 日期单元格为 `36dp` 高，日期数字区域为 `32dp × 28dp` 并水平、垂直居中；金额在该日期选择器中不显示。
+- 日历页选中日期下方的记录区域使用白色 `12dp` 圆角卡片，空记录时隐藏整张记录卡片而不是留下空白容器。
+- 该日历卡片曾发生过 ID 误绑定导致整个月历被隐藏的问题，当前 `card_calendar_records` 已绑定到下方记录卡片，修改时注意不要再次复用错误节点。
+
+### 颜色与卡片约定
+
+- 浅色主题主体卡片前景色统一以 `#FFFFFF` 为基准（`@color/surface_light` / `@color/editorial_surface_lowest`）。页面背景通常为 `#EEEEEE`，不要将页面背景误当成卡片前景色。
+- 记账记录、统计、资产、设置、分类管理等主体卡片当前使用白色；收支 / 转账图标底色仍按 `IncomeExpenseColorScheme` 和转账黄色语义显示。
+- 涉及视觉调整时继续遵守 `DESIGN.md` 的卡片分组、圆角、无阴影 / 无描边要求；不要把按钮或状态容器的彩色底误改成主体卡片颜色。
+
+### 构建与交接状态
+
+- Debug APK 输出名已从 `CardTally-debug.apk` 改为 `app-debug.apk`。
+- 最近一次验证命令：`.\gradlew.bat assembleDebug`，结果为 `BUILD SUCCESSFUL`。
+- 最近一次产物路径：`app/build/outputs/apk/debug/app-debug.apk`。
+- 当前工作区存在大量既有 UI、Tabler 资源、数据库和文档改动，交接 agent 不应使用 reset / clean / checkout 等破坏性操作清理工作区。
+- 本轮主要改动文件包括：`AddRecordFragment.kt`、`CalendarFragment.kt`、`LedgerSetupFragment.kt`、`DateGroupAdapter.kt`、`LedgerDateGroupAdapter.kt`、`LedgerCalendarAdapter.kt`、`RecordAssetSheetAdapter.kt`、`AmountKeypadController.kt`，以及对应的录入、日历和资产 BottomSheet 布局资源。
+- 尚未完成自动化真机回归；需要在可用 Android 设备上重点验证：金额键盘切换 BottomSheet、日期单元格布局、资产无默认选择、日历空记录状态、编辑账本隐藏资产关系区域，以及分类图标在搜索 / 账单中的显示。

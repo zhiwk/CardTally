@@ -1,6 +1,7 @@
 package com.example.cardtally.adapter
 
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,10 +9,11 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.example.cardtally.R
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.ThemeColorHelper
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 
 class RecordCategoryTreeAdapter(
     private val allCategories: List<Category>,
@@ -132,34 +134,34 @@ class RecordCategoryTreeAdapter(
             val trailingView = trailingView ?: return
             val indentView = indentView ?: return
             val context = itemView.context
+            val cardColor = ThemeColorHelper.resolveThemeAwareResource(
+                context,
+                R.color.surface_container_lowest
+            )
+            (itemView as? MaterialCardView)?.apply {
+                setCardBackgroundColor(cardColor)
+                setCardForegroundColor(ColorStateList.valueOf(Color.TRANSPARENT))
+            }
+            itemView.foreground = null
             val params = indentView.layoutParams
             params.width = (item.level * 18 * context.resources.displayMetrics.density).toInt()
             indentView.layoutParams = params
 
             nameView.text = item.category.name
-            val iconRes = item.category.icon?.let { MaterialSymbolCatalog.resourceId(it) }
-                ?.takeIf { it != 0 } ?: R.drawable.ic_category_other
+            val iconRes = resolveIcon(context, item.category.icon)
             iconView.setImageResource(iconRes)
 
-            if (selected) {
-                itemView.backgroundTintList = ColorStateList.valueOf(
-                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_light)
-                )
-                iconContainer.backgroundTintList = ColorStateList.valueOf(
+            iconContainer.backgroundTintList = ColorStateList.valueOf(
+                ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_container_high)
+            )
+            iconView.setColorFilter(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface))
+            nameView.setTextColor(
+                if (selected) {
                     ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary)
-                )
-                iconView.setColorFilter(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimary))
-                nameView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary))
-            } else {
-                itemView.backgroundTintList = ColorStateList.valueOf(
-                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_light)
-                )
-                iconContainer.backgroundTintList = ColorStateList.valueOf(
-                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_low)
-                )
-                iconView.setColorFilter(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary))
-                nameView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface))
-            }
+                } else {
+                    ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface)
+                }
+            )
 
             trailingView.visibility = View.VISIBLE
             when {
@@ -208,9 +210,15 @@ class RecordCategoryTreeAdapter(
                 }
                 val childView = LayoutInflater.from(itemView.context)
                     .inflate(R.layout.item_category_child, row, false)
+                childView.findViewById<View>(R.id.child_icon_container).backgroundTintList =
+                    ColorStateList.valueOf(
+                        ThemeColorHelper.resolveThemeAwareResource(
+                            itemView.context,
+                            R.color.surface_container_highest
+                        )
+                    )
                 childView.findViewById<TextView>(R.id.text_child_name).text = child.name
-                val icon = child.icon?.let { MaterialSymbolCatalog.resourceId(it) }
-                    ?.takeIf { it != 0 } ?: R.drawable.ic_category_other
+                val icon = resolveIcon(itemView.context, child.icon)
                 childView.findViewById<ImageView>(R.id.image_child_icon).setImageResource(icon)
                 childView.findViewById<ImageView>(R.id.image_drag_handle).visibility = View.GONE
                 childView.setOnClickListener { onSelected(child) }
@@ -226,7 +234,7 @@ class RecordCategoryTreeAdapter(
             addView.findViewById<TextView>(R.id.text_child_name)
                 .setText(R.string.category_add_child_cta)
             addView.findViewById<ImageView>(R.id.image_child_icon)
-                .setImageResource(R.drawable.ms_rounded_add)
+                .setImageResource(R.drawable.tabler_plus)
             addView.findViewById<ImageView>(R.id.image_drag_handle).visibility = View.GONE
             addView.setOnClickListener { onAddChild(parent) }
             row.addView(addView)
@@ -238,9 +246,17 @@ class RecordCategoryTreeAdapter(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
-                gravity = android.view.Gravity.CENTER_HORIZONTAL
+                gravity = android.view.Gravity.START
                 orientation = LinearLayout.HORIZONTAL
             }
+
+        private fun resolveIcon(context: android.content.Context, iconName: String?): Int {
+            if (iconName.isNullOrBlank()) return R.drawable.ic_category_other
+            TablerIconCatalog.resourceId(context, iconName).takeIf { it != 0 }?.let { return it }
+            context.resources.getIdentifier(iconName, "drawable", context.packageName)
+                .takeIf { it != 0 }?.let { return it }
+            return R.drawable.ic_category_other
+        }
     }
 
     companion object {

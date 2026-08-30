@@ -27,7 +27,8 @@ data class LedgerCalendarDay(
     val isInSelectedRange: Boolean,
     val isToday: Boolean,
     val income: Double = 0.0,
-    val expense: Double = 0.0
+    val expense: Double = 0.0,
+    val isCurrentMonth: Boolean = true
 )
 
 object LedgerPeriodHelper {
@@ -117,32 +118,27 @@ object LedgerPeriodHelper {
         }
         val leadingCount = (firstDay.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY + 7) % 7
         val daysInMonth = firstDay.getActualMaximum(Calendar.DAY_OF_MONTH)
-        val totalCells = ((leadingCount + daysInMonth + 6) / 7) * 7
+        val totalCells = 42
         val todayIso = formatIsoDate(Date(todayMillis))
         val cells = mutableListOf<LedgerCalendarDay>()
 
         repeat(totalCells) { index ->
-            val day = index - leadingCount + 1
-            if (day < 1 || day > daysInMonth) {
-                cells += LedgerCalendarDay(null, null, false, false, false, false, false)
-            } else {
-                val cellCalendar = firstDay.clone() as Calendar
-                cellCalendar.set(Calendar.DAY_OF_MONTH, day)
-                val isoDate = formatIsoDate(cellCalendar.time)
-                val inRange = isDateInRange(isoDate, selectedRange)
-                val isStart = isoDate == selectedRange.startDate
-                val isEnd = isoDate == selectedRange.endDate
-                cells += 
-                    LedgerCalendarDay(
-                        isoDate = isoDate,
-                        dayOfMonth = day,
-                        isRangeBoundary = isStart || isEnd,
-                        isRangeStart = isStart,
-                        isRangeEnd = isEnd,
-                        isInSelectedRange = inRange,
-                        isToday = isoDate == todayIso
-                    )
-            }
+            val cellCalendar = firstDay.clone() as Calendar
+            cellCalendar.add(Calendar.DAY_OF_MONTH, index - leadingCount)
+            val isoDate = formatIsoDate(cellCalendar.time)
+            val inRange = isDateInRange(isoDate, selectedRange)
+            val isStart = isoDate == selectedRange.startDate
+            val isEnd = isoDate == selectedRange.endDate
+            cells += LedgerCalendarDay(
+                isoDate = isoDate,
+                dayOfMonth = cellCalendar.get(Calendar.DAY_OF_MONTH),
+                isRangeBoundary = isStart || isEnd,
+                isRangeStart = isStart,
+                isRangeEnd = isEnd,
+                isInSelectedRange = inRange,
+                isToday = isoDate == todayIso,
+                isCurrentMonth = cellCalendar.get(Calendar.MONTH) == month
+            )
         }
         return cells
     }

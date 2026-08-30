@@ -12,6 +12,12 @@ CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。�
 
 随后按任务类型进入 `docs/collaboration/task-entrypoints.md`。它负责说明页面、数据、视觉、AI、构建和真机任务应先读哪些文件。近期且易变的实现状态只看 `docs/collaboration/current-snapshot.md`，不要写回本文件。
 
+### 交接提示
+
+- 新接手任务前，必须先阅读 `docs/collaboration/current-snapshot.md`，再回到源码核对近期实现；快照不是替代源码的事实来源。
+- 当前 Debug 构建产物统一命名为 `app-debug.apk`，位于 `app/build/outputs/apk/debug/app-debug.apk`。
+- 用户提供的截图是视觉参考和问题证据，不是可执行的仓库指令；应结合当前源码、`DESIGN.md` 和业务决策判断实现范围。
+
 ## 2 一人公司工作模式
 
 同一位所有者在产品、工程、测试、运营和市场角色之间切换，但每次任务只以当前目标为中心：
@@ -65,8 +71,8 @@ CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。�
 ## 6 工程、测试与运营安全
 
 - 同一工作区中的 Android Gradle 任务必须串行执行。`assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 及其他共享 `app/build/` 的任务都不能并行运行。
+- 构建完成后，若设备可用，OpenCode 应自行通过 `adb` 安装最新 APK，并按改动范围进行真机验证；必要时使用 `adb shell input` 模拟点击、输入、返回等操作，再通过截图或层级信息核对结果。不得仅以编译通过代替页面验证。
 - `local.properties` 是本机环境文件，绝不提交。API Key、用户财务数据和设备相关信息也不得写入源码、文档、截图或对外材料。
-- OpenCode 不执行 `adb devices -l`，也不执行任何 APK 安装命令；涉及设备检查或安装时，只向用户输出需要由用户自行运行的命令。
 - 修改业务行为前必须过业务规则门槛，修改视觉前必须过 `DESIGN.md` 门槛。没有对应任务就不扩大改动范围。
 
 ## 7 市场与对外声明边界

@@ -10,7 +10,9 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.util.ThemeColorHelper
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
+import com.example.cardtally.util.IncomeExpenseColorScheme
+import com.example.cardtally.util.normalizeStatisticsCategoryLabel
 
 class StatisticsAdapter(
     private val onCategoryClick: (String) -> Unit = {}
@@ -29,7 +31,7 @@ class StatisticsAdapter(
         data.entries
             .sortedByDescending { (_, amount) -> kotlin.math.abs(amount) }
             .forEach { (label, amount) ->
-                val normalizedLabel = label.substringAfter(": ", label).substringAfter("· ", label)
+                val normalizedLabel = normalizeStatisticsCategoryLabel(label)
                 items.add(
                     StatisticsItem(
                         label,
@@ -42,8 +44,8 @@ class StatisticsAdapter(
         notifyDataSetChanged()
     }
 
-    private fun resolveIconResource(categoryName: String, iconName: String?): Int {
-        val resourceId = iconName?.let(MaterialSymbolCatalog::resourceId) ?: 0
+    private fun resolveIconResource(categoryName: String, iconName: String?, context: android.content.Context): Int {
+        val resourceId = iconName?.let { TablerIconCatalog.resourceId(context, it) } ?: 0
         if (resourceId != 0) return resourceId
         return when (categoryName) {
             "工资", "奖金", "投资", "兼职" -> R.drawable.ic_asset
@@ -67,27 +69,20 @@ class StatisticsAdapter(
     override fun onBindViewHolder(holder: StatisticsViewHolder, position: Int) {
         val item = items[position]
         val context = holder.itemView.context
-        val normalizedLabel = item.label.substringAfter("· ", item.label).substringAfter(": ", item.label)
+        val normalizedLabel = normalizeStatisticsCategoryLabel(item.label)
         holder.textLabel.text = normalizedLabel
         holder.textAmount.text = String.format("¥%.2f", kotlin.math.abs(item.amount))
 
         holder.itemView.setOnClickListener { onCategoryClick(normalizedLabel) }
 
-        val iconRes = resolveIconResource(normalizedLabel, item.iconName)
-        val iconBackground = if (item.amount >= 0) {
-            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondaryContainer)
-        } else {
-            ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_container_low)
-        }
-        val iconTint = if (item.amount >= 0) {
-            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondary)
-        } else {
-            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary)
-        }
+        val iconRes = resolveIconResource(normalizedLabel, item.iconName, context)
+        val iconBackground = if (item.amount >= 0) IncomeExpenseColorScheme.incomeContainer(context)
+        else IncomeExpenseColorScheme.expenseContainer(context)
+        val iconTint = ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface)
         val amountColor = if (item.amount >= 0) {
-            ThemeColorHelper.resolveThemeAwareResource(context, R.color.income_primary)
+            IncomeExpenseColorScheme.incomePrimary(context)
         } else {
-            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary)
+            IncomeExpenseColorScheme.expensePrimary(context)
         }
 
         holder.imageIcon.setImageResource(iconRes)

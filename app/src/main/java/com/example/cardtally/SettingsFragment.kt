@@ -15,6 +15,7 @@ import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.QuickAddHelper
 import com.example.cardtally.util.RecordPhotoSettingsHelper
 import com.example.cardtally.util.ScrollTopFabHelper
+import com.example.cardtally.util.IncomeExpenseColorScheme
 
 class SettingsFragment : Fragment() {
     private lateinit var cardQuickAdd: View
@@ -27,6 +28,8 @@ class SettingsFragment : Fragment() {
     private lateinit var cardCategory: View
     private lateinit var cardLedgerManagement: View
     private lateinit var cardLanguage: View
+    private lateinit var cardIncomeExpenseColor: View
+    private lateinit var textIncomeExpenseColor: TextView
     private lateinit var textAiApiKeyStatus: TextView
     private lateinit var textCurrentLanguage: TextView
     private lateinit var cardRecordPhotoLimit: View
@@ -50,6 +53,8 @@ class SettingsFragment : Fragment() {
         cardCategory = view.findViewById(R.id.card_category)
         cardLedgerManagement = view.findViewById(R.id.card_ledger_management)
         cardLanguage = view.findViewById(R.id.card_language)
+        cardIncomeExpenseColor = view.findViewById(R.id.card_income_expense_color)
+        textIncomeExpenseColor = view.findViewById(R.id.text_income_expense_color)
         textAiApiKeyStatus = view.findViewById(R.id.text_ai_api_key_status)
         textCurrentLanguage = view.findViewById(R.id.text_current_language)
         cardRecordPhotoLimit = view.findViewById(R.id.card_record_photo_limit)
@@ -64,6 +69,7 @@ class SettingsFragment : Fragment() {
         updateCurrentLanguageText()
         updateAiApiKeyStatus()
         updateRecordPhotoLimitText()
+        updateIncomeExpenseColorText()
 
         switchQuickAdd.setOnClickListener {
             QuickAddHelper.saveQuickAdd(requireContext(), switchQuickAdd.isChecked)
@@ -82,6 +88,7 @@ class SettingsFragment : Fragment() {
             ScrollTopFabHelper.saveEnabled(requireContext(), switchScrollTopFab.isChecked)
         }
         cardRecordPhotoLimit.setOnClickListener { showRecordPhotoLimitDialog() }
+        cardIncomeExpenseColor.setOnClickListener { showIncomeExpenseColorDialog() }
 
         cardAiApiKey.setOnClickListener {
             parentFragmentManager.beginTransaction()
@@ -123,6 +130,7 @@ class SettingsFragment : Fragment() {
         updateCurrentLanguageText()
         updateAiApiKeyStatus()
         updateRecordPhotoLimitText()
+        updateIncomeExpenseColorText()
         switchQuickAdd.isChecked = QuickAddHelper.getQuickAdd(requireContext())
         switchAiAssistant.isChecked = AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext())
         switchShowAsset.isChecked = AssetDisplayHelper.getShowAsset(requireContext())
@@ -173,6 +181,32 @@ class SettingsFragment : Fragment() {
                 RecordPhotoSettingsHelper.saveMaxPhotos(requireContext(), picker.value)
                 updateRecordPhotoLimitText()
             }
+            .show()
+    }
+
+    private fun updateIncomeExpenseColorText() {
+        if (!::textIncomeExpenseColor.isInitialized || !isAdded) return
+        textIncomeExpenseColor.text = when (IncomeExpenseColorScheme.getMode(requireContext())) {
+            IncomeExpenseColorScheme.INCOME_GREEN_EXPENSE_RED -> getString(R.string.settings_income_expense_color_income_green_expense_red)
+            IncomeExpenseColorScheme.BOTH_BLACK -> getString(R.string.settings_income_expense_color_both_black)
+            else -> getString(R.string.settings_income_expense_color_income_red_expense_green)
+        }
+    }
+
+    private fun showIncomeExpenseColorDialog() {
+        val labels = arrayOf(
+            getString(R.string.settings_income_expense_color_income_green_expense_red),
+            getString(R.string.settings_income_expense_color_income_red_expense_green),
+            getString(R.string.settings_income_expense_color_both_black)
+        )
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(R.string.settings_income_expense_color)
+            .setSingleChoiceItems(labels, IncomeExpenseColorScheme.getMode(requireContext())) { dialog, which ->
+                IncomeExpenseColorScheme.saveMode(requireContext(), which)
+                updateIncomeExpenseColorText()
+                dialog.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 

@@ -88,7 +88,7 @@
 2. `skills/android-install-debug-apk.md`
 3. 如同时涉及测试或整轮验证，再读 `docs/collaboration/skills/android-gradle-serial-verification.md`
 
-注意：当前仓库内 Gradle 构建与测试默认串行；安装前先确认 `app/build/outputs/apk/debug/CardTally-debug.apk` 已生成。
+注意：当前仓库内 Gradle 构建与测试默认串行；安装前先确认 `app/build/outputs/apk/debug/app-debug.apk` 已生成。
 
 ### 改主题 / 样式 / 视觉一致性
 

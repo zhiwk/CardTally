@@ -47,7 +47,7 @@ class DatabaseHelper(
 
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
-        private const val DATABASE_VERSION = 28
+        private const val DATABASE_VERSION = 29
         const val MAX_RECORD_QUERY_LIMIT = 200
         const val RECORD_UNDO_WINDOW_MS = 10_000L
 
@@ -95,6 +95,7 @@ class DatabaseHelper(
         private const val COLUMN_CATEGORY_ICON = "icon"
         private const val COLUMN_CATEGORY_PARENT_ID = "parent_id"
         private const val COLUMN_CATEGORY_SORT_ORDER = "sort_order"
+        private const val COLUMN_CATEGORY_COLOR = "color"
 
         private const val TABLE_ASSETS = "assets"
         private const val COLUMN_ASSET_ID = "id"
@@ -147,6 +148,7 @@ class DatabaseHelper(
             "$COLUMN_CATEGORY_NAME TEXT NOT NULL, " +
             "$COLUMN_CATEGORY_TYPE INTEGER NOT NULL, " +
             "$COLUMN_CATEGORY_ICON TEXT, " +
+            "$COLUMN_CATEGORY_COLOR TEXT NOT NULL DEFAULT '#F5F5F5', " +
             "$COLUMN_CATEGORY_PARENT_ID INTEGER, " +
             "$COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1, " +
             "$COLUMN_CATEGORY_SORT_ORDER INTEGER NOT NULL DEFAULT 0)"
@@ -194,7 +196,7 @@ class DatabaseHelper(
             "$COLUMN_LEDGER_SUBTITLE TEXT NOT NULL DEFAULT '', " +
             "$COLUMN_LEDGER_SHARED_ASSET_IDS TEXT NOT NULL DEFAULT '', " +
             "$COLUMN_LEDGER_SORT_ORDER INTEGER NOT NULL DEFAULT 0, " +
-            "$COLUMN_LEDGER_ICON_NAME TEXT NOT NULL DEFAULT 'ms_rounded_book')"
+            "$COLUMN_LEDGER_ICON_NAME TEXT NOT NULL DEFAULT 'tabler_book')"
 
         private const val CREATE_TABLE_LEDGER_SHARED_ASSETS =
             "CREATE TABLE $TABLE_LEDGER_SHARED_ASSETS (" +
@@ -255,11 +257,16 @@ class DatabaseHelper(
         return id
     }
 
-    /** Assets owned by the active ledger plus assets explicitly shared into it. */
+    private fun assetPoolRootId(ledgerId: Long): Long {
+        val visited = mutableSetOf<Long>()
+        var root = ledgerId
+        while (visited.add(root)) root = getSharedSourceLedgerId(root) ?: break
+        return root
+    }
+
+    /** Assets owned by the active ledger's effective asset pool. */
     private fun assetScope(): String {
-        return "($COLUMN_LEDGER_ID = ${currentLedgerId()} OR " +
-            "$COLUMN_LEDGER_ID IN (SELECT $COLUMN_SHARED_SOURCE_LEDGER_ID FROM $TABLE_LEDGER_SHARED_LEDGERS " +
-            "WHERE $COLUMN_SHARED_LEDGER_ID = ${currentLedgerId()}))"
+        return "$COLUMN_LEDGER_ID = ${assetPoolRootId(currentLedgerId())}"
     }
 
     fun getLedgers(): List<com.example.cardtally.model.Ledger> {
@@ -273,7 +280,12 @@ class DatabaseHelper(
         return result
     }
 
-    fun addLedger(name: String, subtitle: String = "", iconName: String = "ms_rounded_book"): Long {
+    /** The first ledger owns the permanent master asset pool. */
+    fun getMasterLedgerId(): Long = readableDatabase.rawQuery(
+        "SELECT $COLUMN_ID FROM $TABLE_LEDGERS ORDER BY $COLUMN_LEDGER_SORT_ORDER, $COLUMN_ID LIMIT 1", null
+    ).use { if (it.moveToFirst()) it.getLong(0) else 1L }
+
+    fun addLedger(name: String, subtitle: String = "", iconName: String = "tabler_book"): Long {
         val db = writableDatabase
         val id = db.insertOrThrow(TABLE_LEDGERS, null, ContentValues().apply {
             put(COLUMN_LEDGER_NAME, name)
@@ -288,7 +300,7 @@ class DatabaseHelper(
         return addLedger(name, subtitle, sharedAssetIds, emptyList())
     }
 
-    fun addLedgerWithAssetPool(name: String, sharedSourceLedgerId: Long? = null, copyFromLedgerId: Long? = null, iconName: String = "ms_rounded_book"): Long {
+    fun addLedgerWithAssetPool(name: String, sharedSourceLedgerId: Long? = null, copyFromLedgerId: Long? = null, iconName: String = "tabler_book"): Long {
         val id = addLedger(name, iconName = iconName)
         val db = writableDatabase
         if (sharedSourceLedgerId != null) {
@@ -362,7 +374,7 @@ class DatabaseHelper(
     }
 
     fun getLedgerAssetPoolSummary(ledgerId: Long): Pair<Int, Double> {
-        val sourceId = getSharedSourceLedgerId(ledgerId) ?: ledgerId
+        val sourceId = assetPoolRootId(ledgerId)
         return readableDatabase.rawQuery(
             "SELECT COUNT(*), COALESCE(SUM(CASE WHEN $COLUMN_ASSET_INCLUDE_IN_TOTAL = 1 THEN $COLUMN_ASSET_AMOUNT ELSE 0 END), 0) " +
                 "FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
@@ -392,6 +404,18 @@ class DatabaseHelper(
             })
         }
         return true
+    }
+
+    fun updateLedgerDetails(ledgerId: Long, iconName: String? = null, name: String? = null): Boolean {
+        if (ledgerId != currentLedgerId()) return false
+        if (iconName == null && name == null) return true
+        return writableDatabase.update(TABLE_LEDGERS, ContentValues().apply {
+            iconName?.let { put(COLUMN_LEDGER_ICON_NAME, it) }
+            name?.let {
+                put(COLUMN_LEDGER_NAME, it)
+                put(COLUMN_LEDGER_SUBTITLE, "${it}账本")
+            }
+        }, "$COLUMN_ID = ?", arrayOf(ledgerId.toString())) > 0
     }
 
     fun addLedger(name: String, subtitle: String = "", sharedAssetIds: List<Long>, copiedAssetIds: List<Long>): Long {
@@ -479,7 +503,7 @@ class DatabaseHelper(
     /** Permanently folds sourceLedgerId into the active ledger, retaining IDs and history. */
     fun mergeLedgerIntoCurrent(sourceLedgerId: Long): Boolean {
         val targetLedgerId = currentLedgerId()
-        if (sourceLedgerId == targetLedgerId || getLedgers().none { it.id == sourceLedgerId }) return false
+        if (sourceLedgerId == targetLedgerId || sourceLedgerId == getMasterLedgerId() || getLedgers().none { it.id == sourceLedgerId }) return false
         val db = writableDatabase
         db.beginTransaction()
         return try {
@@ -513,7 +537,7 @@ class DatabaseHelper(
     /** Deletes ledgers and their records while retaining a shared pool for surviving ledgers. */
     fun deleteLedgers(ledgerIds: Set<Long>): Boolean {
         val allLedgers = getLedgers()
-        if (ledgerIds.isEmpty() || ledgerIds.size >= allLedgers.size || !ledgerIds.all { id -> allLedgers.any { it.id == id } }) return false
+        if (ledgerIds.isEmpty() || getMasterLedgerId() in ledgerIds || ledgerIds.size >= allLedgers.size || !ledgerIds.all { id -> allLedgers.any { it.id == id } }) return false
         fun poolRoot(ledgerId: Long): Long {
             val visited = mutableSetOf<Long>()
             var root = ledgerId
@@ -613,11 +637,15 @@ class DatabaseHelper(
                 db,
                 TABLE_LEDGERS,
                 COLUMN_LEDGER_ICON_NAME,
-                "ALTER TABLE $TABLE_LEDGERS ADD COLUMN $COLUMN_LEDGER_ICON_NAME TEXT NOT NULL DEFAULT 'ms_rounded_book'"
+                "ALTER TABLE $TABLE_LEDGERS ADD COLUMN $COLUMN_LEDGER_ICON_NAME TEXT NOT NULL DEFAULT 'tabler_book'"
             )
         }
         if (oldVersion < 28) {
             normalizeCategoriesAsGlobal(db)
+        }
+        if (oldVersion < 29) {
+            ensureColumn(db, TABLE_CATEGORIES, COLUMN_CATEGORY_COLOR,
+                "ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_CATEGORY_COLOR TEXT NOT NULL DEFAULT '#F5F5F5'")
         }
         if (oldVersion >= 2 && oldVersion < 21) migrateLedgerSchema(db)
         if (oldVersion < 2) {
@@ -937,10 +965,10 @@ class DatabaseHelper(
         }
 
         val expenseChildren = mapOf(
-            "购物" to listOf("服饰" to "ms_rounded_checkroom", "家电" to "ms_rounded_devices", "数码" to "ms_rounded_devices"),
-            "餐饮" to listOf("早午晚餐" to "ms_rounded_lunch_dining"),
-            "居住" to listOf("房租" to "ms_rounded_home", "酒店" to "ms_rounded_hotel"),
-            "交通" to listOf("短途" to "ms_rounded_directions_car", "飞机高铁" to "ms_rounded_flight")
+            "购物" to listOf("服饰" to "tabler_shirt", "家电" to "tabler_devices", "数码" to "tabler_device_laptop"),
+            "餐饮" to listOf("早午晚餐" to "tabler_tools_kitchen"),
+            "居住" to listOf("房租" to "tabler_home", "酒店" to "tabler_hotel_service"),
+            "交通" to listOf("短途" to "tabler_car", "飞机高铁" to "tabler_plane")
         )
         for ((parentName, children) in expenseChildren) {
             val parentId = parentIds[parentName] ?: continue
@@ -1089,6 +1117,7 @@ class DatabaseHelper(
             name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_NAME)),
             type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE)),
             icon = getNullableString(cursor, COLUMN_CATEGORY_ICON),
+            color = getNullableString(cursor, COLUMN_CATEGORY_COLOR),
             parentId = getNullableLong(cursor, COLUMN_CATEGORY_PARENT_ID),
             sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_SORT_ORDER))
         )
@@ -1388,10 +1417,10 @@ class DatabaseHelper(
             parentIds[name] = db.insertOrThrow(TABLE_CATEGORIES, null, values)
         }
         val children = mapOf(
-            "购物" to listOf("服饰" to "ms_rounded_checkroom", "家电" to "ms_rounded_devices", "数码" to "ms_rounded_devices"),
-            "餐饮" to listOf("早午晚餐" to "ms_rounded_lunch_dining"),
-            "居住" to listOf("房租" to "ms_rounded_home", "酒店" to "ms_rounded_hotel"),
-            "交通" to listOf("短途" to "ms_rounded_directions_car", "飞机高铁" to "ms_rounded_flight")
+            "购物" to listOf("服饰" to "tabler_shirt", "家电" to "tabler_devices", "数码" to "tabler_device_laptop"),
+            "餐饮" to listOf("早午晚餐" to "tabler_tools_kitchen"),
+            "居住" to listOf("房租" to "tabler_home", "酒店" to "tabler_hotel_service"),
+            "交通" to listOf("短途" to "tabler_car", "飞机高铁" to "tabler_plane")
         )
         children.forEach { (parent, items) ->
             items.forEach { (name, icon) ->
@@ -1408,8 +1437,8 @@ class DatabaseHelper(
 
     private fun insertDefaultIncomeCategories(db: SQLiteDatabase, ledgerId: Long = 1L) {
         val parents = listOf(
-            "工作" to "ms_rounded_work",
-            "理财" to "ms_rounded_account_balance"
+            "工作" to "tabler_briefcase",
+            "理财" to "tabler_building_bank"
         )
         val parentIds = mutableMapOf<String, Long>()
         parents.forEachIndexed { index, (name, icon) ->
@@ -1428,11 +1457,11 @@ class DatabaseHelper(
         }
 
         val children = mapOf(
-            "工作" to listOf("工资" to "ic_category_salary", "报销" to "ms_rounded_receipt_long"),
+            "工作" to listOf("工资" to "ic_category_salary", "报销" to "tabler_receipt"),
             "理财" to listOf(
-                "股票" to "ms_rounded_show_chart",
-                "基金" to "ms_rounded_pie_chart",
-                "黄金" to "ms_rounded_savings"
+                "股票" to "tabler_chart_line",
+                "基金" to "tabler_chart_donut",
+                "黄金" to "tabler_pig_money"
             )
         )
         children.forEach { (parentName, items) ->
@@ -1710,6 +1739,7 @@ class DatabaseHelper(
             put(COLUMN_CATEGORY_NAME, category.name)
             put(COLUMN_CATEGORY_TYPE, category.type)
             put(COLUMN_CATEGORY_ICON, category.icon)
+            put(COLUMN_CATEGORY_COLOR, category.color ?: "#F5F5F5")
             if (category.parentId != null) {
                 put(COLUMN_CATEGORY_PARENT_ID, category.parentId)
             } else {
@@ -1917,6 +1947,7 @@ class DatabaseHelper(
             put(COLUMN_CATEGORY_NAME, category.name)
             put(COLUMN_CATEGORY_TYPE, category.type)
             put(COLUMN_CATEGORY_ICON, category.icon)
+            put(COLUMN_CATEGORY_COLOR, category.color ?: "#F5F5F5")
             if (category.parentId != null) {
                 put(COLUMN_CATEGORY_PARENT_ID, category.parentId)
             } else {

@@ -65,12 +65,19 @@ class MainActivity : AppCompatActivity() {
             }
 
             selectedFragment?.let {
+                val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+                if (currentFragment != null && currentFragment::class == it::class) {
+                    return@setOnItemSelectedListener true
+                }
+
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, it)
                     .commit()
                 true
             } ?: false
         }
+
+        bottomNavigationView.setOnItemReselectedListener { }
 
         bottomNavigationView.menu.findItem(R.id.nav_ledger).isChecked = true
 

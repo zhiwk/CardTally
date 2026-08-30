@@ -1,6 +1,7 @@
 package com.example.cardtally.adapter
 
 import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -45,7 +46,7 @@ class RecordAssetSheetAdapter(
         private val titleView: TextView = itemView.findViewById(R.id.text_title)
         private val subtitleView: TextView = itemView.findViewById(R.id.text_subtitle)
         private val amountView: TextView = itemView.findViewById(R.id.text_amount)
-        private val checkView: ImageView = itemView.findViewById(R.id.image_check)
+        private val cardView: View = itemView
 
         fun bind(item: AssetSheetItem, selected: Boolean) {
             val context = itemView.context
@@ -53,24 +54,22 @@ class RecordAssetSheetAdapter(
             subtitleView.text = item.subtitle
             amountView.text = item.amountLabel
             iconView.setImageResource(R.drawable.ic_asset)
+            cardView.background = createCardBackground(
+                ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_light)
+            )
 
             if (selected) {
-                itemView.backgroundTintList = ColorStateList.valueOf(
-                    ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary)
+                cardView.background = createCardBackground(
+                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.primaryContainer_light)
                 )
-                titleView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimary))
-                subtitleView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimary))
-                amountView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimary))
+                titleView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface))
+                subtitleView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurfaceVariant))
+                amountView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface))
                 iconContainer.backgroundTintList = ColorStateList.valueOf(
                     ThemeColorHelper.resolveThemeAwareResource(context, R.color.primaryContainer_light)
                 )
                 iconView.setColorFilter(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimaryContainer))
-                checkView.visibility = View.VISIBLE
-                checkView.setColorFilter(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnPrimary))
             } else {
-                itemView.backgroundTintList = ColorStateList.valueOf(
-                    ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSurfaceContainerLow)
-                )
                 titleView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface))
                 subtitleView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurfaceVariant))
                 amountView.setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurface))
@@ -78,9 +77,15 @@ class RecordAssetSheetAdapter(
                     ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_low)
                 )
                 iconView.setColorFilter(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary))
-                checkView.visibility = View.GONE
             }
         }
+
+        private fun createCardBackground(color: Int): GradientDrawable =
+            GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(color)
+                cornerRadius = 12f * itemView.resources.displayMetrics.density
+            }
     }
 }
 

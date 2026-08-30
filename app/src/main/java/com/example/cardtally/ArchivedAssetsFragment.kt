@@ -18,7 +18,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 class ArchivedAssetsFragment : Fragment() {
     private lateinit var recyclerAssets: RecyclerView
     private lateinit var textEmpty: TextView
-    private lateinit var textTotalAmount: TextView
     private lateinit var databaseHelper: DatabaseHelper
     private var adapter: AssetAdapter? = null
 
@@ -31,7 +30,6 @@ class ArchivedAssetsFragment : Fragment() {
 
         recyclerAssets = view.findViewById(R.id.recycler_assets)
         textEmpty = view.findViewById(R.id.text_empty)
-        textTotalAmount = view.findViewById(R.id.text_total_amount)
         view.findViewById<View>(R.id.btn_back).setOnClickListener {
             parentFragmentManager.popBackStack()
         }
@@ -58,16 +56,11 @@ class ArchivedAssetsFragment : Fragment() {
 
     private fun loadAssets() {
         val assets = databaseHelper.getArchivedAssets()
-        var total = 0.0
-        for (asset in assets) {
-            total += asset.amount
-        }
-
-        textTotalAmount.text = String.format("¥%.2f", total)
-
         if (assets.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
             recyclerAssets.visibility = View.GONE
+            adapter = null
+            recyclerAssets.adapter = null
         } else {
             textEmpty.visibility = View.GONE
             recyclerAssets.visibility = View.VISIBLE
@@ -75,7 +68,13 @@ class ArchivedAssetsFragment : Fragment() {
             if (adapter == null) {
                 adapter = AssetAdapter(assets, object : AssetAdapter.OnAssetActionListener {
                     override fun onClick(asset: Asset) {
-                        val recordsFragment = AssetRecordsFragment.newInstance(asset.name, asset.amount, asset.type)
+                        val recordsFragment = AssetRecordsFragment.newInstance(
+                            asset.name,
+                            asset.amount,
+                            asset.type,
+                            asset.id,
+                            asset.categoryLabel
+                        )
                         parentFragmentManager.beginTransaction()
                             .replace(R.id.fragment_container, recordsFragment)
                             .addToBackStack(null)
@@ -95,10 +94,13 @@ class ArchivedAssetsFragment : Fragment() {
                         Toast.makeText(requireContext(), "已恢复", Toast.LENGTH_SHORT).show()
                         loadAssets()
                     }
-                }, archivedMode = true)
+                }, archivedMode = true, showAmount = true)
                 recyclerAssets.adapter = adapter
             } else {
                 adapter?.updateAssets(assets)
+                if (recyclerAssets.adapter == null) {
+                    recyclerAssets.adapter = adapter
+                }
             }
         }
     }

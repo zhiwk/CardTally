@@ -27,6 +27,7 @@ import com.example.cardtally.state.LedgerViewState
 import com.example.cardtally.state.PeriodPreset
 import com.example.cardtally.state.StatisticsType
 import com.example.cardtally.util.FloatingNavLayoutHelper
+import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.example.cardtally.util.LedgerAggregationHelper
 import com.example.cardtally.util.LedgerDateRange
 import com.example.cardtally.util.LedgerDisplayHelper
@@ -35,6 +36,7 @@ import com.example.cardtally.util.LedgerPeriodPreset
 import com.example.cardtally.util.LedgerUxPreferences
 import com.example.cardtally.util.LedgerView
 import com.example.cardtally.util.ThemeColorHelper
+import com.example.cardtally.util.normalizeStatisticsCategoryLabel
 import com.example.cardtally.view.LedgerDonutChartView
 import com.example.cardtally.view.LedgerLineChartView
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -345,9 +347,24 @@ class StatisticsFragment : Fragment() {
                 entryCounts[categoryName] = (entryCounts[categoryName] ?: 0) + 1
             }
         }
-        val categoryIcons = databaseHelper.getAllCategories()
-            .filter { !it.icon.isNullOrBlank() }
-            .associate { it.name to it.icon!! }
+        val categories = databaseHelper.getAllCategories()
+        val categoriesById = categories.associateBy { it.id }
+        val categoriesByName = categories.associateBy { it.name }
+        val categoryIcons = mutableMapOf<String, String>()
+        categories.forEach { category ->
+            category.icon?.takeIf { it.isNotBlank() }?.let { categoryIcons[category.name] = it }
+        }
+        categoryRecords.forEach { record ->
+            val category = record.categoryId?.let(categoriesById::get)
+                ?: record.categoryNameSnapshot?.let(categoriesByName::get)
+                ?: categoriesByName[record.category]
+            val icon = category?.icon?.takeIf {
+                it.isNotBlank() && it != "tabler_category" && it != "ic_category_other"
+            }
+            if (icon != null && record.category.isNotBlank()) {
+                categoryIcons[record.category] = icon
+            }
+        }
 
         val normalizedStats = stats.mapKeys { (label, _) ->
             if (currentStatsType == TYPE_EXPENSE) {
@@ -361,6 +378,8 @@ class StatisticsFragment : Fragment() {
 
         textSummaryExpense.text = getString(R.string.currency_amount, expenseTotal)
         textSummaryIncome.text = getString(R.string.currency_amount, incomeTotal)
+        textSummaryExpense.setTextColor(IncomeExpenseColorScheme.expensePrimary(requireContext()))
+        textSummaryIncome.setTextColor(IncomeExpenseColorScheme.incomePrimary(requireContext()))
         textSummaryBalance.text = getString(
             R.string.currency_amount,
             incomeTotal - expenseTotal
@@ -556,10 +575,10 @@ class StatisticsFragment : Fragment() {
             dot.backgroundTintList = android.content.res.ColorStateList.valueOf(palette[index % palette.size])
 
             val entryCount = slice.sourceLabels.sumOf { sourceLabel ->
-                val normalizedLabel = sourceLabel.substringAfter(": ", sourceLabel).substringAfter("· ", sourceLabel)
+                val normalizedLabel = normalizeStatisticsCategoryLabel(sourceLabel)
                 entryCounts[normalizedLabel] ?: 0
             }
-            val displayLabel = slice.label.substringAfter(": ", slice.label).substringAfter("· ", slice.label)
+            val displayLabel = normalizeStatisticsCategoryLabel(slice.label)
             val percentage = if (summary.completeTotal == 0.0) {
                 0.0
             } else {
@@ -603,7 +622,7 @@ class StatisticsFragment : Fragment() {
         }
 
         toggleChartMode.setImageResource(
-            if (isPie) R.drawable.ms_rounded_pie_chart else R.drawable.ms_rounded_multiline_chart
+            if (isPie) R.drawable.tabler_chart_donut else R.drawable.tabler_chart_line
         )
         val showChartToggle = currentViewMode == VIEW_MODE_STATISTICS &&
                 currentPeriodPreset != LedgerPeriodPreset.CUSTOM &&

@@ -1,5 +1,7 @@
 package com.example.cardtally.adapter
 
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,7 +17,7 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Category
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.SwipeToEditDeleteHelper
 
 class CategoryAdapter(
@@ -49,7 +51,7 @@ class CategoryAdapter(
 
         holder.cardContent.translationX = 0f
         holder.textCategoryName.text = category.name
-        bindIcon(holder.itemView, holder.imageCategoryIcon, category.icon)
+        bindIcon(holder.itemView, holder.imageCategoryIcon, category.icon, category.name)
         holder.imageExpand.setImageResource(
             if (expanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more
         )
@@ -247,7 +249,19 @@ class CategoryAdapter(
     private fun bindChild(view: View, child: Category) {
         view.alpha = if (activeDraggedChildId == child.id) 0f else 1f
         view.findViewById<TextView>(R.id.text_child_name).text = child.name
-        bindIcon(view, view.findViewById(R.id.image_child_icon), child.icon)
+        val iconContainer = view.findViewById<View>(R.id.image_child_icon).parent as? View
+        iconContainer?.setBackgroundResource(R.drawable.bg_category_child_icon)
+        child.color?.let { color ->
+            runCatching { Color.parseColor(color) }.getOrNull()?.let { parsedColor ->
+                iconContainer?.let {
+                    iconContainer.background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(parsedColor)
+                    }
+                }
+            }
+        }
+        bindIcon(view, view.findViewById(R.id.image_child_icon), child.icon, child.name)
         // Reordering is gesture-based; an external handle would overlap the compact icon tile.
         view.findViewById<ImageView>(R.id.image_drag_handle).visibility = View.GONE
     }
@@ -255,21 +269,35 @@ class CategoryAdapter(
     private fun bindAddChild(view: View, parent: Category) {
         view.findViewById<TextView>(R.id.text_child_name).setText(R.string.category_add_child_cta)
         view.findViewById<ImageView>(R.id.image_child_icon)
-            .setImageResource(R.drawable.ms_rounded_add)
+            .setImageResource(R.drawable.tabler_plus)
         view.findViewById<ImageView>(R.id.image_drag_handle).visibility = View.GONE
         view.setOnClickListener { listener.onAddChild(parent) }
     }
 
-    private fun bindIcon(root: View, imageView: ImageView, icon: String?) {
+    private fun bindIcon(root: View, imageView: ImageView, icon: String?, categoryName: String? = null) {
         val resourceId = icon?.let { name ->
-            MaterialSymbolCatalog.resourceId(name).takeIf { it != 0 }
+            TablerIconCatalog.resourceId(root.context, name).takeIf { it != 0 }
                 ?: root.context.resources.getIdentifier(
                     name,
                     "drawable",
                     root.context.packageName
                 )
         } ?: 0
-        imageView.setImageResource(resourceId.takeIf { it != 0 } ?: R.drawable.ms_rounded_category)
+        val categoryFallback = when (categoryName) {
+            "购物" -> R.drawable.tabler_shopping_cart
+            "餐饮" -> R.drawable.tabler_tools_kitchen
+            "居住", "住房" -> R.drawable.tabler_home
+            "交通" -> R.drawable.tabler_car
+            else -> 0
+        }
+        val shouldUseCategoryFallback = icon.isNullOrBlank() || icon == "tabler_category" || icon == "ic_category_other"
+        imageView.setImageResource(
+            if (shouldUseCategoryFallback) {
+                categoryFallback.takeIf { it != 0 } ?: resourceId.takeIf { it != 0 } ?: R.drawable.tabler_category
+            } else {
+                resourceId.takeIf { it != 0 } ?: categoryFallback.takeIf { it != 0 } ?: R.drawable.tabler_category
+            }
+        )
         imageView.visibility = View.VISIBLE
     }
 

@@ -19,11 +19,11 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="16dp"
-        app:cardBackgroundColor="@color/surface_light"
+        app:cardBackgroundColor="#FFFFFFFF"
         app:cardCornerRadius="12dp"
         app:cardElevation="0dp"
-        app:strokeColor="@color/outline_light"
-        app:strokeWidth="1dp"
+        app:strokeColor="@android:color/transparent"
+        app:strokeWidth="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/category_header">
@@ -31,13 +31,15 @@
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tab_layout"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="@android:color/transparent"
+            android:layout_height="40dp"
+            android:background="#FFFFFFFF"
             app:tabGravity="fill"
+            app:tabBackground="@drawable/bg_category_tab_white"
             app:tabIndicatorColor="@color/primary_light"
             app:tabIndicatorHeight="2dp"
             app:tabIndicatorFullWidth="false"
             app:tabMode="fixed"
+            app:tabRippleColor="@android:color/transparent"
             app:tabSelectedTextColor="@color/onSurface_light"
             app:tabTextColor="@color/onSurfaceVariant_light">
 

@@ -48,7 +48,7 @@ cd CardTally
 将生成的 APK 文件安装到 Android 设备：
 
 ```
-app/build/outputs/apk/debug/CardTally-debug.apk
+app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ## 📁 项目结构

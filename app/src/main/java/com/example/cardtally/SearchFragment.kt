@@ -204,9 +204,10 @@ class SearchFragment : Fragment() {
             recyclerRecords.visibility = View.VISIBLE
 
             val dateGroups = groupRecordsByDate(filteredRecords)
-            val categoryIconsById = databaseHelper.getAllCategories()
+            val categories = databaseHelper.getAllCategories()
                 .filter { !it.icon.isNullOrEmpty() }
-                .associate { it.id to it.icon.orEmpty() }
+            val categoryIconsById = categories.associate { it.id to it.icon.orEmpty() }
+            val categoryIconsByName = categories.associate { it.name to it.icon.orEmpty() }
 
             if (adapter == null) {
                 adapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
@@ -233,7 +234,7 @@ class SearchFragment : Fragment() {
 
                     override fun onToggleMultiSelect(record: Record) {
                     }
-                }, categoryIconsById)
+                }, categoryIconsById, categoryIconsByName, showTypeSubtitle = false)
                 recyclerRecords.adapter = adapter
             } else {
                 adapter?.updateDateGroups(dateGroups)

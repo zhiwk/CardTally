@@ -7,7 +7,7 @@ import android.widget.ImageView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 
 class IconPickerAdapter(
     private val allIcons: List<String>,
@@ -34,7 +34,7 @@ class IconPickerAdapter(
     override fun onBindViewHolder(holder: IconViewHolder, position: Int) {
         val iconName = icons[position]
         
-        val resourceId = MaterialSymbolCatalog.resourceId(iconName)
+        val resourceId = TablerIconCatalog.resourceId(holder.itemView.context, iconName)
         if (resourceId != 0) {
             holder.imageIcon.setImageResource(resourceId)
         } else {

@@ -9,6 +9,7 @@ import android.view.View
 import com.example.cardtally.R
 import com.example.cardtally.util.ThemeColorHelper
 import kotlin.math.min
+import kotlin.math.max
 
 class LedgerDonutChartView @JvmOverloads constructor(
     context: Context,
@@ -103,7 +104,7 @@ class LedgerDonutChartView @JvmOverloads constructor(
     ) {
         val callouts = mutableListOf<Callout>()
         var angle = -90f
-        slices.take(3).forEach { slice ->
+        slices.filter { it.value > 0f }.forEach { slice ->
             val sweep = (slice.value / total) * 360f
             val middleAngle = Math.toRadians((angle + sweep / 2f).toDouble())
             val cos = kotlin.math.cos(middleAngle).toFloat()
@@ -122,33 +123,66 @@ class LedgerDonutChartView @JvmOverloads constructor(
 
         // Resolve labels independently on both sides. This keeps the leader lines
         // readable when two small categories have nearly identical angles.
-        val minimumGap = labelPaint.textSize + 5f
+        val fontMetrics = labelPaint.fontMetrics
+        val textHeight = fontMetrics.descent - fontMetrics.ascent
+        val minimumGap = textHeight + 6f
         callouts.groupBy { it.rightSide }.values.forEach { sideCallouts ->
-            var previousY = Float.NEGATIVE_INFINITY
-            sideCallouts.sortedBy { it.desiredY }.forEach { callout ->
-                val y = maxOf(callout.desiredY, previousY + minimumGap)
-                    .coerceIn(labelPaint.textSize, height - 2f)
-                previousY = y
+            val placed = sideCallouts.sortedBy { it.desiredY }.map { callout ->
+                val label = formatCalloutLabel(callout.slice, total)
+                val textWidth = labelPaint.measureText(label)
+                val top = textHeight / 2f
+                val bottom = height - textHeight / 2f
+                val y = callout.desiredY.coerceIn(top, bottom)
+                CalloutPlacement(callout, label, textWidth, y)
+            }.toMutableList()
+
+            for (index in 1 until placed.size) {
+                placed[index] = placed[index].copy(
+                    centerY = max(placed[index].centerY, placed[index - 1].centerY + minimumGap)
+                )
+            }
+            for (index in placed.lastIndex - 1 downTo 0) {
+                placed[index] = placed[index].copy(
+                    centerY = min(placed[index].centerY, placed[index + 1].centerY - minimumGap)
+                )
+            }
+            val shift = when {
+                placed.isEmpty() -> 0f
+                placed.first().centerY < textHeight / 2f -> textHeight / 2f - placed.first().centerY
+                placed.last().centerY > height - textHeight / 2f -> height - textHeight / 2f - placed.last().centerY
+                else -> 0f
+            }
+            placed.forEach { placement ->
+                val callout = placement.callout
+                val y = placement.centerY + shift
 
                 val elbowX = centerX + if (callout.rightSide) radius + 12f else -(radius + 12f)
                 val textX = if (callout.rightSide) width - 6f else 6f
-                val lineEndX = if (callout.rightSide) textX - 4f else textX + 4f
+                val lineEndX = if (callout.rightSide) {
+                    textX - placement.textWidth - 5f
+                } else {
+                    textX + placement.textWidth + 5f
+                }
                 leaderPaint.color = callout.slice.color
                 canvas.drawLine(callout.startX, callout.startY, elbowX, y, leaderPaint)
                 canvas.drawLine(elbowX, y, lineEndX, y, leaderPaint)
 
                 labelPaint.textAlign = if (callout.rightSide) Paint.Align.RIGHT else Paint.Align.LEFT
-                val percentage = (callout.slice.value / total * 100f)
-                    .let { String.format(java.util.Locale.US, "%.1f%%", it) }
-                val amount = String.format(java.util.Locale.US, "¥%.2f", callout.slice.value)
-                val label = if (callout.slice.label.isBlank()) {
-                    "$percentage · $amount"
-                } else {
-                    "${callout.slice.label} · $percentage · $amount"
-                }
-                canvas.drawText(label, textX, y + labelPaint.textSize / 3f, labelPaint)
+                canvas.drawText(placement.label, textX, y - (fontMetrics.ascent + fontMetrics.descent) / 2f, labelPaint)
             }
         }
         labelPaint.textAlign = Paint.Align.LEFT
+    }
+
+    private data class CalloutPlacement(
+        val callout: Callout,
+        val label: String,
+        val textWidth: Float,
+        val centerY: Float
+    )
+
+    private fun formatCalloutLabel(slice: Slice, total: Float): String {
+        val percentage = String.format(java.util.Locale.US, "%.1f%%", slice.value / total * 100f)
+        return if (slice.label.isBlank()) percentage else "${slice.label} · $percentage"
     }
 }

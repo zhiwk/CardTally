@@ -1,6 +1,7 @@
 package com.example.cardtally.adapter
 
 import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,14 +14,17 @@ import com.example.cardtally.R
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.LedgerDisplayHelper
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.SwipeToEditDeleteHelper
 import com.example.cardtally.util.ThemeColorHelper
+import com.example.cardtally.util.IncomeExpenseColorScheme
 
 class DateGroupAdapter(
     private var dateGroups: List<DateGroup>,
     private val listener: OnRecordActionListener,
-    private val categoryIconsById: Map<Long, String> = emptyMap()
+    private val categoryIconsById: Map<Long, String> = emptyMap(),
+    private val categoryIconsByName: Map<String, String> = emptyMap(),
+    private val showTypeSubtitle: Boolean = true
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -82,7 +86,13 @@ class DateGroupAdapter(
                     record,
                     listener,
                     isMultiSelect,
-                    selectedRecords.contains(record)
+                    selectedRecords.contains(record),
+                    categoryIconsById = categoryIconsById,
+                    categoryIconsByName = categoryIconsByName,
+                    showTypeSubtitle = showTypeSubtitle,
+                    showDivider = recordIndex < dateGroup.records.lastIndex,
+                    roundTopCorners = recordIndex == 0,
+                    roundBottomCorners = recordIndex == dateGroup.records.lastIndex
                 )
                 return
             }
@@ -241,6 +251,7 @@ class DateGroupAdapter(
         private val textDescription: TextView = itemView.findViewById(R.id.text_description)
         private val textAsset: TextView = itemView.findViewById(R.id.text_asset)
         private val textAmount: TextView = itemView.findViewById(R.id.text_amount)
+        private val recordDivider: View = itemView.findViewById(R.id.view_record_divider)
         private val btnEdit: ImageButton = itemView.findViewById(R.id.btn_edit)
         private val btnDelete: ImageButton = itemView.findViewById(R.id.btn_delete)
 
@@ -265,9 +276,14 @@ class DateGroupAdapter(
             isMultiSelect: Boolean,
             isSelected: Boolean,
             categoryIconsById: Map<Long, String> = emptyMap(),
-            showTypeSubtitle: Boolean = true
+            categoryIconsByName: Map<String, String> = emptyMap(),
+            showTypeSubtitle: Boolean = true,
+            showDivider: Boolean = false,
+            roundTopCorners: Boolean = false,
+            roundBottomCorners: Boolean = false
         ) {
             currentRecord = record
+            recordDivider.visibility = if (showDivider) View.VISIBLE else View.GONE
             val title = record.description?.takeIf { it.isNotBlank() }
                 ?: record.categoryNameSnapshot?.takeIf { it.isNotBlank() }
                 ?: record.category
@@ -284,10 +300,16 @@ class DateGroupAdapter(
                 record.assetSource?.takeIf { it.isNotBlank() }.orEmpty()
             }
             textAsset.visibility = if (textAsset.text.isNullOrBlank()) View.GONE else View.VISIBLE
-            val iconName = record.categoryId?.let(categoryIconsById::get)
+            val context = itemView.context
+            val idIconName = record.categoryId?.let(categoryIconsById::get)
+            val nameIconName = record.categoryNameSnapshot?.let(categoryIconsByName::get)
+                ?: categoryIconsByName[record.category]
+            val iconName = idIconName
+                ?.takeUnless { it == "tabler_category" || it == "ic_category_other" }
+                ?: nameIconName
             val iconResource = if (record.type == 2) {
-                R.drawable.ic_asset
-            } else iconName?.let { MaterialSymbolCatalog.resourceId(it) }
+                R.drawable.tabler_transfer
+            } else iconName?.let { TablerIconCatalog.resourceId(context, it) }
                 ?.takeIf { it != 0 }
                 ?: categoryIcons[record.category]
                 ?: R.drawable.ic_category_other
@@ -295,28 +317,24 @@ class DateGroupAdapter(
 
             textDescription.visibility = View.GONE
 
-            val context = itemView.context
-            val categoryColors = mapOf(
-                "餐饮" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.warning_container),
-                "购物" to ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondaryContainer),
-                "工资" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.success_container),
-                "交通" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.error_container),
-                "住房" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.info_container),
-                "娱乐" to ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_low)
-            )
             viewIcon.backgroundTintList = ColorStateList.valueOf(
-                categoryColors[record.category]
-                    ?: ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_low)
+                if (record.type == 2) {
+                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.warning_container)
+                } else if (record.type == 1) {
+                    IncomeExpenseColorScheme.incomeContainer(context)
+                } else {
+                    IncomeExpenseColorScheme.expenseContainer(context)
+                }
             )
 
             val amountText = if (record.type == 2) {
                 textAmount.setTextColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.onSurface_light))
                 String.format("¥%.2f", record.amount)
             } else if (record.type == 0) {
-                textAmount.setTextColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.expense_primary))
+                textAmount.setTextColor(IncomeExpenseColorScheme.expensePrimary(context))
                 String.format("-¥%.2f", record.amount)
             } else {
-                textAmount.setTextColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.income_primary))
+                textAmount.setTextColor(IncomeExpenseColorScheme.incomePrimary(context))
                 String.format("+¥%.2f", record.amount)
             }
             textAmount.text = amountText
@@ -326,12 +344,16 @@ class DateGroupAdapter(
                 swipeHelper = null
 
                 if (isSelected) {
-                    cardContent.setBackgroundColor(
-                        ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondaryContainer)
+                    setCardBackground(
+                        ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondaryContainer),
+                        roundTopCorners,
+                        roundBottomCorners
                     )
                 } else {
-                    cardContent.setBackgroundColor(
-                        ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_lowest)
+                    setCardBackground(
+                        ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_lowest),
+                        roundTopCorners,
+                        roundBottomCorners
                     )
                 }
 
@@ -339,8 +361,10 @@ class DateGroupAdapter(
                     currentRecord?.let { listener.onToggleMultiSelect(it) }
                 }
             } else {
-                cardContent.setBackgroundColor(
-                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_lowest)
+                setCardBackground(
+                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_lowest),
+                    roundTopCorners,
+                    roundBottomCorners
                 )
 
                 swipeHelper = SwipeToEditDeleteHelper(
@@ -365,6 +389,24 @@ class DateGroupAdapter(
                 itemView.context.getString(R.string.record_type_income)
             } else {
                 itemView.context.getString(R.string.record_type_expense)
+            }
+        }
+
+        private fun setCardBackground(color: Int, roundTop: Boolean, roundBottom: Boolean) {
+            val radius = 12f * itemView.resources.displayMetrics.density
+            val topLeft = if (roundTop) radius else 0f
+            val topRight = if (roundTop) radius else 0f
+            val bottomRight = if (roundBottom) radius else 0f
+            val bottomLeft = if (roundBottom) radius else 0f
+            cardContent.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(color)
+                cornerRadii = floatArrayOf(
+                    topLeft, topLeft,
+                    topRight, topRight,
+                    bottomRight, bottomRight,
+                    bottomLeft, bottomLeft
+                )
             }
         }
     }

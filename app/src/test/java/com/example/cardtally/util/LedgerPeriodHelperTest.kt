@@ -60,7 +60,7 @@ class LedgerPeriodHelperTest {
             todayMillis = 1775001600000L
         )
 
-        assertEquals(35, cells.size)
+        assertEquals(42, cells.size)
 
         val startCell = cells.first { it.isoDate == "2026-04-12" }
         val middleCell = cells.first { it.isoDate == "2026-04-13" }
@@ -75,5 +75,7 @@ class LedgerPeriodHelperTest {
         assertTrue(endCell.isRangeBoundary)
         assertTrue(endCell.isRangeEnd)
         assertTrue(todayCell.isToday)
+        assertFalse(cells.first { it.isoDate == "2026-03-30" }.isCurrentMonth)
+        assertFalse(cells.first { it.isoDate == "2026-05-10" }.isCurrentMonth)
     }
 }

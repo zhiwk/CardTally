@@ -11,6 +11,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -18,7 +19,7 @@ import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.adapter.IconPickerAdapter
 import com.example.cardtally.util.LedgerSession
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 
 class LedgerSetupFragment : Fragment() {
     companion object {
@@ -37,7 +38,7 @@ class LedgerSetupFragment : Fragment() {
     private lateinit var shareSwitch: Switch
     private lateinit var assetList: LinearLayout
     private var selectedSourceLedgerId: Long? = null
-    private var selectedIconName = "ms_rounded_book"
+    private var selectedIconName = "tabler_book"
     private val editingLedgerId: Long? by lazy {
         arguments?.getLong(ARG_LEDGER_ID, -1L)?.takeIf { it > 0L }
     }
@@ -48,16 +49,21 @@ class LedgerSetupFragment : Fragment() {
         nameInput = view.findViewById(R.id.ledger_setup_name)
         shareSwitch = view.findViewById(R.id.ledger_setup_share_assets)
         assetList = view.findViewById(R.id.ledger_setup_asset_list)
+        val assetModeGroup = view.findViewById<RadioGroup>(R.id.ledger_setup_asset_mode_group)
+        val independentAssets = view.findViewById<RadioButton>(R.id.ledger_setup_independent_assets)
+        val shareOtherAssets = view.findViewById<RadioButton>(R.id.ledger_setup_share_other_assets)
         val assetSourceTitle = view.findViewById<TextView>(R.id.ledger_setup_choose_ledger)
         val iconView = view.findViewById<ImageView>(R.id.ledger_setup_icon)
         val iconLabel = view.findViewById<TextView>(R.id.ledger_setup_icon_label)
+        view.findViewById<View>(R.id.ledger_setup_asset_relation_section).visibility =
+            if (editingLedgerId == null) View.VISIBLE else View.GONE
         fun refreshIcon() {
-            iconView.setImageResource(MaterialSymbolCatalog.resourceId(selectedIconName).takeIf { it != 0 } ?: R.drawable.ic_book)
+            iconView.setImageResource(TablerIconCatalog.resourceId(selectedIconName).takeIf { it != 0 } ?: R.drawable.ic_book)
             iconLabel.text = getString(R.string.ledger_setup_icon_selected)
         }
         view.findViewById<View>(R.id.ledger_setup_icon_picker).setOnClickListener {
             showIconPickerDialog(selectedIconName) { icon ->
-                selectedIconName = icon ?: "ms_rounded_book"
+                selectedIconName = icon ?: "tabler_book"
                 refreshIcon()
             }
         }
@@ -70,30 +76,59 @@ class LedgerSetupFragment : Fragment() {
         )
 
         view.findViewById<View>(R.id.button_ledger_setup_back).setOnClickListener { parentFragmentManager.popBackStack() }
+        independentAssets.isChecked = true
+        shareOtherAssets.isChecked = false
+        shareOtherAssets.visibility = if (databaseHelper.getLedgers().any { it.id != databaseHelper.getMasterLedgerId() && it.id != editingLedgerId }) View.VISIBLE else View.GONE
         shareSwitch.setOnCheckedChangeListener { _, checked ->
-            assetList.visibility = if (checked) View.VISIBLE else View.GONE
-            assetSourceTitle.visibility = if (checked) View.VISIBLE else View.GONE
-            if (checked && selectedSourceLedgerId == null) {
-                selectedSourceLedgerId = databaseHelper.getLedgers()
-                    .firstOrNull { it.id != editingLedgerId }?.id
-            }
+            assetModeGroup.visibility = if (checked) View.GONE else View.VISIBLE
+            assetSourceTitle.visibility = if (!checked && shareOtherAssets.isChecked) View.VISIBLE else View.GONE
+            assetList.visibility = if (!checked && shareOtherAssets.isChecked) View.VISIBLE else View.GONE
+            if (checked) selectedSourceLedgerId = databaseHelper.getMasterLedgerId()
         }
-        assetSourceTitle.visibility = if (shareSwitch.isChecked) View.VISIBLE else View.GONE
+        independentAssets.setOnClickListener {
+            selectedSourceLedgerId = null
+            assetSourceTitle.visibility = View.GONE
+            assetList.visibility = View.GONE
+        }
+        shareOtherAssets.setOnClickListener {
+            if (selectedSourceLedgerId == null) {
+                selectedSourceLedgerId = databaseHelper.getLedgers()
+                    .firstOrNull { it.id != databaseHelper.getMasterLedgerId() && it.id != editingLedgerId }?.id
+            }
+            assetSourceTitle.visibility = View.VISIBLE
+            assetList.visibility = View.VISIBLE
+            renderAssets()
+        }
+        assetModeGroup.visibility = if (shareSwitch.isChecked) View.GONE else View.VISIBLE
+        assetSourceTitle.visibility = View.GONE
         renderAssets()
         if (savedInstanceState == null && editingLedgerId != null) {
             val ledger = databaseHelper.getLedgers().firstOrNull { it.id == editingLedgerId }
             nameInput.setText(ledger?.name.orEmpty())
-            selectedIconName = ledger?.iconName ?: "ms_rounded_book"
+            selectedIconName = ledger?.iconName ?: "tabler_book"
             refreshIcon()
             selectedSourceLedgerId = databaseHelper.getSharedSourceLedgerId(editingLedgerId!!)
-            shareSwitch.isChecked = selectedSourceLedgerId != null
+            val masterId = databaseHelper.getMasterLedgerId()
+            shareSwitch.isChecked = selectedSourceLedgerId == masterId
+            if (!shareSwitch.isChecked) {
+                independentAssets.isChecked = selectedSourceLedgerId == null
+                shareOtherAssets.isChecked = selectedSourceLedgerId != null
+                assetSourceTitle.visibility = if (shareOtherAssets.isChecked) View.VISIBLE else View.GONE
+                assetList.visibility = if (shareOtherAssets.isChecked) View.VISIBLE else View.GONE
+            }
         }
         savedInstanceState?.let { state ->
             nameInput.setText(state.getString(STATE_NAME).orEmpty())
             selectedSourceLedgerId = state.getLong(STATE_SOURCE, -1L).takeIf { it > 0L }
-            selectedIconName = state.getString(STATE_ICON) ?: "ms_rounded_book"
+            selectedIconName = state.getString(STATE_ICON) ?: "tabler_book"
             shareSwitch.isChecked = state.getBoolean(STATE_SHARE, false)
+            assetModeGroup.visibility = if (shareSwitch.isChecked) View.GONE else View.VISIBLE
             refreshIcon()
+        }
+        if (editingLedgerId != null) {
+            assetModeGroup.visibility = View.GONE
+            assetSourceTitle.visibility = View.GONE
+            assetList.visibility = View.GONE
         }
         view.findViewById<View>(R.id.button_ledger_setup_save).setOnClickListener { saveLedger() }
         return view
@@ -110,7 +145,8 @@ class LedgerSetupFragment : Fragment() {
     private fun renderAssets() {
         assetList.removeAllViews()
         val currentId = LedgerSession.getCurrentId(requireContext())
-        val ledgers = databaseHelper.getLedgers().filter { it.id != editingLedgerId }
+        val masterId = databaseHelper.getMasterLedgerId()
+        val ledgers = databaseHelper.getLedgers().filter { it.id != editingLedgerId && it.id != masterId }
         if (ledgers.isEmpty()) {
             assetList.addView(TextView(requireContext()).apply {
                 text = getString(R.string.ledger_setup_no_assets)
@@ -148,10 +184,13 @@ class LedgerSetupFragment : Fragment() {
             return
         }
         if (editingLedgerId != null) {
-            if (!databaseHelper.updateLedgerAssetPool(editingLedgerId!!, selectedSourceLedgerId.takeIf { shareSwitch.isChecked }, selectedIconName, name)) return
+            if (!databaseHelper.updateLedgerDetails(editingLedgerId!!, selectedIconName, name)) return
             Toast.makeText(requireContext(), R.string.ledger_setup_updated, Toast.LENGTH_SHORT).show()
         } else {
-            val sourceId = selectedSourceLedgerId.takeIf { shareSwitch.isChecked }
+            val sourceId = when {
+                shareSwitch.isChecked -> databaseHelper.getMasterLedgerId()
+                else -> selectedSourceLedgerId
+            }
             val ledgerId = databaseHelper.addLedgerWithAssetPool(
                 name,
                 sharedSourceLedgerId = sourceId,
@@ -171,7 +210,7 @@ class LedgerSetupFragment : Fragment() {
             .setView(dialogView)
             .setNegativeButton(R.string.dialog_cancel, null)
             .create()
-        recycler.adapter = IconPickerAdapter(MaterialSymbolCatalog.icons, selectedIcon) { icon ->
+        recycler.adapter = IconPickerAdapter(TablerIconCatalog.icons, selectedIcon) { icon ->
             onIconSelected(icon)
             dialog.dismiss()
         }

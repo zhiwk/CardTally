@@ -13,6 +13,7 @@
     <color name="onSecondaryContainer_light">#435647</color>
     
     <color name="background_light">#EEEEEE</color>
+    <color name="calendar_adjacent_day">#AEB3B9</color>
     <color name="onBackground_light">#17181A</color>
     
     <color name="surface_light">#FFFFFF</color>

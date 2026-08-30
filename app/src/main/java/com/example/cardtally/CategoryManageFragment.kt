@@ -20,10 +20,14 @@ import com.example.cardtally.adapter.IconPickerAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.CategoryHierarchySettingsHelper
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 import com.google.android.material.tabs.TabLayout
 
 class CategoryManageFragment : Fragment() {
+    companion object {
+        const val CATEGORY_SAVED_RESULT = "category_saved"
+    }
+
     private lateinit var tabLayout: TabLayout
     private lateinit var recyclerCategories: RecyclerView
     private lateinit var textEmpty: TextView
@@ -32,7 +36,7 @@ class CategoryManageFragment : Fragment() {
     private var adapter: CategoryAdapter? = null
     private var currentType = 0
 
-    private val availableIcons: List<String> = MaterialSymbolCatalog.icons
+    private val availableIcons: List<String> = TablerIconCatalog.icons
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,6 +54,12 @@ class CategoryManageFragment : Fragment() {
         }
 
         databaseHelper = DatabaseHelper(requireContext())
+        parentFragmentManager.setFragmentResultListener(
+            CATEGORY_SAVED_RESULT,
+            viewLifecycleOwner
+        ) { _, _ ->
+            loadCategories()
+        }
         recyclerCategories.layoutManager = LinearLayoutManager(requireContext())
         val reorderCallback = object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN,
@@ -90,10 +100,20 @@ class CategoryManageFragment : Fragment() {
         })
 
         btnAdd.setOnClickListener {
-            showCategoryDialog(category = null)
+            openCategoryEditor(parentId = null)
         }
 
         return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // AddCategoryFragment saves before popping the back stack. Reload here
+        // so returning to this page always reflects the persisted categories,
+        // including the transition from an empty state.
+        if (::databaseHelper.isInitialized && ::recyclerCategories.isInitialized) {
+            loadCategories()
+        }
     }
 
     override fun onDestroyView() {
@@ -127,7 +147,7 @@ class CategoryManageFragment : Fragment() {
                     }
 
                     override fun onAddChild(parent: Category) {
-                        showCategoryDialog(category = null, initialParentId = parent.id)
+                        openCategoryEditor(parentId = parent.id)
                     }
 
                     override fun onChildOrderChanged(children: List<Category>) {
@@ -138,20 +158,43 @@ class CategoryManageFragment : Fragment() {
             recyclerCategories.adapter = adapter
         } else {
             adapter?.updateCategories(categories)
+            // The Fragment view can be recreated when returning from
+            // AddCategoryFragment. The adapter instance survives, but the new
+            // RecyclerView does not have an adapter attached yet.
+            if (recyclerCategories.adapter !== adapter) {
+                recyclerCategories.adapter = adapter
+            }
         }
     }
 
-    private fun bindCategoryIcon(imageView: ImageView, icon: String?) {
+    private fun bindCategoryIcon(imageView: ImageView, icon: String?, categoryName: String? = null) {
         if (icon.isNullOrEmpty()) {
-            imageView.setImageResource(R.drawable.ic_category_other)
+            imageView.setImageResource(
+                when (categoryName) {
+                    "购物" -> R.drawable.tabler_shopping_cart
+                    "餐饮" -> R.drawable.tabler_tools_kitchen
+                    "居住", "住房" -> R.drawable.tabler_home
+                    "交通" -> R.drawable.tabler_car
+                    else -> R.drawable.tabler_category
+                }
+            )
             return
         }
 
-        val resourceId = MaterialSymbolCatalog.resourceId(icon)
-        if (resourceId != 0) {
+        val resourceId = TablerIconCatalog.resourceId(requireContext(), icon)
+        val hasGenericIcon = icon == "tabler_category" || icon == "ic_category_other"
+        if (resourceId != 0 && !hasGenericIcon) {
             imageView.setImageResource(resourceId)
         } else {
-            imageView.setImageResource(R.drawable.ic_category_other)
+            imageView.setImageResource(
+                when (categoryName) {
+                    "购物" -> R.drawable.tabler_shopping_cart
+                    "餐饮" -> R.drawable.tabler_tools_kitchen
+                    "居住", "住房" -> R.drawable.tabler_home
+                    "交通" -> R.drawable.tabler_car
+                    else -> R.drawable.tabler_category
+                }
+            )
         }
     }
 
@@ -190,12 +233,12 @@ class CategoryManageFragment : Fragment() {
         val imageIcon = dialogView.findViewById<ImageView>(R.id.image_category_icon)
         var selectedIcon = category?.icon
         editName.setText(category?.name.orEmpty())
-        bindCategoryIcon(imageIcon, selectedIcon)
+        bindCategoryIcon(imageIcon, selectedIcon, category?.name)
 
         imageIcon.setOnClickListener {
             showIconPickerDialog(selectedIcon) { icon ->
                 selectedIcon = icon
-                bindCategoryIcon(imageIcon, selectedIcon)
+                bindCategoryIcon(imageIcon, selectedIcon, category?.name)
             }
         }
 
@@ -297,6 +340,13 @@ class CategoryManageFragment : Fragment() {
             dialog.dismiss()
         }
         dialog.show()
+    }
+
+    private fun openCategoryEditor(parentId: Long?) {
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, AddCategoryFragment.newInstance(currentType, parentId))
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun showDeleteDialog(category: Category) {

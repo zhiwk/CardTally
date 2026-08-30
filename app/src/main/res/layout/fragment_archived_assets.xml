@@ -37,31 +37,6 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/text_total_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="归档资产总额"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="16dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_title" />
-
-        <TextView
-            android:id="@+id/text_total_amount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="¥0.00"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#FF9800"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_total_label" />
-
-        <TextView
             android:id="@+id/text_empty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -72,7 +47,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_total_amount" />
+            app:layout_constraintTop_toBottomOf="@+id/text_title" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_assets"
@@ -82,7 +57,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_total_amount" />
+            app:layout_constraintTop_toBottomOf="@+id/text_title" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

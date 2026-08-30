@@ -146,6 +146,7 @@
     <string name="record_asset_label">资产</string>
     <string name="record_transfer_from_asset">转出资产</string>
     <string name="record_asset_none">无</string>
+    <string name="record_asset_select">请选择</string>
     <string name="record_detail_label">备注</string>
     <string name="record_detail_hint">添加备注...</string>
     <string name="record_category_label">分类</string>
@@ -279,6 +280,10 @@
     <string name="settings_profile_tier">静奢记账用户</string>
     <string name="settings_aesthetic_preferences">偏好设置</string>
     <string name="settings_language">语言</string>
+    <string name="settings_income_expense_color">收支颜色</string>
+    <string name="settings_income_expense_color_income_green_expense_red">收入(绿色),支出(红色)</string>
+    <string name="settings_income_expense_color_income_red_expense_green">收入(红色),支出(绿色)</string>
+    <string name="settings_income_expense_color_both_black">收入(黑色),支出(黑色)</string>
     <string name="settings_journal_shortcut">快捷记账</string>
     <string name="settings_journal_shortcut_hint">直接进入记一笔</string>
     <string name="settings_ai_assistant_group">AI 助理</string>
@@ -313,6 +318,10 @@
     <string name="category_empty">暂无分类</string>
     <string name="category_add_cta">添加一级分类</string>
     <string name="category_add_title">添加分类</string>
+    <string name="category_add_expense_title">新增支出分类</string>
+    <string name="category_add_income_title">新增收入分类</string>
+    <string name="category_add_icon_hint">选择分类图标</string>
+    <string name="category_add_color_title">背景底色</string>
     <string name="category_edit_title">编辑分类</string>
     <string name="category_delete_title">删除分类</string>
     <string name="category_delete_message">确定要删除“%1$s”吗？</string>
@@ -325,6 +334,7 @@
     <string name="category_dialog_icon_label">图标</string>
     <string name="category_dialog_icon_hint">点击图标可选择</string>
     <string name="category_icon_picker_title">选择图标</string>
+    <string name="category_icon_more">更多图标</string>
     <string name="category_icon_search_hint">搜索图标，例如：交通、餐饮、home</string>
     <string name="category_add_child_cta">添加分类</string>
     <string name="category_expand_content_description">展开或收起二级分类</string>
@@ -374,6 +384,11 @@
     <string name="ledger_setup_icon_selected">选择账本图标</string>
     <string name="ledger_setup_share_assets">共用另一个账本的资产</string>
     <string name="ledger_setup_share_assets_hint">开启后选择账本级资产关系</string>
+    <string name="ledger_setup_share_main_assets">共用主资产</string>
+    <string name="ledger_setup_share_main_assets_hint">默认使用主资产；关闭后可选择独立资产或共用其他账本</string>
+    <string name="ledger_setup_independent_assets">独立资产</string>
+    <string name="ledger_setup_share_other_assets">共用其他账本的资产</string>
+    <string name="ledger_setup_master_assets_note">主资产始终存在，并由默认账本使用</string>
     <string name="ledger_setup_choose_ledger">选择资产来源账本</string>
     <string name="ledger_setup_no_assets">当前没有可选择的账本</string>
     <string name="ledger_setup_save">创建账本</string>

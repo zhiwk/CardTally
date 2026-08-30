@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "active_work_id": "cardtally-light-ux-redesign",
+  "works": {
+    "cardtally-light-ux-redesign": {
+      "work_id": "cardtally-light-ux-redesign",
+      "active_plan": ".omo/plans/cardtally-light-ux-redesign.md",
+      "plan_name": "cardtally-light-ux-redesign",
+      "session_ids": ["codex:current-atlas-session"],
+      "status": "active",
+      "worktree_path": null,
+      "delivery_mode": "direct",
+      "objective": "Execute 4 waves containing 19 implementation todos plus 4 final verification gates to deliver one light-only black/white/gray card-led CardTally Android UX, verified by tests, build, visual QA, and all final reviewers."
+    }
+  }
+}

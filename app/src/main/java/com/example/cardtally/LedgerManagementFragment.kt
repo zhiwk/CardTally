@@ -18,7 +18,7 @@ import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Ledger
 import com.example.cardtally.util.LedgerSession
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.SwipeToEditDeleteHelper
 
 class LedgerManagementFragment : Fragment() {
@@ -264,7 +264,7 @@ class LedgerManagementFragment : Fragment() {
                             setBackgroundColor(Color.TRANSPARENT)
                             addView(ImageButton(requireContext()).apply {
                                 id = R.id.btn_fork
-                                setImageResource(R.drawable.ms_rounded_fork_right)
+                                setImageResource(R.drawable.tabler_arrow_fork)
                                 setColorFilter(Color.rgb(55, 90, 67))
                                 background = GradientDrawable().apply {
                                     shape = GradientDrawable.OVAL
@@ -364,7 +364,7 @@ class LedgerManagementFragment : Fragment() {
     }
 
     private fun resolveLedgerIcon(ledger: Ledger): Int {
-        return MaterialSymbolCatalog.resourceId(ledger.iconName).takeIf { it != 0 } ?: R.drawable.ic_book
+        return TablerIconCatalog.resourceId(ledger.iconName).takeIf { it != 0 } ?: R.drawable.ic_book
     }
 
     private val Int.dp: Int get() = (this * resources.displayMetrics.density).toInt()

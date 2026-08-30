@@ -35,22 +35,31 @@
                     android:textColor="?attr/colorOnSurfaceVariant" android:textSize="24sp" />
             </LinearLayout>
 
-            <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginTop="16dp"
+            <LinearLayout android:id="@+id/ledger_setup_asset_relation_section" android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginTop="16dp"
                 android:gravity="center_vertical" android:orientation="horizontal" android:background="@color/surface_light"
                 android:paddingStart="14dp" android:paddingEnd="8dp">
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="@string/ledger_setup_share_assets" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+                        android:text="@string/ledger_setup_share_main_assets" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="@string/ledger_setup_share_assets_hint" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="13sp" />
+                        android:text="@string/ledger_setup_share_main_assets_hint" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="13sp" />
                 </LinearLayout>
-                <Switch android:id="@+id/ledger_setup_share_assets" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                <Switch android:id="@+id/ledger_setup_share_assets" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:checked="true" />
             </LinearLayout>
 
-            <TextView android:id="@+id/ledger_setup_choose_ledger" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp"
-                android:text="@string/ledger_setup_choose_ledger" android:textColor="?attr/colorOnSurface" android:textSize="14sp" />
-            <LinearLayout android:id="@+id/ledger_setup_asset_list" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" android:orientation="vertical" android:visibility="gone" />
+            <RadioGroup android:id="@+id/ledger_setup_asset_mode_group" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:orientation="vertical" android:visibility="gone">
+                <RadioButton android:id="@+id/ledger_setup_independent_assets" android:layout_width="match_parent" android:layout_height="48dp"
+                    android:text="@string/ledger_setup_independent_assets" android:textColor="?attr/colorOnSurface" android:textSize="15sp" />
+                <RadioButton android:id="@+id/ledger_setup_share_other_assets" android:layout_width="match_parent" android:layout_height="48dp"
+                    android:text="@string/ledger_setup_share_other_assets" android:textColor="?attr/colorOnSurface" android:textSize="15sp" />
+                <TextView android:id="@+id/ledger_setup_choose_ledger" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp" android:layout_marginTop="4dp" android:text="@string/ledger_setup_choose_ledger"
+                    android:textColor="?attr/colorOnSurface" android:textSize="14sp" />
+                <LinearLayout android:id="@+id/ledger_setup_asset_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp" android:orientation="vertical" android:visibility="gone" />
+            </RadioGroup>
         </LinearLayout>
     </ScrollView>
 

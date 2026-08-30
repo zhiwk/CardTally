@@ -18,6 +18,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.FloatingNavLayoutHelper
+import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.example.cardtally.util.ScrollTopFabHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.text.SimpleDateFormat
@@ -155,6 +156,8 @@ class LedgerFragment : Fragment() {
         textIncome.text = getString(R.string.currency_amount, income)
         textExpense.text = getString(R.string.currency_amount, expense)
         textBalance.text = getString(R.string.currency_amount, income - expense)
+        textIncome.setTextColor(IncomeExpenseColorScheme.incomePrimary(requireContext()))
+        textExpense.setTextColor(IncomeExpenseColorScheme.expensePrimary(requireContext()))
 
         val groups = records.groupBy { it.date }
             .toSortedMap(compareByDescending { it })

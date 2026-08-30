@@ -38,6 +38,11 @@
                     <TextView android:id="@+id/text_current_language" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" />
                     <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_marginStart="8dp" android:src="@drawable/ic_arrow_right" app:tint="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
+            <LinearLayout android:id="@+id/card_income_expense_color" android:layout_width="match_parent" android:layout_height="48dp" android:paddingStart="16dp" android:paddingEnd="16dp" android:gravity="center_vertical" android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/settings_income_expense_color" android:textColor="?attr/colorOnSurface" android:textSize="14sp" />
+                <TextView android:id="@+id/text_income_expense_color" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" />
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_marginStart="8dp" android:src="@drawable/ic_arrow_right" app:tint="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
             <LinearLayout android:id="@+id/card_quick_add" android:layout_width="match_parent" android:layout_height="56dp" android:paddingStart="16dp" android:paddingEnd="16dp" android:gravity="center_vertical" android:orientation="horizontal">
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/settings_journal_shortcut" android:textColor="?attr/colorOnSurface" android:textSize="14sp" />

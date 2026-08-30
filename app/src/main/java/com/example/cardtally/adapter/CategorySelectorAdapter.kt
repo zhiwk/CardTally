@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.ThemeColorHelper
-import com.example.cardtally.util.MaterialSymbolCatalog
+import com.example.cardtally.util.TablerIconCatalog
 
 class CategorySelectorAdapter(
     private var categories: List<Category>,
@@ -38,12 +38,8 @@ class CategorySelectorAdapter(
 
         val iconName = category.icon
         if (!iconName.isNullOrEmpty()) {
-            val resourceId = MaterialSymbolCatalog.resourceId(iconName)
-            if (resourceId != 0) {
-                holder.imageIcon.setImageResource(resourceId)
-            } else {
-                holder.imageIcon.setImageResource(R.drawable.ic_category_other)
-            }
+            val drawableId = TablerIconCatalog.resourceId(holder.itemView.context, iconName)
+            holder.imageIcon.setImageResource(drawableId.takeIf { it != 0 } ?: R.drawable.ic_category_other)
         } else {
             holder.imageIcon.setImageResource(R.drawable.ic_category_other)
         }
