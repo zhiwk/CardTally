@@ -160,6 +160,12 @@ open class AddRecordFragment : Fragment() {
         textAssetLabel = view.findViewById(R.id.text_asset_label)
         rowCategory = view.findViewById(R.id.row_category)
         textDestinationAssetValue = view.findViewById(R.id.text_destination_asset_value)
+        view.findViewById<View>(R.id.btn_swap_transfer_assets).setOnClickListener {
+            val source = selectedAsset
+            selectedAsset = selectedDestinationAsset
+            selectedDestinationAsset = source
+            updateTransferRows()
+        }
 
         databaseHelper = DatabaseHelper(requireContext())
 
