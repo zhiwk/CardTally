@@ -17,8 +17,8 @@ import com.example.cardtally.adapter.LedgerDateGroupAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
-import com.example.cardtally.util.FloatingNavLayoutHelper
 import com.example.cardtally.util.IncomeExpenseColorScheme
+import com.example.cardtally.util.Money
 import com.example.cardtally.util.ScrollTopFabHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.text.SimpleDateFormat
@@ -94,23 +94,6 @@ class LedgerFragment : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
-        view.findViewById<FloatingActionButton>(R.id.fab_add).let { fab ->
-            view.findViewById<View>(R.id.ledger_content).post {
-                FloatingNavLayoutHelper.applyFabGapAboveBottomNav(
-                    fab,
-                    requireActivity().findViewById(R.id.nav_shell)
-                )
-            }
-        }
-        val addFab = view.findViewById<FloatingActionButton>(R.id.fab_add)
-        requireActivity().findViewById<View>(R.id.nav_shell).post {
-            val addParams = addFab.layoutParams as? ViewGroup.MarginLayoutParams
-            val scrollParams = fabScrollTop.layoutParams as? ViewGroup.MarginLayoutParams
-            if (addParams != null && scrollParams != null) {
-                scrollParams.bottomMargin = addParams.bottomMargin + addFab.height + 16.dp
-                fabScrollTop.layoutParams = scrollParams
-            }
-        }
         updateScrollTopFab(false)
         return view
     }
@@ -124,6 +107,7 @@ class LedgerFragment : Fragment() {
     private fun updateScrollTopFab(canScrollUp: Boolean) {
         if (!::fabScrollTop.isInitialized) return
         val shouldShow = ScrollTopFabHelper.isEnabled(requireContext()) && canScrollUp
+        fabScrollTop.animate().cancel()
         if (shouldShow && fabScrollTop.visibility != View.VISIBLE) {
             fabScrollTop.bringToFront()
             fabScrollTop.alpha = 0f
@@ -132,11 +116,15 @@ class LedgerFragment : Fragment() {
             fabScrollTop.visibility = View.VISIBLE
             fabScrollTop.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(160L).start()
         } else if (shouldShow) {
+            fabScrollTop.alpha = 1f
+            fabScrollTop.scaleX = 1f
+            fabScrollTop.scaleY = 1f
             fabScrollTop.bringToFront()
         } else if (!shouldShow && fabScrollTop.visibility == View.VISIBLE) {
-            fabScrollTop.animate().alpha(0f).scaleX(0.8f).scaleY(0.8f).setDuration(120L)
-                .withEndAction { fabScrollTop.visibility = View.GONE }
-                .start()
+            fabScrollTop.alpha = 1f
+            fabScrollTop.scaleX = 1f
+            fabScrollTop.scaleY = 1f
+            fabScrollTop.visibility = View.GONE
         }
     }
 
@@ -153,9 +141,9 @@ class LedgerFragment : Fragment() {
         val expense = records.filter { it.type == 0 }.sumOf { it.amount }
         textMonth.text = databaseHelper.getCurrentLedger()?.name ?: getString(R.string.ledger_book_name)
         textMonthSummaryTitle.text = monthSummaryTitle(currentMonth)
-        textIncome.text = getString(R.string.currency_amount, income)
-        textExpense.text = getString(R.string.currency_amount, expense)
-        textBalance.text = getString(R.string.currency_amount, income - expense)
+        textIncome.text = "¥${Money.formatYuan(income)}"
+        textExpense.text = "¥${Money.formatYuan(expense)}"
+        textBalance.text = "¥${Money.formatYuan(income - expense)}"
         textIncome.setTextColor(IncomeExpenseColorScheme.incomePrimary(requireContext()))
         textExpense.setTextColor(IncomeExpenseColorScheme.expensePrimary(requireContext()))
 
@@ -267,9 +255,6 @@ class LedgerFragment : Fragment() {
             parentFragmentManager.beginTransaction().replace(R.id.fragment_container, CalendarFragment.newInstance(currentMonth)).addToBackStack(null).commit()
         }
     }
-
-    private val Int.dp: Int
-        get() = (this * resources.displayMetrics.density).toInt()
 
     private fun showDeleteDialog(record: Record) {
         AlertDialog.Builder(requireContext())

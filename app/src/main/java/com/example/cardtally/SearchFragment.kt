@@ -23,6 +23,7 @@ import com.example.cardtally.adapter.DateGroupAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
+import com.example.cardtally.util.Money
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.text.SimpleDateFormat
@@ -184,8 +185,7 @@ class SearchFragment : Fragment() {
             val matchesKeyword =
                 (record.categoryPathSnapshot ?: record.category).contains(searchKeyword, ignoreCase = true) ||
                     record.description?.contains(searchKeyword, ignoreCase = true) == true ||
-                    record.amount.toString().contains(searchKeyword) ||
-                    String.format("%.2f", record.amount).contains(searchKeyword) ||
+                    Money.formatYuan(record.amount).contains(searchKeyword) ||
                     record.assetSource?.contains(searchKeyword, ignoreCase = true) == true ||
                     record.date.contains(searchKeyword)
             inRange && matchesKeyword

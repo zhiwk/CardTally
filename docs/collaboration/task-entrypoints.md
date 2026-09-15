@@ -90,6 +90,8 @@
 
 注意：当前仓库内 Gradle 构建与测试默认串行；安装前先确认 `app/build/outputs/apk/debug/app-debug.apk` 已生成。
 
+注意：`verification` flavor 会把变体名拆开，日常命令写作 `:app:assembleDebug` / `:app:testDebugUnitTest` 仍可用（同 `:app:assembleEverydayDebug` / `:app:testEverydayUnitTest`）；会重置数据库的 device 测试只能跑 `:app:connectedVerificationDebugAndroidTest`，它以 `.verification` applicationId 安装并与日常数据隔离。项目只保留 `dev`、`verification` flavor，release 通过 build type 使用 `.release` applicationId。
+
 ### 改主题 / 样式 / 视觉一致性
 
 先读：

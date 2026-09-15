@@ -19,8 +19,8 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="24dp"
-        android:paddingTop="18dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
         android:paddingBottom="12dp">
 
         <LinearLayout
@@ -35,14 +35,15 @@
                 android:text="@string/record_category_sheet_title"
                 android:textColor="?attr/colorOnSurface"
                  android:textSize="22sp"
-                 android:fontFamily="serif" />
+                 android:fontFamily="sans-serif" />
         </LinearLayout>
 
         <ImageButton
             android:id="@+id/btn_close_sheet"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-             android:background="@android:color/transparent"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/dialog_cancel"
             android:src="@drawable/ic_close"
             app:tint="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
@@ -52,7 +53,7 @@
         android:layout_width="match_parent"
         android:layout_height="320dp"
         android:clipToPadding="false"
-        android:paddingHorizontal="24dp"
+        android:paddingHorizontal="16dp"
         android:paddingTop="8dp" />
 
 </LinearLayout>

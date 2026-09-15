@@ -63,4 +63,29 @@ class MiniMaxConfigTest {
 
         assertEquals(MiniMaxConfig.DEFAULT_REQUEST_URL, normalized.requestUrl)
     }
+
+    @Test
+    fun hasValidRequestUrl_rejectsUnusableValuesThatIsCompleteAccepts() {
+        val unusable = MiniMaxConfig(
+            apiKey = "secret-key",
+            model = "M2-her",
+            requestUrl = "not-a-url"
+        )
+
+        // isComplete only checks presence, which is exactly why the caller must
+        // pre-validate the URL before starting a request.
+        assertTrue(unusable.isComplete())
+        assertFalse(unusable.hasValidRequestUrl())
+    }
+
+    @Test
+    fun hasValidRequestUrl_acceptsAnHttpUrl() {
+        assertTrue(
+            MiniMaxConfig(
+                apiKey = "secret-key",
+                model = "M2-her",
+                requestUrl = "https://api.minimax.io/v1/text/chatcompletion_v2"
+            ).hasValidRequestUrl()
+        )
+    }
 }

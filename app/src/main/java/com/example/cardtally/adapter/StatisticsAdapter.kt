@@ -13,6 +13,7 @@ import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.example.cardtally.util.normalizeStatisticsCategoryLabel
+import com.example.cardtally.util.Money
 
 class StatisticsAdapter(
     private val onCategoryClick: (String) -> Unit = {}
@@ -71,7 +72,7 @@ class StatisticsAdapter(
         val context = holder.itemView.context
         val normalizedLabel = normalizeStatisticsCategoryLabel(item.label)
         holder.textLabel.text = normalizedLabel
-        holder.textAmount.text = String.format("¥%.2f", kotlin.math.abs(item.amount))
+        holder.textAmount.text = "¥${Money.formatYuan(kotlin.math.abs(item.amount))}"
 
         holder.itemView.setOnClickListener { onCategoryClick(normalizedLabel) }
 

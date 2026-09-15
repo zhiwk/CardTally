@@ -10,6 +10,8 @@ import com.example.cardtally.util.QuickAddHelper
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -91,6 +93,43 @@ class MainActivityFabLayoutTest {
     }
 
     @Test
+    fun ledgerSelectorReturn_keepsScrollFabAbovePrimaryFab() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            instrumentation.waitForIdleSync()
+
+            scenario.onActivity { activity ->
+                val ledgerView = requireNotNull(
+                    activity.supportFragmentManager.findFragmentById(R.id.fragment_container)?.view
+                )
+                ledgerView.findViewById<View>(R.id.button_ledger_switch).performClick()
+            }
+            instrumentation.waitForIdleSync()
+
+            scenario.onActivity { activity ->
+                assertTrue(activity.supportFragmentManager.findFragmentById(R.id.fragment_container) is LedgerManagementFragment)
+                activity.supportFragmentManager.popBackStack()
+            }
+            instrumentation.waitForIdleSync()
+
+            scenario.onActivity { activity ->
+                val ledgerView = requireNotNull(
+                    activity.supportFragmentManager.findFragmentById(R.id.fragment_container)?.view
+                )
+                val scrollFab = requireNotNull(ledgerView.findViewById<FloatingActionButton>(R.id.fab_scroll_top))
+                val addFab = requireNotNull(ledgerView.findViewById<FloatingActionButton>(R.id.fab_add))
+                scrollFab.visibility = View.VISIBLE
+
+                assertFalse(
+                    "The return-to-top FAB must not overlap the primary add FAB after returning from ledger selection.",
+                    boundsOverlap(scrollFab, addFab)
+                )
+            }
+        }
+    }
+
+    @Test
     fun agentSessionDrawer_hidesFloatingNavigationShellWhileExpanded() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
 
@@ -154,5 +193,16 @@ class MainActivityFabLayoutTest {
         val location = IntArray(2)
         getLocationOnScreen(location)
         return location[1] + height
+    }
+
+    private fun boundsOverlap(first: View, second: View): Boolean {
+        val firstLocation = IntArray(2)
+        val secondLocation = IntArray(2)
+        first.getLocationOnScreen(firstLocation)
+        second.getLocationOnScreen(secondLocation)
+        return firstLocation[0] < secondLocation[0] + second.width &&
+            firstLocation[0] + first.width > secondLocation[0] &&
+            firstLocation[1] < secondLocation[1] + second.height &&
+            firstLocation[1] + first.height > secondLocation[1]
     }
 }

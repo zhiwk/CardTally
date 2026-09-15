@@ -3,9 +3,22 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// Release signing credentials live in an untracked keystore.properties so the
+// key and passwords are never committed. If the file is absent the release
+// artifact is simply left unsigned (and cannot be installed).
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = 'com.example.cardtally'
     compileSdk = 34
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.example.cardtally"
@@ -17,10 +30,41 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // The release build installs under its own package so it can coexist
+            // with the everyday debug build and keep a separate data sandbox.
+            applicationIdSuffix ".release"
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+    // A dedicated flavor for device tests that reset the database. It installs
+    // under its own applicationId, so an instrumentation run can never read, clear,
+    // or uninstall the user's everyday CardTally install or its data.
+    // Run: :app:connectedVerificationDebugAndroidTest   (everyday build: :app:assembleDebug)
+    flavorDimensions "audience"
+    productFlavors {
+        dev {
+            dimension "audience"
+        }
+        verification {
+            dimension "audience"
+            applicationIdSuffix ".verification"
         }
     }
     compileOptions {
@@ -30,14 +74,19 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
-    
+
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
             def outputFile = output.outputFile
             if (outputFile != null && outputFile.name.endsWith('.apk')) {
-                def fileName = variant.buildType.name == 'debug'
-                        ? 'app-debug.apk'
-                        : "CardTally-${variant.buildType.name}.apk"
+                def fileName
+                if (variant.buildType.name == 'debug') {
+                    fileName = 'app-debug.apk'
+                } else if (variant.buildType.name == 'release') {
+                    fileName = 'app-release.apk'
+                } else {
+                    fileName = "CardTally-${variant.buildType.name}.apk"
+                }
                 outputFileName = fileName
             }
         }
@@ -54,4 +103,61 @@ dependencies {
     testImplementation 'org.json:json:20240303'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+// The `dev` flavor exists only so database-resetting device tests can run under an
+// isolated applicationId. It splits the variant names, so these aliases keep a
+// stable everyday entry point for the debug build and the JVM unit tests.
+tasks.register('assembleEverydayDebug') {
+    group = 'build'
+    description = 'Everyday debug APK (same artifact as the documented app-debug.apk).'
+    dependsOn 'assembleDevDebug'
+}
+
+// Signed release APK for daily use; installs alongside the debug build with a
+// separate data sandbox (com.example.cardtally.release).
+tasks.register('assembleEverydayRelease') {
+    group = 'build'
+    description = 'Everyday signed release APK (app-release.apk).'
+    dependsOn 'assembleDevRelease'
+}
+
+tasks.register('testEverydayUnitTest') {
+    group = 'verification'
+    description = 'Everyday JVM unit tests for the debug build.'
+    dependsOn 'testDevDebugUnitTest'
+}
+
+// Keeps the long-standing documented command working after the flavor split.
+// (`:app:assembleDebug` still resolves because AGP aggregates it over flavors.)
+tasks.register('testDebugUnitTest') {
+    group = 'verification'
+    description = 'Alias for testDevDebugUnitTest, the everyday JVM unit test task.'
+    dependsOn 'testDevDebugUnitTest'
+}
+
+// Gradle still writes the flavor artifact under the flavor directory, so mirror the
+// everyday debug/release APKs back to the documented paths
+// `app/build/outputs/apk/debug/app-debug.apk` and `.../release/app-release.apk`.
+tasks.configureEach { task ->
+    if (task.name == 'assembleDevDebug') {
+        task.doLast {
+            def produced = file("${buildDir}/outputs/apk/dev/debug/app-debug.apk")
+            def target = file("${buildDir}/outputs/apk/debug/app-debug.apk")
+            if (produced.exists()) {
+                target.parentFile.mkdirs()
+                target.bytes = produced.bytes
+            }
+        }
+    }
+    if (task.name == 'assembleDevRelease') {
+        task.doLast {
+            def produced = file("${buildDir}/outputs/apk/dev/release/app-release.apk")
+            def target = file("${buildDir}/outputs/apk/release/app-release.apk")
+            if (produced.exists()) {
+                target.parentFile.mkdirs()
+                target.bytes = produced.bytes
+            }
+        }
+    }
 }

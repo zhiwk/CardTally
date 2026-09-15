@@ -14,7 +14,13 @@ class ScreenStateBundleTest {
     @Test
     fun recordForms_roundTripEveryApprovedFieldAcrossProcessStyleBundle() {
         // Given: complete Add/Edit Record drafts, including an open category sheet
-        val addState = RecordFormState("12.30", RecordType.INCOME, "2026-08-15", 7L, 9L, "draft", RecordSheet.CATEGORY, 10L)
+        val addState = RecordFormState.DEFAULT.copy(
+            amountBuffer = "12.30", recordType = RecordType.INCOME,
+            selectedDate = "2026-08-15", selectedAssetId = 7L,
+            selectedCategoryId = 9L, description = "draft",
+            feeBuffer = "3.50",
+            openSheet = RecordSheet.CATEGORY, pendingCategoryId = 10L
+        )
         val editState = EditRecordState(42L, addState)
         val bundle = Bundle()
 
@@ -32,7 +38,7 @@ class ScreenStateBundleTest {
     fun malformedRecordState_usesExactEnumFallbacksAndClearsMissingEntities() {
         // Given: interrupted recreation with malformed tokens and deleted references
         val bundle = Bundle().apply {
-            putString("state_record_type", "transfer")
+            putString("state_record_type", "future_type")
             putString("state_open_sheet", "future_sheet")
             putLong("state_selected_asset_id", 7L)
             putLong("state_selected_category_id", 9L)
@@ -120,16 +126,19 @@ class ScreenStateBundleTest {
 
     @Test
     fun inFlightAiLifecycle_cancelsAndVisiblyResetsWithoutRestoringRequest() {
-        // Given: an active Agent request lifecycle
+        // Given: an active Agent request lifecycle bound to a cancellable handle
         var agentCancelled = false
-        val agentRequest = InFlightAiLifecycle { agentCancelled = true }
-        agentRequest.markStarted()
+        val lifecycle = InFlightAiLifecycle()
+        val handle = com.example.cardtally.network.MiniMaxRequestHandle(
+            cancelAction = { agentCancelled = true }
+        )
+        lifecycle.markStarted(handle)
 
         // When: recreation destroys the request owner
-        agentRequest.cancelAndReset()
+        lifecycle.cancelAndReset()
 
         // Then: transport cancellation occurs and loading state is visibly reset
         assertTrue(agentCancelled)
-        assertFalse(agentRequest.isLoading)
+        assertFalse(lifecycle.isLoading)
     }
 }

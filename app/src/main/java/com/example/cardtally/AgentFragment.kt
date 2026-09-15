@@ -23,10 +23,12 @@ import com.example.cardtally.adapter.AgentSessionListItem
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.AiChatMessage
 import com.example.cardtally.model.AiChatRole
+import com.example.cardtally.network.AiChatSender
 import com.example.cardtally.network.MiniMaxChatResult
 import com.example.cardtally.network.MiniMaxClient
 import com.example.cardtally.network.MiniMaxErrorType
 import com.example.cardtally.state.AgentScreenState
+import com.example.cardtally.state.AiRequestIdentity
 import com.example.cardtally.state.InFlightAiLifecycle
 import com.example.cardtally.util.AgentSessionTitleHelper
 import com.example.cardtally.util.AiAssistantSettingsHelper
@@ -52,19 +54,25 @@ class AgentFragment : Fragment() {
     private lateinit var imageSend: ImageView
     private lateinit var layoutComposerContainer: View
     private lateinit var layoutComposerShell: View
+    private lateinit var imageStop: ImageView
 
     private lateinit var databaseHelper: DatabaseHelper
-    private val miniMaxClient = MiniMaxClient()
-    private val requestLifecycle = InFlightAiLifecycle(miniMaxClient::cancel)
+    private var miniMaxClient: AiChatSender = createDefaultSender()
+    private val requestLifecycle = InFlightAiLifecycle()
     private val chatMessages = mutableListOf<AiChatMessage>()
     private lateinit var chatAdapter: AgentChatAdapter
     private lateinit var sessionAdapter: AgentSessionAdapter
     private lateinit var closeDrawerCallback: OnBackPressedCallback
-    private var isSending = false
-    private var hasActiveStream = false
+    internal var isSending = false
+        private set
+    internal var hasActiveStream = false
+        private set
     private var currentSessionId = 0L
     private var isSessionDrawerOpen = false
-    private var suppressNextTerminalCallback = false
+    // Monotonically increasing request identity. A callback is only applied when
+    // its captured requestId matches this value, so a stopped request A cannot
+    // overwrite or finish a later request B. Stale ids are simply ignored.
+    private val requestIdentity = AiRequestIdentity()
     private var restoredAgentState: AgentScreenState? = null
 
     override fun onCreateView(
@@ -88,6 +96,7 @@ class AgentFragment : Fragment() {
         progressSending = view.findViewById(R.id.progress_agent_sending)
         overlaySessionDrawer = view.findViewById(R.id.view_agent_session_overlay)
         imageSend = view.findViewById(R.id.image_agent_send)
+        imageStop = view.findViewById(R.id.image_agent_stop)
         layoutComposerContainer = view.findViewById(R.id.layout_agent_composer_container)
         layoutComposerShell = view.findViewById(R.id.layout_agent_composer_shell)
 
@@ -189,13 +198,8 @@ class AgentFragment : Fragment() {
 
     override fun onDestroyView() {
         (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(false)
-        if (hasActiveStream) {
-            persistCurrentAssistantDraftBeforeForcedStop()
-            suppressNextTerminalCallback = true
-            requestLifecycle.cancelAndReset()
-            hasActiveStream = false
-            isSending = false
-            updateSendingState(sending = false, streaming = false)
+        if (isSending) {
+            stopActiveStreamByUser()
         }
         super.onDestroyView()
     }
@@ -218,27 +222,40 @@ class AgentFragment : Fragment() {
     }
 
     private fun applyComposerGapAboveBottomNav() {
-        activity?.findViewById<View>(R.id.nav_shell)?.let { navShell ->
-            FloatingNavLayoutHelper.applyViewBottomPaddingGapAboveBottomNav(
-                paddingContainer = layoutComposerContainer,
-                anchoredView = layoutComposerShell,
-                navShell = navShell
-            )
-        }
+        // MainActivity already places the fragment above navigation; consume the gap only once.
+        layoutComposerContainer.setPaddingRelative(
+            layoutComposerContainer.paddingStart,
+            layoutComposerContainer.paddingTop,
+            layoutComposerContainer.paddingEnd,
+            resources.getDimensionPixelSize(R.dimen.spacing_s)
+        )
     }
 
-    private fun sendCurrentMessage() {
+    /**
+     * Drives the composer from an instrumentation test without depending on the
+     * real IME. Only text is written; no persistence or network side effect.
+     */
+    internal fun setComposerTextForTest(text: String) {
+        editMessage.setText(text)
+    }
+
+    /** Rendered chat rows, for instrumentation assertions on the send lifecycle. */
+    internal fun messageSnapshotForTest(): List<Pair<AiChatRole, String>> =
+        chatAdapter.messageSnapshot()
+
+    /** Cancels and clears any in-flight request without touching the user draft. */
+    internal fun forceStopForTest() {
+        if (isSending) stopActiveStreamByUser()
+    }
+
+    internal fun sendCurrentMessage() {
         if (isSending) {
             if (hasActiveStream) {
-                requestLifecycle.cancelAndReset()
-                hasActiveStream = false
-                isSending = false
-                updateSendingState(sending = false, streaming = false)
+                stopActiveStreamByUser()
             }
             return
         }
 
-        suppressNextTerminalCallback = false
         closeSessionDrawer()
 
         if (!AiAssistantSettingsHelper.isMiniMaxConfigComplete(requireContext())) {
@@ -250,6 +267,14 @@ class AgentFragment : Fragment() {
         val content = editMessage.text.toString().trim()
         if (content.isBlank()) {
             editMessage.error = getString(R.string.agent_error_empty_message)
+            return
+        }
+
+        // Reject an unusable request URL before the request is registered as in
+        // flight: the client would otherwise report that failure synchronously.
+        if (!AiAssistantSettingsHelper.getMiniMaxConfig(requireContext()).hasValidRequestUrl()) {
+            editMessage.error = getString(R.string.agent_error_invalid_url)
+            openAiSettings()
             return
         }
 
@@ -273,90 +298,134 @@ class AgentFragment : Fragment() {
         chatMessages.add(placeholderMessage)
         chatAdapter.startStreamingMessage()
 
+        val requestId = requestIdentity.begin(currentSessionId)
+        val requestSessionId = currentSessionId
+
         isSending = true
-        hasActiveStream = true
-        requestLifecycle.markStarted()
+        hasActiveStream = false
         updateSendingState(isSending, hasActiveStream)
 
-        miniMaxClient.sendChat(
+        // Register the request as in flight before the sender runs. A sender may
+        // report a failure synchronously (which has already been ruled out for the
+        // predictable cases above), and the terminal handler must then be able to
+        // clear the busy state instead of being overwritten by a late markStarted.
+        requestLifecycle.registerPending()
+
+        val handle = miniMaxClient.sendChat(
             config = AiAssistantSettingsHelper.getMiniMaxConfig(requireContext()),
             messages = chatMessages.filter { !it.isError && it.content.isNotBlank() }.toList()
         ) { result ->
-            activity?.runOnUiThread {
-                if (suppressNextTerminalCallback && result !is MiniMaxChatResult.StreamingChunk) {
-                    suppressNextTerminalCallback = false
-                    return@runOnUiThread
+            deliverAiResult(requestId, requestSessionId, result)
+        }
+        requestLifecycle.markStarted(handle)
+    }
+
+    /**
+     * Applies an AI callback only while it still belongs to the active request and
+     * session. Kept separate from the sender lambda so the ordering contract (a
+     * synchronous failure can arrive before [requestLifecycle.markStarted]) is
+     * explicit and testable.
+     */
+    internal fun deliverAiResult(
+        requestId: Long,
+        requestSessionId: Long,
+        result: MiniMaxChatResult
+    ) {
+        activity?.runOnUiThread {
+            if (!isAdded) {
+                return@runOnUiThread
+            }
+
+            if (!isCurrentRequest(requestId, requestSessionId)) {
+                return@runOnUiThread
+            }
+
+            when (result) {
+                is MiniMaxChatResult.StreamingChunk -> {
+                    if (!isSending) return@runOnUiThread
+                    if (!hasActiveStream) {
+                        hasActiveStream = true
+                        updateSendingState(isSending, hasActiveStream)
+                    }
+                    // Update both adapter and chatMessages with partial content
+                    val partialContent = result.partialContent
+                    chatAdapter.updateStreamingContent(partialContent, result.reasoning.orEmpty())
+                    // Update chatMessages to keep it in sync
+                    val lastIndex = chatMessages.size - 1
+                    if (lastIndex >= 0 && chatMessages[lastIndex].role == AiChatRole.ASSISTANT) {
+                        chatMessages[lastIndex] = AiChatMessage(
+                            role = AiChatRole.ASSISTANT,
+                            content = partialContent,
+                            reasoning = result.reasoning?.takeIf { it.isNotBlank() }
+                        )
+                    }
+                    scrollToBottom()
                 }
 
-                if (!isAdded) {
-                    return@runOnUiThread
+                is MiniMaxChatResult.StreamingDone -> {
+                    completeCurrentRequest(requestId, requestSessionId)
+                    val finalMessage = AiChatMessage(
+                        sessionId = requestSessionId,
+                        role = AiChatRole.ASSISTANT,
+                        content = result.finalContent,
+                        reasoning = result.reasoning?.takeIf { it.isNotBlank() },
+                        createdAt = System.currentTimeMillis()
+                    )
+                    chatMessages[chatMessages.size - 1] = finalMessage
+                    chatAdapter.finalizeStreamingMessage(result.finalContent, result.reasoning.orEmpty(), isError = false)
+                    databaseHelper.addAiChatMessage(finalMessage)
+                    refreshSessionList()
+                    updateSendingState(isSending, hasActiveStream)
                 }
 
-                when (result) {
-                    is MiniMaxChatResult.StreamingChunk -> {
-                        // Update both adapter and chatMessages with partial content
-                        val partialContent = result.partialContent
-                        chatAdapter.updateStreamingContent(partialContent)
-                        // Update chatMessages to keep it in sync
-                        val lastIndex = chatMessages.size - 1
-                        if (lastIndex >= 0 && chatMessages[lastIndex].role == AiChatRole.ASSISTANT) {
-                            chatMessages[lastIndex] = AiChatMessage(
-                                role = AiChatRole.ASSISTANT,
-                                content = partialContent
-                            )
-                        }
-                        scrollToBottom()
-                    }
+                is MiniMaxChatResult.Success -> {
+                    completeCurrentRequest(requestId, requestSessionId)
+                    val finalMessage = AiChatMessage(
+                        sessionId = requestSessionId,
+                        role = AiChatRole.ASSISTANT,
+                        content = result.reply,
+                        reasoning = result.reasoning?.takeIf { it.isNotBlank() },
+                        createdAt = System.currentTimeMillis()
+                    )
+                    chatMessages[chatMessages.size - 1] = finalMessage
+                    chatAdapter.finalizeStreamingMessage(result.reply, result.reasoning.orEmpty(), isError = false)
+                    databaseHelper.addAiChatMessage(finalMessage)
+                    refreshSessionList()
+                    updateSendingState(isSending, hasActiveStream)
+                }
 
-                    is MiniMaxChatResult.StreamingDone -> {
-                        requestLifecycle.markFinished()
-                        hasActiveStream = false
-                        isSending = false
-                        val finalMessage = AiChatMessage(
-                            sessionId = currentSessionId,
-                            role = AiChatRole.ASSISTANT,
-                            content = result.finalContent,
-                            createdAt = System.currentTimeMillis()
-                        )
-                        chatMessages[chatMessages.size - 1] = finalMessage
-                        chatAdapter.finalizeStreamingMessage(result.finalContent, isError = false)
-                        databaseHelper.addAiChatMessage(finalMessage)
-                        refreshSessionList()
-                        updateSendingState(isSending, hasActiveStream)
-                    }
-
-                    is MiniMaxChatResult.Success -> {
-                        requestLifecycle.markFinished()
-                        hasActiveStream = false
-                        isSending = false
-                        val finalMessage = AiChatMessage(
-                            sessionId = currentSessionId,
-                            role = AiChatRole.ASSISTANT,
-                            content = result.reply,
-                            createdAt = System.currentTimeMillis()
-                        )
-                        chatMessages[chatMessages.size - 1] = finalMessage
-                        chatAdapter.finalizeStreamingMessage(result.reply, isError = false)
-                        databaseHelper.addAiChatMessage(finalMessage)
-                        refreshSessionList()
-                        updateSendingState(isSending, hasActiveStream)
-                    }
-
-                    is MiniMaxChatResult.Failure -> {
-                        requestLifecycle.markFinished()
-                        hasActiveStream = false
-                        isSending = false
-                        val finalMessage = handleErrorResult(result)
-                        databaseHelper.addAiChatMessage(finalMessage)
-                        refreshSessionList()
-                        updateSendingState(isSending, hasActiveStream)
-                    }
+                is MiniMaxChatResult.Failure -> {
+                    completeCurrentRequest(requestId, requestSessionId)
+                    val finalMessage = handleErrorResult(result, requestSessionId)
+                    databaseHelper.addAiChatMessage(finalMessage)
+                    refreshSessionList()
+                    updateSendingState(isSending, hasActiveStream)
                 }
             }
         }
     }
 
-    private fun handleErrorResult(result: MiniMaxChatResult.Failure): AiChatMessage {
+    /** Guards against stale callbacks: a request is only applied while it is current. */
+    private fun isCurrentRequest(requestId: Long, requestSessionId: Long): Boolean {
+        return requestIdentity.isCurrent(requestId, requestSessionId)
+    }
+
+    /** Marks the active request finished / expected to no longer receive callbacks. */
+    private fun completeCurrentRequest(requestId: Long, requestSessionId: Long) {
+        if (requestIdentity.isCurrent(requestId, requestSessionId)) {
+            requestLifecycle.markFinished()
+            hasActiveStream = false
+            isSending = false
+            requestIdentity.complete(requestId)
+        }
+    }
+
+    /** Invalidates the current request so its remaining callbacks are dropped. */
+    private fun invalidateCurrentRequest() {
+        requestIdentity.invalidate()
+    }
+
+    private fun handleErrorResult(result: MiniMaxChatResult.Failure, requestSessionId: Long): AiChatMessage {
         val partialContent = result.detail?.takeIf {
             (result.type == MiniMaxErrorType.CANCELLED ||
              result.type == MiniMaxErrorType.INTERRUPTED ||
@@ -379,7 +448,7 @@ class AgentFragment : Fragment() {
                 errorTypeString
             )
             val finalMessage = AiChatMessage(
-                sessionId = currentSessionId,
+                sessionId = requestSessionId,
                 role = AiChatRole.ASSISTANT,
                 content = contentWithContext,
                 isError = true,
@@ -392,7 +461,7 @@ class AgentFragment : Fragment() {
         } else {
             val errorContent = getErrorMessage(result)
             val errorMessage = AiChatMessage(
-                sessionId = currentSessionId,
+                sessionId = requestSessionId,
                 role = AiChatRole.ASSISTANT,
                 content = errorContent,
                 isError = true,
@@ -408,13 +477,28 @@ class AgentFragment : Fragment() {
     private fun updateSendingState(sending: Boolean, streaming: Boolean) {
         isSending = sending
         val configComplete = AiAssistantSettingsHelper.isMiniMaxConfigComplete(requireContext())
-        editMessage.isEnabled = configComplete && !sending
-        buttonSend.isEnabled = configComplete
-        buttonMenu.isEnabled = !sending
-        buttonNewSession.isEnabled = !sending
-        sessionAdapter.interactionsEnabled = !sending
-        progressSending.visibility = if (streaming) View.VISIBLE else View.GONE
-        imageSend.visibility = if (streaming) View.INVISIBLE else View.VISIBLE
+        val idle = !sending
+        val establishing = sending && !streaming
+        val streamingActive = sending && streaming
+
+        editMessage.isEnabled = configComplete && idle
+        buttonMenu.isEnabled = idle
+        buttonNewSession.isEnabled = idle
+        sessionAdapter.interactionsEnabled = idle
+        buttonMenu.alpha = if (idle) 1f else 0.4f
+        buttonNewSession.alpha = if (idle) 1f else 0.4f
+
+        val sendEnabled = configComplete && (idle || streamingActive)
+        buttonSend.isEnabled = sendEnabled
+        buttonSend.alpha = if (configComplete) 1f else 0.4f
+        progressSending.visibility = if (establishing) View.VISIBLE else View.GONE
+        imageSend.visibility = if (idle) View.VISIBLE else View.INVISIBLE
+        imageStop.visibility = if (streamingActive) View.VISIBLE else View.GONE
+        buttonSend.contentDescription = when {
+            streamingActive -> getString(R.string.agent_stop_content_description)
+            establishing -> getString(R.string.agent_status_sending)
+            else -> getString(R.string.agent_send_content_description)
+        }
 
         textStatus.text = when {
             !configComplete -> getString(R.string.agent_status_configuration_required)
@@ -603,16 +687,22 @@ class AgentFragment : Fragment() {
     }
 
     private fun forceStopStreamingIfNeeded() {
-        if (!hasActiveStream) {
+        if (!isSending) {
             return
         }
+        stopActiveStreamByUser()
+    }
 
+    private fun stopActiveStreamByUser() {
+        if (!isSending) {
+            return
+        }
         persistCurrentAssistantDraftBeforeForcedStop()
-        suppressNextTerminalCallback = true
+        invalidateCurrentRequest()
         hasActiveStream = false
         isSending = false
         requestLifecycle.cancelAndReset()
-        updateSendingState(isSending, hasActiveStream)
+        updateSendingState(sending = false, streaming = false)
     }
 
     private fun persistCurrentAssistantDraftBeforeForcedStop() {
@@ -621,7 +711,15 @@ class AgentFragment : Fragment() {
         }
 
         val lastMessage = chatMessages.last()
-        if (lastMessage.role != AiChatRole.ASSISTANT || lastMessage.content.isBlank()) {
+        if (lastMessage.role != AiChatRole.ASSISTANT) {
+            return
+        }
+
+        if (lastMessage.content.isBlank()) {
+            // Still only an empty placeholder: drop it from the adapter and the
+            // in-memory draft rather than persisting a blank error message.
+            chatMessages.removeAt(chatMessages.size - 1)
+            chatAdapter.discardStreamingPlaceholder()
             return
         }
 
@@ -637,6 +735,9 @@ class AgentFragment : Fragment() {
             createdAt = System.currentTimeMillis()
         )
         chatMessages[chatMessages.size - 1] = finalMessage
+        // Keep the adapter bubble and the persisted message in sync so the stop
+        // state is visible immediately and consistent after a re-entry.
+        chatAdapter.finalizeStreamingMessage(persistedContent, isError = true)
         databaseHelper.addAiChatMessage(finalMessage)
         refreshSessionList()
     }
@@ -786,5 +887,14 @@ class AgentFragment : Fragment() {
             .replace(R.id.fragment_container, AiAssistantSettingsFragment())
             .addToBackStack(null)
             .commit()
+    }
+
+    companion object {
+        // Injectable seam so a fake AiChatSender can drive stop/restart/late-callback
+        // orchestration deterministically in tests. Production uses MiniMaxClient.
+        @Volatile
+        internal var senderFactory: () -> AiChatSender = { MiniMaxClient() }
+
+        internal fun createDefaultSender(): AiChatSender = senderFactory.invoke()
     }
 }

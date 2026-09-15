@@ -31,8 +31,8 @@
         android:layout_height="wrap_content"
         android:textColor="?attr/colorPrimary"
         android:textSize="12sp"
-        android:textStyle="italic"
-        android:fontFamily="serif"
+        android:textStyle="normal"
+        android:fontFamily="sans-serif"
         tools:text="¥842" />
 
 </LinearLayout>

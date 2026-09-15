@@ -1,10 +1,11 @@
-package com.example.cardtally.database
+﻿package com.example.cardtally.database
 
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.cardtally.testing.IsolatedTestGuard
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -20,6 +21,7 @@ class DatabaseHelperRecursiveCategoryMigrationTest {
 
     @Before
     fun setUp() {
+        IsolatedTestGuard.requireIsolatedBuild()
         context = InstrumentationRegistry.getInstrumentation().targetContext
         context.deleteDatabase(DATABASE_NAME)
     }
@@ -33,7 +35,7 @@ class DatabaseHelperRecursiveCategoryMigrationTest {
     }
 
     @Test
-    fun upgradingLegacyVersion9_addsRecursiveColumnsAndPreservesLegacyRecordDisplay() {
+    fun upgradingLegacyVersion9_resetsFinancialDataToCurrentSchema() {
         createLegacyVersion9Database(
             categories = listOf(
                 LegacyCategoryRow(id = 1L, name = "餐饮", type = EXPENSE_TYPE, icon = "ic_category_food")
@@ -64,25 +66,12 @@ class DatabaseHelperRecursiveCategoryMigrationTest {
             "category_path_snapshot"
         )
 
-        val records = databaseHelper.getAllRecords()
-        assertEquals(1, records.size)
-        assertEquals("餐饮", records.single().category)
-
-        upgradedDatabase.rawQuery(
-            "SELECT category, category_id, category_name_snapshot, category_path_snapshot FROM records WHERE id = 1",
-            null
-        ).use { cursor ->
-            assertTrue(cursor.moveToFirst())
-
-            assertEquals("餐饮", cursor.getString(cursor.getColumnIndexOrThrow("category")))
-            assertEquals(1L, cursor.getLong(cursor.getColumnIndexOrThrow("category_id")))
-            assertEquals("餐饮", cursor.getString(cursor.getColumnIndexOrThrow("category_name_snapshot")))
-            assertEquals("餐饮", cursor.getString(cursor.getColumnIndexOrThrow("category_path_snapshot")))
-        }
+        assertTrue(databaseHelper.getAllRecords().isEmpty())
+        assertTrue(databaseHelper.getCategoriesByType(EXPENSE_TYPE).isNotEmpty())
     }
 
     @Test
-    fun upgradingAmbiguousLegacyCategoryName_keepsCategoryIdNullInsteadOfGuessing() {
+    fun upgradingLegacyVersion9_resetsAllDataForTheBetaSchema() {
         createLegacyVersion9Database(
             categories = listOf(
                 LegacyCategoryRow(id = 1L, name = "早餐", type = EXPENSE_TYPE, icon = null),
@@ -101,6 +90,7 @@ class DatabaseHelperRecursiveCategoryMigrationTest {
                 )
             )
         )
+        insertLegacyChat()
 
         databaseHelper = DatabaseHelper(context)
         val upgradedDatabase = databaseHelper.readableDatabase
@@ -113,21 +103,39 @@ class DatabaseHelperRecursiveCategoryMigrationTest {
             "category_path_snapshot"
         )
 
-        upgradedDatabase.rawQuery(
-            "SELECT category, category_id, category_name_snapshot, category_path_snapshot FROM records WHERE id = 1",
-            null
-        ).use { cursor ->
-            assertTrue(cursor.moveToFirst())
-
-            assertEquals("早餐", cursor.getString(cursor.getColumnIndexOrThrow("category")))
-            assertTrue(
-                "Ambiguous legacy names should stay unresolved instead of being bound to one possible category",
-                cursor.isNull(cursor.getColumnIndexOrThrow("category_id"))
-            )
-            assertEquals("早餐", cursor.getString(cursor.getColumnIndexOrThrow("category_name_snapshot")))
-            assertEquals("早餐", cursor.getString(cursor.getColumnIndexOrThrow("category_path_snapshot")))
-        }
+        assertEquals(0, tableRowCount(upgradedDatabase, "records"))
+        assertEquals(0, tableRowCount(upgradedDatabase, "ai_chat_sessions"))
+        assertEquals(0, tableRowCount(upgradedDatabase, "ai_chat_messages"))
     }
+
+    private fun insertLegacyChat() {
+        val database = SQLiteDatabase.openDatabase(
+            context.getDatabasePath(DATABASE_NAME).path,
+            null,
+            SQLiteDatabase.OPEN_READWRITE
+        )
+        database.insertOrThrow("ai_chat_sessions", null, ContentValues().apply {
+            put("id", 7L)
+            put("title", "Legacy session")
+            put("created_at", 100L)
+            put("updated_at", 200L)
+        })
+        database.insertOrThrow("ai_chat_messages", null, ContentValues().apply {
+            put("id", 8L)
+            put("session_id", 7L)
+            put("role", "user")
+            put("content", "Kept locally")
+            put("is_error", 0)
+            put("created_at", 150L)
+        })
+        database.close()
+    }
+
+    private fun tableRowCount(database: SQLiteDatabase, tableName: String): Int =
+        database.rawQuery("SELECT COUNT(*) FROM $tableName", null).use { cursor ->
+            cursor.moveToFirst()
+            cursor.getInt(0)
+        }
 
     private fun createLegacyVersion9Database(
         categories: List<LegacyCategoryRow>,

@@ -2,6 +2,82 @@
 
 ## 当前有效快照
 
+- 2026-09-13：资产管理页统一使用一个多选入口，顶部独立“合并”入口已移除；普通状态右上角使用 `tabler_list_check` 多选图标，进入选择状态后切换关闭图标，底部保留删除与合并操作。合并选择同资产组内两个账本后再明确选择保留目标；资产组拆分入口和手势不再提供。
+
+- 2026-09-13：资产管理页保留页内“合并账本”入口，但合并改为在本页进入选择模式：先选择同一资产组的两个账本，再明确选择保留目标，主账本参与时固定保留主账本，跨组选择会在选择阶段拦截；确认前展示源/目标和记录数量，成功后才清理选择状态。移除了账本行上的“拆分为独立资产组”入口和手势，不再提供现有资产组拆分功能。
+
+- 2026-09-13：在“我的 → 管理”加入 JSON 导入/导出。`DataTransferManager` 导出账本、资产组关系、分类、资产、记录、AI 会话/消息及现有 SharedPreferences（包括 API Key），金额保留数据库整数分；导入采用合并模式，按实体内容映射 ID、记录和消息去重，未知实体新建，字段异常使用默认值或跳过并显示统计。文件操作使用系统文档选择器，导入导出均在后台线程执行；当前附件保留原有 URI 引用，未复制二进制文件。
+
+- 2026-09-13：新增 `scripts/run-android-verification.ps1` 作为有界验证入口。它串行运行 `:app:assembleEverydayDebug`、`:app:testEverydayUnitTest`、`:app:connectedVerificationDebugAndroidTest`，默认阶段超时 10/5/8 分钟；每阶段写独立 stdout/stderr 日志，遇到失败或超时立即停止，超时返回 124 并清理 Gradle 子进程及 verification 包，不操作日常/release 包。验证结果：完整入口 **PASS**（编译、JVM 单测、110 项隔离设备测试均通过）；`-SkipDeviceTests` 入口 **PASS**。
+
+- 2026-09-13：金额内部精度优化已落地一部分：项目只保留 `dev`、`verification` 两个 flavor，release 使用 `.release` applicationId；beta flavor 和 beta 首启清理逻辑已移除。数据库版本升至 v32：记录/资产/撤销余额金额列使用 SQLite `INTEGER` 分，应用模型与 UI 仍使用元单位 `Double`，边界通过 `Money` 转换（如 UI `1.22` ↔ DB `122`），键盘表达式改为整数分计算；记录写入/更新与资产余额效果纳入事务并加数据层校验；当前核心查询索引已加入，`getTodayRecordsPage()` 已补当前账本条件。注意：当前仍保留旧共享资产关系表和旧迁移代码作为兼容源码，尚未完成 asset pool / attachment 表级范式删除；日常旧库迁移仍是后续独立范围。
+
+- 2026-09-13：按用户要求移除 beta 应用后，`assembleEverydayRelease` 成功并安装到 PNM-AN10，包名为 `com.example.cardtally.release`；dev 编译和 JVM 单测通过。移除 beta 后重新执行隔离设备测试时，构建和测试 APK 安装完成并启动 111 项测试，但 8 分钟内没有结束，验证入口按设计返回 `TIMEOUT` 并清理测试进程；未将该轮设备测试记为 PASS。手机上的旧 `com.example.cardtally.beta` 包已卸载；当前设备保留 dev、release 及测试专用 verification 包。
+
+- 2026-09-13：修复 AI 回复出现整片 `null`，并支持展示模型思考过程。根因：`MiniMaxPayloadParser` 用 `optString("content")`，而 `org.json` 在键存在但值为 JSON `null` 时返回字符串 `"null"`；`deepseek-flash` 流式时把思考放在 `delta.reasoning_content` 且 `delta.content` 为 `null`，于是每个思考分片都追加一个 `"null"`，最终随消息落库（历史不清理，按用户选择）。修复：新增 `JSONObject.stringOrNull`（`!has || isNull` 视为无），流式同时解析 `content` 与 `reasoning_content`（兼容 `reasoning`），非流式读 `message.reasoning_content`；`MiniMaxChatResult` 的 `Success/StreamingChunk/StreamingDone` 增加可空 `reasoning`，`MiniMaxClient` 分别累积正文与思考。展示：`AiChatMessage` 增加 `reasoning`，`ai_chat_messages` 增加 `reasoning_content`（`DATABASE_VERSION 30→31`，`onUpgrade` 用 `ensureColumn`），`item_agent_message.xml` 在回答气泡上方加可折叠「思考过程」块（默认收起 2 行预览，流式时自动展开、答案开始后收起，点击标题切换），`AgentChatAdapter`/`AgentFragment` 同步渲染与落库；思考内容不回传给模型。验证：`:app:testEverydayUnitTest` 通过（新增 6 条解析回归）；`:app:assembleEverydayDebug` 成功；`:app:connectedVerificationDebugAndroidTest` **110/110、约 32 秒**（新增 `AgentReasoningMessageTest` 4 项、`DatabaseHelperAgentChatSessionTest` 思考往返 1 项）。PNM-AN10 真机真实请求：`layout_agent_reasoning` 出现、思考正文与回答正文均无 `nullnull` 连续串，回复正常（思考文本里出现的 “null” 是模型自身措辞，非解析结果）。
+
+- 2026-09-13：修复录入金额的 ¥ 间距与长金额自适应，并修掉一个导致整轮设备测试卡死的布局死循环。新增 `util/EntryAmountLayoutController`：去掉快速布局 `edit_amount` 的 `minEms`、把 ¥ 的 `marginStart` 收到 6dp，短金额时字段保持 `wrap_content` 让 ¥ 紧贴数字；文本超出备注列剩余宽度时把字段钳到可用宽度并按宽度比例缩小字号（下限：快速 14sp、标准 12sp，`TextPaint` 推算、不依赖框架 autosize）。**根因修复**：控制器最初在 `OnGlobalLayoutListener` 里无条件 `row.requestLayout()`，形成“全局布局→applyForWidth→requestLayout→全局布局”的死循环，使 `AmountKeypadRenderTest.keypadOpensInARealActivity_andKeepsItsLabels` 的 `waitForIdleSync()` 卡到 **337 秒**，整轮 6 分 13 秒并因设备 5 分钟熄屏触发 12 个 `IllegalStateException: Can not perform this action after onSaveInstanceState` 假失败。现改为仅当字段宽度或字号实际变化时才 `requestLayout()`，并加重入保护。验证：`:app:testEverydayUnitTest` 通过；`:app:assembleEverydayDebug` / `:app:assembleEverydayRelease` 成功；`:app:connectedVerificationDebugAndroidTest` **105/105、约 30 秒**（`AmountKeypadRenderTest` 由 337s 回到秒级，新增 `EntryAmountLayoutTest` 4 项含真机布局死循环回归）。Release 已重装（`com.example.cardtally.release`）；PNM-AN10 真机复核：短金额 `¥ [402,1298][439,1379]` 与金额左缘间距 6px（约 2dp）；输入 19 位 `1000000000000000000` 时金额字段仍被钳在 `[445,1324][984,1385]`（高度由 121px 收到 63px，即字号已缩小）且文本完整、`¥` 仍紧贴。
+
+- 2026-09-12：新增转账手续费与转账账户大卡。业务规则见 `docs/requirements/decisions/business_rules.md` 第 9 节：手续费仅转账；转出资产扣「金额+手续费」、转入资产加「金额」；删除对称回滚；手续费计入支出总额与支出趋势、不计入分类；列表显示「含手续费」。实现：`Record.fee`；`DATABASE_VERSION=30`，`records` 与 `record_deletion_undo` 各加 `fee REAL NOT NULL DEFAULT 0`（`onUpgrade(oldVersion<30)` 用 `ensureColumn`）；`createRecordValues`（仅 `type==2` 写入）、`createRecordFromCursor`、`createRecordDeletionUndoValues`、`applyRecordAssetEffect`、`getTotalByType`/`getTotalByTypeAndDateRange`/`getMonthlyStatistics` 全部按规则处理；`RecordFormState.feeBuffer` 支持草稿恢复。`AmountKeypadController` 新增 `bindTarget`/`selectTarget`/`resetTarget`，金额与手续费共用一个键盘并按当前目标输入。快速与标准布局都把转出/转入改为独立 `transfer_accounts_block`（`row_asset`/`row_destination_asset` 整行大卡 + 交换），支出/收入改用 `row_asset_single`，转账出现 `row_fee`/`edit_fee`；标准模式移除旧的 `removeView/addView` 行重排。`item_record.xml` 新增 `text_fee`，`DateGroupAdapter`/`RecordAdapter` 在转账 `fee>0` 时显示「含手续费」。验证：`:app:testEverydayUnitTest` 通过；`:app:assembleEverydayDebug` 成功；`:app:connectedVerificationDebugAndroidTest` **101/101**（新增 `DatabaseHelperTransferFeeTest` 4 项、`QuickRecordLayoutTest` 键盘目标切换与双布局转账卡用例）。真机（PNM-AN10）复核：快速转账 `transfer_accounts_block [48,437][1032,1201]`、转出/转入卡显示「请选择转出/转入资产」、`row_fee`+`edit_fee` 存在、键盘贴底 `[0,1622][1080,2354]`；标准转账同样显示两张整行大卡与手续费行。验证后偏好保持「快速模式」。
+
+
+- 2026-09-12：按用户参考图把快速模式改为「顶部类型行 + 分类白卡 + 固定组合面板 + 常驻键盘」的结构，并修复转账模式下键盘悬空。`fragment_add_record_quick.xml` 根节点改为 `ConstraintLayout`：键盘 `bottom→parent.bottom`、面板 `bottom→键盘.top`（间距 12dp）、分类白卡 `top→类型行.bottom` 且 `bottom→面板.top`、高度 `0dp`，因此分类卡在转账时 `GONE` 也不会把键盘推离底部（旧 `LinearLayout` + `weight=1` 占位在 `GONE` 时失效，导致键盘下方出现空白）。唯一组合白卡 `quick_record_panel` 紧贴键盘上方，包含备注(`edit_description`)+`¥`前缀(`text_amount_prefix`)+金额(`edit_amount`，hint `0.00`)、紧凑缩略图条 `card_photo_preview`、以及时间(`row_date`/`text_date`，今天显示「今天」)、资产(`row_asset`/`text_asset_value`，快速模式显示「无账户」)、附件(`btn_take_photo` 整块可点 + `text_photo_count` 显示「附件(n/max)」)；转账时 `row_destination_asset` 与 `btn_swap_transfer_assets` 在第二行可切换。`layout_amount_keypad_quick.xml` 按参考图重排：数字区 `123/456/789/.0再记`，右栏 `⌫/−/+/完成`。`AddRecordFragment` 删除 `quick_record_scroll` 避让逻辑，新增 `rootView` 引用修正 `onCreateView` 阶段 `getView()` 为 null 导致附件计数/分类空态未绑定的问题；缩略图在快速模式收紧到 64dp。`item_category_selector.xml` 名称 14sp、图标 40dp。验证：`:app:testEverydayUnitTest`、`:app:assembleEverydayDebug` 成功；`:app:connectedVerificationDebugAndroidTest` **95/95**（新增键盘贴底回归用例 `quickLayout_keepsKeypadPinnedToBottomWhenCategoryCardIsHidden`）；PNM-AN10 真机层级确认支出模式 `quick_record_panel [48,1237][1032,1586]`、键盘 `[0,1622][1080,2354]`，转账模式分类卡 `GONE` 后 `quick_record_panel [48,1093][1032,1586]`、键盘仍为 `[0,1622][1080,2354]`（底边贴内容区底），`text_date=今天`、`text_asset_value=无账户`、`text_photo_count=附件(0/3)`、`btn_save_and_add` 位于数字区底行、`btn_save` 位于右栏底部。
+- 2026-09-12：记一笔/编辑记录新增可切换布局模式。`RecordEntryModePreferences`（`record_entry_mode_prefs` / `record_entry_mode`，默认 `standard`，非法值修复为 `STANDARD`）持久化 `STANDARD` / `QUICK`。「我的」一级页新增「记一笔模式」行（`card_record_entry_mode` / `text_record_entry_mode`），点击进入二级页 `RecordEntryModeSettingsFragment` + `fragment_record_entry_mode_settings`（沿用语言设置的单选交互，返回时 `SettingsFragment.onResume()` 刷新当前值）。`AddRecordFragment` 按偏好 inflate `fragment_add_record` 或 `fragment_add_record_quick`；`EditRecordFragment` 继续继承，因此新增与编辑都跟随模式。
+- 快速模式：页内 `recycler_quick_categories`（`GridLayoutManager` 3–5 列）只平铺叶子分类，`CategorySelectorAdapter` 改为稳定 ID + 勾选标记 + 完整路径 contentDescription；金额键盘常驻（`layout_amount_keypad_quick`），数字区 `123/456/789/.0再记`、右栏 `⌫/−/+/完成`。`AmountKeypadController` 新增 `alwaysVisible`、`hideForModal`/`restoreAfterModal`、`hideForSoftKeyboard`/`restoreAfterSoftKeyboard`，键位查找改为 null-safe 以兼容无 `keypad_confirm`/`keypad_hide` 的快速键盘，并保持 `AddAssetFragment` 默认行为不变。备注获焦时临时隐藏金额键盘，日期/资产弹层关闭后恢复；快速模式转账行只切可见性，不复用标准模式的 `removeView/addView` 重排。
+- 快速模式不改变业务语义：仍只选叶子分类并保存 `category_id` 与快照；转账仍需转出/转入且不能相同（`saveRecord` 新增统一校验，并校验分类仍为叶子）；不改数据库结构与 `Record` 字段。
+- 验证：`:app:testEverydayUnitTest` 通过；`:app:assembleEverydayDebug` 成功；`:app:connectedVerificationDebugAndroidTest` **94/94**（新增 `RecordEntryModePreferencesTest` 4 项、`QuickRecordLayoutTest` 3 项）。真机（PNM-AN10）`uiautomator dump` 复核：设置行默认「标准模式」→ 二级页选中并持久化 → 返回刷新为「快速模式」；快速布局实测 `recycler_quick_categories [72,461][1008,989]`、键盘 `[0,1622][1080,2354]` 常驻、`完成 [804,2156][1050,2312]`、`再记 [804,1988][1050,2144]`（各 82×52dp），`layout_buttons` 与 `keypad_confirm` 按设计不存在。验证后已把偏好切回标准模式。
+- 该功能的未覆盖项（不得当 PASS）：TalkBack、字体 2 倍下快速布局排布、深色主题（仓库 `values-night` 为空）。
+- 2026-09-12：分类图标浏览改为共享的“左分组 + 右图标网格”组件（`IconBrowserBinder` + `CategoryIconGridAdapter`），图标只显示图形、仍带可访问名称（`icon_featured_labels` 优先，否则英文名）。每组精选约 60–100 个（`IconCategoryCatalog.groups`，共 915），新增/编辑分类、记一笔子分类、账本图标四个入口统一使用 `IconPickerDialog` 的分组浏览；按字母序的全量弹窗（`IconPickerAdapter`/`IconPickerSelectionState`/搜索）已删除。旧图标若不在精选集，选择器顶部显示“当前图标”并可重选；保存键仍是 `tabler_xxx`。补齐 `app/src/main/assets/third_party/tabler_icons/LICENSE`（MIT）。验证：`:app:testEverydayUnitTest` 73 项 0 失败（新增 `IconCategoryCatalogTest`），`:app:assembleEverydayDebug` 成功。
+- 2026-09-12：Gradle 变体拆分为 `dev`（日常，applicationId `com.example.cardtally`）与 `verification`（重置数据库的设备测试，applicationIdSuffix `.verification`）；release 使用仓库外 keystore 并加 `.release` 后缀，与 debug 数据隔离。日常命令 `:app:assembleEverydayDebug` / `:app:assembleEverydayRelease` / `:app:testEverydayUnitTest`，隔离设备测试 `:app:connectedVerificationDebugAndroidTest`。签名细节见 `AGENTS.md` 第 6 节。
+- 2026-09-11（第七轮）已按第六轮视觉复核修复 UX15（新建账本现有资产组选择区）与 UX16（共用金额键盘浅色主题下字符不可见，P0）。证据见 openspec ux-consistency-handoff 的 implementation-report.md「第七轮实施」；**仍待用户视觉复审，变更未归档**。
+- UX16 根因：主题把 framework `Button` 换成 Material3 `MaterialButton`，父样式 `android:background=@empty`，而 `android:background` 一旦设置会让 MaterialButton 跳过 `backgroundTint`，按键最终无背景。已把键盘按键改成 `<TextView>` 并显式声明 `bg_keypad_key` / `bg_keypad_key_primary`（普通键浅底深字、确定键黑底白字，48dp、12dp 圆角）。XML 文本属性不再是判据：`AmountKeypadRenderTest` 用 inflate→measure→`draw(Canvas)` 逐键断言显式不透明表面、对比度 ≥4.5:1、≥48dp、键心出现 ≥2 种像素（真实字形已绘制），并在真实 `MainActivity` + `AddRecordFragment` 的生产 `bind()` 路径上复核。
+- UX15：资产关系卡内新增全宽 `ledger_setup_group_row`（14sp「选择资产组」标签 + 16sp 组名 + 12sp「成员 + 资产数」摘要 + 20dp 矢量 chevron，minHeight 64dp，整行可点击可聚焦，带整行 contentDescription），与模式行分离；模式行只保留通用说明，不再重复组摘要；模式行只切模式，只有该行打开 BottomSheet；独立模式整段（含分隔线）隐藏。
+- 第七轮验证：静态脚本 73/51 PASS；JVM 78 项 0 失败；`assembleDebug` 成功；隔离设备全套 **87/87**（新增 `AmountKeypadRenderTest` 4 项、`LedgerSetupFormTest` 增至 8 项）；APK 已覆盖安装，`CardTally.db` 仍在。
+- 第七轮真机复核（原 BLOCKED 已解除）：用 `uiautomator dump` 取精确 bounds 后实测——点击 `edit_amount [318,545][984,665]` 弹出键盘 `[0,1622][1080,2354]`，15 个按键各 246×156px（82×52dp），`⌫`/`−`/`+`/`确定` 文本均在下发可见，`确定` 为黑底白字；点 `1` `+` `2` → 输入框 `1+2`、按钮变 `=`，点 `=` → `3.00`、按钮回 `确定`。截图 `screenshot/ux16_keypad_light.png`、`ux16_keypad_equals.png`、`ux15_ledger_form.png`。注意：本机第一屏截图是 1080×2420，按 dp 估算坐标会错位（曾被误判为「adb 点击不可靠」），真机操作前先用 `uiautomator dump` 取 bounds。
+- 第七轮未覆盖（不得当 PASS）：深色/跟随系统主题（仓库 `values-night` 为空、`ThemeHelper` 恒返回 light，无法给出真实证据，已按主题 token 编写）；字体 2 倍下键盘/表单排布截图；TalkBack；UX15 非主/空组真机截图（由隔离测试覆盖）。
+
+- 2026-09-11（第四轮）已按 OpenSpec ux-consistency-handoff 第6/7/8节实施：第三轮遗留 F1—F6、UX13 账本页统一、UX14 资产组/同组合并/跨账本流水。逐项证据见该目录 `implementation-report.md` 与 `tasks.md`；**最终视觉复审仍待用户安排，变更未归档**。
+- 设备测试安全改造：`app/build.gradle` 新增 `verification` flavor（`applicationIdSuffix ".verification"`）；会 `deleteDatabase("CardTally.db")` 的设备测试通过 `testing/IsolatedTestGuard.kt` 只在隔离变体运行。日常命令仍为 `:app:assembleDebug` / `:app:testDebugUnitTest`，`devDebug` 产物镜像回 `app/build/outputs/apk/debug/app-debug.apk`；设备测试用 `:app:connectedVerificationDebugAndroidTest`。若变体名歧义，显式等价任务为 `:app:assembleEverydayDebug` / `:app:testEverydayUnitTest`。
+- 已落地数据能力：`getAllRecordsByAssetId`（按 assetId 跨账本、每行一次）、`getAssetGroups`（按稳定池根去重）、`createLedgerInAssetGroup`（单事务）、`validateLedgerMerge` / `mergeLedgerInto(source,target)`（单事务、同组校验、主账本保护、第三方共享引用重定向）；旧的 `mergeLedgerIntoCurrent` 已删除。
+- 已落地页面：新建/编辑账本统一白卡并直选独立/现有资产组；账本/资产管理页新增可发现「合并」入口 + 保留目标选择 + 二次确认；资产详情按 assetId 显示跨账本流水，金额下方显示所属账本名（`Record.ledgerId/ledgerName`，仅该页使用）。
+- 记录项 `item_record.xml` 改为 `RecordRowLayoutController` 驱动：金额过长或字体放大时移到独立整行，金额用框架 auto-size 且不低于 14sp，名称最多两行；不再省略金额。
+- 第五轮闭环验证：静态脚本 73 布局/51 引用 PASS；JVM 78 项 0 失败；`assembleDebug` 成功；隔离设备套件 **80 项全通过**。原 5 个失败均为过期测试契约：资产名称绑定、v9 财务保留和把合法 `transfer` 当非法 token，现已按当前源码/决策修正。
+- UX09/UX10 补齐：AI fake 生命周期现含配置缺失且确认 sender 零调用；新增金额键盘→日期/资产/分类真实弹层测试、42 单元日历、640×320dp/2倍字体短视口测量。日期弹层实测底部操作裁切后改为“日历滚动 + 底部操作固定”。
+- 未覆盖（不得当 PASS）：最终视觉复审、图标选择后自动关闭的人工真机点验、TalkBack、UX13 全组合人工观感、AI 真实请求链路。该折叠设备的强制横屏坐标跨 display 不一致，不能作为视觉坐标 PASS；自动化改用不旋转设备的横屏布局测量，避免 instrumentation 清理挂起。
+
+- 2026-09-11新增已确认需求：独立/现有资产组选择、同组合并、资产详情跨账本流水及账本名称标签。决策见 `docs/requirements/decisions/2026-09-11-ledger-asset-groups.md`；实施规划见OpenSpec ux-consistency-handoff的UX14与tasks第8节。上述数据层与页面已于第四轮实施，见本文件第一节与实施报告。
+
+### 2026-09-11 第三轮复核与新增账本页规划
+
+- 最新结论见 `openspec/changes/ux-consistency-handoff/recheck-2026-09-11.md`：默认竖屏图标搜索键盘复测通过，选择后不关闭仍复现；第三轮未整体通过。历史测试结果不代表本次重新执行。
+- 新建/编辑账本 UX13 已加入该变更的 design、spec 与 tasks 第7节，仍待实施；第6节是第三轮遗留项。本轮仅更新规划，未修改应用代码。
+- 用户日常应用不得运行自动卸载目标包的测试流程。测试先核对安装清理行为，优先隔离环境；详细安全说明见最新复核报告。
+
+## 2026-09-09 UX 实施（按 OpenSpec ux-consistency-handoff 执行）
+
+- 实施模型按 `openspec/changes/ux-consistency-handoff/` 的 design.md 与 spec 落地代码，已完成项见同目录 `implementation-report.md`；最终视觉验收仍待用户安排，未自行归档 OpenSpec 变更。
+- 已落地：设置行右向 chevron（UX01）；共享二级头 minHeight56/标题22 与 AI 配置页真实相邻布局、资产流水“返回+标题+编辑+更多”及置顶/归档/删除移入菜单（UX02）；UX03 触碰目标加高（记录/资产/分类滑动动作、分类 Tab、日期弹层“选择今天”、记录关闭与拍照、搜索取消/筛选）；信息文本语义色与字号（UX04）；常规主按钮统一黑底 12 圆角并转 MaterialButton（UX06）；图标选择以图标名为稳定选中态 + 勾选标记 + 选中朗读，新增纯 Kotlin 选择模型与单测（UX07）；图标浏览受限高双列滚动 + 全入口搜索 + 分组标题本地化与精选标签（UX08，部分精选标签未覆盖全部组内图标）；记一笔打开弹层前收起系统键盘并做图标选择器可用高约束（UX09，只实现代码侧，组合未全测）。
+- 静态脚本 `scripts/verify-ux-resources.ps1` 通过（71 布局 / 49 引用）；`testDebugUnitTest` 55 项 0 失败；`assembleDebug` 成功；最新 `app-debug.apk` 已安装到当前设备。截图证据存于根目录 `screenshot/`（`ux01_settings_after.png`、`ux09_date_sheet.png`）。
+- 风险类（UX05 长金额、UX09 多种键盘/横屏/大字体组合、UX11 若干可达页面硬编码文案）只完成代码侧可达部分，未声明全部组合真机通过；具体逐项 PASS/FAIL/BLOCKED 见 `implementation-report.md`。
+
+### 2026-09-09 复审返工（review.md 的 R1—R5）
+
+- 审查给出 `review.md`：暂不通过，列 R1（图标搜索键盘遮住取消）、R2（停止后重发缺少请求身份隔离）、R3（停止回复未同步消息适配器）、R4（精选图标浏览未文字化）、R5（未实施项与测试数量）。
+- 返工已落地：图标选择器改为 `BottomSheetDialog` 并监听窗口 insets/IME 重排网格（R1，已在真机验证键盘弹起后关闭按钮/网格位于键盘上方）；`MiniMaxClient` 每请求独立取消句柄 + `AiRequestIdentity` 请求身份过滤停止后的迟到回调（R2，含 `AiChatSender` 接口与 `AgentFragment.senderFactory` 测试注入口）；停止时同步 `AgentChatAdapter.finalizeStreamingMessage` / 空占位 `discardStreamingPlaceholder`（R3）；精选图标只显示有中英标签的项、12sp、选中分组独立底色、按可用高度夹紧、别名搜索（R4）；周期弹层与账本保存按钮统一 12 圆角、长金额布局测量测试、空资产“入口隐藏→指向我的→账户资产”动态指引（R5）。
+- 返工后：`testDebugUnitTest` 为 **68 项、0 失败**；`RecordRowLayoutMeasurementTest`（androidTest，仅 inflate+measure，不写用户数据）2 项设备测试通过；`assembleDebug` 成功；静态脚本通过；APK 已重装。图标选择器键盘弹起验证：关闭按钮 y=807—951、网格底 y=1491，均在键盘上方。
+- 仍待办：UX09 多键盘/横屏/大字体矩阵、UX11 剩余硬编码与空资产隐藏入口动态指引（已完成该指引）、UX07/UX10 适配器点击+保存链路与 AI fake 生命周期 Fragment 级测试；逐项见实施报告。
+
+
+## 2026-09-09 UX 一致性检查
+
+- 续检：AI 页改为自适应垂直布局，配置提示卡可滚动。新增 `AgentLayoutIsolationTest` 三项设备布局测试通过，覆盖大字体、多行输入、长消息、流式文本更新和配置卡滚动；不访问数据库/API。完整键盘、聊天生命周期及非空财务页面仍未验证，见检查记录。
+
+- 已将用户最新灰底、纯白圆角、无主体卡片描边/阴影基准补入 `DESIGN.md`，新增共享 `bg_card_surface` 与次要操作背景。
+- 本轮统一 API 配置、AI 会话、日期/资产/分类/周期弹窗、资产流水摘要、资产表单、账本/分类面板及录入底栏等残留样式；保留输入边界和语义色。
+- 新增 `scripts/verify-ux-resources.ps1`；当前静态检查通过（71 个布局解析，49 个代码/include 引用布局）。
+- 本次最终 `assembleDebug` 成功；`testDebugUnitTest` 为 49 项、0 失败、0 错误。最终 APK 已安装，资产空状态说明已在设备层级中确认可见。
+- 页面覆盖、已做设备检查与未验证状态详见 `ux-consistency-audit.md`。不应将本轮描述为全部页面所有交互已通过真机回归。
+
 以下内容用于帮助后续 AI 快速识别仓库的最近实现状态，避免把已落地的内容继续误判为"规划中"。
 
 ## 2026-04-06 已落地状态

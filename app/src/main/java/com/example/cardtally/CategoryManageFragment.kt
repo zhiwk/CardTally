@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.CategoryAdapter
-import com.example.cardtally.adapter.IconPickerAdapter
+import com.example.cardtally.adapter.IconPickerDialog
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.CategoryHierarchySettingsHelper
@@ -36,7 +36,6 @@ class CategoryManageFragment : Fragment() {
     private var adapter: CategoryAdapter? = null
     private var currentType = 0
 
-    private val availableIcons: List<String> = TablerIconCatalog.icons
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -313,33 +312,7 @@ class CategoryManageFragment : Fragment() {
         selectedIcon: String?,
         onIconSelected: (String?) -> Unit
     ) {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle(R.string.category_icon_picker_title)
-
-        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_icon_picker, null)
-        builder.setView(view)
-
-        val recyclerIcons = view.findViewById<RecyclerView>(R.id.recycler_icons)
-        val iconAdapter = IconPickerAdapter(availableIcons, selectedIcon) { icon ->
-            onIconSelected(icon)
-        }
-        view.findViewById<EditText>(R.id.edit_icon_search).addTextChangedListener(
-            object : android.text.TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    iconAdapter.filter(s?.toString().orEmpty())
-                }
-                override fun afterTextChanged(s: android.text.Editable?) = Unit
-            }
-        )
-        recyclerIcons.adapter = iconAdapter
-
-        val dialog = builder.create()
-        iconAdapter.setOnIconSelected { icon ->
-            onIconSelected(icon)
-            dialog.dismiss()
-        }
-        dialog.show()
+        IconPickerDialog.show(requireContext(), selectedIcon, onIconSelected)
     }
 
     private fun openCategoryEditor(parentId: Long?) {

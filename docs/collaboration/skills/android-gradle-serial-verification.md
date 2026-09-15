@@ -47,6 +47,22 @@
 
 如果只需要某一项，就只跑那一项；不要为了“节省时间”把它们并发丢给多个终端调用。
 
+### 有限时验证入口
+
+为避免单个 UI 测试、UTP 或 ADB 子进程无限等待，优先使用：
+
+```powershell
+.\scripts\run-android-verification.ps1
+```
+
+该入口串行执行 Debug 编译、JVM 单测和隔离设备测试；默认超时分别为 10、5、8 分钟。任何阶段都会明确返回 `PASS`、`FAIL` 或 `TIMEOUT`，并把 stdout/stderr 保存到 `app/build/reports/verification/<run-id>/`。超时会清理 Gradle 子进程和 verification 包，但不会触碰日常或 release 包。
+
+需要只验证编译和 JVM 单测时使用：
+
+```powershell
+.\scripts\run-android-verification.ps1 -SkipDeviceTests
+```
+
 ## 推荐判读方式
 
 ### 构建失败时
@@ -76,6 +92,12 @@
 - 真机测试会和安装、Dex、构建产物共享状态
 - 因此一次任务里涉及多条 Android 验证命令时，默认采用“上一条完成，再跑下一条”的策略
 - 即使多个命令彼此独立，只要它们通过 `gradlew` 进入同一工作区，也不要并行触发
+
+### 变体与隔离约束
+
+- 仓库存在 `dev` 与 `verification` 两个 flavor：`dev` 是日常包（applicationId `com.example.cardtally`），`verification` 带 `.verification` 后缀，仅用于设备测试。
+- 会执行 `context.deleteDatabase("CardTally.db")` 的设备测试只能跑 `:app:connectedVerificationDebugAndroidTest`；在 `dev` 变体上运行时，`IsolatedTestGuard.requireIsolatedBuild()` 会跳过这些测试，避免清掉用户真实账本数据。
+- 日常构建与单测仍使用 `:app:assembleDebug` / `:app:testDebugUnitTest`（等价显式名 `:app:assembleEverydayDebug` / `:app:testEverydayUnitTest`）。
 
 ## 一句话记忆
 

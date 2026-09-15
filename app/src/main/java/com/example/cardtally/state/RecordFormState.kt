@@ -13,6 +13,7 @@ data class RecordFormState(
     val selectedDestinationAssetId: Long?,
     val selectedCategoryId: Long?,
     val description: String,
+    val feeBuffer: String,
     val photoUri: String?,
     val photoUris: List<String>,
     val openSheet: RecordSheet,
@@ -26,6 +27,7 @@ data class RecordFormState(
         bundle.putNullableLong(KEY_SELECTED_DESTINATION_ASSET_ID, selectedDestinationAssetId)
         bundle.putNullableLong(KEY_SELECTED_CATEGORY_ID, selectedCategoryId)
         bundle.putString(KEY_DESCRIPTION, description)
+        bundle.putString(KEY_FEE_BUFFER, feeBuffer)
         bundle.putString(KEY_PHOTO_URI, photoUri)
         bundle.putStringArrayList(KEY_PHOTO_URIS, ArrayList(photoUris))
         bundle.putString(KEY_OPEN_SHEET, openSheet.token)
@@ -33,7 +35,7 @@ data class RecordFormState(
     }
 
     companion object {
-        val DEFAULT = RecordFormState("0.00", RecordType.EXPENSE, "", null, null, null, "", null, emptyList(), RecordSheet.NONE, null)
+        val DEFAULT = RecordFormState("0.00", RecordType.EXPENSE, "", null, null, null, "", "", null, emptyList(), RecordSheet.NONE, null)
         private const val KEY_AMOUNT_BUFFER = "state_amount_buffer"
         private const val KEY_RECORD_TYPE = "state_record_type"
         private const val KEY_SELECTED_DATE = "state_selected_date"
@@ -41,6 +43,7 @@ data class RecordFormState(
         private const val KEY_SELECTED_DESTINATION_ASSET_ID = "state_selected_destination_asset_id"
         private const val KEY_SELECTED_CATEGORY_ID = "state_selected_category_id"
         private const val KEY_DESCRIPTION = "state_description"
+        private const val KEY_FEE_BUFFER = "state_fee_buffer"
         private const val KEY_PHOTO_URI = "state_photo_uri"
         private const val KEY_PHOTO_URIS = "state_photo_uris"
         private const val KEY_OPEN_SHEET = "state_open_sheet"
@@ -56,6 +59,7 @@ data class RecordFormState(
                 selectedDestinationAssetId = bundle.getNullableLong(KEY_SELECTED_DESTINATION_ASSET_ID),
                 selectedCategoryId = bundle.getNullableLong(KEY_SELECTED_CATEGORY_ID),
                 description = bundle.getString(KEY_DESCRIPTION, defaults.description),
+                feeBuffer = bundle.getString(KEY_FEE_BUFFER, defaults.feeBuffer),
                 photoUri = bundle.getString(KEY_PHOTO_URI, defaults.photoUri),
                 photoUris = bundle.getStringArrayList(KEY_PHOTO_URIS)?.toList() ?: defaults.photoUris,
                 openSheet = RecordSheet.values().firstOrNull { it.token == bundle.getString(KEY_OPEN_SHEET) } ?: RecordSheet.NONE,

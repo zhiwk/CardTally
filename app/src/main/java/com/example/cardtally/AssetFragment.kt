@@ -13,15 +13,22 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.AssetAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
-import com.example.cardtally.util.FloatingNavLayoutHelper
+import com.example.cardtally.util.Money
+import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class AssetFragment : Fragment() {
+    interface AssetSelectionHost {
+        fun onAssetSelected(asset: Asset)
+        fun onAssetSelectionClosed()
+    }
+
     private lateinit var recyclerAssets: RecyclerView
     private lateinit var recyclerPinnedAssets: RecyclerView
     private lateinit var recyclerCreditAssets: RecyclerView
@@ -57,6 +64,9 @@ class AssetFragment : Fragment() {
     private var creditAdapter: AssetAdapter? = null
     private val additionalAdapters = mutableMapOf<Int, AssetAdapter>()
     private var amountsVisible = true
+    private var pickerMode = false
+    private var excludedAssetId: Long? = null
+    private var selectedAssetId: Long? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -65,6 +75,9 @@ class AssetFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_asset_v2, container, false)
         contentView = view
+        pickerMode = arguments?.getBoolean(ARG_PICKER_MODE, false) == true
+        excludedAssetId = arguments?.getLong(ARG_EXCLUDED_ASSET_ID)?.takeIf { it > 0L }
+        selectedAssetId = arguments?.getLong(ARG_SELECTED_ASSET_ID)?.takeIf { it > 0L }
         amountsVisible = savedInstanceState?.getBoolean(KEY_AMOUNTS_VISIBLE, true) ?: true
 
         recyclerAssets = view.findViewById(R.id.recycler_assets)
@@ -111,25 +124,36 @@ class AssetFragment : Fragment() {
         recyclerInvestmentAssets.layoutManager = LinearLayoutManager(requireContext())
         recyclerReceivableAssets.layoutManager = LinearLayoutManager(requireContext())
         recyclerPayableAssets.layoutManager = LinearLayoutManager(requireContext())
+        if (!pickerMode) {
+            listOf(
+                recyclerPinnedAssets,
+                recyclerAssets,
+                recyclerCreditAssets,
+                recyclerRechargeAssets,
+                recyclerInvestmentAssets,
+                recyclerReceivableAssets,
+                recyclerPayableAssets
+            ).forEach(::attachAssetDragSorting)
+        }
 
         loadAssets()
 
-        fabAdd.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, AssetTypeSelectFragment())
-                .addToBackStack("asset_type_select")
-                .commit()
-        }
+        if (pickerMode) {
+            configurePickerMode(view)
+        } else {
+            fabAdd.setOnClickListener {
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, AssetTypeSelectFragment())
+                    .addToBackStack("asset_type_select")
+                    .commit()
+            }
 
-        requireActivity().findViewById<View>(R.id.nav_shell)?.let { navShell ->
-            FloatingNavLayoutHelper.applyFabGapAboveBottomNav(fabAdd, navShell)
-        }
-        
-        btnArchive.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, ArchivedAssetsFragment())
-                .addToBackStack(null)
-                .commit()
+            btnArchive.setOnClickListener {
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, ArchivedAssetsFragment())
+                    .addToBackStack(null)
+                    .commit()
+            }
         }
 
         return view
@@ -146,9 +170,9 @@ class AssetFragment : Fragment() {
     }
 
     private fun loadAssets() {
-        val assets = databaseHelper.getAllAssets()
-        val pinnedAssets = assets.filter { it.isPinned }.sortedBy { it.name }
-        val regularAssets = assets.filterNot { it.isPinned }.sortedBy { it.name }
+        val assets = databaseHelper.getAllAssets().filter { it.id != excludedAssetId }
+        val pinnedAssets = assets.filter { it.isPinned }
+        val regularAssets = assets.filterNot { it.isPinned }
         val creditAssets = regularAssets.filter(::isCreditAsset)
         val fundAssets = regularAssets.filterNot(::isCreditAsset)
         val rechargeAssets = regularAssets.filter { it.categoryLabel in rechargeLabels }
@@ -163,14 +187,14 @@ class AssetFragment : Fragment() {
         val includedAssets = assets.filter { it.includeInTotal }
         val totalAssets = includedAssets.filter { it.amount >= 0 }.sumOf { it.amount }
         val totalLiabilities = includedAssets.filter { it.amount < 0 }.sumOf { -it.amount }
-        val regularFundsTotal = coreFundAssets
-            .filter { it.includeInTotal && it.amount >= 0 }
-            .sumOf { it.amount }
+        val regularFundsTotal = coreFundAssets.sumOf { it.amount }
         val regularCreditTotal = creditAssets.filter { it.includeInTotal }.sumOf { it.amount }
 
         textTotalAmount.text = moneyText(total)
         textTotalAssets.text = moneyText(totalAssets)
         textTotalLiabilities.text = moneyText(totalLiabilities)
+        textTotalAssets.setTextColor(IncomeExpenseColorScheme.incomePrimary(requireContext()))
+        textTotalLiabilities.setTextColor(IncomeExpenseColorScheme.expensePrimary(requireContext()))
         textFundsTotal.text = totalText(regularFundsTotal)
         textCreditTotal.text = totalText(regularCreditTotal)
         textRechargeTotal.text = sectionTotal(rechargeAssets)
@@ -195,7 +219,6 @@ class AssetFragment : Fragment() {
             pinnedAdapter = createAssetAdapter(pinnedAssets)
             recyclerPinnedAssets.swapAdapter(pinnedAdapter, true)
             recyclerPinnedAssets.visibility = View.VISIBLE
-            setPinnedAssetsHeight(pinnedAssets.size)
         } else {
             pinnedAdapter = null
             recyclerPinnedAssets.adapter = null
@@ -251,14 +274,14 @@ class AssetFragment : Fragment() {
     private val payableLabels = setOf("借入", "其他应付")
 
     private fun sectionTotal(assets: List<Asset>): String {
-        return totalText(assets.filter { it.includeInTotal }.sumOf { it.amount })
+        return totalText(assets.sumOf { it.amount })
     }
 
     private fun moneyText(amount: Double): String =
-        if (amountsVisible) String.format("¥%.2f", amount) else "***"
+        if (amountsVisible) "¥${Money.formatYuan(amount)}" else "***"
 
     private fun totalText(amount: Double): String =
-        if (amountsVisible) String.format("共计:¥%.2f", amount) else "共计:***"
+        if (amountsVisible) "共计:¥${Money.formatYuan(amount)}" else "共计:***"
 
     private fun setAdapterAmountsVisibility() {
         adapter?.setAmountsVisible(amountsVisible)
@@ -282,6 +305,18 @@ class AssetFragment : Fragment() {
 
     companion object {
         private const val KEY_AMOUNTS_VISIBLE = "asset_amounts_visible"
+        private const val ARG_PICKER_MODE = "asset_picker_mode"
+        private const val ARG_EXCLUDED_ASSET_ID = "excluded_asset_id"
+        private const val ARG_SELECTED_ASSET_ID = "selected_asset_id"
+
+        fun newPickerInstance(excludedAssetId: Long?, selectedAssetId: Long?): AssetFragment =
+            AssetFragment().apply {
+                arguments = Bundle().apply {
+                    putBoolean(ARG_PICKER_MODE, true)
+                    excludedAssetId?.let { putLong(ARG_EXCLUDED_ASSET_ID, it) }
+                    selectedAssetId?.let { putLong(ARG_SELECTED_ASSET_ID, it) }
+                }
+            }
     }
 
     private fun bindAdditionalSection(sectionId: Int, recyclerId: Int, assets: List<Asset>) {
@@ -302,23 +337,41 @@ class AssetFragment : Fragment() {
         }
     }
 
-    /**
-     * The pinned list is nested inside the page NestedScrollView. Android can
-     * reuse a zero-height RecyclerView measurement when returning from a child
-     * page, so give each dense asset row its explicit minimum height.
-     */
-    private fun setPinnedAssetsHeight(itemCount: Int) {
-        val rowHeight = (48 * resources.displayMetrics.density).toInt()
-        recyclerPinnedAssets.layoutParams = recyclerPinnedAssets.layoutParams.apply {
-            height = rowHeight * itemCount
-        }
-        recyclerPinnedAssets.requestLayout()
-        cardPinnedAssets.requestLayout()
+    private fun attachAssetDragSorting(recycler: RecyclerView) {
+        ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+            private var moved = false
+
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val from = viewHolder.adapterPosition
+                val to = target.adapterPosition
+                if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                moved = (recyclerView.adapter as? AssetAdapter)?.moveAsset(from, to) == true || moved
+                return moved
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                if (moved) {
+                    (recyclerView.adapter as? AssetAdapter)?.assetIdsInOrder()?.let(databaseHelper::updateAssetSortOrder)
+                    moved = false
+                }
+            }
+        }).attachToRecyclerView(recycler)
     }
 
     private fun createAssetAdapter(assets: List<Asset>): AssetAdapter {
         return AssetAdapter(assets, object : AssetAdapter.OnAssetActionListener {
             override fun onClick(asset: Asset) {
+                if (pickerMode) {
+                    (parentFragment as? AssetSelectionHost)?.onAssetSelected(asset)
+                    return
+                }
                 val detailFragment = AssetRecordsFragment.newInstance(
                     asset.name, asset.amount, asset.type, asset.id, asset.categoryLabel
                 )
@@ -347,7 +400,30 @@ class AssetFragment : Fragment() {
                 Toast.makeText(requireContext(), "已归档", Toast.LENGTH_SHORT).show()
                 loadAssets()
             }
-        }).also { it.setAmountsVisible(amountsVisible) }
+        }, pickerMode = pickerMode, selectedAssetId = selectedAssetId).also {
+            it.setAmountsVisible(amountsVisible)
+        }
+    }
+
+    private fun configurePickerMode(view: View) {
+        view.findViewById<View>(R.id.card_asset_summary).visibility = View.GONE
+        view.findViewById<View>(R.id.fab_add).visibility = View.GONE
+        view.findViewById<TextView>(R.id.text_title).setText(R.string.record_asset_sheet_title)
+        btnArchive.setImageResource(R.drawable.ic_close)
+        btnArchive.contentDescription = getString(R.string.dialog_cancel)
+        btnArchive.setOnClickListener {
+            (parentFragment as? AssetSelectionHost)?.onAssetSelectionClosed()
+        }
+        view.findViewById<androidx.core.widget.NestedScrollView>(R.id.asset_content_scroll).apply {
+            isNestedScrollingEnabled = true
+            setPadding(0, 0, 0, (16 * resources.displayMetrics.density).toInt())
+        }
+        view.findViewById<View>(R.id.asset_page_content).setPadding(
+            (16 * resources.displayMetrics.density).toInt(),
+            0,
+            (16 * resources.displayMetrics.density).toInt(),
+            0
+        )
     }
 
     private fun showAddDialog() {
@@ -382,9 +458,7 @@ class AssetFragment : Fragment() {
                 return@setPositiveButton
             }
 
-            val amount = try {
-                amountStr.toDouble()
-            } catch (e: NumberFormatException) {
+            val amount = Money.evaluateYuanExpression(amountStr)?.let(Money::toMajorDouble) ?: run {
                 Toast.makeText(requireContext(), "请输入有效的金额", Toast.LENGTH_SHORT).show()
                 return@setPositiveButton
             }
@@ -416,7 +490,7 @@ class AssetFragment : Fragment() {
         val radioGroupType = view.findViewById<RadioGroup>(R.id.radio_group_asset_type)
 
         editName.setText(asset.name)
-        editAmount.setText(asset.amount.toString())
+        editAmount.setText(Money.formatYuan(asset.amount))
 
         when (asset.type) {
             0 -> view.findViewById<RadioButton>(R.id.radio_cash).isChecked = true
@@ -447,9 +521,7 @@ class AssetFragment : Fragment() {
                 return@setPositiveButton
             }
 
-            val amount = try {
-                amountStr.toDouble()
-            } catch (e: NumberFormatException) {
+            val amount = Money.evaluateYuanExpression(amountStr)?.let(Money::toMajorDouble) ?: run {
                 Toast.makeText(requireContext(), "请输入有效的金额", Toast.LENGTH_SHORT).show()
                 return@setPositiveButton
             }

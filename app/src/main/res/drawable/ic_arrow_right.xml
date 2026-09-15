@@ -7,6 +7,6 @@
     
     <path
         android:fillColor="@color/onSurfaceVariant_light"
-        android:pathData="M8.59,16.59L13.41,16.59L13.41,7.59L8.59,7.59L8.59,16.59Z" />
+        android:pathData="M8.59,16.59L13.17,12 8.59,7.41 10,6l6,6 -6,6z" />
     
 </vector>

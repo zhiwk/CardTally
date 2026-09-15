@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -26,7 +26,7 @@
     </LinearLayout>
     <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginTop="12dp" android:gravity="center_vertical" android:orientation="horizontal">
         <Button android:id="@+id/button_range_start" android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1" android:text="@string/search_start_date" android:textSize="12sp" />
-        <TextView android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center" android:text="至" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
+        <TextView android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center" android:text="@string/search_date_range_separator" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
         <Button android:id="@+id/button_range_end" android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1" android:text="@string/search_end_date" android:textSize="12sp" />
     </LinearLayout>
 </LinearLayout>

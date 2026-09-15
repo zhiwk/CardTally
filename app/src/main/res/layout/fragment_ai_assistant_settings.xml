@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_container"
+    android:background="@color/background_light"
+    android:orientation="vertical"
     tools:context=".AiAssistantSettingsFragment">
 
     <include
@@ -13,25 +14,24 @@
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="48dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingBottom="152dp">
+        android:paddingBottom="24dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="24dp"
+            android:paddingHorizontal="16dp"
             android:paddingTop="8dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_summary_item"
-                android:backgroundTint="@color/surface_light"
+                android:background="@drawable/bg_card_surface"
                 android:orientation="vertical"
-                android:padding="24dp">
+                android:padding="16dp">
 
                 <TextView
                     android:layout_width="match_parent"
@@ -39,8 +39,7 @@
                     android:text="@string/ai_settings_api_key_description"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp"
-                    android:lineSpacingExtra="4dp"
-                    android:alpha="0.8" />
+                    android:lineSpacingExtra="4dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -55,8 +54,7 @@
                     android:id="@+id/edit_ai_api_key"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_summary_item"
-                    android:backgroundTint="?attr/colorSurfaceContainerLowest"
+                    android:background="@drawable/bg_input_surface"
                     android:hint="@string/ai_settings_api_key_hint"
                     android:inputType="textPassword|textNoSuggestions"
                     android:minHeight="56dp"
@@ -74,8 +72,7 @@
                     android:text="@string/ai_settings_defaults_status_fallback"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="12sp"
-                    android:lineSpacingExtra="4dp"
-                    android:alpha="0.75" />
+                    android:lineSpacingExtra="4dp" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -90,8 +87,7 @@
                     android:id="@+id/edit_ai_model"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_summary_item"
-                    android:backgroundTint="?attr/colorSurfaceContainerLowest"
+                    android:background="@drawable/bg_input_surface"
                     android:hint="@string/ai_settings_model_hint"
                     android:inputType="textNoSuggestions"
                     android:minHeight="56dp"
@@ -114,8 +110,7 @@
                     android:id="@+id/edit_ai_base_url"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_summary_item"
-                    android:backgroundTint="?attr/colorSurfaceContainerLowest"
+                    android:background="@drawable/bg_input_surface"
                     android:hint="@string/ai_settings_base_url_hint"
                     android:inputType="textUri|textNoSuggestions"
                     android:minHeight="56dp"
@@ -125,31 +120,22 @@
                     android:textColorHint="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp" />
 
-                <LinearLayout
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_save_ai_api_key"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:background="@drawable/shape_button_primary"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="32dp"
-                    android:paddingVertical="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/ai_settings_save"
-                        android:textColor="?attr/colorOnPrimary"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+                    android:minHeight="52dp"
+                    android:text="@string/ai_settings_save"
+                    android:textAllCaps="false"
+                    android:textColor="@color/onPrimary_light"
+                    android:textSize="16sp"
+                    app:backgroundTint="@color/buttonPrimary_light"
+                    app:cornerRadius="12dp" />
 
             </LinearLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</LinearLayout>

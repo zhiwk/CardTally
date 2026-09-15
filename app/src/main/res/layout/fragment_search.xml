@@ -57,9 +57,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:gravity="center"
             android:clickable="true"
             android:focusable="true"
-            android:paddingVertical="8dp"
+            android:paddingHorizontal="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:text="@string/dialog_cancel"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp" />
@@ -68,7 +72,8 @@
     <LinearLayout
         android:id="@+id/layout_search_summary"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
         android:paddingHorizontal="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -78,6 +83,12 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            android:minHeight="48dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground"
+            android:paddingStart="4dp"
             android:text="@string/search_all_time"
             android:textColor="?attr/colorOnSurface"
             android:ellipsize="marquee"
@@ -89,7 +100,7 @@
             android:layout_height="wrap_content"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:singleLine="true"
-            android:textSize="11sp" />
+            android:textSize="12sp" />
     </LinearLayout>
 
     <TextView

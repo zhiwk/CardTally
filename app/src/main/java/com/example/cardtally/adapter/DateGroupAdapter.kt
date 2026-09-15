@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
+import com.example.cardtally.util.Money
 import com.example.cardtally.util.LedgerDisplayHelper
 import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.SwipeToEditDeleteHelper
@@ -24,7 +25,13 @@ class DateGroupAdapter(
     private val listener: OnRecordActionListener,
     private val categoryIconsById: Map<Long, String> = emptyMap(),
     private val categoryIconsByName: Map<String, String> = emptyMap(),
-    private val showTypeSubtitle: Boolean = true
+    private val showTypeSubtitle: Boolean = true,
+    /**
+     * When false the asset column keeps the *ledger* provenance label instead of
+     * the asset/transfer route. Only the asset-detail history uses this, so other
+     * bill and search pages keep their existing asset label semantics.
+     */
+    private val showAssetRoute: Boolean = true
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -90,6 +97,7 @@ class DateGroupAdapter(
                     categoryIconsById = categoryIconsById,
                     categoryIconsByName = categoryIconsByName,
                     showTypeSubtitle = showTypeSubtitle,
+                    showAssetRoute = showAssetRoute,
                     showDivider = recordIndex < dateGroup.records.lastIndex,
                     roundTopCorners = recordIndex == 0,
                     roundBottomCorners = recordIndex == dateGroup.records.lastIndex
@@ -250,12 +258,15 @@ class DateGroupAdapter(
         private val textTime: TextView = itemView.findViewById(R.id.text_time)
         private val textDescription: TextView = itemView.findViewById(R.id.text_description)
         private val textAsset: TextView = itemView.findViewById(R.id.text_asset)
+        private val textFee: TextView = itemView.findViewById(R.id.text_fee)
+        private val textLedger: TextView = itemView.findViewById(R.id.text_ledger)
         private val textAmount: TextView = itemView.findViewById(R.id.text_amount)
         private val recordDivider: View = itemView.findViewById(R.id.view_record_divider)
         private val btnEdit: ImageButton = itemView.findViewById(R.id.btn_edit)
         private val btnDelete: ImageButton = itemView.findViewById(R.id.btn_delete)
 
         private var swipeHelper: SwipeToEditDeleteHelper? = null
+        private val rowLayoutController = RecordRowLayoutController(itemView)
         private var currentRecord: Record? = null
         private val categoryIcons = mapOf(
             "餐饮" to R.drawable.ic_category_food,
@@ -278,28 +289,53 @@ class DateGroupAdapter(
             categoryIconsById: Map<Long, String> = emptyMap(),
             categoryIconsByName: Map<String, String> = emptyMap(),
             showTypeSubtitle: Boolean = true,
+            showAssetRoute: Boolean = true,
             showDivider: Boolean = false,
             roundTopCorners: Boolean = false,
             roundBottomCorners: Boolean = false
         ) {
             currentRecord = record
             recordDivider.visibility = if (showDivider) View.VISIBLE else View.GONE
-            val title = record.description?.takeIf { it.isNotBlank() }
-                ?: record.categoryNameSnapshot?.takeIf { it.isNotBlank() }
-                ?: record.category
-            val categoryLabel = record.categoryPathSnapshot?.takeIf { it.isNotBlank() } ?: record.category
-            textCategory.text = title
+            val transferRoute = listOfNotNull(
+                record.assetSource?.takeIf { it.isNotBlank() },
+                record.destinationAssetSource?.takeIf { it.isNotBlank() }
+            ).joinToString(" → ")
+            textCategory.text = if (record.type == 2) {
+                transferRoute.ifBlank { itemView.context.getString(R.string.record_type_transfer) }
+            } else {
+                record.categoryPathSnapshot?.takeIf { it.isNotBlank() }
+                    ?: record.categoryNameSnapshot?.takeIf { it.isNotBlank() }
+                    ?: record.category
+            }
             textTime.text = buildSubtitle(record)
             textTime.visibility = if (showTypeSubtitle) View.VISIBLE else View.GONE
             textAsset.text = if (record.type == 2) {
-                listOfNotNull(
-                    record.assetSource?.takeIf { it.isNotBlank() },
-                    record.destinationAssetSource?.takeIf { it.isNotBlank() }
-                ).joinToString(" → ")
+                ""
             } else {
                 record.assetSource?.takeIf { it.isNotBlank() }.orEmpty()
             }
-            textAsset.visibility = if (textAsset.text.isNullOrBlank()) View.GONE else View.VISIBLE
+            textAsset.visibility = if (record.type != 2 && showAssetRoute && !textAsset.text.isNullOrBlank()) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+            if (record.type == 2 && record.fee > 0L) {
+                textFee.text = itemView.context.getString(
+                    R.string.record_fee_included,
+                    "¥${Money.formatYuan(record.fee)}"
+                )
+                textFee.visibility = View.VISIBLE
+            } else {
+                textFee.visibility = View.GONE
+            }
+            // Asset-detail mode shows which ledger each record belongs to; other
+            // pages keep the asset/route label untouched.
+            textLedger.text = record.ledgerName?.takeIf { it.isNotBlank() }.orEmpty()
+            textLedger.visibility = if (!showAssetRoute && textLedger.text.isNotEmpty()) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
             val context = itemView.context
             val idIconName = record.categoryId?.let(categoryIconsById::get)
             val nameIconName = record.categoryNameSnapshot?.let(categoryIconsByName::get)
@@ -315,7 +351,12 @@ class DateGroupAdapter(
                 ?: R.drawable.ic_category_other
             imageIcon.setImageResource(iconResource)
 
-            textDescription.visibility = View.GONE
+            textDescription.text = record.description?.takeIf { it.isNotBlank() }.orEmpty()
+            textDescription.visibility = if (textDescription.text.isNotBlank()) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
 
             viewIcon.backgroundTintList = ColorStateList.valueOf(
                 if (record.type == 2) {
@@ -329,15 +370,20 @@ class DateGroupAdapter(
 
             val amountText = if (record.type == 2) {
                 textAmount.setTextColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.onSurface_light))
-                String.format("¥%.2f", record.amount)
+                "¥${Money.formatYuan(record.amount)}"
             } else if (record.type == 0) {
                 textAmount.setTextColor(IncomeExpenseColorScheme.expensePrimary(context))
-                String.format("-¥%.2f", record.amount)
+                "-¥${Money.formatYuan(record.amount)}"
             } else {
                 textAmount.setTextColor(IncomeExpenseColorScheme.incomePrimary(context))
-                String.format("+¥%.2f", record.amount)
+                "+¥${Money.formatYuan(record.amount)}"
             }
             textAmount.text = amountText
+            // Long amounts or enlarged fonts must not squeeze the name: the row
+            // re-applies its fitting rules on every layout (first bind, recycle,
+            // font or orientation change).
+            rowLayoutController.attach()
+            rowLayoutController.applyLayout()
 
             if (isMultiSelect) {
                 layoutActions.visibility = View.GONE

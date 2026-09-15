@@ -18,6 +18,7 @@ import com.example.cardtally.model.Asset
 import com.example.cardtally.state.AssetFormState
 import com.example.cardtally.state.AssetType
 import com.example.cardtally.util.AmountKeypadController
+import com.example.cardtally.util.Money
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.chip.ChipGroup
 
@@ -78,11 +79,13 @@ class AddAssetFragment : Fragment() {
             requireContext(),
             editAmount,
             view.findViewById(R.id.layout_amount_keypad),
-            btnSave
-        ) {
+            btnSave,
+            onConfirm = {
             // The keypad confirms the amount only. The page CTA owns saving.
             editAmount.clearFocus()
-        }.bind()
+            },
+            allowNegative = true
+        ).bind()
 
         databaseHelper = DatabaseHelper(requireContext())
         val loadedAsset = arguments?.getLong(KEY_EDIT_ASSET_ID, 0L)
@@ -110,7 +113,7 @@ class AddAssetFragment : Fragment() {
             ?: arguments?.getString(KEY_ASSET_TYPE_ICON_NAME).orEmpty()
         val defaultState = AssetFormState(
             loadedAsset?.name.orEmpty(),
-            loadedAsset?.amount?.toString().orEmpty(),
+            loadedAsset?.let { Money.formatYuan(it.amount) }.orEmpty(),
             initialType,
             initialLabel,
             initialIconName,
@@ -230,25 +233,8 @@ class AddAssetFragment : Fragment() {
         )
     }
 
-    private fun evaluateAmountExpression(expression: String): Double? {
-        val normalized = expression.replace(" ", "")
-        if (normalized.isEmpty() || !normalized.matches(Regex("""\d+(\.\d+)?([+-]\d+(\.\d+)?)*"""))) {
-            return null
-        }
-        val tokens = normalized.split(Regex("(?=[+-])|(?<=[+-])"))
-        var result = tokens.firstOrNull()?.toDoubleOrNull() ?: return null
-        var index = 1
-        while (index + 1 < tokens.size) {
-            val operand = tokens[index + 1].toDoubleOrNull() ?: return null
-            result = when (tokens[index]) {
-                "+" -> result + operand
-                "-" -> result - operand
-                else -> return null
-            }
-            index += 2
-        }
-        return result
-    }
+    private fun evaluateAmountExpression(expression: String): Double? =
+        Money.evaluateYuanExpression(expression, allowNegative = true)?.let(Money::toMajorDouble)
 
     private fun applyState(state: AssetFormState) {
         editName.setText(state.assetName)

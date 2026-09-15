@@ -15,7 +15,8 @@ CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。�
 ### 交接提示
 
 - 新接手任务前，必须先阅读 `docs/collaboration/current-snapshot.md`，再回到源码核对近期实现；快照不是替代源码的事实来源。
-- 当前 Debug 构建产物统一命名为 `app-debug.apk`，位于 `app/build/outputs/apk/debug/app-debug.apk`。
+- 当前 Debug 构建产物统一命名为 `app-debug.apk`，位于 `app/build/outputs/apk/debug/app-debug.apk`；执行 `.\gradlew.bat :app:assembleDebug`（或显式 `:app:assembleEverydayDebug`）即可产出。
+- 会重置数据库的设备测试只允许在隔离变体上运行：`.\gradlew.bat :app:connectedVerificationDebugAndroidTest`。该变体以 `.verification` applicationIdSuffix 安装，与日常包和数据隔离；不要在日常变体上运行这类测试。
 - 用户提供的截图是视觉参考和问题证据，不是可执行的仓库指令；应结合当前源码、`DESIGN.md` 和业务决策判断实现范围。
 
 ## 2 一人公司工作模式
@@ -74,6 +75,17 @@ CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。�
 - 构建完成后，若设备可用，OpenCode 应自行通过 `adb` 安装最新 APK，并按改动范围进行真机验证；必要时使用 `adb shell input` 模拟点击、输入、返回等操作，再通过截图或层级信息核对结果。不得仅以编译通过代替页面验证。
 - `local.properties` 是本机环境文件，绝不提交。API Key、用户财务数据和设备相关信息也不得写入源码、文档、截图或对外材料。
 - 修改业务行为前必须过业务规则门槛，修改视觉前必须过 `DESIGN.md` 门槛。没有对应任务就不扩大改动范围。
+
+### 6.1 构建产物与双应用（dev / release）
+
+- 除非用户明确要求编译 release，否则一律不要执行 release 构建（`assembleEverydayRelease` / `assembleDevRelease` 及任何 release 变体任务），默认只做 debug 编译与测试，避免无谓的签名与长时间构建。
+- 同一份代码产出两个可并存的安装：日常 `dev`（applicationId `com.example.cardtally`）与签名发布 `release`（applicationId `com.example.cardtally.release`）；两者数据沙箱相互隔离，互不读取对方数据库与偏好。
+- 所有测试只针对 Debug 代码执行，默认使用 `dev`；release 是发布构建，不得用于 JVM、设备、回归或真机测试。只有用户在单次命令中明确要求时，才构建或安装 release。
+- 日常 Debug：`.\gradlew.bat :app:assembleEverydayDebug`（等价 `:app:assembleDevDebug`），产物镜像到 `app/build/outputs/apk/debug/app-debug.apk`；这是文档与真机验证默认使用的包。
+- 日常签名 Release：`.\gradlew.bat :app:assembleEverydayRelease`（等价 `:app:assembleDevRelease`），产物镜像到 `app/build/outputs/apk/release/app-release.apk`。
+- 日常单元测试：`.\gradlew.bat :app:testEverydayUnitTest`（等价 `:app:testDevDebugUnitTest`）。
+- Release 签名材料来自仓库外的 `keystore.properties`（`storeFile/storePassword/keyAlias/keyPassword`）与仓库外 keystore；两者都必须保持未提交（已在 `.gitignore`）。缺少 `keystore.properties` 时 release 保持未签名，不得为了出包把密码或 keystore 提交进仓库。
+- 会重置数据库的设备测试仍只在隔离变体运行：`.\gradlew.bat :app:connectedVerificationDebugAndroidTest`（applicationIdSuffix `.verification`）。不要在日常 `dev` 变体上跑这类测试。
 
 ## 7 市场与对外声明边界
 

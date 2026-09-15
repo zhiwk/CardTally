@@ -1,9 +1,11 @@
 package com.example.cardtally.adapter
 
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -17,6 +19,7 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
 
     private val messages = mutableListOf<AiChatMessage>()
     private var streamingMessageIndex: Int = -1
+    private val expandedReasoning = mutableSetOf<Long>()
 
     /**
      * Replaces all messages (used for initial load or complete refresh).
@@ -25,6 +28,7 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
         messages.clear()
         messages.addAll(newMessages)
         streamingMessageIndex = -1
+        expandedReasoning.clear()
         notifyDataSetChanged()
     }
 
@@ -53,26 +57,43 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
     /**
      * Updates the content of the currently streaming message.
      */
-    fun updateStreamingContent(content: String) {
+    fun updateStreamingContent(content: String, reasoning: String = "") {
         if (streamingMessageIndex >= 0 && streamingMessageIndex < messages.size) {
-            val updatedMessage = messages[streamingMessageIndex].copy(content = content)
+            val updatedMessage = messages[streamingMessageIndex].copy(
+                content = content,
+                reasoning = reasoning.takeIf { it.isNotBlank() }
+            )
             messages[streamingMessageIndex] = updatedMessage
-            notifyItemChanged(streamingMessageIndex, PAYLOAD_STREAMING_CONTENT)
+            notifyItemChanged(streamingMessageIndex)
         }
     }
 
     /**
-     * Finalizes the streaming message with final content.
+     * Finalizes the streaming message with final content and reasoning.
      * If isError is true, marks it as an error message.
      */
-    fun finalizeStreamingMessage(finalContent: String, isError: Boolean = false) {
+    fun finalizeStreamingMessage(finalContent: String, reasoning: String = "", isError: Boolean = false) {
         if (streamingMessageIndex >= 0 && streamingMessageIndex < messages.size) {
             val finalMessage = messages[streamingMessageIndex].copy(
                 content = finalContent,
+                reasoning = reasoning.takeIf { it.isNotBlank() },
                 isError = isError
             )
             messages[streamingMessageIndex] = finalMessage
             notifyItemChanged(streamingMessageIndex)
+            streamingMessageIndex = -1
+        }
+    }
+
+    /**
+     * Removes the streaming placeholder entirely without persisting it. Used when
+     * a request is stopped before any assistant content arrived, so the empty
+     * bubble does not linger in the list.
+     */
+    fun discardStreamingPlaceholder() {
+        if (streamingMessageIndex in 0 until messages.size) {
+            messages.removeAt(streamingMessageIndex)
+            notifyItemRemoved(streamingMessageIndex)
             streamingMessageIndex = -1
         }
     }
@@ -84,7 +105,7 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
     }
 
     override fun onBindViewHolder(holder: AgentChatViewHolder, position: Int) {
-        bindViewHolder(holder, position, false)
+        bindMessage(holder, position)
     }
 
     override fun onBindViewHolder(
@@ -92,16 +113,10 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
         position: Int,
         payloads: MutableList<Any>
     ) {
-        if (payloads.contains(PAYLOAD_STREAMING_CONTENT)) {
-            // Partial update - only update text content
-            val message = messages[position]
-            holder.textMessage.text = message.content
-        } else {
-            bindViewHolder(holder, position, false)
-        }
+        bindMessage(holder, position)
     }
 
-    private fun bindViewHolder(holder: AgentChatViewHolder, position: Int, isPartial: Boolean) {
+    private fun bindMessage(holder: AgentChatViewHolder, position: Int) {
         val message = messages[position]
         val context = holder.itemView.context
         val bubbleLayoutParams = holder.textMessage.layoutParams as LinearLayout.LayoutParams
@@ -142,21 +157,76 @@ class AgentChatAdapter : RecyclerView.Adapter<AgentChatAdapter.AgentChatViewHold
 
         holder.textRole.layoutParams = roleLayoutParams
         holder.textMessage.layoutParams = bubbleLayoutParams
+
+        bindReasoning(holder, message, position)
+    }
+
+    private fun bindReasoning(holder: AgentChatViewHolder, message: AiChatMessage, position: Int) {
+        val context = holder.itemView.context
+        val reasoning = message.reasoning.orEmpty()
+        val hasReasoning = message.role == AiChatRole.ASSISTANT && reasoning.isNotBlank()
+        holder.layoutReasoning.visibility = if (hasReasoning) View.VISIBLE else View.GONE
+        if (!hasReasoning) return
+
+        holder.textReasoningBody.text = reasoning
+        val isStreaming = position == streamingMessageIndex
+        // Auto-expand while only thinking is arriving; collapse once the answer starts.
+        val expanded = if (isStreaming && message.content.isBlank()) {
+            true
+        } else {
+            expandedReasoning.contains(message.id)
+        }
+        applyReasoningExpanded(holder, expanded)
+        holder.rowReasoningHeader.contentDescription = context.getString(
+            if (expanded) R.string.agent_reasoning_collapse else R.string.agent_reasoning_expand
+        )
+        holder.rowReasoningHeader.setOnClickListener {
+            // Fall back to the bind-time position when the holder is not attached
+            // to a RecyclerView (e.g. tests binding the holder directly).
+            val adapterPosition = holder.adapterPosition
+                .takeIf { it != RecyclerView.NO_POSITION }
+                ?: position
+            val id = messages.getOrNull(adapterPosition)?.id ?: return@setOnClickListener
+            if (expandedReasoning.contains(id)) {
+                expandedReasoning.remove(id)
+            } else {
+                expandedReasoning.add(id)
+            }
+            notifyItemChanged(adapterPosition)
+        }
+    }
+
+    private fun applyReasoningExpanded(holder: AgentChatViewHolder, expanded: Boolean) {
+        holder.textReasoningBody.maxLines = if (expanded) Int.MAX_VALUE else 2
+        holder.textReasoningBody.ellipsize = if (expanded) null else TextUtils.TruncateAt.END
+        holder.imageReasoningChevron.setImageResource(
+            if (expanded) R.drawable.tabler_chevron_up else R.drawable.tabler_chevron_down
+        )
     }
 
     override fun getItemCount(): Int = messages.size
 
+    /**
+     * Read-only snapshot of the rendered rows, used by instrumentation tests to
+     * assert which assistant text actually reached the adapter.
+     */
+    internal fun messageSnapshot(): List<Pair<AiChatRole, String>> =
+        messages.map { it.role to it.content }
+
+    internal fun reasoningSnapshot(): List<String?> =
+        messages.map { it.reasoning }
+
     class AgentChatViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val container: LinearLayout = itemView.findViewById(R.id.layout_agent_message_container)
         val textRole: TextView = itemView.findViewById(R.id.text_agent_message_role)
+        val layoutReasoning: LinearLayout = itemView.findViewById(R.id.layout_agent_reasoning)
+        val rowReasoningHeader: LinearLayout = itemView.findViewById(R.id.row_agent_reasoning_header)
+        val textReasoningBody: TextView = itemView.findViewById(R.id.text_agent_reasoning_body)
+        val imageReasoningChevron: ImageView = itemView.findViewById(R.id.image_agent_reasoning_chevron)
         val textMessage: TextView = itemView.findViewById(R.id.text_agent_message_body)
     }
 
     private fun Int.dp(viewContext: android.content.Context): Int {
         return (this * viewContext.resources.displayMetrics.density).roundToInt()
-    }
-
-    companion object {
-        private const val PAYLOAD_STREAMING_CONTENT = "streaming_content"
     }
 }

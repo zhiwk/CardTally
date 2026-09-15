@@ -26,12 +26,12 @@ import com.example.cardtally.state.LedgerScreenState
 import com.example.cardtally.state.LedgerViewState
 import com.example.cardtally.state.PeriodPreset
 import com.example.cardtally.state.StatisticsType
-import com.example.cardtally.util.FloatingNavLayoutHelper
 import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.example.cardtally.util.LedgerAggregationHelper
 import com.example.cardtally.util.LedgerDateRange
 import com.example.cardtally.util.LedgerDisplayHelper
 import com.example.cardtally.util.LedgerPeriodHelper
+import com.example.cardtally.util.Money
 import com.example.cardtally.util.LedgerPeriodPreset
 import com.example.cardtally.util.LedgerUxPreferences
 import com.example.cardtally.util.LedgerView
@@ -211,10 +211,6 @@ class StatisticsFragment : Fragment() {
                 .commit()
         }
 
-        requireActivity().findViewById<View>(R.id.nav_shell)?.let { navShell ->
-            FloatingNavLayoutHelper.applyFabGapAboveBottomNav(fabAdd, navShell)
-        }
-
         checkPeriodToggle(togglePeriodPreset, currentPeriodPreset, false)
         if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM) {
             clearTopPeriodToggleSelection()
@@ -376,14 +372,11 @@ class StatisticsFragment : Fragment() {
             if (currentStatsType == TYPE_EXPENSE) -amount else amount
         }
 
-        textSummaryExpense.text = getString(R.string.currency_amount, expenseTotal)
-        textSummaryIncome.text = getString(R.string.currency_amount, incomeTotal)
+        textSummaryExpense.text = "¥${Money.formatYuan(expenseTotal)}"
+        textSummaryIncome.text = "¥${Money.formatYuan(incomeTotal)}"
         textSummaryExpense.setTextColor(IncomeExpenseColorScheme.expensePrimary(requireContext()))
         textSummaryIncome.setTextColor(IncomeExpenseColorScheme.incomePrimary(requireContext()))
-        textSummaryBalance.text = getString(
-            R.string.currency_amount,
-            incomeTotal - expenseTotal
-        )
+        textSummaryBalance.text = "¥${Money.formatYuan(incomeTotal - expenseTotal)}"
         textStatisticsSectionTitle.text = getString(
             if (currentStatsType == TYPE_EXPENSE) {
                 R.string.ledger_statistics_ranking_expense
@@ -400,7 +393,7 @@ class StatisticsFragment : Fragment() {
             viewStatisticsChart.submitData(
                 emptyList(),
                 getString(R.string.ledger_chart_total_label),
-                getString(R.string.currency_amount, 0.0)
+                "¥${Money.formatYuan(0L)}"
             )
             val emptyChartDates = buildChartAxisDates()
             viewStatisticsLineChart.submitData(
@@ -511,7 +504,7 @@ class StatisticsFragment : Fragment() {
         viewStatisticsChart.submitData(
             slices = slices,
             totalLabel = getString(R.string.ledger_chart_total_label),
-            totalValue = getString(R.string.currency_amount, summary.completeTotal)
+            totalValue = "¥${Money.formatYuan(summary.completeTotal)}"
         )
 
         val showLineChart = currentPeriodPreset == LedgerPeriodPreset.WEEK ||
@@ -591,7 +584,7 @@ class StatisticsFragment : Fragment() {
                 percentage,
                 LedgerDisplayHelper.formatEntriesMeta(entryCount)
             )
-            value.text = getString(R.string.currency_amount, slice.amount)
+            value.text = "¥${Money.formatYuan(slice.amount)}"
             layoutChartLegend.addView(legendView)
         }
 

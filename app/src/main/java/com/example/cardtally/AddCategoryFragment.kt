@@ -9,15 +9,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
-import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.RecyclerView
-import com.example.cardtally.adapter.IconPickerAdapter
+import com.example.cardtally.adapter.FeaturedIconLabels
+import com.example.cardtally.adapter.IconBrowserBinder
+import com.example.cardtally.adapter.IconPickerDialog
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.TablerIconCatalog
@@ -43,12 +42,10 @@ class AddCategoryFragment : Fragment() {
     private lateinit var nameInput: EditText
     private lateinit var iconView: ImageView
     private lateinit var preview: FrameLayout
-    private lateinit var iconLibrary: LinearLayout
+    private lateinit var iconLibraryPane: View
+    private var iconBrowser: IconBrowserBinder? = null
     private var selectedIcon = "tabler_category"
-    // Expense categories default to the app's success green; income categories
-    // use the income red. Users can still choose another swatch before saving.
     private var selectedColor = COLORS.first()
-    private var selectedGroupIndex = 0
     private val type get() = arguments?.getInt(ARG_TYPE, 0) ?: 0
     private val parentId get() = arguments?.getLong(ARG_PARENT_ID, -1L)?.takeIf { it > 0L }
 
@@ -59,17 +56,67 @@ class AddCategoryFragment : Fragment() {
         nameInput = view.findViewById(R.id.add_category_name)
         iconView = view.findViewById(R.id.add_category_icon)
         preview = view.findViewById(R.id.add_category_preview)
-        iconLibrary = view.findViewById(R.id.add_category_icon_library)
+        iconLibraryPane = view.findViewById(R.id.icon_library_pane)
         view.findViewById<TextView>(R.id.add_category_title).text = getString(
             if (type == 0) R.string.category_add_expense_title else R.string.category_add_income_title
         )
         view.findViewById<View>(R.id.add_category_back).setOnClickListener { parentFragmentManager.popBackStack() }
         view.findViewById<View>(R.id.add_category_confirm_top).setOnClickListener { saveCategory() }
         view.findViewById<View>(R.id.add_category_icon_picker).setOnClickListener { showIconPicker() }
+
+        val labels = FeaturedIconLabels.load(requireContext())
+        iconBrowser = IconBrowserBinder(requireContext(), view, labels) { icon ->
+            selectedIcon = icon
+            renderIcon()
+        }.also { it.bind(selectedIcon) }
+
         renderIcon()
         renderColors(view.findViewById(R.id.add_category_colors))
-        renderIconLibrary()
+        clampBrowseAreaToViewport()
         return view
+    }
+
+    /**
+     * Caps the icon browse area to the space that is actually reachable on
+     * screen instead of an estimated offset. The pane lives inside a scrolling
+     * page, so its real window position is used: everything between the pane top
+     * and the bottom of the visible content area (excluding system insets and
+     * the page's own bottom margin) becomes the pane height, clamped to the
+     * resource maximum. Re-runs on layout/font/orientation changes and detaches
+     * with the view, and never grows the pane beyond the declared maximum.
+     */
+    private fun clampBrowseAreaToViewport() {
+        val density = resources.displayMetrics.density
+        val maxHeightPx = resources.getDimensionPixelSize(R.dimen.category_icon_browse_height)
+        val bottomMarginPx = (16 * density).toInt()
+
+        fun updatePaneHeight() {
+            val pane = view?.findViewById<View>(R.id.icon_library_pane) ?: return
+            val location = IntArray(2)
+            pane.getLocationInWindow(location)
+            val bounds = android.graphics.Rect()
+            pane.getWindowVisibleDisplayFrame(bounds)
+            val availablePx = (bounds.bottom - bottomMarginPx - location[1]).coerceAtMost(maxHeightPx)
+            if (availablePx <= 0) return
+
+            val params = pane.layoutParams ?: return
+            if (params.height != availablePx) {
+                params.height = availablePx
+                pane.layoutParams = params
+            }
+        }
+
+        val listener = android.view.ViewTreeObserver.OnGlobalLayoutListener { updatePaneHeight() }
+        iconLibraryPane.viewTreeObserver.addOnGlobalLayoutListener(listener)
+        iconLibraryPane.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) = Unit
+            override fun onViewDetachedFromWindow(v: View) {
+                if (v.viewTreeObserver.isAlive) {
+                    v.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+                }
+            }
+        })
+        iconLibraryPane.post { updatePaneHeight() }
     }
 
     private fun renderIcon() {
@@ -107,104 +154,13 @@ class AddCategoryFragment : Fragment() {
     }
 
     private fun showIconPicker() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_icon_picker, null)
-        val dialog = AlertDialog.Builder(requireContext()).setTitle(R.string.category_icon_picker_title)
-            .setView(dialogView).setNegativeButton(R.string.dialog_cancel, null).create()
-        val recycler = dialogView.findViewById<RecyclerView>(R.id.recycler_icons)
-        val adapter = IconPickerAdapter(TablerIconCatalog.icons, selectedIcon) { icon ->
-            selectedIcon = icon ?: selectedIcon
-            renderIcon()
-            dialog.dismiss()
-        }
-        recycler.adapter = adapter
-        dialog.show()
-    }
-
-    private fun renderIconLibrary() {
-        iconLibrary.removeAllViews()
-        val context = requireContext()
-        val content = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        }
-        val navigation = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(64.dp, ViewGroup.LayoutParams.WRAP_CONTENT)
-        }
-        TablerIconCatalog.groups.forEachIndexed { index, group ->
-            navigation.addView(TextView(context).apply {
-                text = group.title
-                textSize = 14f
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                setTextColor(context.getColor(if (index == selectedGroupIndex) R.color.onSurface_light else R.color.onSurfaceVariant_light))
-                setTypeface(typeface, if (index == selectedGroupIndex) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
-                setPadding(4.dp, 0, 4.dp, 0)
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 52.dp)
-                isClickable = true
-                setOnClickListener {
-                    selectedGroupIndex = index
-                    renderIconLibrary()
-                }
-            })
-        }
-        content.addView(navigation)
-        val grid = GridLayout(context).apply {
-            columnCount = 4
-            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-        }
-        TablerIconCatalog.groups.getOrNull(selectedGroupIndex)?.icons?.distinct()?.take(16)?.forEach { icon ->
-            grid.addView(createIconTile(icon))
-        }
-        content.addView(grid)
-        iconLibrary.addView(content)
-        iconLibrary.addView(TextView(context).apply {
-            text = getString(R.string.category_icon_more)
-            textSize = 14f
-            gravity = android.view.Gravity.CENTER
-            setTextColor(context.getColor(R.color.primary_light))
-            setPadding(0, 8.dp, 0, 8.dp)
-            setOnClickListener { showIconPicker() }
-        })
-    }
-
-    private fun createIconTile(icon: String): View {
-        val context = requireContext()
-        val tile = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER
-            minimumHeight = 64.dp
-            layoutParams = GridLayout.LayoutParams().apply {
-                width = 0
-                height = ViewGroup.LayoutParams.WRAP_CONTENT
-                columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-                setMargins(2.dp, 2.dp, 2.dp, 2.dp)
-            }
-            isClickable = true
-            isFocusable = true
-            setOnClickListener {
+        IconPickerDialog.show(requireContext(), initialSelectedIcon = selectedIcon) { icon ->
+            if (icon != null) {
                 selectedIcon = icon
                 renderIcon()
-                renderIconLibrary()
+                iconBrowser?.updateSelection(icon)
             }
         }
-        tile.addView(ImageView(context).apply {
-            layoutParams = LinearLayout.LayoutParams(40.dp, 40.dp)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(Color.parseColor(if (icon == selectedIcon) "#DDF3F4" else "#F2F3F4"))
-            }
-            setPadding(9.dp, 9.dp, 9.dp, 9.dp)
-            setImageResource(TablerIconCatalog.resourceId(context, icon).takeIf { it != 0 } ?: R.drawable.tabler_category)
-            imageTintList = android.content.res.ColorStateList.valueOf(context.getColor(R.color.onSurface_light))
-        })
-        tile.addView(TextView(context).apply {
-            text = icon.removePrefix("tabler_").replace('_', ' ')
-            textSize = 10f
-            setTextColor(context.getColor(R.color.onSurfaceVariant_light))
-            maxLines = 1
-            ellipsize = android.text.TextUtils.TruncateAt.END
-        })
-        return tile
     }
 
     private fun saveCategory() {

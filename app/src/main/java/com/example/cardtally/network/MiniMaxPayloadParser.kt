@@ -42,12 +42,13 @@ object MiniMaxPayloadParser {
                 ?: return MiniMaxChatResult.Failure(MiniMaxErrorType.PARSE)
             val message = choice.optJSONObject("message")
                 ?: return MiniMaxChatResult.Failure(MiniMaxErrorType.PARSE)
-            val content = message.optString("content").orEmpty().trim()
+            val content = message.stringOrNull("content")?.trim().orEmpty()
+            val reasoning = message.reasoningOrNull()
 
             if (content.isBlank()) {
                 MiniMaxChatResult.Failure(MiniMaxErrorType.EMPTY_REPLY)
             } else {
-                MiniMaxChatResult.Success(content)
+                MiniMaxChatResult.Success(content, reasoning)
             }
         } catch (_: JSONException) {
             MiniMaxChatResult.Failure(MiniMaxErrorType.PARSE)
@@ -87,24 +88,26 @@ object MiniMaxPayloadParser {
         // Try to parse as JSON
         return try {
             val json = JSONObject(dataContent)
-            
+
             // MiniMax streaming format: choices[0].delta.content
             val choices = json.optJSONArray("choices")
             if (choices != null && choices.length() > 0) {
                 val choice = choices.optJSONObject(0)
                 val delta = choice?.optJSONObject("delta")
-                val content = delta?.optString("content")?.takeIf { it.isNotEmpty() }
-                
-                if (content != null) {
-                    StreamingParseResult.Content(content)
+                val content = delta?.stringOrNull("content")
+                val reasoning = delta?.reasoningOrNull()
+
+                if (content != null || reasoning != null) {
+                    StreamingParseResult.Content(content, reasoning)
                 } else {
                     StreamingParseResult.Empty
                 }
             } else {
-                // Alternative format: check for direct content field
-                val content = json.optString("content").takeIf { it.isNotEmpty() }
-                if (content != null) {
-                    StreamingParseResult.Content(content)
+                // Alternative format: top-level content / reasoning_content
+                val content = json.stringOrNull("content")
+                val reasoning = json.reasoningOrNull()
+                if (content != null || reasoning != null) {
+                    StreamingParseResult.Content(content, reasoning)
                 } else {
                     StreamingParseResult.Empty
                 }
@@ -114,6 +117,20 @@ object MiniMaxPayloadParser {
             StreamingParseResult.Empty
         }
     }
+
+    /**
+     * Reads a string field, treating a JSON `null` as absent.
+     *
+     * `JSONObject.optString` stringifies `JSONObject.NULL` to the literal "null",
+     * which is how streamed `content: null` chunks used to leak "null" into replies.
+     */
+    private fun JSONObject.stringOrNull(name: String): String? {
+        if (!has(name) || isNull(name)) return null
+        return optString(name).takeIf { it.isNotEmpty() }
+    }
+
+    private fun JSONObject.reasoningOrNull(): String? =
+        stringOrNull("reasoning_content") ?: stringOrNull("reasoning")
     
     /**
      * Checks if a response body appears to be a streaming response based on its shape.
@@ -213,11 +230,11 @@ object MiniMaxPayloadParser {
             val baseResp = root.optJSONObject("base_resp")
             ErrorInfo(
                 detail = firstNonBlank(
-                    baseResp?.optString("status_msg"),
-                    root.optString("message"),
-                    root.optString("msg"),
-                    root.optString("detail"),
-                    root.optJSONObject("error")?.optString("message")
+                    baseResp?.stringOrNull("status_msg"),
+                    root.stringOrNull("message"),
+                    root.stringOrNull("msg"),
+                    root.stringOrNull("detail"),
+                    root.optJSONObject("error")?.stringOrNull("message")
                 ),
                 miniMaxStatusCode = baseResp?.takeIf { it.has("status_code") }?.optInt("status_code")
             )
@@ -245,6 +262,6 @@ object MiniMaxPayloadParser {
     sealed class StreamingParseResult {
         object Empty : StreamingParseResult()
         object Done : StreamingParseResult()
-        data class Content(val text: String) : StreamingParseResult()
+        data class Content(val content: String?, val reasoning: String?) : StreamingParseResult()
     }
 }

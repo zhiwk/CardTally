@@ -19,8 +19,8 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="24dp"
-        android:paddingTop="18dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
         android:paddingBottom="12dp">
 
         <LinearLayout
@@ -35,17 +35,31 @@
                 android:text="@string/record_asset_sheet_title"
                 android:textColor="?attr/colorOnSurface"
                  android:textSize="22sp"
-                 android:fontFamily="serif" />
+                 android:fontFamily="sans-serif" />
         </LinearLayout>
 
         <ImageButton
             android:id="@+id/btn_close_sheet"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-             android:background="@android:color/transparent"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/dialog_cancel"
             android:src="@drawable/ic_close"
             app:tint="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/text_asset_sheet_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:background="@drawable/bg_card_surface"
+        android:gravity="center"
+        android:padding="24dp"
+        android:text="@string/record_asset_sheet_empty"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="14sp"
+        android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_assets"
@@ -53,7 +67,7 @@
         android:layout_height="wrap_content"
         android:clipToPadding="false"
         android:nestedScrollingEnabled="false"
-        android:paddingHorizontal="24dp"
+        android:paddingHorizontal="16dp"
         android:paddingTop="8dp" />
 
 </LinearLayout>

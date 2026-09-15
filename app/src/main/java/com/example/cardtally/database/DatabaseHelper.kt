@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.example.cardtally.BuildConfig
 import com.example.cardtally.model.AiChatMessage
 import com.example.cardtally.model.AiChatRole
 import com.example.cardtally.model.AiChatSession
@@ -13,6 +14,7 @@ import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.CategoryHierarchySettingsHelper
 import com.example.cardtally.util.LedgerSession
+import com.example.cardtally.util.Money
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -21,6 +23,11 @@ import java.util.UUID
 class DatabaseHelper(
     private val appContext: Context
 ) : SQLiteOpenHelper(appContext, DATABASE_NAME, null, DATABASE_VERSION) {
+
+    override fun onConfigure(db: SQLiteDatabase) {
+        super.onConfigure(db)
+        db.setForeignKeyConstraintsEnabled(true)
+    }
 
     enum class CategoryOperationError {
         PARENT_NOT_FOUND,
@@ -47,7 +54,8 @@ class DatabaseHelper(
 
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
-        private const val DATABASE_VERSION = 29
+        /** v33 adds persistent display ordering for assets. */
+        private const val DATABASE_VERSION = 33
         const val MAX_RECORD_QUERY_LIMIT = 200
         const val RECORD_UNDO_WINDOW_MS = 10_000L
 
@@ -61,6 +69,7 @@ class DatabaseHelper(
         private const val COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT = "category_path_snapshot"
         private const val COLUMN_TYPE = "type"
         private const val COLUMN_DESCRIPTION = "description"
+        private const val COLUMN_RECORD_FEE = "fee"
         private const val COLUMN_RECORD_ASSET_ID = "asset_id"
         private const val COLUMN_RECORD_DESTINATION_ASSET_ID = "destination_asset_id"
         private const val COLUMN_ASSET_SOURCE = "asset_source"
@@ -107,6 +116,7 @@ class DatabaseHelper(
         private const val COLUMN_ASSET_IS_ARCHIVED = "is_archived"
         private const val COLUMN_ASSET_IS_PINNED = "is_pinned"
         private const val COLUMN_ASSET_INCLUDE_IN_TOTAL = "include_in_total"
+        private const val COLUMN_ASSET_SORT_ORDER = "sort_order"
 
         private const val TABLE_AI_CHAT_SESSIONS = "ai_chat_sessions"
         private const val COLUMN_AI_CHAT_SESSION_ID = "id"
@@ -119,6 +129,7 @@ class DatabaseHelper(
         private const val COLUMN_AI_CHAT_MESSAGE_SESSION_ID = "session_id"
         private const val COLUMN_AI_CHAT_MESSAGE_ROLE = "role"
         private const val COLUMN_AI_CHAT_MESSAGE_CONTENT = "content"
+        private const val COLUMN_AI_CHAT_MESSAGE_REASONING = "reasoning_content"
         private const val COLUMN_AI_CHAT_MESSAGE_IS_ERROR = "is_error"
         private const val COLUMN_AI_CHAT_MESSAGE_CREATED_AT = "created_at"
 
@@ -126,13 +137,14 @@ class DatabaseHelper(
             "CREATE TABLE $TABLE_RECORDS (" +
             "$COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "$COLUMN_DATE TEXT NOT NULL, " +
-            "$COLUMN_AMOUNT REAL NOT NULL, " +
+            "$COLUMN_AMOUNT INTEGER NOT NULL CHECK ($COLUMN_AMOUNT > 0), " +
             "$COLUMN_CATEGORY TEXT NOT NULL, " +
             "$COLUMN_RECORD_CATEGORY_ID INTEGER, " +
             "$COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT TEXT, " +
             "$COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT TEXT, " +
-            "$COLUMN_TYPE INTEGER NOT NULL, " +
+            "$COLUMN_TYPE INTEGER NOT NULL CHECK ($COLUMN_TYPE IN (0, 1, 2)), " +
             "$COLUMN_DESCRIPTION TEXT, " +
+            "$COLUMN_RECORD_FEE INTEGER NOT NULL DEFAULT 0 CHECK ($COLUMN_RECORD_FEE >= 0), " +
             "$COLUMN_RECORD_ASSET_ID INTEGER, " +
             "$COLUMN_RECORD_DESTINATION_ASSET_ID INTEGER, " +
             "$COLUMN_ASSET_SOURCE TEXT, " +
@@ -140,7 +152,8 @@ class DatabaseHelper(
             "$COLUMN_PHOTO_URI TEXT, " +
             "$COLUMN_PHOTO_URIS TEXT, " +
             "$COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1, " +
-            "$COLUMN_SORT_ORDER INTEGER DEFAULT 0)"
+            "$COLUMN_SORT_ORDER INTEGER NOT NULL DEFAULT 0, " +
+            "CHECK ($COLUMN_TYPE != 2 OR ($COLUMN_RECORD_ASSET_ID IS NOT NULL AND $COLUMN_RECORD_DESTINATION_ASSET_ID IS NOT NULL AND $COLUMN_RECORD_ASSET_ID != $COLUMN_RECORD_DESTINATION_ASSET_ID)))"
 
         private const val CREATE_TABLE_CATEGORIES =
             "CREATE TABLE $TABLE_CATEGORIES (" +
@@ -157,29 +170,31 @@ class DatabaseHelper(
             "CREATE TABLE $TABLE_ASSETS (" +
             "$COLUMN_ASSET_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "$COLUMN_ASSET_NAME TEXT NOT NULL, " +
-            "$COLUMN_ASSET_AMOUNT REAL NOT NULL, " +
+            "$COLUMN_ASSET_AMOUNT INTEGER NOT NULL, " +
             "$COLUMN_ASSET_TYPE INTEGER NOT NULL, " +
             "$COLUMN_ASSET_CATEGORY_LABEL TEXT NOT NULL DEFAULT '', " +
             "$COLUMN_ASSET_CATEGORY_ICON_NAME TEXT NOT NULL DEFAULT '', " +
             "$COLUMN_ASSET_IS_ARCHIVED INTEGER DEFAULT 0, " +
             "$COLUMN_ASSET_IS_PINNED INTEGER DEFAULT 0, " +
             "$COLUMN_ASSET_INCLUDE_IN_TOTAL INTEGER DEFAULT 1, " +
-            "$COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1)"
+            "$COLUMN_ASSET_SORT_ORDER INTEGER NOT NULL DEFAULT 0, " +
+            "$COLUMN_LEDGER_ID INTEGER NOT NULL)"
 
         private const val CREATE_TABLE_RECORD_DELETION_UNDO =
             "CREATE TABLE $TABLE_RECORD_DELETION_UNDO (" +
             "$COLUMN_UNDO_TOKEN TEXT PRIMARY KEY, " +
             "$COLUMN_UNDO_EXPIRES_AT INTEGER NOT NULL, " +
-            "$COLUMN_UNDO_BALANCE_DELTA REAL NOT NULL, " +
+            "$COLUMN_UNDO_BALANCE_DELTA INTEGER NOT NULL, " +
             "$COLUMN_ID INTEGER NOT NULL, " +
             "$COLUMN_DATE TEXT NOT NULL, " +
-            "$COLUMN_AMOUNT REAL NOT NULL, " +
+            "$COLUMN_AMOUNT INTEGER NOT NULL, " +
             "$COLUMN_CATEGORY TEXT NOT NULL, " +
             "$COLUMN_RECORD_CATEGORY_ID INTEGER, " +
             "$COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT TEXT, " +
             "$COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT TEXT, " +
             "$COLUMN_TYPE INTEGER NOT NULL, " +
             "$COLUMN_DESCRIPTION TEXT, " +
+            "$COLUMN_RECORD_FEE INTEGER NOT NULL DEFAULT 0, " +
             "$COLUMN_RECORD_ASSET_ID INTEGER, " +
             "$COLUMN_RECORD_DESTINATION_ASSET_ID INTEGER, " +
             "$COLUMN_ASSET_SOURCE TEXT, " +
@@ -222,6 +237,7 @@ class DatabaseHelper(
             "$COLUMN_AI_CHAT_MESSAGE_SESSION_ID INTEGER NOT NULL, " +
             "$COLUMN_AI_CHAT_MESSAGE_ROLE TEXT NOT NULL, " +
             "$COLUMN_AI_CHAT_MESSAGE_CONTENT TEXT NOT NULL, " +
+            "$COLUMN_AI_CHAT_MESSAGE_REASONING TEXT, " +
             "$COLUMN_AI_CHAT_MESSAGE_IS_ERROR INTEGER DEFAULT 0, " +
             "$COLUMN_AI_CHAT_MESSAGE_CREATED_AT INTEGER NOT NULL)"
 
@@ -230,6 +246,21 @@ class DatabaseHelper(
 
         private const val CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT =
             "CREATE INDEX IF NOT EXISTS idx_ai_chat_messages_session_created_at ON $TABLE_AI_CHAT_MESSAGES($COLUMN_AI_CHAT_MESSAGE_SESSION_ID, $COLUMN_AI_CHAT_MESSAGE_CREATED_AT ASC)"
+
+        private const val CREATE_INDEX_RECORDS_LEDGER_DATE =
+            "CREATE INDEX IF NOT EXISTS idx_records_ledger_date_sort ON $TABLE_RECORDS($COLUMN_LEDGER_ID, $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC)"
+        private const val CREATE_INDEX_RECORDS_LEDGER_TYPE_DATE =
+            "CREATE INDEX IF NOT EXISTS idx_records_ledger_type_date ON $TABLE_RECORDS($COLUMN_LEDGER_ID, $COLUMN_TYPE, $COLUMN_DATE DESC)"
+        private const val CREATE_INDEX_RECORDS_SOURCE_ASSET =
+            "CREATE INDEX IF NOT EXISTS idx_records_source_asset_date ON $TABLE_RECORDS($COLUMN_RECORD_ASSET_ID, $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC)"
+        private const val CREATE_INDEX_RECORDS_DESTINATION_ASSET =
+            "CREATE INDEX IF NOT EXISTS idx_records_destination_asset_date ON $TABLE_RECORDS($COLUMN_RECORD_DESTINATION_ASSET_ID, $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC)"
+        private const val CREATE_INDEX_CATEGORIES_TYPE_PARENT =
+            "CREATE INDEX IF NOT EXISTS idx_categories_type_parent_sort ON $TABLE_CATEGORIES($COLUMN_CATEGORY_TYPE, $COLUMN_CATEGORY_PARENT_ID, $COLUMN_CATEGORY_SORT_ORDER, $COLUMN_CATEGORY_ID)"
+        private const val CREATE_INDEX_ASSETS_LEDGER_ARCHIVED =
+            "CREATE INDEX IF NOT EXISTS idx_assets_ledger_archived_name ON $TABLE_ASSETS($COLUMN_LEDGER_ID, $COLUMN_ASSET_IS_ARCHIVED, $COLUMN_ASSET_NAME)"
+        private const val CREATE_INDEX_ASSETS_LEDGER_ARCHIVED_ORDER =
+            "CREATE INDEX IF NOT EXISTS idx_assets_ledger_archived_order ON $TABLE_ASSETS($COLUMN_LEDGER_ID, $COLUMN_ASSET_IS_ARCHIVED, $COLUMN_ASSET_SORT_ORDER, $COLUMN_ASSET_ID)"
     }
 
     data class RecordPageCursor(
@@ -249,7 +280,13 @@ class DatabaseHelper(
 
     private fun currentLedgerId(): Long {
         val saved = LedgerSession.getCurrentId(appContext)
-        if (saved != null) return saved
+        if (saved != null) {
+            val exists = readableDatabase.rawQuery(
+                "SELECT 1 FROM $TABLE_LEDGERS WHERE $COLUMN_ID = ? LIMIT 1",
+                arrayOf(saved.toString())
+            ).use { it.moveToFirst() }
+            if (exists) return saved
+        }
         val id = readableDatabase.rawQuery(
             "SELECT $COLUMN_ID FROM $TABLE_LEDGERS ORDER BY $COLUMN_LEDGER_SORT_ORDER, $COLUMN_ID LIMIT 1", null
         ).use { if (it.moveToFirst()) it.getLong(0) else 1L }
@@ -380,7 +417,7 @@ class DatabaseHelper(
                 "FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
             arrayOf(sourceId.toString())
         ).use { cursor ->
-            if (cursor.moveToFirst()) cursor.getInt(0) to cursor.getDouble(1) else 0 to 0.0
+            if (cursor.moveToFirst()) cursor.getInt(0) to Money.toMajorDouble(cursor.getLong(1)) else 0 to 0.0
         }
     }
 
@@ -437,7 +474,7 @@ class DatabaseHelper(
             ContentValues().apply {
                 put(COLUMN_LEDGER_ID, targetLedgerId)
                 put(COLUMN_ASSET_NAME, cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_NAME)))
-                put(COLUMN_ASSET_AMOUNT, cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT)))
+                put(COLUMN_ASSET_AMOUNT, cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT)))
                 put(COLUMN_ASSET_TYPE, cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE)))
                 put(COLUMN_ASSET_CATEGORY_LABEL, cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_LABEL)))
                 put(COLUMN_ASSET_CATEGORY_ICON_NAME, cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_ICON_NAME)))
@@ -499,40 +536,6 @@ class DatabaseHelper(
     fun getLedgerRecordCount(ledgerId: Long): Int = readableDatabase.rawQuery(
         "SELECT COUNT(*) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ?", arrayOf(ledgerId.toString())
     ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
-
-    /** Permanently folds sourceLedgerId into the active ledger, retaining IDs and history. */
-    fun mergeLedgerIntoCurrent(sourceLedgerId: Long): Boolean {
-        val targetLedgerId = currentLedgerId()
-        if (sourceLedgerId == targetLedgerId || sourceLedgerId == getMasterLedgerId() || getLedgers().none { it.id == sourceLedgerId }) return false
-        val db = writableDatabase
-        db.beginTransaction()
-        return try {
-            val sourceAssetIds = mutableSetOf<Long>()
-            db.rawQuery(
-                "SELECT $COLUMN_ASSET_ID FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ?",
-                arrayOf(sourceLedgerId.toString())
-            ).use { cursor -> while (cursor.moveToNext()) sourceAssetIds += cursor.getLong(0) }
-            db.rawQuery(
-                "SELECT $COLUMN_SHARED_ASSET_ID FROM $TABLE_LEDGER_SHARED_ASSETS WHERE $COLUMN_SHARED_LEDGER_ID = ?",
-                arrayOf(sourceLedgerId.toString())
-            ).use { cursor -> while (cursor.moveToNext()) sourceAssetIds += cursor.getLong(0) }
-
-            db.update(TABLE_RECORDS, ContentValues().apply { put(COLUMN_LEDGER_ID, targetLedgerId) }, "$COLUMN_LEDGER_ID = ?", arrayOf(sourceLedgerId.toString()))
-            db.update(TABLE_ASSETS, ContentValues().apply { put(COLUMN_LEDGER_ID, targetLedgerId) }, "$COLUMN_LEDGER_ID = ?", arrayOf(sourceLedgerId.toString()))
-            sourceAssetIds.forEach { assetId ->
-                db.insertWithOnConflict(TABLE_LEDGER_SHARED_ASSETS, null, ContentValues().apply {
-                    put(COLUMN_SHARED_LEDGER_ID, targetLedgerId)
-                    put(COLUMN_SHARED_ASSET_ID, assetId)
-                }, SQLiteDatabase.CONFLICT_IGNORE)
-            }
-            db.delete(TABLE_LEDGER_SHARED_ASSETS, "$COLUMN_SHARED_LEDGER_ID = ?", arrayOf(sourceLedgerId.toString()))
-            db.delete(TABLE_LEDGERS, "$COLUMN_ID = ?", arrayOf(sourceLedgerId.toString()))
-            db.setTransactionSuccessful()
-            true
-        } finally {
-            db.endTransaction()
-        }
-    }
 
     /** Deletes ledgers and their records while retaining a shared pool for surviving ledgers. */
     fun deleteLedgers(ledgerIds: Set<Long>): Boolean {
@@ -598,12 +601,39 @@ class DatabaseHelper(
         db.execSQL(CREATE_TABLE_RECORD_DELETION_UNDO)
         db.execSQL(CREATE_TABLE_AI_CHAT_SESSIONS)
         db.execSQL(CREATE_TABLE_AI_CHAT_MESSAGES)
+        db.execSQL(CREATE_INDEX_RECORDS_LEDGER_DATE)
+        db.execSQL(CREATE_INDEX_RECORDS_LEDGER_TYPE_DATE)
+        db.execSQL(CREATE_INDEX_RECORDS_SOURCE_ASSET)
+        db.execSQL(CREATE_INDEX_RECORDS_DESTINATION_ASSET)
+        db.execSQL(CREATE_INDEX_CATEGORIES_TYPE_PARENT)
+        db.execSQL(CREATE_INDEX_ASSETS_LEDGER_ARCHIVED)
+        db.execSQL(CREATE_INDEX_ASSETS_LEDGER_ARCHIVED_ORDER)
         db.execSQL(CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT)
         db.execSQL(CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT)
         insertDefaultCategories(db, 1L)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // Verification deliberately starts from one coherent schema. Earlier builds
+        // do not carry forward local data, so no partial legacy migration can survive.
+        if (BuildConfig.APPLICATION_ID.endsWith(".verification")) {
+            resetAllDataForVerification(db)
+        } else {
+            // Daily sandboxes retain their data. Their existing schema already has
+            // the columns used by the app; add safe performance-only indices.
+            if (oldVersion < 33) {
+                ensureColumn(
+                    db,
+                    TABLE_ASSETS,
+                    COLUMN_ASSET_SORT_ORDER,
+                    "ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_SORT_ORDER INTEGER NOT NULL DEFAULT 0"
+                )
+                initializeAssetSortOrders(db)
+            }
+            createPerformanceIndices(db)
+        }
+        return
+
         // v22 starts the clean multi-ledger model. Financial data is intentionally reset;
         // AI conversations remain shared and are kept in their own tables.
         if (oldVersion < 22) {
@@ -646,6 +676,16 @@ class DatabaseHelper(
         if (oldVersion < 29) {
             ensureColumn(db, TABLE_CATEGORIES, COLUMN_CATEGORY_COLOR,
                 "ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_CATEGORY_COLOR TEXT NOT NULL DEFAULT '#F5F5F5'")
+        }
+        if (oldVersion < 30) {
+            ensureColumn(db, TABLE_RECORDS, COLUMN_RECORD_FEE,
+                "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_RECORD_FEE REAL NOT NULL DEFAULT 0")
+            ensureColumn(db, TABLE_RECORD_DELETION_UNDO, COLUMN_RECORD_FEE,
+                "ALTER TABLE $TABLE_RECORD_DELETION_UNDO ADD COLUMN $COLUMN_RECORD_FEE REAL NOT NULL DEFAULT 0")
+        }
+        if (oldVersion < 31) {
+            ensureColumn(db, TABLE_AI_CHAT_MESSAGES, COLUMN_AI_CHAT_MESSAGE_REASONING,
+                "ALTER TABLE $TABLE_AI_CHAT_MESSAGES ADD COLUMN $COLUMN_AI_CHAT_MESSAGE_REASONING TEXT")
         }
         if (oldVersion >= 2 && oldVersion < 21) migrateLedgerSchema(db)
         if (oldVersion < 2) {
@@ -823,6 +863,32 @@ class DatabaseHelper(
             db.execSQL("UPDATE $TABLE_ASSETS SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
             db.execSQL("UPDATE $TABLE_RECORD_DELETION_UNDO SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
         }
+    }
+
+    private fun resetAllDataForVerification(db: SQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_RECORD_DELETION_UNDO")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_RECORDS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_LEDGER_SHARED_ASSETS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_LEDGER_SHARED_LEDGERS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_ASSETS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_CATEGORIES")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_AI_CHAT_MESSAGES")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_AI_CHAT_SESSIONS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_LEDGERS")
+        onCreate(db)
+        LedgerSession.setCurrentId(appContext, 1L)
+    }
+
+    private fun createPerformanceIndices(db: SQLiteDatabase) {
+        db.execSQL(CREATE_INDEX_RECORDS_LEDGER_DATE)
+        db.execSQL(CREATE_INDEX_RECORDS_LEDGER_TYPE_DATE)
+        db.execSQL(CREATE_INDEX_RECORDS_SOURCE_ASSET)
+        db.execSQL(CREATE_INDEX_RECORDS_DESTINATION_ASSET)
+        db.execSQL(CREATE_INDEX_CATEGORIES_TYPE_PARENT)
+        db.execSQL(CREATE_INDEX_ASSETS_LEDGER_ARCHIVED)
+        db.execSQL(CREATE_INDEX_ASSETS_LEDGER_ARCHIVED_ORDER)
+        db.execSQL(CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT)
+        db.execSQL(CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT)
     }
 
     private fun resetFinancialData(db: SQLiteDatabase) {
@@ -1065,7 +1131,7 @@ class DatabaseHelper(
         return ContentValues().apply {
             put(COLUMN_LEDGER_ID, currentLedgerId())
             put(COLUMN_DATE, record.date)
-            put(COLUMN_AMOUNT, record.amount)
+            put(COLUMN_AMOUNT, requireNotNull(Money.toMinor(record.amount)))
             put(COLUMN_CATEGORY, record.category)
             if (record.categoryId != null) {
                 put(COLUMN_RECORD_CATEGORY_ID, record.categoryId)
@@ -1076,6 +1142,7 @@ class DatabaseHelper(
             put(COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT, categoryPathSnapshot)
             put(COLUMN_TYPE, record.type)
             put(COLUMN_DESCRIPTION, record.description)
+            put(COLUMN_RECORD_FEE, if (record.type == 2) requireNotNull(Money.toMinor(record.fee)) else 0L)
             putNullable(COLUMN_RECORD_ASSET_ID, record.assetId)
             putNullable(COLUMN_RECORD_DESTINATION_ASSET_ID, record.destinationAssetId)
             put(COLUMN_ASSET_SOURCE, record.assetSource)
@@ -1089,13 +1156,14 @@ class DatabaseHelper(
         return Record(
             id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID)),
             date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE)),
-            amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT)),
+            amount = Money.toMajorDouble(cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT))),
             category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
             categoryId = getNullableLong(cursor, COLUMN_RECORD_CATEGORY_ID),
             categoryNameSnapshot = getNullableString(cursor, COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT),
             categoryPathSnapshot = getNullableString(cursor, COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT),
             type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
             description = getNullableString(cursor, COLUMN_DESCRIPTION),
+            fee = Money.toMajorDouble(cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_RECORD_FEE))),
             assetId = getNullableLong(cursor, COLUMN_RECORD_ASSET_ID),
             destinationAssetId = getNullableLong(cursor, COLUMN_RECORD_DESTINATION_ASSET_ID),
             assetSource = getNullableString(cursor, COLUMN_ASSET_SOURCE),
@@ -1107,6 +1175,7 @@ class DatabaseHelper(
                 ?.ifEmpty { getNullableString(cursor, COLUMN_PHOTO_URI)?.let(::listOf) ?: emptyList() }
                 ?: getNullableString(cursor, COLUMN_PHOTO_URI)?.let(::listOf)
                 ?: emptyList(),
+            ledgerId = getNullableLong(cursor, COLUMN_LEDGER_ID),
             sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
         )
     }
@@ -1259,26 +1328,24 @@ class DatabaseHelper(
 
     fun addRecord(record: Record): Long {
         val db = writableDatabase
-        
-        val maxSortOrderQuery = "SELECT MAX($COLUMN_SORT_ORDER) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_DATE = ?"
-        val cursor = db.rawQuery(maxSortOrderQuery, arrayOf(currentLedgerId().toString(), record.date))
-        var maxSortOrder = 0
-        if (cursor.moveToFirst()) {
-            maxSortOrder = cursor.getInt(0)
-        }
-        cursor.close()
-        
-        val values = createRecordValues(record).apply {
-            put(COLUMN_SORT_ORDER, maxSortOrder + 1)
-        }
-
-        val id = db.insert(TABLE_RECORDS, null, values)
-        
-        if (id != -1L) {
+        db.beginTransaction()
+        return try {
+            validateRecordForWrite(db, record)
+            val maxSortOrder = db.rawQuery(
+                "SELECT COALESCE(MAX($COLUMN_SORT_ORDER), 0) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_DATE = ?",
+                arrayOf(currentLedgerId().toString(), record.date)
+            ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
+            val id = db.insertOrThrow(TABLE_RECORDS, null, createRecordValues(record).apply {
+                put(COLUMN_SORT_ORDER, maxSortOrder + 1)
+            })
             applyRecordAssetEffect(db, record, reverse = false)
+            db.setTransactionSuccessful()
+            id
+        } catch (_: IllegalArgumentException) {
+            -1L
+        } finally {
+            db.endTransaction()
         }
-
-        return id
     }
 
     fun getAllRecords(): List<Record> {
@@ -1300,20 +1367,50 @@ class DatabaseHelper(
 
     fun updateRecord(record: Record): Int {
         val db = writableDatabase
-        
-        val oldRecord = getRecordByIdInternal(db, record.id)
-        
-        val values = createRecordValues(record)
-
-        val rowsAffected = db.update(TABLE_RECORDS, values, "$COLUMN_ID = ? AND $COLUMN_LEDGER_ID = ?",
-            arrayOf(record.id.toString(), currentLedgerId().toString()))
-        
-        if (rowsAffected > 0 && oldRecord != null) {
+        db.beginTransaction()
+        return try {
+            validateRecordForWrite(db, record)
+            val oldRecord = getRecordByIdInternal(db, record.id) ?: return 0
             applyRecordAssetEffect(db, oldRecord, reverse = true)
+            val rowsAffected = db.update(
+                TABLE_RECORDS,
+                createRecordValues(record),
+                "$COLUMN_ID = ? AND $COLUMN_LEDGER_ID = ?",
+                arrayOf(record.id.toString(), currentLedgerId().toString())
+            )
+            check(rowsAffected == 1)
             applyRecordAssetEffect(db, record, reverse = false)
+            db.setTransactionSuccessful()
+            rowsAffected
+        } catch (_: IllegalArgumentException) {
+            0
+        } finally {
+            db.endTransaction()
         }
+    }
 
-        return rowsAffected
+    private fun validateRecordForWrite(db: SQLiteDatabase, record: Record) {
+        require(record.type in 0..2) { "Unsupported record type" }
+        require(record.amount > 0.0 && Money.toMinor(record.amount) != null) { "Amount must be positive and finite" }
+        require(record.fee >= 0.0 && Money.toMinor(record.fee) != null) { "Fee cannot be negative" }
+        if (record.type == 2) {
+            require(record.assetId != null && record.destinationAssetId != null) { "Transfer assets are required" }
+            require(record.assetId != record.destinationAssetId) { "Transfer assets must differ" }
+        } else {
+            require(record.category.isNotBlank()) { "Category is required" }
+            record.categoryId?.let { categoryId ->
+                val category = getCategoryByIdInternal(db, categoryId)
+                    ?: throw IllegalArgumentException("Category missing")
+                require(category.type == record.type && !categoryHasChildren(db, categoryId)) { "Category must be a matching leaf" }
+            }
+        }
+        listOfNotNull(record.assetId, record.destinationAssetId).forEach { assetId ->
+            val exists = db.rawQuery(
+                "SELECT 1 FROM $TABLE_ASSETS WHERE ${assetScope()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0 LIMIT 1",
+                arrayOf(assetId.toString())
+            ).use { it.moveToFirst() }
+            require(exists) { "Asset unavailable" }
+        }
     }
 
     fun getRecordById(id: Long): Record? {
@@ -1567,7 +1664,7 @@ class DatabaseHelper(
                     RecordDeletionUndoEntry(
                         record = createRecordFromCursor(it),
                         expiresAtEpochMs = it.getLong(it.getColumnIndexOrThrow(COLUMN_UNDO_EXPIRES_AT)),
-                        balanceDelta = it.getDouble(it.getColumnIndexOrThrow(COLUMN_UNDO_BALANCE_DELTA))
+                        balanceDelta = Money.toMajorDouble(it.getLong(it.getColumnIndexOrThrow(COLUMN_UNDO_BALANCE_DELTA)))
                     )
                 }
             }
@@ -1621,16 +1718,17 @@ class DatabaseHelper(
             put(COLUMN_LEDGER_ID, currentLedgerId())
             put(COLUMN_UNDO_TOKEN, token.value)
             put(COLUMN_UNDO_EXPIRES_AT, token.expiresAtEpochMs)
-            put(COLUMN_UNDO_BALANCE_DELTA, balanceDelta)
+            put(COLUMN_UNDO_BALANCE_DELTA, requireNotNull(Money.toMinor(balanceDelta)))
             put(COLUMN_ID, record.id)
             put(COLUMN_DATE, record.date)
-            put(COLUMN_AMOUNT, record.amount)
+            put(COLUMN_AMOUNT, requireNotNull(Money.toMinor(record.amount)))
             put(COLUMN_CATEGORY, record.category)
             putNullable(COLUMN_RECORD_CATEGORY_ID, record.categoryId)
             putNullable(COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT, record.categoryNameSnapshot)
             putNullable(COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT, record.categoryPathSnapshot)
             put(COLUMN_TYPE, record.type)
             putNullable(COLUMN_DESCRIPTION, record.description)
+            put(COLUMN_RECORD_FEE, requireNotNull(Money.toMinor(record.fee)))
             putNullable(COLUMN_RECORD_ASSET_ID, record.assetId)
             putNullable(COLUMN_RECORD_DESTINATION_ASSET_ID, record.destinationAssetId)
             putNullable(COLUMN_ASSET_SOURCE, record.assetSource)
@@ -1668,7 +1766,7 @@ class DatabaseHelper(
         execSQL(
             "UPDATE $TABLE_ASSETS SET $COLUMN_ASSET_AMOUNT = $COLUMN_ASSET_AMOUNT + ? " +
                 "WHERE ${assetScope()} AND $identityClause$archiveClause",
-            arrayOf(delta.toString(), identityValue)
+            arrayOf(requireNotNull(Money.toMinor(delta)).toString(), identityValue)
         )
         return true
     }
@@ -1676,30 +1774,33 @@ class DatabaseHelper(
     private fun applyRecordAssetEffect(db: SQLiteDatabase, record: Record, reverse: Boolean) {
         val direction = if (reverse) -1 else 1
         when (record.type) {
-            0 -> record.assetId?.let { updateAssetAmount(db, it, record.amount * direction, false) }
-            1 -> record.assetId?.let { updateAssetAmount(db, it, record.amount * direction, true) }
+            0 -> record.assetId?.let { check(updateAssetAmount(db, it, record.amount * direction, false)) }
+            1 -> record.assetId?.let { check(updateAssetAmount(db, it, record.amount * direction, true)) }
             2 -> {
-                record.assetId?.let { updateAssetAmount(db, it, record.amount * direction, false) }
-                record.destinationAssetId?.let { updateAssetAmount(db, it, record.amount * direction, true) }
+                val transferOut = record.amount + record.fee
+                record.assetId?.let { check(updateAssetAmount(db, it, transferOut * direction, false)) }
+                record.destinationAssetId?.let { check(updateAssetAmount(db, it, record.amount * direction, true)) }
             }
         }
     }
 
-    private fun updateAssetAmount(db: SQLiteDatabase, assetId: Long, amount: Double, isAdd: Boolean) {
+    private fun updateAssetAmount(db: SQLiteDatabase, assetId: Long, amount: Double, isAdd: Boolean): Boolean {
         val selectQuery = "SELECT $COLUMN_ASSET_AMOUNT FROM $TABLE_ASSETS WHERE ${assetScope()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0 LIMIT 1"
         val cursor = db.rawQuery(selectQuery, arrayOf(assetId.toString()))
         
-        if (cursor.moveToFirst()) {
-            val currentAmount = cursor.getDouble(0)
-            val newAmount = if (isAdd) currentAmount + amount else currentAmount - amount
+        val updated = if (cursor.moveToFirst()) {
+            val currentAmount = cursor.getLong(0)
+            val amountMinor = requireNotNull(Money.toMinor(amount))
+            val newAmount = if (isAdd) currentAmount + amountMinor else currentAmount - amountMinor
             
             val values = ContentValues().apply {
                 put(COLUMN_ASSET_AMOUNT, newAmount)
             }
-            db.update(TABLE_ASSETS, values, "${assetScope()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0", arrayOf(assetId.toString()))
-        }
+            db.update(TABLE_ASSETS, values, "${assetScope()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0", arrayOf(assetId.toString())) == 1
+        } else false
         
         cursor.close()
+        return updated
     }
 
     fun updateRecordSortOrder(recordId: Long, newSortOrder: Int) {
@@ -1820,6 +1921,23 @@ class DatabaseHelper(
                     db.update(TABLE_CATEGORIES, values, "$COLUMN_CATEGORY_ID = ?", arrayOf(id.toString()))
                     nextByGroup[groupKey] = values.getAsInteger(COLUMN_CATEGORY_SORT_ORDER) + 1
                 } while (it.moveToNext())
+            }
+        }
+    }
+
+    private fun initializeAssetSortOrders(db: SQLiteDatabase) {
+        db.rawQuery(
+            "SELECT $COLUMN_ASSET_ID FROM $TABLE_ASSETS ORDER BY $COLUMN_ASSET_NAME COLLATE NOCASE, $COLUMN_ASSET_ID",
+            null
+        ).use { cursor ->
+            var order = 0
+            while (cursor.moveToNext()) {
+                db.update(
+                    TABLE_ASSETS,
+                    ContentValues().apply { put(COLUMN_ASSET_SORT_ORDER, order++) },
+                    "$COLUMN_ASSET_ID = ?",
+                    arrayOf(cursor.getLong(0).toString())
+                )
             }
         }
     }
@@ -1983,12 +2101,32 @@ class DatabaseHelper(
         val cursor = db.rawQuery(selectQuery, arrayOf(currentLedgerId().toString(), type.toString()))
 
         if (cursor.moveToFirst()) {
-            total = cursor.getDouble(0)
+            total = Money.toMajorDouble(cursor.getLong(0))
         }
 
         cursor.close()
+        if (type == 0) {
+            total += getTransferFeeSum(db, null, null)
+        }
         db.close()
         return total
+    }
+
+    /** Transfer fees count toward the expense total even though transfers are not income/expense. */
+    private fun getTransferFeeSum(db: SQLiteDatabase, startDate: String?, endDate: String?): Double {
+        val rangeClause = if (startDate != null && endDate != null) " AND $COLUMN_DATE BETWEEN ? AND ?" else ""
+        val args = if (rangeClause.isEmpty()) {
+            arrayOf(currentLedgerId().toString(), "2")
+        } else {
+            arrayOf(currentLedgerId().toString(), "2", startDate!!, endDate!!)
+        }
+        val cursor = db.rawQuery(
+            "SELECT SUM($COLUMN_RECORD_FEE) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = ?$rangeClause",
+            args
+        )
+        val sum = if (cursor.moveToFirst()) Money.toMajorDouble(cursor.getLong(0)) else 0.0
+        cursor.close()
+        return sum
     }
 
     fun getTotalByTypeAndDateRange(type: Int, startDate: String, endDate: String): Double {
@@ -1999,10 +2137,13 @@ class DatabaseHelper(
         val cursor = db.rawQuery(selectQuery, arrayOf(currentLedgerId().toString(), type.toString(), startDate, endDate))
 
         if (cursor.moveToFirst()) {
-            total = cursor.getDouble(0)
+            total = Money.toMajorDouble(cursor.getLong(0))
         }
 
         cursor.close()
+        if (type == 0) {
+            total += getTransferFeeSum(db, startDate, endDate)
+        }
         db.close()
         return total
     }
@@ -2034,15 +2175,16 @@ class DatabaseHelper(
         val arguments: Array<String>
         if (after == null) {
             query =
-                "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_DATE = ? " +
+                "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_DATE = ? " +
                     "ORDER BY $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC LIMIT $MAX_RECORD_QUERY_LIMIT"
-            arguments = arrayOf(todayDate)
+            arguments = arrayOf(currentLedgerId().toString(), todayDate)
         } else {
             query =
-                "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_DATE = ? " +
+                "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_DATE = ? " +
                     "AND ($COLUMN_SORT_ORDER > ? OR ($COLUMN_SORT_ORDER = ? AND $COLUMN_ID > ?)) " +
                     "ORDER BY $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC LIMIT $MAX_RECORD_QUERY_LIMIT"
             arguments = arrayOf(
+                currentLedgerId().toString(),
                 todayDate,
                 after.sortOrder.toString(),
                 after.sortOrder.toString(),
@@ -2097,6 +2239,283 @@ class DatabaseHelper(
         return records
     }
 
+    /**
+     * Every ledger that references [assetId], in every ledger — the asset-detail
+     * history is a property of the asset id, not of the currently selected ledger.
+     * Each row appears once even when the same asset is both source and
+     * destination (a transfer to itself is still a single record).
+     */
+    fun getAllRecordsByAssetId(assetId: Long): List<Record> {
+        val records = mutableListOf<Record>()
+        readableDatabase.rawQuery(
+            "SELECT * FROM $TABLE_RECORDS " +
+                "WHERE ($COLUMN_RECORD_ASSET_ID = ? OR $COLUMN_RECORD_DESTINATION_ASSET_ID = ?) " +
+                "ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC",
+            arrayOf(assetId.toString(), assetId.toString())
+        ).use { cursor ->
+            while (cursor.moveToNext()) records += createRecordFromCursor(cursor)
+        }
+        return records
+    }
+
+    /** Ledger names keyed by id, for bulk provenance labels (one query, no N+1). */
+    fun getLedgerNamesByIds(ledgerIds: Set<Long>): Map<Long, String> {
+        if (ledgerIds.isEmpty()) return emptyMap()
+        val names = HashMap<Long, String>()
+        readableDatabase.rawQuery(
+            "SELECT $COLUMN_ID, $COLUMN_LEDGER_NAME FROM $TABLE_LEDGERS",
+            null
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(0)
+                if (id in ledgerIds) names[id] = cursor.getString(1)
+            }
+        }
+        return names
+    }
+
+    /** A ledger's ledger-row id, needed to flag "this row belongs to this ledger". */
+    fun getLedgerIdForRecord(recordId: Long): Long? = readableDatabase.rawQuery(
+        "SELECT $COLUMN_LEDGER_ID FROM $TABLE_RECORDS WHERE $COLUMN_ID = ?",
+        arrayOf(recordId.toString())
+    ).use { if (it.moveToFirst()) it.getLong(0) else null }
+
+    /**
+     * One row per distinct asset group (pool root). [rootLedgerId] and
+     * [rootLedgerName] describe the owner; [memberLedgerIds] are the ledgers that
+     * share the same pool, and [sameNameGroupCount] distinguishes identically
+     * named groups without forcing the user to maintain group names.
+     */
+    data class AssetGroupDescriptor(
+        val rootLedgerId: Long,
+        val rootLedgerName: String,
+        val memberLedgerIds: List<Long>,
+        val memberLedgerNames: List<String>,
+        val isMaster: Boolean,
+        val assetCount: Int,
+        val sameNameGroupCount: Int
+    )
+
+    /** Stable pool root of a ledger (follows shared-source chains, cycle-safe). */
+    fun getAssetGroupRootId(ledgerId: Long): Long = assetPoolRootId(ledgerId)
+
+    /** Ledgers that resolve to the same asset pool as [ledgerId], including itself. */
+    fun getAssetGroupMemberIds(ledgerId: Long): List<Long> {
+        val root = assetPoolRootId(ledgerId)
+        return getLedgers().map { it.id }.filter { assetPoolRootId(it) == root }
+    }
+
+    /** Whether [ledgerId] owns the permanent master asset pool. */
+    fun isMasterAssetGroup(ledgerId: Long): Boolean =
+        assetPoolRootId(ledgerId) == getMasterLedgerId()
+
+    fun getAssetGroups(): List<AssetGroupDescriptor> {
+        val ledgers = getLedgers()
+        val masterId = getMasterLedgerId()
+        val grouped = ledgers.groupBy { assetPoolRootId(it.id) }
+        // How many distinct groups share the same owner name; used only to tell
+        // otherwise identical group labels apart in the picker.
+        val groupNameCounts = HashMap<String, Int>()
+        grouped.forEach { (rootId, members) ->
+            val name = members.firstOrNull { it.id == rootId }?.name.orEmpty()
+            groupNameCounts[name] = (groupNameCounts[name] ?: 0) + 1
+        }
+        return grouped
+            .map { (rootId, members) ->
+                val ordered = members.sortedBy { it.id }
+                val rootName = ordered.firstOrNull { it.id == rootId }?.name.orEmpty()
+                AssetGroupDescriptor(
+                    rootLedgerId = rootId,
+                    rootLedgerName = rootName,
+                    memberLedgerIds = ordered.map { it.id },
+                    memberLedgerNames = ordered.map { it.name },
+                    isMaster = rootId == masterId,
+                    assetCount = getLedgerAssetPoolAssetCount(rootId),
+                    sameNameGroupCount = groupNameCounts[rootName] ?: 1
+                )
+            }
+            .sortedWith(compareBy({ !it.isMaster }, { it.rootLedgerId }))
+    }
+
+    private fun getLedgerAssetPoolAssetCount(rootId: Long): Int {
+        return readableDatabase.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
+            arrayOf(rootId.toString())
+        ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
+    }
+
+    /**
+     * Creates a ledger that either starts an empty independent asset group
+     * ([sharedSourceLedgerId] null) or joins an existing group. Joining stores no
+     * asset copies: the ledger references the group root, so the same asset ids
+     * and balances are shared. The whole operation is one transaction, so a
+     * failure leaves neither a ledger nor a half-written relationship behind.
+     */
+    fun createLedgerInAssetGroup(
+        name: String,
+        sharedSourceLedgerId: Long?,
+        iconName: String = "tabler_book"
+    ): Long? {
+        val trimmedName = name.trim()
+        if (trimmedName.isEmpty()) return null
+        val resolvedRoot = sharedSourceLedgerId?.let { sourceId ->
+            if (getLedgers().none { it.id == sourceId }) return null
+            assetPoolRootId(sourceId)
+        }
+        val db = writableDatabase
+        db.beginTransaction()
+        return try {
+            val id = db.insertOrThrow(TABLE_LEDGERS, null, ContentValues().apply {
+                put(COLUMN_LEDGER_NAME, trimmedName)
+                put(COLUMN_LEDGER_SUBTITLE, "${trimmedName}账本")
+                put(COLUMN_LEDGER_SORT_ORDER, getLedgers().size)
+                put(COLUMN_LEDGER_ICON_NAME, iconName)
+            })
+            if (resolvedRoot != null && resolvedRoot != id) {
+                db.insertOrThrow(TABLE_LEDGER_SHARED_LEDGERS, null, ContentValues().apply {
+                    put(COLUMN_SHARED_LEDGER_ID, id)
+                    put(COLUMN_SHARED_SOURCE_LEDGER_ID, resolvedRoot)
+                })
+            }
+            db.setTransactionSuccessful()
+            id
+        } catch (exception: Exception) {
+            null
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    enum class LedgerMergeFailure {
+        NONE,
+        SAME_LEDGER,
+        MISSING_LEDGER,
+        CROSS_GROUP,
+        MASTER_AS_SOURCE
+    }
+
+    /** Validates an explicit source → target merge without writing anything. */
+    fun validateLedgerMerge(sourceLedgerId: Long, targetLedgerId: Long): LedgerMergeFailure {
+        if (sourceLedgerId == targetLedgerId) return LedgerMergeFailure.SAME_LEDGER
+        val ledgerIds = getLedgers().map { it.id }.toSet()
+        if (sourceLedgerId !in ledgerIds || targetLedgerId !in ledgerIds) {
+            return LedgerMergeFailure.MISSING_LEDGER
+        }
+        if (sourceLedgerId == getMasterLedgerId()) return LedgerMergeFailure.MASTER_AS_SOURCE
+        if (assetPoolRootId(sourceLedgerId) != assetPoolRootId(targetLedgerId)) {
+            return LedgerMergeFailure.CROSS_GROUP
+        }
+        return LedgerMergeFailure.NONE
+    }
+
+    /**
+     * Merges [sourceLedgerId] into [targetLedgerId] in a single transaction.
+     *
+     * Record ids, dates, amounts, category ids/snapshots, notes, photos and both
+     * transfer asset ids are preserved: only the owning ledger changes. Asset ids
+     * and balances are untouched because both ledgers already share one asset
+     * pool, and global categories are never copied. Survivors of the same pool are
+     * re-pointed to the kept root so no shared reference dangles or loops, and a
+     * failure rolls the whole merge back.
+     */
+    fun mergeLedgerInto(sourceLedgerId: Long, targetLedgerId: Long): Boolean {
+        if (validateLedgerMerge(sourceLedgerId, targetLedgerId) != LedgerMergeFailure.NONE) {
+            return false
+        }
+        val originalRoot = assetPoolRootId(sourceLedgerId)
+        val groupMemberIds = getAssetGroupMemberIds(sourceLedgerId)
+        val db = writableDatabase
+        db.beginTransaction()
+        return try {
+            // Re-check inside the transaction: the pre-check is not the guarantee.
+            if (validateLedgerMerge(sourceLedgerId, targetLedgerId) != LedgerMergeFailure.NONE) {
+                db.endTransaction()
+                return false
+            }
+            db.update(
+                TABLE_RECORDS,
+                ContentValues().apply { put(COLUMN_LEDGER_ID, targetLedgerId) },
+                "$COLUMN_LEDGER_ID = ?",
+                arrayOf(sourceLedgerId.toString())
+            )
+            // Asset rows belong to whichever ledger is the pool root. If the source
+            // is the root, they move to the target; otherwise they stay where they
+            // are and the target simply keeps referencing the same root.
+            if (originalRoot == sourceLedgerId) {
+                db.update(
+                    TABLE_ASSETS,
+                    ContentValues().apply { put(COLUMN_LEDGER_ID, targetLedgerId) },
+                    "$COLUMN_LEDGER_ID = ?",
+                    arrayOf(sourceLedgerId.toString())
+                )
+            }
+            db.delete(
+                TABLE_LEDGER_SHARED_LEDGERS,
+                "$COLUMN_SHARED_LEDGER_ID = ?",
+                arrayOf(sourceLedgerId.toString())
+            )
+            db.delete(TABLE_LEDGERS, "$COLUMN_ID = ?", arrayOf(sourceLedgerId.toString()))
+            repointSharedReferences(db, groupMemberIds, sourceLedgerId, targetLedgerId)
+            db.setTransactionSuccessful()
+            true
+        } catch (exception: Exception) {
+            false
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    /**
+     * Guarantees every surviving *member of the merged group* references a ledger
+     * that still exists, and that the group resolves to exactly one root.
+     *
+     * Only [groupMemberIds] — captured before the source was removed — are
+     * touched. Unrelated groups are never re-pointed, so merging one group cannot
+     * change which assets another ledger sees.
+     */
+    private fun repointSharedReferences(
+        db: SQLiteDatabase,
+        groupMemberIds: List<Long>,
+        removedSourceId: Long,
+        keptLedgerId: Long
+    ) {
+        val survivingIds = getLedgers().map { it.id }.toSet()
+        val survivors = groupMemberIds.filter { it != removedSourceId && it in survivingIds }
+        if (survivors.isEmpty()) return
+
+        val keptOldRoot = db.rawQuery(
+            "SELECT $COLUMN_SHARED_SOURCE_LEDGER_ID FROM $TABLE_LEDGER_SHARED_LEDGERS WHERE $COLUMN_SHARED_LEDGER_ID = ?",
+            arrayOf(keptLedgerId.toString())
+        ).use { if (it.moveToFirst()) it.getLong(0) else null }
+
+        // The group root is the ledger that owns the asset rows. It only has to
+        // change when the removed source *was* the root that the target pointed to;
+        // in that case the target now owns the moved rows and is promoted.
+        val newRoot = if (keptOldRoot == removedSourceId || keptOldRoot == null) {
+            keptLedgerId
+        } else if (keptOldRoot in survivingIds) {
+            keptOldRoot
+        } else {
+            keptLedgerId
+        }
+
+        // Rewrite the whole group with direct links so no chain can dangle, loop,
+        // or resolve to a ledger that no longer exists.
+        groupMemberIds.forEach { ledgerId ->
+            db.delete(
+                TABLE_LEDGER_SHARED_LEDGERS,
+                "$COLUMN_SHARED_LEDGER_ID = ?",
+                arrayOf(ledgerId.toString())
+            )
+        }
+        survivors.filter { it != newRoot }.forEach { ledgerId ->
+            db.insertOrThrow(TABLE_LEDGER_SHARED_LEDGERS, null, ContentValues().apply {
+                put(COLUMN_SHARED_LEDGER_ID, ledgerId)
+                put(COLUMN_SHARED_SOURCE_LEDGER_ID, newRoot)
+            })
+        }
+    }
+
     fun getCategoryStatistics(type: Int): Map<String, Double> {
         val categoryStats = mutableMapOf<String, Double>()
         val selectQuery = "SELECT $COLUMN_CATEGORY, SUM($COLUMN_AMOUNT) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = ? GROUP BY $COLUMN_CATEGORY"
@@ -2107,7 +2526,7 @@ class DatabaseHelper(
         if (cursor.moveToFirst()) {
             do {
                 val category = cursor.getString(0)
-                val total = cursor.getDouble(1)
+                val total = Money.toMajorDouble(cursor.getLong(1))
                 categoryStats[category] = total
             } while (cursor.moveToNext())
         }
@@ -2127,7 +2546,7 @@ class DatabaseHelper(
         if (cursor.moveToFirst()) {
             do {
                 val category = cursor.getString(0)
-                val total = cursor.getDouble(1)
+                val total = Money.toMajorDouble(cursor.getLong(1))
                 categoryStats[category] = total
             } while (cursor.moveToNext())
         }
@@ -2147,12 +2566,26 @@ class DatabaseHelper(
         if (cursor.moveToFirst()) {
             do {
                 val month = cursor.getString(0)
-                val total = cursor.getDouble(1)
+                val total = Money.toMajorDouble(cursor.getLong(1))
                 monthlyStats[month] = total
             } while (cursor.moveToNext())
         }
 
         cursor.close()
+        if (type == 0) {
+            val feeCursor = db.rawQuery(
+                "SELECT SUBSTR($COLUMN_DATE, 1, 7) as month, SUM($COLUMN_RECORD_FEE) FROM $TABLE_RECORDS " +
+                    "WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = 2 AND SUBSTR($COLUMN_DATE, 1, 4) = ? GROUP BY month",
+                arrayOf(currentLedgerId().toString(), year.toString())
+            )
+            if (feeCursor.moveToFirst()) {
+                do {
+                    val month = feeCursor.getString(0)
+                    monthlyStats[month] = (monthlyStats[month] ?: 0.0) + Money.toMajorDouble(feeCursor.getLong(1))
+                } while (feeCursor.moveToNext())
+            }
+            feeCursor.close()
+        }
         db.close()
         return monthlyStats
     }
@@ -2162,13 +2595,14 @@ class DatabaseHelper(
         val values = ContentValues().apply {
             put(COLUMN_LEDGER_ID, currentLedgerId())
             put(COLUMN_ASSET_NAME, asset.name)
-            put(COLUMN_ASSET_AMOUNT, asset.amount)
+            put(COLUMN_ASSET_AMOUNT, requireNotNull(Money.toMinor(asset.amount)))
             put(COLUMN_ASSET_TYPE, asset.type)
             put(COLUMN_ASSET_CATEGORY_LABEL, asset.categoryLabel)
             put(COLUMN_ASSET_CATEGORY_ICON_NAME, asset.categoryIconName)
             put(COLUMN_ASSET_IS_ARCHIVED, if (asset.isArchived) 1 else 0)
             put(COLUMN_ASSET_IS_PINNED, if (asset.isPinned) 1 else 0)
             put(COLUMN_ASSET_INCLUDE_IN_TOTAL, if (asset.includeInTotal) 1 else 0)
+            put(COLUMN_ASSET_SORT_ORDER, nextAssetSortOrder(db))
         }
 
         val id = db.insert(TABLE_ASSETS, null, values)
@@ -2178,7 +2612,7 @@ class DatabaseHelper(
 
     fun getAllAssets(): List<Asset> {
         val assets = mutableListOf<Asset>()
-        val selectQuery = "SELECT * FROM $TABLE_ASSETS WHERE ${assetScope()} AND $COLUMN_ASSET_IS_ARCHIVED = 0 ORDER BY $COLUMN_ASSET_NAME"
+        val selectQuery = "SELECT * FROM $TABLE_ASSETS WHERE ${assetScope()} AND $COLUMN_ASSET_IS_ARCHIVED = 0 ORDER BY $COLUMN_ASSET_SORT_ORDER, $COLUMN_ASSET_ID"
 
         val db = readableDatabase
         val cursor = db.rawQuery(selectQuery, null)
@@ -2189,13 +2623,14 @@ class DatabaseHelper(
                     id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_ID)),
                     ledgerId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_LEDGER_ID)),
                     name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_NAME)),
-                    amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT)),
+                    amount = Money.toMajorDouble(cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT))),
                     type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE)),
                     categoryLabel = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_LABEL)),
                     categoryIconName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_ICON_NAME)),
                     isArchived = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_IS_ARCHIVED)) == 1,
                     isPinned = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_IS_PINNED)) == 1
-                    ,includeInTotal = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_INCLUDE_IN_TOTAL)) == 1
+                    ,includeInTotal = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_INCLUDE_IN_TOTAL)) == 1,
+                    sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_SORT_ORDER))
                 )
                 assets.add(asset)
             } while (cursor.moveToNext())
@@ -2219,7 +2654,7 @@ class DatabaseHelper(
                     id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_ID)),
                     ledgerId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_LEDGER_ID)),
                     name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_NAME)),
-                    amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT)),
+                    amount = Money.toMajorDouble(cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT))),
                     type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE)),
                     categoryLabel = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_LABEL)),
                     categoryIconName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_ICON_NAME)),
@@ -2259,7 +2694,7 @@ class DatabaseHelper(
         val db = writableDatabase
         val values = ContentValues().apply {
             put(COLUMN_ASSET_NAME, asset.name)
-            put(COLUMN_ASSET_AMOUNT, asset.amount)
+            put(COLUMN_ASSET_AMOUNT, requireNotNull(Money.toMinor(asset.amount)))
             put(COLUMN_ASSET_TYPE, asset.type)
             put(COLUMN_ASSET_CATEGORY_LABEL, asset.categoryLabel)
             put(COLUMN_ASSET_CATEGORY_ICON_NAME, asset.categoryIconName)
@@ -2278,6 +2713,7 @@ class DatabaseHelper(
         val db = writableDatabase
         val values = ContentValues().apply {
             put(COLUMN_ASSET_IS_PINNED, if (pinned) 1 else 0)
+            put(COLUMN_ASSET_SORT_ORDER, nextAssetSortOrder(db))
         }
         val rows = db.update(
             TABLE_ASSETS,
@@ -2287,6 +2723,35 @@ class DatabaseHelper(
         )
         db.close()
         return rows
+    }
+
+    fun updateAssetSortOrder(assetIds: List<Long>): Boolean {
+        if (assetIds.isEmpty() || assetIds.distinct().size != assetIds.size) return false
+        val db = writableDatabase
+        db.beginTransaction()
+        return try {
+            assetIds.forEachIndexed { order, id ->
+                val changed = db.update(
+                    TABLE_ASSETS,
+                    ContentValues().apply { put(COLUMN_ASSET_SORT_ORDER, order) },
+                    "${assetScope()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
+                    arrayOf(id.toString())
+                )
+                if (changed != 1) return false
+            }
+            db.setTransactionSuccessful()
+            true
+        } finally {
+            db.endTransaction()
+            db.close()
+        }
+    }
+
+    private fun nextAssetSortOrder(db: SQLiteDatabase): Int = db.rawQuery(
+        "SELECT COALESCE(MAX($COLUMN_ASSET_SORT_ORDER), -1) + 1 FROM $TABLE_ASSETS WHERE ${assetScope()}",
+        null
+    ).use { cursor ->
+        if (cursor.moveToFirst()) cursor.getInt(0) else 0
     }
 
     fun deleteArchivedAsset(id: Long): Boolean {
@@ -2365,7 +2830,7 @@ class DatabaseHelper(
         val cursor = db.rawQuery(selectQuery, null)
 
         if (cursor.moveToFirst()) {
-            total = cursor.getDouble(0)
+            total = Money.toMajorDouble(cursor.getLong(0))
         }
 
         cursor.close()
@@ -2482,6 +2947,7 @@ class DatabaseHelper(
             put(COLUMN_AI_CHAT_MESSAGE_SESSION_ID, message.sessionId)
             put(COLUMN_AI_CHAT_MESSAGE_ROLE, message.role.apiValue)
             put(COLUMN_AI_CHAT_MESSAGE_CONTENT, message.content)
+            put(COLUMN_AI_CHAT_MESSAGE_REASONING, message.reasoning)
             put(COLUMN_AI_CHAT_MESSAGE_IS_ERROR, if (message.isError) 1 else 0)
             put(COLUMN_AI_CHAT_MESSAGE_CREATED_AT, createdAt)
         }
@@ -2519,6 +2985,7 @@ class DatabaseHelper(
                             it.apiValue == cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_ROLE))
                         } ?: AiChatRole.ASSISTANT,
                         content = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_CONTENT)),
+                        reasoning = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_REASONING)),
                         isError = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_IS_ERROR)) == 1,
                         createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_CREATED_AT))
                     )

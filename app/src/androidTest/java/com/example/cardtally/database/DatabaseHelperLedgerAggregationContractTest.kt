@@ -1,7 +1,8 @@
-package com.example.cardtally.database
+﻿package com.example.cardtally.database
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.cardtally.testing.IsolatedTestGuard
 import com.example.cardtally.model.Record
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -17,6 +18,7 @@ class DatabaseHelperLedgerAggregationContractTest {
 
     @Before
     fun setUp() {
+        IsolatedTestGuard.requireIsolatedBuild()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         context.deleteDatabase(DATABASE_NAME)
         databaseHelper = DatabaseHelper(context)

@@ -1,4 +1,4 @@
-# Android Debug APK 安装 Skill
+﻿# Android Debug APK 安装 Skill
 
 用于把 CardTally 的 `debug apk` 通过 `adb` 安装到已连接的 Android 设备上。
 
@@ -13,7 +13,7 @@
 安装前先确认：
 
 1. 已执行过 `skills/android-build-debug.md` 对应的编译步骤
-2. 本地 APK 存在：`app/build/outputs/apk/debug/CardTally-debug.apk`
+2. 本地 APK 存在：`app/build/outputs/apk/debug/app-debug.apk`
 3. `adb devices` 能看到目标设备处于 `device` 状态
 4. 如有多台设备，已确认目标设备 `serial`
 
@@ -28,7 +28,7 @@ adb devices
 ### 2. 安装 debug apk
 
 ```powershell
-adb install -r app/build/outputs/apk/debug/CardTally-debug.apk
+adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 说明：
@@ -41,7 +41,7 @@ adb install -r app/build/outputs/apk/debug/CardTally-debug.apk
 如果同时连接多台设备，必须显式指定：
 
 ```powershell
-adb -s <serial> install -r app/build/outputs/apk/debug/CardTally-debug.apk
+adb -s <serial> install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 不要在多设备场景下省略 `-s <serial>`。
@@ -85,10 +85,10 @@ adb -s <serial> install -r app/build/outputs/apk/debug/CardTally-debug.apk
 
 1. 执行 `adb devices`
 2. 如有多设备，确认目标 `serial`
-3. 确认 `app/build/outputs/apk/debug/CardTally-debug.apk` 已生成
+3. 确认 `app/build/outputs/apk/debug/app-debug.apk` 已生成
 4. 执行 `adb install -r ...`
 5. 检查输出是否为 `Success`
 
 ## 一句话记忆
 
-> 先确认 `CardTally-debug.apk` 已生成，再用 `adb install -r` 覆盖安装；多设备时必须带 `-s <serial>`。
+> 先确认 `app-debug.apk` 已生成，再用 `adb install -r` 覆盖安装；多设备时必须带 `-s <serial>`。

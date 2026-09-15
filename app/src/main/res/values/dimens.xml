@@ -55,6 +55,7 @@
     <dimen name="floating_nav_vertical_padding">6dp</dimen>
     <dimen name="floating_primary_fab_end_margin">28dp</dimen>
     <dimen name="floating_primary_fab_gap_above_nav">15dp</dimen>
+    <dimen name="floating_scroll_top_fab_bottom_margin">87dp</dimen>
     <!-- Runtime helpers align FAB/composer to keep a fixed 15dp gap above bottom nav. -->
     <dimen name="floating_primary_fab_bottom_margin_with_nav">92dp</dimen>
     <dimen name="content_bottom_padding_with_floating_nav">132dp</dimen>
@@ -80,6 +81,9 @@
     <dimen name="spacing_xxl">32dp</dimen>
     <dimen name="spacing_xxxl">48dp</dimen>
     <dimen name="category_depth_indent">20dp</dimen>
+    <!-- Cap for the featured-icon browse area; actual height is clamped to the
+         available viewport at runtime so it never exceeds the reachable region. -->
+    <dimen name="category_icon_browse_height">360dp</dimen>
 
     <!-- Material bottom navigation overrides: compact icon/label rhythm. -->
     <dimen name="design_bottom_navigation_margin">0dp</dimen>

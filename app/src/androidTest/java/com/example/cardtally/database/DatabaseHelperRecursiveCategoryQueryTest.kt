@@ -1,10 +1,12 @@
-package com.example.cardtally.database
+﻿package com.example.cardtally.database
 
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.cardtally.testing.IsolatedTestGuard
+import com.example.cardtally.util.Money
 import com.example.cardtally.model.Category
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -21,6 +23,7 @@ class DatabaseHelperRecursiveCategoryQueryTest {
 
     @Before
     fun setUp() {
+        IsolatedTestGuard.requireIsolatedBuild()
         context = InstrumentationRegistry.getInstrumentation().targetContext
         context.deleteDatabase(DATABASE_NAME)
         databaseHelper = DatabaseHelper(context)
@@ -188,7 +191,7 @@ class DatabaseHelperRecursiveCategoryQueryTest {
         database.insertOrThrow("records", null, ContentValues().apply {
             put("id", id)
             put("date", date)
-            put("amount", amount)
+            put("amount", requireNotNull(Money.toMinor(amount)))
             put("category", category)
             put("type", EXPENSE_TYPE)
             putNull("description")

@@ -7,6 +7,12 @@
 
 ## 1. Atmosphere & Identity
 
+### Current visual baseline (2026-09-06)
+
+The owner's latest Ledger / Record-entry references supersede the older outlined-card and shadow defaults below. For current pages use `background_light` (`#EEEEEE`) as the canvas and opaque `surface_light` (`#FFFFFF`) for neutral working cards. Standard group radius is 12dp; the established prominent record-entry form may retain 20dp. Neutral cards and bottom action/navigation bars have no stroke and no elevation. `bg_card_surface` is the shared drawable for plain rounded cards; do not use alpha fills or background tints to simulate white.
+
+Use system sans-serif, compact bold 22sp page/sheet titles, 16dp mobile gutters, and consistent grouped rows. Preserve input boundaries, internal separators, pressed/focus feedback, selected markers, and semantic income/expense/transfer colors. These are functional cues, not decorative card edges. Floating actions and modal scrims remain distinct from neutral cards. Existing navigation and data behavior are unchanged by this visual pass.
+
 CardTally is simple, neutral, structured, calm, and card-led. It should feel like a clear personal ledger arranged on a bright desk: white working surfaces, black financial figures, quiet gray structure, and pale color only when meaning requires it. The signature is the **outlined financial card**: a white or whisper-gray surface with a fine cool-gray edge, a very light downward shadow, medium outer corners, and disciplined information grouping. Cards mark a meaningful summary, entity, or control group; rows inside a group remain rows rather than becoming nested cards. This is not the former “静奢理财日记” identity, not a dashboard template, and not a decorative lifestyle surface.
 
 ### Product principles

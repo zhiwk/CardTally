@@ -19,7 +19,6 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Ledger
 import com.example.cardtally.util.LedgerSession
 import com.example.cardtally.util.TablerIconCatalog
-import com.example.cardtally.util.SwipeToEditDeleteHelper
 
 class LedgerManagementFragment : Fragment() {
     companion object {
@@ -59,7 +58,7 @@ class LedgerManagementFragment : Fragment() {
         )
         val actionButton = view.findViewById<ImageView>(R.id.button_ledger_management_add)
         actionButton.visibility = View.VISIBLE
-        actionButton.setImageResource(if (showLedgers) R.drawable.ic_add else R.drawable.ic_check)
+        actionButton.setImageResource(if (showLedgers) R.drawable.ic_add else R.drawable.tabler_list_check)
         actionButton.contentDescription = getString(if (showLedgers) R.string.ledger_management_add else R.string.ledger_management_select)
         view.findViewById<View>(R.id.button_ledger_management_back).setOnClickListener { parentFragmentManager.popBackStack() }
         actionButton.setOnClickListener {
@@ -71,6 +70,12 @@ class LedgerManagementFragment : Fragment() {
             } else {
                 selectionMode = !selectionMode
                 selectedLedgerIds.clear()
+                actionButton.setImageResource(
+                    if (selectionMode) R.drawable.ic_close else R.drawable.tabler_list_check
+                )
+                actionButton.contentDescription = getString(
+                    if (selectionMode) R.string.dialog_cancel else R.string.ledger_management_select
+                )
                 render()
             }
         }
@@ -105,20 +110,6 @@ class LedgerManagementFragment : Fragment() {
                 setOnClickListener {
                     LedgerSession.setCurrentId(requireContext(), ledger.id)
                     parentFragmentManager.popBackStack()
-                }
-                setOnLongClickListener {
-                    if (ledger.id == currentId) return@setOnLongClickListener false
-                    AlertDialog.Builder(requireContext())
-                        .setTitle(R.string.ledger_management_merge_title)
-                        .setMessage(getString(R.string.ledger_management_merge_message, ledger.name))
-                        .setNegativeButton(R.string.dialog_cancel, null)
-                        .setPositiveButton(R.string.ledger_management_merge_confirm) { _, _ ->
-                            if (databaseHelper.mergeLedgerIntoCurrent(ledger.id)) {
-                                Toast.makeText(requireContext(), R.string.ledger_management_merge_done, Toast.LENGTH_SHORT).show()
-                                render()
-                            }
-                        }.show()
-                    true
                 }
             }
             val icon = ImageView(requireContext()).apply {
@@ -163,7 +154,7 @@ class LedgerManagementFragment : Fragment() {
     private fun renderAssets() {
         assetList.removeAllViews()
         val ledgers = databaseHelper.getLedgers()
-        val currentId = LedgerSession.getCurrentId(requireContext())
+         val currentId = LedgerSession.getCurrentId(requireContext())
         fun resolvePoolId(ledgerId: Long): Long {
             val visited = mutableSetOf<Long>()
             var poolId = ledgerId
@@ -212,6 +203,11 @@ class LedgerManagementFragment : Fragment() {
                     isClickable = true
                     setOnClickListener {
                         if (selectionMode) {
+                            val selectedRoot = selectedLedgerIds.firstOrNull()?.let(::resolvePoolId)
+                            if (selectedRoot != null && selectedRoot != poolId && ledger.id !in selectedLedgerIds) {
+                                Toast.makeText(requireContext(), R.string.ledger_management_merge_same_group_required, Toast.LENGTH_SHORT).show()
+                                return@setOnClickListener
+                            }
                             if (!selectedLedgerIds.add(ledger.id)) selectedLedgerIds.remove(ledger.id)
                             render()
                         } else {
@@ -257,45 +253,7 @@ class LedgerManagementFragment : Fragment() {
                     val rowParams = LinearLayout.LayoutParams(-1, -2).apply {
                         if (index < poolLedgers.lastIndex) bottomMargin = 2.dp
                     }
-                    if (poolLedgers.size > 1 && !selectionMode) {
-                        val rowContainer = android.widget.FrameLayout(requireContext())
-                        val actions = LinearLayout(requireContext()).apply {
-                            gravity = Gravity.CENTER
-                            setBackgroundColor(Color.TRANSPARENT)
-                            addView(ImageButton(requireContext()).apply {
-                                id = R.id.btn_fork
-                                setImageResource(R.drawable.tabler_arrow_fork)
-                                setColorFilter(Color.rgb(55, 90, 67))
-                                background = GradientDrawable().apply {
-                                    shape = GradientDrawable.OVAL
-                                    setColor(Color.rgb(220, 239, 227))
-                                }
-                                contentDescription = "独立资产池"
-                                setPadding(10.dp, 10.dp, 10.dp, 10.dp)
-                                layoutParams = LinearLayout.LayoutParams(40.dp, 40.dp)
-                            })
-                        }
-                        rowContainer.addView(actions, android.widget.FrameLayout.LayoutParams(56.dp, -1).apply {
-                            gravity = Gravity.END
-                        })
-                        rowContainer.addView(row, android.widget.FrameLayout.LayoutParams(-1, -2))
-                        SwipeToEditDeleteHelper(
-                            row,
-                            actions,
-                            onEdit = {},
-                            onDelete = {},
-                            onFork = {
-                                if (databaseHelper.forkLedgerAssetPool(ledger.id)) {
-                                    Toast.makeText(requireContext(), "已转为独立资产池", Toast.LENGTH_SHORT).show()
-                                    render()
-                                }
-                            },
-                            onClick = { row.performClick() }
-                        )
-                        card.addView(rowContainer, rowParams)
-                    } else {
-                        card.addView(row, rowParams)
-                    }
+                    card.addView(row, rowParams)
                 }
                 assetList.addView(card, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = 8.dp })
             }
@@ -327,38 +285,67 @@ class LedgerManagementFragment : Fragment() {
     }
 
     private fun mergeSelectedLedgers() {
-        if (selectedLedgerIds.size < 2) {
-            Toast.makeText(requireContext(), R.string.ledger_management_merge_selection_required, Toast.LENGTH_SHORT).show()
+        if (selectedLedgerIds.size != 2) {
+            Toast.makeText(requireContext(), R.string.ledger_management_merge_two_required, Toast.LENGTH_SHORT).show()
             return
         }
-        val currentId = LedgerSession.getCurrentId(requireContext())
-        val targetId = currentId?.takeIf { it in selectedLedgerIds } ?: selectedLedgerIds.first()
-        val sources = selectedLedgerIds.filter { it != targetId }
-        val selectedNames = selectedLedgerIds.mapNotNull { id ->
-            databaseHelper.getLedgers().firstOrNull { it.id == id }?.name
+        val selected = selectedLedgerIds.toList()
+        val masterId = databaseHelper.getMasterLedgerId()
+        val targets = selected.filter { it == masterId || masterId !in selected }
+        val targetNames = targets.mapNotNull { id -> databaseHelper.getLedgers().firstOrNull { it.id == id }?.name }.toTypedArray()
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.ledger_management_merge_keep_title)
+            .setSingleChoiceItems(targetNames, -1) { dialog, which ->
+                val targetId = targets[which]
+                val sourceId = selected.first { it != targetId }
+                dialog.dismiss()
+                confirmMerge(sourceId, targetId)
+            }
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .show()
+    }
+
+    /** Explicit source → target confirmation; nothing is written before this. */
+    private fun confirmMerge(sourceLedgerId: Long, targetLedgerId: Long) {
+        when (databaseHelper.validateLedgerMerge(sourceLedgerId, targetLedgerId)) {
+            DatabaseHelper.LedgerMergeFailure.CROSS_GROUP -> {
+                Toast.makeText(requireContext(), R.string.ledger_management_merge_cross_group, Toast.LENGTH_LONG).show()
+                return
+            }
+            DatabaseHelper.LedgerMergeFailure.MASTER_AS_SOURCE -> {
+                Toast.makeText(requireContext(), R.string.ledger_management_merge_master_source, Toast.LENGTH_LONG).show()
+                return
+            }
+            DatabaseHelper.LedgerMergeFailure.SAME_LEDGER,
+            DatabaseHelper.LedgerMergeFailure.MISSING_LEDGER -> return
+            DatabaseHelper.LedgerMergeFailure.NONE -> Unit
         }
-        val targetName = databaseHelper.getLedgers().firstOrNull { it.id == targetId }?.name.orEmpty()
-        val sourceNames = sources.mapNotNull { id ->
-            databaseHelper.getLedgers().firstOrNull { it.id == id }?.name
-        }
+        val ledgers = databaseHelper.getLedgers()
+        val source = ledgers.firstOrNull { it.id == sourceLedgerId } ?: return
+        val target = ledgers.firstOrNull { it.id == targetLedgerId } ?: return
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.ledger_management_merge_title)
             .setMessage(
                 getString(
-                    R.string.ledger_management_merge_selection_message,
-                    selectedNames.joinToString("、"),
-                    targetName
-                ) + "\n" + sourceNames.joinToString("、")
+                    R.string.ledger_management_merge_confirm_message,
+                    source.name,
+                    target.name,
+                    databaseHelper.getLedgerRecordCount(source.id)
+                )
             )
             .setNegativeButton(R.string.dialog_cancel, null)
             .setPositiveButton(R.string.ledger_management_merge_confirm) { _, _ ->
-                LedgerSession.setCurrentId(requireContext(), targetId)
-                val merged = sources.all { databaseHelper.mergeLedgerIntoCurrent(it) }
-                if (merged) {
-                    Toast.makeText(requireContext(), R.string.ledger_management_merge_done, Toast.LENGTH_SHORT).show()
+                if (databaseHelper.mergeLedgerInto(source.id, target.id)) {
+                    // Only touch the active-ledger preference after a successful merge.
+                    if (LedgerSession.getCurrentId(requireContext()) == source.id) {
+                        LedgerSession.setCurrentId(requireContext(), target.id)
+                    }
                     selectedLedgerIds.clear()
                     selectionMode = false
+                    Toast.makeText(requireContext(), R.string.ledger_management_merge_done, Toast.LENGTH_SHORT).show()
                     render()
+                } else {
+                    Toast.makeText(requireContext(), R.string.ledger_management_merge_failed, Toast.LENGTH_LONG).show()
                 }
             }.show()
     }

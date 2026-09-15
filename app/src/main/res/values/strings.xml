@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="app_name">卡片记账</string>
     <string name="app_name_en">CardTally</string>
     <string name="hello_world">你好</string>
@@ -44,11 +44,19 @@
     <string name="ledger_management_select">选择账本</string>
     <string name="ledger_management_delete_selected">删除</string>
     <string name="ledger_management_merge_selected">合并</string>
-    <string name="ledger_management_merge_selection_message">已选择：%1$s\n保留账本：%2$s\n其他选中账本将合并到该账本：</string>
     <string name="ledger_management_selection_required">请先选择账本</string>
-    <string name="ledger_management_merge_selection_required">合并至少需要选择两个账本</string>
     <string name="ledger_management_delete_all_forbidden">至少保留一个账本</string>
     <string name="ledger_management_delete_message">确定删除选中的 %1$d 个账本及其中的账单吗？</string>
+    <string name="ledger_management_merge_two_required">合并需要恰好选择两个账本</string>
+    <string name="ledger_management_merge_group_required">至少需要两个账本才能合并</string>
+    <string name="ledger_management_merge_same_group_required">只能选择同一资产组内的账本</string>
+    <string name="ledger_management_merge_keep_title">选择要保留的账本</string>
+    <string name="ledger_management_merge_pick_source">长按要合并的另一个账本，将其并入“%1$s”</string>
+    <string name="ledger_management_merge_keep_first">请先选择要保留的账本</string>
+    <string name="ledger_management_merge_cross_group">仅支持合并使用同一资产组的账本</string>
+    <string name="ledger_management_merge_master_source">主资产组账本不能作为合并来源</string>
+    <string name="ledger_management_merge_confirm_message">将“%1$s”（%3$d 笔记录）合并到“%2$s”？\n源账本将移除，资产与余额保持不变。</string>
+    <string name="ledger_management_merge_failed">合并失败，未做任何修改</string>
     <string name="ledger_month_label">%1$d月</string>
     <string name="ledger_month_summary">本月统计</string>
     <string name="ledger_month_summary_same_year">%1$d月统计</string>
@@ -137,6 +145,11 @@
     <string name="amount_default">0.00</string>
 
     <string name="record_title_new">记一笔</string>
+    <string name="record_type_transfer">转账</string>
+    <string name="record_destination_asset_label">转入资产</string>
+    <string name="record_add_photo">拍照添加图片</string>
+    <string name="record_action_edit">编辑</string>
+    <string name="record_action_delete">删除</string>
     <string name="record_title_edit">编辑记录</string>
     <string name="record_amount_label">金额</string>
     <string name="record_type_expense">支出</string>
@@ -145,7 +158,14 @@
     <string name="record_date_placeholder">2026-04-07</string>
     <string name="record_asset_label">资产</string>
     <string name="record_transfer_from_asset">转出资产</string>
+    <string name="record_transfer_from_asset_hint">选择账户</string>
+    <string name="record_transfer_to_asset_hint">选择账户</string>
+    <string name="record_fee_label">手续费</string>
+    <string name="record_fee_invalid">请输入有效手续费</string>
+    <string name="record_fee_included">含手续费 %1$s</string>
     <string name="record_asset_none">无</string>
+    <string name="record_asset_sheet_empty">暂无可选资产，请先在资产页添加账户</string>
+    <string name="record_asset_sheet_empty_nav">暂无账户。资产入口当前隐藏，请先到“我的 → 账户资产”开启并添加账户</string>
     <string name="record_asset_select">请选择</string>
     <string name="record_detail_label">备注</string>
     <string name="record_detail_hint">添加备注...</string>
@@ -154,6 +174,10 @@
     <string name="record_save_entry">保存记录</string>
     <string name="record_save_and_add">再记一笔</string>
     <string name="record_keypad_hide">收起数字键盘</string>
+    <string name="record_keypad_delete">删除一位</string>
+    <string name="record_keypad_delete_glyph">⌫</string>
+    <string name="record_keypad_confirm">确定</string>
+    <string name="record_keypad_equals">=</string>
     <string name="record_update">更新</string>
     <string name="record_editor_prompt">“这一刻，值得被记下一笔。”</string>
     <string name="record_date_display">%1$d月%2$d日</string>
@@ -193,6 +217,51 @@
     <string name="asset_delete_cta">归档资产</string>
     <string name="asset_toast_add_success">添加成功</string>
     <string name="asset_toast_add_failed">添加失败</string>
+    <string name="asset_records_title">账户详情</string>
+    <string name="asset_records_edit">编辑资产</string>
+    <string name="asset_records_more">更多操作</string>
+    <string name="asset_records_transfer">转账</string>
+    <string name="asset_records_section">账单记录</string>
+    <string name="asset_records_empty">暂无相关记录</string>
+    <string name="asset_records_unknown_ledger">未知账本</string>
+    <string name="archived_assets_title">归档资产</string>
+    <string name="archived_assets_empty">暂无归档资产</string>
+    <string name="menu_asset_pin">置顶资产</string>
+    <string name="menu_asset_unpin">取消置顶</string>
+    <string name="menu_asset_archive">归档资产</string>
+    <string name="menu_asset_delete">删除资产</string>
+    <string name="toast_asset_pinned">已置顶</string>
+    <string name="toast_asset_unpinned">已取消置顶</string>
+    <string name="toast_asset_archived">已归档</string>
+    <string name="toast_asset_deleted">已删除</string>
+    <string name="toast_asset_delete_failed">删除失败</string>
+    <string name="error_asset_in_use_by_records">该资产仍有关联账单，无法删除</string>
+    <string name="asset_dialog_archive_title">归档资产</string>
+    <string name="asset_dialog_archive_message">确定归档“%1$s”吗？</string>
+    <string name="asset_dialog_archive_confirm">归档</string>
+    <string name="asset_dialog_delete_title">删除资产</string>
+    <string name="asset_dialog_delete_message">确定删除“%1$s”吗？</string>
+    <string name="asset_dialog_delete_confirm">删除</string>
+    <string name="toast_transfer_not_configured">转账功能暂未配置</string>
+
+    <string name="asset_form_account_info">账户信息</string>
+    <string name="asset_form_account_name">账户名称</string>
+    <string name="asset_form_account_balance">账户余额</string>
+    <string name="asset_form_note">备注</string>
+    <string name="asset_form_note_optional">选填</string>
+    <string name="asset_form_include_in_total">是否计入总资产</string>
+    <string name="asset_excluded_badge">不计入</string>
+    <string name="asset_type_select_page_title">选择资产类型</string>
+    <string name="asset_account_cash">资金账户</string>
+    <string name="asset_account_credit">信用账户</string>
+    <string name="asset_account_topup">充值账户</string>
+    <string name="asset_account_investment">理财账户</string>
+    <string name="asset_account_receivable">应收账户</string>
+    <string name="asset_account_payable">应付账户</string>
+    <string name="ledger_management_delete_action">删除</string>
+    <string name="ledger_management_merge_action">合并</string>
+    <string name="search_date_range_separator">至</string>
+    <string name="record_transfer_swap_content_description">交换转入转出资产</string>
 
     <string name="validation_select_date">请选择日期</string>
     <string name="validation_enter_amount">请输入金额</string>
@@ -225,6 +294,9 @@
 
     <string name="agent_title">AI 助手</string>
     <string name="agent_role_assistant">Assistant</string>
+    <string name="agent_reasoning_title">思考过程</string>
+    <string name="agent_reasoning_expand">展开思考过程</string>
+    <string name="agent_reasoning_collapse">收起思考过程</string>
     <string name="agent_role_you">YOU</string>
     <string name="agent_greeting">你好，我已接入 MiniMax 文本对话。你可以先问我预算思路、消费复盘，或让我们一起梳理一段财务想法。</string>
     <string name="agent_sample_user_message">帮我记录一笔晚餐，35元</string>
@@ -243,6 +315,7 @@
     <string name="agent_new_session_content_description">新建对话</string>
     <string name="agent_mic_content_description">语音输入</string>
     <string name="agent_send_content_description">发送消息</string>
+    <string name="agent_stop_content_description">停止回复</string>
     <string name="agent_sessions_title">对话</string>
     <string name="agent_session_create_title">新建会话</string>
     <string name="agent_session_rename_title">重命名会话</string>
@@ -285,7 +358,29 @@
     <string name="settings_income_expense_color_income_red_expense_green">收入(红色),支出(绿色)</string>
     <string name="settings_income_expense_color_both_black">收入(黑色),支出(黑色)</string>
     <string name="settings_journal_shortcut">快捷记账</string>
+    <string name="settings_default_expense_asset">默认支出资产账户</string>
+    <string name="settings_default_income_asset">默认收入资产账户</string>
+    <string name="settings_default_asset_not_set">未设置</string>
     <string name="settings_journal_shortcut_hint">直接进入记一笔</string>
+    <string name="settings_record_entry_mode">记一笔模式</string>
+    <string name="record_entry_mode_standard_title">标准模式</string>
+    <string name="record_entry_mode_standard_desc">通过详情行和底部弹层逐项选择金额、账户、日期和分类</string>
+    <string name="record_entry_mode_quick_title">快速模式</string>
+    <string name="record_entry_mode_quick_desc">页面内平铺分类，常驻金额键盘，完成后直接保存</string>
+    <string name="record_quick_save_and_add">再记</string>
+    <string name="record_quick_complete">完成</string>
+    <string name="record_quick_category_empty">暂无可选分类</string>
+    <string name="record_category_selected_state">已选分类</string>
+    <string name="record_date_today">今天</string>
+    <string name="record_asset_none_short">无账户</string>
+    <string name="record_attachment_count">附件(%1$d/%2$d)</string>
+    <string name="record_amount_prefix">¥</string>
+    <string name="record_transfer_select_assets">请选择转出和转入资产</string>
+    <string name="record_transfer_same_asset">转出和转入资产不能相同</string>
+    <string name="record_photo_limit_reached">当前记录最多添加%1$d张图片</string>
+    <string name="record_photo_preview_description">查看第%1$d张照片</string>
+    <string name="record_photo_delete_description">删除第%1$d张照片</string>
+    <string name="record_photo_fullscreen_description">全屏查看照片，点击关闭</string>
     <string name="settings_ai_assistant_group">AI 助理</string>
     <string name="settings_ai_assistant_toggle">显示 AI 入口</string>
     <string name="settings_ai_assistant_toggle_hint">控制 AI 助手入口与底部标签</string>
@@ -295,6 +390,11 @@
     <string name="settings_management">管理</string>
     <string name="settings_category_organization">分类管理</string>
     <string name="settings_ledger_management">账本 / 资产管理</string>
+    <string name="settings_export_data">导出数据</string>
+    <string name="settings_import_data">导入数据</string>
+    <string name="settings_export_success">数据已导出</string>
+    <string name="settings_import_success">导入完成：账本 %1$d，分类 %2$d，资产 %3$d，记录 %4$d，会话 %5$d，跳过 %6$d</string>
+    <string name="settings_transfer_failed">数据传输失败，请检查 JSON 文件</string>
     <string name="settings_category_max_depth">分类层级上限</string>
     <string name="settings_category_max_depth_value">当前上限 %1$d 级</string>
     <string name="settings_category_max_depth_dialog_title">设置分类层级上限</string>
@@ -334,8 +434,9 @@
     <string name="category_dialog_icon_label">图标</string>
     <string name="category_dialog_icon_hint">点击图标可选择</string>
     <string name="category_icon_picker_title">选择图标</string>
-    <string name="category_icon_more">更多图标</string>
-    <string name="category_icon_search_hint">搜索图标，例如：交通、餐饮、home</string>
+    <string name="icon_picker_item_selected">%1$s，已选中</string>
+    <string name="icon_picker_item_unselected">%1$s，未选中</string>
+    <string name="icon_browser_current_group">当前图标</string>
     <string name="category_add_child_cta">添加分类</string>
     <string name="category_expand_content_description">展开或收起二级分类</string>
     <string name="category_drag_content_description">拖动排序</string>
@@ -396,4 +497,135 @@
     <string name="ledger_setup_saved">账本已创建</string>
     <string name="ledger_setup_updated">账本已更新</string>
 
+    <string name="ledger_asset_card_title">账本资产</string>
+    <string name="ledger_asset_new_group">新建独立资产组</string>
+    <string name="ledger_asset_new_group_hint">创建一组独立资产，不复制已有资产</string>
+    <string name="ledger_asset_existing_group">使用现有资产组</string>
+    <string name="ledger_asset_existing_group_hint">该账本与所选资产组共享同一批资产与余额</string>
+    <string name="ledger_asset_master_group">主资产组</string>
+    <string name="ledger_asset_group_label">资产组 · %1$s</string>
+    <string name="ledger_asset_group_members">%1$s</string>
+    <string name="ledger_asset_group_asset_count">%1$d项资产</string>
+    <string name="ledger_asset_group_members_assets">成员：%1$s · %2$d项资产</string>
+    <string name="ledger_asset_group_row_accessibility">选择资产组，当前为%1$s，%2$s</string>
+    <string name="ledger_asset_group_picker_title">选择资产组</string>
+    <string name="ledger_asset_group_empty">当前没有可选择的资产组</string>
+    <string name="ledger_asset_group_master_note">主资产组始终存在，并由默认账本使用</string>
+    <string name="ledger_asset_group_created_failed">账本创建失败，未保存任何内容</string>
+
+    <string-array name="icon_group_titles">
+        <item>常用</item>
+        <item>财务</item>
+        <item>出行</item>
+        <item>餐饮</item>
+        <item>居住</item>
+        <item>购物</item>
+        <item>工作</item>
+        <item>生活</item>
+        <item>通讯</item>
+        <item>设备</item>
+        <item>其他</item>
+    </string-array>
+
+    <string-array name="icon_featured_labels">
+        <item>tabler_check=勾选</item>
+        <item>tabler_chevron_right=右箭头</item>
+        <item>tabler_chevron_left=左箭头</item>
+        <item>tabler_chevron_down=下箭头</item>
+        <item>tabler_chevron_up=上箭头</item>
+        <item>tabler_x=关闭</item>
+        <item>tabler_plus=添加</item>
+        <item>tabler_minus=减少</item>
+        <item>tabler_edit=编辑</item>
+        <item>tabler_trash=删除</item>
+        <item>tabler_search=搜索</item>
+        <item>tabler_calendar=日历</item>
+        <item>tabler_cash=现金</item>
+        <item>tabler_coin=硬币</item>
+        <item>tabler_currency=货币</item>
+        <item>tabler_wallet=钱包</item>
+        <item>tabler_receipt=收据</item>
+        <item>tabler_chart_bar=条形图</item>
+        <item>tabler_car=汽车</item>
+        <item>tabler_bus=公交</item>
+        <item>tabler_train=火车</item>
+        <item>tabler_plane=飞机</item>
+        <item>tabler_bike=自行车</item>
+        <item>tabler_walk=步行</item>
+        <item>tabler_route=路线</item>
+        <item>tabler_coffee=咖啡</item>
+        <item>tabler_pizza=披萨</item>
+        <item>tabler_bowl=碗</item>
+        <item>tabler_cake=蛋糕</item>
+        <item>tabler_burger=汉堡</item>
+        <item>tabler_apple=苹果</item>
+        <item>tabler_beer=啤酒</item>
+        <item>tabler_home=家</item>
+        <item>tabler_bed=床</item>
+        <item>tabler_sofa=沙发</item>
+        <item>tabler_bath=浴室</item>
+        <item>tabler_building=楼宇</item>
+        <item>tabler_building_bank=银行</item>
+        <item>tabler_lamp=台灯</item>
+        <item>tabler_door=门</item>
+        <item>tabler_key=钥匙</item>
+        <item>tabler_shirt=衣服</item>
+        <item>tabler_gift=礼物</item>
+        <item>tabler_basket=购物篮</item>
+        <item>tabler_barcode=条形码</item>
+        <item>tabler_briefcase=公文包</item>
+        <item>tabler_school=学校</item>
+        <item>tabler_book=书</item>
+        <item>tabler_clipboard=记事板</item>
+        <item>tabler_file=文件</item>
+        <item>tabler_pencil=铅笔</item>
+        <item>tabler_tool=工具</item>
+        <item>tabler_code=代码</item>
+        <item>tabler_printer=打印机</item>
+        <item>tabler_heart=爱心</item>
+        <item>tabler_star=星星</item>
+        <item>tabler_camera=相机</item>
+        <item>tabler_music=音乐</item>
+        <item>tabler_paw=爪子</item>
+        <item>tabler_plant=植物</item>
+        <item>tabler_sun=太阳</item>
+        <item>tabler_moon=月亮</item>
+        <item>tabler_phone=电话</item>
+        <item>tabler_mail=邮件</item>
+        <item>tabler_message=消息</item>
+        <item>tabler_send=发送</item>
+        <item>tabler_bell=铃铛</item>
+        <item>tabler_keyboard=键盘</item>
+        <item>tabler_headphones=耳机</item>
+        <item>tabler_microphone=麦克风</item>
+        <item>tabler_database=数据库</item>
+        <item>tabler_circle=圆形</item>
+        <item>tabler_help=帮助</item>
+        <item>tabler_flag=旗帜</item>
+        <item>tabler_tag=标签</item>
+        <item>tabler_bookmark=书签</item>
+        <item>tabler_bolt=闪电</item>
+        <item>tabler_adjustments=调整</item>
+        <item>tabler_building_community=社区</item>
+        <item>tabler_building_hospital=医院</item>
+        <item>tabler_building_factory=工厂</item>
+        <item>tabler_mug=杯子</item>
+        <item>tabler_chart_pie=饼图</item>
+        <item>tabler_currency_dollar=美元</item>
+        <item>tabler_currency_euro=欧元</item>
+        <item>tabler_currency_yen=日元</item>
+        <item>tabler_currency_yuan=人民币</item>
+        <item>tabler_credit_card=信用卡</item>
+        <item>tabler_shopping_cart=购物车</item>
+        <item>tabler_building_arch=拱门</item>
+        <item>tabler_building_estate=房产</item>
+        <item>tabler_building_cottage=小屋</item>
+        <item>tabler_motorbike=摩托车</item>
+        <item>tabler_plane_departure=起飞</item>
+        <item>tabler_plane_arrival=降落</item>
+        <item>tabler_mail_opened=已读邮件</item>
+        <item>tabler_phone_call=通话</item>
+        <item>tabler_camera_selfie=自拍</item>
+        <item>tabler_tools_kitchen=厨房</item>
+    </string-array>
 </resources>

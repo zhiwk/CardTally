@@ -1,4 +1,6 @@
-<resources>
+﻿<resources>
+    <string name="record_asset_sheet_empty">No assets available. Add an account on the Assets page first.</string>
+    <string name="record_asset_sheet_empty_nav">No accounts yet. The assets entry is currently hidden, so enable it under My → Account Assets, then add an account.</string>
     <string name="app_name">CardTally</string>
     <string name="app_name_en">CardTally</string>
     <string name="hello_world">Hello</string>
@@ -27,6 +29,16 @@
     <string name="ledger_management_merge_message">Merge “%1$s” into the current ledger? Its records, categories, and assets will be moved. This cannot be undone.</string>
     <string name="ledger_management_merge_confirm">Merge</string>
     <string name="ledger_management_merge_done">Ledger merged</string>
+    <string name="ledger_management_merge_two_required">Select exactly two ledgers to merge</string>
+    <string name="ledger_management_merge_group_required">At least two ledgers are needed to merge</string>
+    <string name="ledger_management_merge_same_group_required">Select ledgers from the same asset group</string>
+    <string name="ledger_management_merge_keep_title">Choose the ledger to keep</string>
+    <string name="ledger_management_merge_pick_source">Long-press the other ledger to merge it into “%1$s”</string>
+    <string name="ledger_management_merge_keep_first">Choose the ledger to keep first</string>
+    <string name="ledger_management_merge_cross_group">Only ledgers that share one asset group can be merged</string>
+    <string name="ledger_management_merge_master_source">The master asset group ledger cannot be a merge source</string>
+    <string name="ledger_management_merge_confirm_message">Merge “%1$s” (%3$d records) into “%2$s”?\nThe source ledger is removed; assets and balances are unchanged.</string>
+    <string name="ledger_management_merge_failed">Merge failed; nothing was changed</string>
     <string name="ledger_setup_share_assets">Share assets from another ledger</string>
     <string name="ledger_setup_share_assets_hint">Choose a ledger-level asset relationship</string>
     <string name="ledger_setup_choose_ledger">Choose the asset source ledger</string>
@@ -126,13 +138,23 @@
 
     <string name="record_title_new">New Entry</string>
     <string name="record_title_edit">Edit Entry</string>
-    <string name="record_amount_label">AMOUNT</string>
+    <string name="record_amount_label">Amount</string>
+    <string name="record_type_transfer">Transfer</string>
+    <string name="record_destination_asset_label">Destination asset</string>
+    <string name="record_add_photo">Add photo</string>
+    <string name="record_action_edit">Edit</string>
+    <string name="record_action_delete">Delete</string>
     <string name="record_type_expense">Expense</string>
     <string name="record_type_income">Income</string>
     <string name="record_when_label">When</string>
     <string name="record_date_placeholder">2026-04-07</string>
     <string name="record_asset_label">Asset</string>
     <string name="record_transfer_from_asset">From asset</string>
+    <string name="record_transfer_from_asset_hint">Select account</string>
+    <string name="record_transfer_to_asset_hint">Select account</string>
+    <string name="record_fee_label">Fee</string>
+    <string name="record_fee_invalid">Enter a valid fee</string>
+    <string name="record_fee_included">Incl. fee %1$s</string>
     <string name="record_asset_none">None</string>
     <string name="record_detail_label">Detail</string>
     <string name="record_detail_hint">Add a note...</string>
@@ -141,6 +163,10 @@
     <string name="record_save_entry">SAVE ENTRY</string>
     <string name="record_save_and_add">SAVE &amp; ADD</string>
     <string name="record_keypad_hide">Hide numeric keypad</string>
+    <string name="record_keypad_delete">Delete one character</string>
+    <string name="record_keypad_delete_glyph">⌫</string>
+    <string name="record_keypad_confirm">Confirm</string>
+    <string name="record_keypad_equals">=</string>
     <string name="record_update">UPDATE</string>
     <string name="record_editor_prompt">&quot;A small moment is still worth recording.&quot;</string>
     <string name="record_date_display">%1$d/%2$d</string>
@@ -181,7 +207,80 @@
     <string name="asset_delete_cta">Archive Asset</string>
     <string name="asset_toast_add_success">Added successfully</string>
     <string name="asset_toast_add_failed">Add failed</string>
+    <string name="asset_records_title">Account details</string>
+    <string name="asset_records_edit">Edit asset</string>
+    <string name="asset_records_more">More actions</string>
+    <string name="asset_records_transfer">Transfer</string>
+    <string name="asset_records_section">Records</string>
+    <string name="asset_records_empty">No records for this asset</string>
+    <string name="asset_records_unknown_ledger">Unknown ledger</string>
+    <string name="archived_assets_title">Archived assets</string>
+    <string name="archived_assets_empty">No archived assets</string>
+    <string name="menu_asset_pin">Pin asset</string>
+    <string name="menu_asset_unpin">Unpin asset</string>
+    <string name="menu_asset_archive">Archive asset</string>
+    <string name="menu_asset_delete">Delete asset</string>
+    <string name="toast_asset_pinned">Pinned to top</string>
+    <string name="toast_asset_unpinned">Unpinned</string>
+    <string name="toast_asset_archived">Archived</string>
+    <string name="toast_asset_deleted">Deleted</string>
+    <string name="toast_asset_delete_failed">Failed to delete</string>
+    <string name="error_asset_in_use_by_records">This asset is still linked to records and cannot be deleted</string>
+    <string name="asset_dialog_archive_title">Archive asset</string>
+    <string name="asset_dialog_archive_message">Archive “%1$s”?</string>
+    <string name="asset_dialog_archive_confirm">Archive</string>
+    <string name="asset_dialog_delete_title">Delete asset</string>
+    <string name="asset_dialog_delete_message">Delete “%1$s”?</string>
+    <string name="asset_dialog_delete_confirm">Delete</string>
+    <string name="toast_transfer_not_configured">Transfer is not configured yet</string>
     <string name="ledger_setup_updated">Ledger updated</string>
+    <string name="ledger_setup_title">New ledger</string>
+    <string name="ledger_setup_name_label">Ledger name</string>
+    <string name="ledger_setup_name_hint">e.g. Travel ledger</string>
+    <string name="ledger_setup_name_required">Please enter a ledger name</string>
+    <string name="ledger_setup_icon_selected">Choose ledger icon</string>
+    <string name="ledger_setup_share_main_assets">Share the main assets</string>
+    <string name="ledger_setup_share_main_assets_hint">Uses the main assets by default; turn off to start an independent group or share another ledger</string>
+    <string name="ledger_setup_independent_assets">Independent assets</string>
+    <string name="ledger_setup_share_other_assets">Share assets from another ledger</string>
+    <string name="ledger_setup_master_assets_note">The main asset group always exists and is used by the default ledger</string>
+    <string name="ledger_setup_no_assets">No ledger is available to choose from</string>
+    <string name="ledger_setup_save">Create ledger</string>
+
+    <string name="ledger_asset_card_title">Ledger assets</string>
+    <string name="ledger_asset_new_group">Create a new independent asset group</string>
+    <string name="ledger_asset_new_group_hint">Starts an empty group without copying existing assets</string>
+    <string name="ledger_asset_existing_group">Use an existing asset group</string>
+    <string name="ledger_asset_existing_group_hint">This ledger shares the same assets and balances as the chosen group</string>
+    <string name="ledger_asset_master_group">Main asset group</string>
+    <string name="ledger_asset_group_label">Asset group · %1$s</string>
+    <string name="ledger_asset_group_members">%1$s</string>
+    <string name="ledger_asset_group_asset_count">%1$d assets</string>
+    <string name="ledger_asset_group_members_assets">Members: %1$s · %2$d assets</string>
+    <string name="ledger_asset_group_row_accessibility">Choose asset group, currently %1$s, %2$s</string>
+    <string name="ledger_asset_group_picker_title">Choose asset group</string>
+    <string name="ledger_asset_group_empty">No asset group is available to choose from</string>
+    <string name="ledger_asset_group_master_note">The main asset group always exists and is used by the default ledger</string>
+    <string name="ledger_asset_group_created_failed">The ledger could not be created; nothing was saved</string>
+
+    <string name="asset_form_account_info">Account information</string>
+    <string name="asset_form_account_name">Account name</string>
+    <string name="asset_form_account_balance">Account balance</string>
+    <string name="asset_form_note">Note</string>
+    <string name="asset_form_note_optional">Optional</string>
+    <string name="asset_form_include_in_total">Include in total assets</string>
+    <string name="asset_excluded_badge">Excluded</string>
+    <string name="asset_type_select_page_title">Choose asset type</string>
+    <string name="asset_account_cash">Cash accounts</string>
+    <string name="asset_account_credit">Credit accounts</string>
+    <string name="asset_account_topup">Top-up accounts</string>
+    <string name="asset_account_investment">Investment accounts</string>
+    <string name="asset_account_receivable">Receivable accounts</string>
+    <string name="asset_account_payable">Payable accounts</string>
+    <string name="ledger_management_delete_action">Delete</string>
+    <string name="ledger_management_merge_action">Merge</string>
+    <string name="search_date_range_separator">to</string>
+    <string name="record_transfer_swap_content_description">Swap source and destination assets</string>
 
     <string name="validation_select_date">Please select a date</string>
     <string name="validation_enter_amount">Please enter an amount</string>
@@ -214,6 +313,9 @@
 
     <string name="agent_title">AI Assistant</string>
     <string name="agent_role_assistant">Assistant</string>
+    <string name="agent_reasoning_title">Thinking</string>
+    <string name="agent_reasoning_expand">Expand thinking</string>
+    <string name="agent_reasoning_collapse">Collapse thinking</string>
     <string name="agent_role_you">You</string>
     <string name="agent_greeting">Hello. MiniMax text chat is ready here. Ask for budget thinking, spending reflections, or help structuring a financial thought.</string>
     <string name="agent_sample_user_message">Help me log a dinner expense for ¥35</string>
@@ -232,6 +334,7 @@
     <string name="agent_new_session_content_description">Start a new session</string>
     <string name="agent_mic_content_description">Voice input</string>
     <string name="agent_send_content_description">Send message</string>
+    <string name="agent_stop_content_description">Stop response</string>
     <string name="agent_sessions_title">Sessions</string>
     <string name="agent_session_create_title">New session</string>
     <string name="agent_session_rename_title">Rename session</string>
@@ -270,7 +373,29 @@
     <string name="settings_aesthetic_preferences">Aesthetic Preferences</string>
     <string name="settings_language">Language</string>
     <string name="settings_journal_shortcut">Journal Shortcut</string>
+    <string name="settings_default_expense_asset">Default expense account</string>
+    <string name="settings_default_income_asset">Default income account</string>
+    <string name="settings_default_asset_not_set">Not set</string>
     <string name="settings_journal_shortcut_hint">Direct access to new entries</string>
+    <string name="settings_record_entry_mode">Entry Layout</string>
+    <string name="record_entry_mode_standard_title">Standard</string>
+    <string name="record_entry_mode_standard_desc">Pick amount, asset, date, and category through detail rows and sheets</string>
+    <string name="record_entry_mode_quick_title">Quick</string>
+    <string name="record_entry_mode_quick_desc">Inline category tiles and an always-visible keypad that saves directly</string>
+    <string name="record_quick_save_and_add">SAVE &amp; ADD</string>
+    <string name="record_quick_complete">DONE</string>
+    <string name="record_quick_category_empty">No categories available</string>
+    <string name="record_category_selected_state">Selected category</string>
+    <string name="record_date_today">Today</string>
+    <string name="record_asset_none_short">No account</string>
+    <string name="record_attachment_count">Attachments (%1$d/%2$d)</string>
+    <string name="record_amount_prefix">¥</string>
+    <string name="record_transfer_select_assets">Choose both the from and to assets</string>
+    <string name="record_transfer_same_asset">From and to assets must differ</string>
+    <string name="record_photo_limit_reached">Up to %1$d photos per record</string>
+    <string name="record_photo_preview_description">View photo %1$d</string>
+    <string name="record_photo_delete_description">Delete photo %1$d</string>
+    <string name="record_photo_fullscreen_description">Full-screen photo, tap to close</string>
     <string name="settings_ai_assistant_group">AI Assistant</string>
     <string name="settings_ai_assistant_toggle">Show AI surfaces</string>
     <string name="settings_ai_assistant_toggle_hint">Controls the AI Assistant entry and tab</string>
@@ -278,6 +403,12 @@
     <string name="settings_ai_api_key_status_not_set">Needs setup</string>
     <string name="settings_ai_api_key_status_saved">Ready</string>
     <string name="settings_management">Management</string>
+    <string name="settings_ledger_management">Ledger / Asset Management</string>
+    <string name="settings_export_data">Export data</string>
+    <string name="settings_import_data">Import data</string>
+    <string name="settings_export_success">Data exported</string>
+    <string name="settings_import_success">Import complete: %1$d ledgers, %2$d categories, %3$d assets, %4$d records, %5$d sessions, %6$d skipped</string>
+    <string name="settings_transfer_failed">Data transfer failed. Check the JSON file.</string>
     <string name="settings_category_organization">Category Organization</string>
     <string name="settings_category_max_depth">Category Max Depth</string>
     <string name="settings_category_max_depth_value">Current limit: %1$d levels</string>
@@ -309,7 +440,9 @@
     <string name="category_dialog_icon_label">Icon</string>
     <string name="category_dialog_icon_hint">Tap the icon to choose</string>
     <string name="category_icon_picker_title">Choose Icon</string>
-    <string name="category_icon_search_hint">Search icons, e.g. transport, food, home</string>
+    <string name="icon_picker_item_selected">%1$s, selected</string>
+    <string name="icon_picker_item_unselected">%1$s, not selected</string>
+    <string name="icon_browser_current_group">Current icon</string>
     <string name="category_add_child_cta">Add category</string>
     <string name="category_expand_content_description">Expand or collapse subcategories</string>
     <string name="category_drag_content_description">Drag to reorder</string>
@@ -351,4 +484,119 @@ Default request URL: https://api.minimax.io/v1/text/chatcompletion_v2</string>
     <string name="ai_settings_save">Save</string>
     <string name="toast_ai_api_key_saved">API settings saved</string>
 
+    <string-array name="icon_group_titles">
+        <item>Common</item>
+        <item>Finance</item>
+        <item>Travel</item>
+        <item>Food &amp; Drink</item>
+        <item>Home</item>
+        <item>Shopping</item>
+        <item>Work</item>
+        <item>Lifestyle</item>
+        <item>Communication</item>
+        <item>Devices</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="icon_featured_labels">
+        <item>tabler_check=Check</item>
+        <item>tabler_chevron_right=Right</item>
+        <item>tabler_chevron_left=Left</item>
+        <item>tabler_chevron_down=Down</item>
+        <item>tabler_chevron_up=Up</item>
+        <item>tabler_x=Close</item>
+        <item>tabler_plus=Add</item>
+        <item>tabler_minus=Minus</item>
+        <item>tabler_edit=Edit</item>
+        <item>tabler_trash=Delete</item>
+        <item>tabler_search=Search</item>
+        <item>tabler_calendar=Calendar</item>
+        <item>tabler_cash=Cash</item>
+        <item>tabler_coin=Coin</item>
+        <item>tabler_currency=Currency</item>
+        <item>tabler_wallet=Wallet</item>
+        <item>tabler_receipt=Receipt</item>
+        <item>tabler_chart_bar=Bar chart</item>
+        <item>tabler_car=Car</item>
+        <item>tabler_bus=Bus</item>
+        <item>tabler_train=Train</item>
+        <item>tabler_plane=Plane</item>
+        <item>tabler_bike=Bicycle</item>
+        <item>tabler_walk=Walk</item>
+        <item>tabler_route=Route</item>
+        <item>tabler_coffee=Coffee</item>
+        <item>tabler_pizza=Pizza</item>
+        <item>tabler_bowl=Bowl</item>
+        <item>tabler_cake=Cake</item>
+        <item>tabler_burger=Burger</item>
+        <item>tabler_apple=Apple</item>
+        <item>tabler_beer=Beer</item>
+        <item>tabler_home=Home</item>
+        <item>tabler_bed=Bed</item>
+        <item>tabler_sofa=Sofa</item>
+        <item>tabler_bath=Bath</item>
+        <item>tabler_building=Building</item>
+        <item>tabler_building_bank=Bank</item>
+        <item>tabler_lamp=Lamp</item>
+        <item>tabler_door=Door</item>
+        <item>tabler_key=Key</item>
+        <item>tabler_shirt=Clothes</item>
+        <item>tabler_gift=Gift</item>
+        <item>tabler_basket=Basket</item>
+        <item>tabler_barcode=Barcode</item>
+        <item>tabler_briefcase=Briefcase</item>
+        <item>tabler_school=School</item>
+        <item>tabler_book=Book</item>
+        <item>tabler_clipboard=Clipboard</item>
+        <item>tabler_file=File</item>
+        <item>tabler_pencil=Pencil</item>
+        <item>tabler_tool=Tools</item>
+        <item>tabler_code=Code</item>
+        <item>tabler_printer=Printer</item>
+        <item>tabler_heart=Heart</item>
+        <item>tabler_star=Star</item>
+        <item>tabler_camera=Camera</item>
+        <item>tabler_music=Music</item>
+        <item>tabler_paw=Paw</item>
+        <item>tabler_plant=Plant</item>
+        <item>tabler_sun=Sun</item>
+        <item>tabler_moon=Moon</item>
+        <item>tabler_phone=Phone</item>
+        <item>tabler_mail=Mail</item>
+        <item>tabler_message=Message</item>
+        <item>tabler_send=Send</item>
+        <item>tabler_bell=Bell</item>
+        <item>tabler_keyboard=Keyboard</item>
+        <item>tabler_headphones=Headphones</item>
+        <item>tabler_microphone=Microphone</item>
+        <item>tabler_database=Database</item>
+        <item>tabler_circle=Circle</item>
+        <item>tabler_help=Help</item>
+        <item>tabler_flag=Flag</item>
+        <item>tabler_tag=Tag</item>
+        <item>tabler_bookmark=Bookmark</item>
+        <item>tabler_bolt=Lightning</item>
+        <item>tabler_adjustments=Adjust</item>
+        <item>tabler_building_community=Community</item>
+        <item>tabler_building_hospital=Hospital</item>
+        <item>tabler_building_factory=Factory</item>
+        <item>tabler_mug=Mug</item>
+        <item>tabler_chart_pie=Pie chart</item>
+        <item>tabler_currency_dollar=Dollar</item>
+        <item>tabler_currency_euro=Euro</item>
+        <item>tabler_currency_yen=Yen</item>
+        <item>tabler_currency_yuan=Yuan</item>
+        <item>tabler_credit_card=Credit card</item>
+        <item>tabler_shopping_cart=Shopping cart</item>
+        <item>tabler_building_arch=Arch</item>
+        <item>tabler_building_estate=Estate</item>
+        <item>tabler_building_cottage=Cottage</item>
+        <item>tabler_motorbike=Motorbike</item>
+        <item>tabler_plane_departure=Departure</item>
+        <item>tabler_plane_arrival=Arrival</item>
+        <item>tabler_mail_opened=Read mail</item>
+        <item>tabler_phone_call=Call</item>
+        <item>tabler_camera_selfie=Selfie</item>
+        <item>tabler_tools_kitchen=Kitchen</item>
+    </string-array>
 </resources>

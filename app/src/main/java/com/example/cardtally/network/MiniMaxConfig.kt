@@ -1,5 +1,7 @@
 package com.example.cardtally.network
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+
 data class MiniMaxConfig(
     val apiKey: String,
     val model: String = DEFAULT_MODEL,
@@ -20,6 +22,18 @@ data class MiniMaxConfig(
         return normalized.apiKey.isNotBlank() &&
             normalized.model.isNotBlank() &&
             normalized.requestUrl.isNotBlank()
+    }
+
+    /**
+     * Whether the configured request URL can actually be used as an HTTP(S)
+     * request target. [isComplete] only checks that a value exists, so an unusable
+     * value (for example `not-a-url`) must be rejected before a request starts
+     * rather than surfacing as a synchronous client failure.
+     */
+    fun hasValidRequestUrl(): Boolean {
+        val candidate = normalized().requestUrl
+        if (candidate.isBlank()) return false
+        return candidate.toHttpUrlOrNull() != null
     }
 
     companion object {

@@ -1,7 +1,8 @@
-package com.example.cardtally.database
+﻿package com.example.cardtally.database
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.cardtally.testing.IsolatedTestGuard
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.CategoryHierarchySettingsHelper
@@ -19,6 +20,7 @@ class DatabaseHelperCategoryTreeTest {
 
     @Before
     fun setUp() {
+        IsolatedTestGuard.requireIsolatedBuild()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         context.deleteDatabase("CardTally.db")
         CategoryHierarchySettingsHelper.saveCategoryMaxDepth(context, 3)

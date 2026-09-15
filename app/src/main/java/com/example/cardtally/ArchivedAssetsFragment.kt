@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.AssetAdapter
 import com.example.cardtally.database.DatabaseHelper
+import com.example.cardtally.util.Money
 import com.example.cardtally.model.Asset
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -117,7 +118,7 @@ class ArchivedAssetsFragment : Fragment() {
         val radioGroupType = view.findViewById<android.widget.RadioGroup>(R.id.radio_group_asset_type)
 
         editName.setText(asset.name)
-        editAmount.setText(asset.amount.toString())
+        editAmount.setText(Money.formatYuan(asset.amount))
 
         when (asset.type) {
             0 -> view.findViewById<android.widget.RadioButton>(R.id.radio_cash).isChecked = true
@@ -148,9 +149,7 @@ class ArchivedAssetsFragment : Fragment() {
                 return@setPositiveButton
             }
 
-            val amount = try {
-                amountStr.toDouble()
-            } catch (e: NumberFormatException) {
+            val amount = Money.evaluateYuanExpression(amountStr)?.let(Money::toMajorDouble) ?: run {
                 Toast.makeText(requireContext(), "请输入有效的金额", Toast.LENGTH_SHORT).show()
                 return@setPositiveButton
             }

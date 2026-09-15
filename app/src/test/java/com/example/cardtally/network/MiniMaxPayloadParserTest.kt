@@ -91,7 +91,7 @@ class MiniMaxPayloadParserTest {
         val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
         
         assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Content)
-        assertEquals("Hello", (result as MiniMaxPayloadParser.StreamingParseResult.Content).text)
+        assertEquals("Hello", (result as MiniMaxPayloadParser.StreamingParseResult.Content).content)
     }
 
     @Test
@@ -130,7 +130,7 @@ class MiniMaxPayloadParserTest {
         val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
         
         assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Content)
-        assertEquals("World", (result as MiniMaxPayloadParser.StreamingParseResult.Content).text)
+        assertEquals("World", (result as MiniMaxPayloadParser.StreamingParseResult.Content).content)
     }
 
     @Test
@@ -328,5 +328,70 @@ class MiniMaxPayloadParserTest {
 
         val json = JSONObject(requestBody)
         assertEquals(MiniMaxConfig.DEFAULT_MODEL, json.getString("model"))
+    }
+
+    // --- JSON null handling and reasoning_content (regression: "nullnull..." replies) ---
+
+    @Test
+    fun parseStreamingChunk_treatsJsonNullContentAsEmpty() {
+        val chunk = "data: {\"choices\": [{\"delta\": {\"content\": null}}]}"
+
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+
+        assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Empty)
+    }
+
+    @Test
+    fun parseStreamingChunk_extractsReasoningWhenContentIsNull() {
+        val chunk = "data: {\"choices\": [{\"delta\": {\"content\": null, \"reasoning_content\": \"thinking\"}}]}"
+
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+
+        assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Content)
+        val content = result as MiniMaxPayloadParser.StreamingParseResult.Content
+        assertNull(content.content)
+        assertEquals("thinking", content.reasoning)
+    }
+
+    @Test
+    fun parseStreamingChunk_extractsContentAndReasoningTogether() {
+        val chunk = "data: {\"choices\": [{\"delta\": {\"content\": \"Hi\", \"reasoning_content\": \"thinking\"}}]}"
+
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+
+        val content = result as MiniMaxPayloadParser.StreamingParseResult.Content
+        assertEquals("Hi", content.content)
+        assertEquals("thinking", content.reasoning)
+    }
+
+    @Test
+    fun parseStreamingChunk_alternativeNullContentIsEmpty() {
+        val chunk = "data: {\"content\": null}"
+
+        val result = MiniMaxPayloadParser.parseStreamingChunk(chunk)
+
+        assertTrue(result is MiniMaxPayloadParser.StreamingParseResult.Empty)
+    }
+
+    @Test
+    fun parseAssistantReply_nullContentIsEmptyReplyNotLiteralNull() {
+        val response = "{\"choices\": [{\"message\": {\"content\": null}}]}"
+
+        val result = MiniMaxPayloadParser.parseAssistantReply(response)
+
+        assertTrue(result is MiniMaxChatResult.Failure)
+        assertEquals(MiniMaxErrorType.EMPTY_REPLY, (result as MiniMaxChatResult.Failure).type)
+    }
+
+    @Test
+    fun parseAssistantReply_extractsReasoning() {
+        val response = "{\"choices\": [{\"message\": {\"content\": \"Hello\", \"reasoning_content\": \"thinking\"}}]}"
+
+        val result = MiniMaxPayloadParser.parseAssistantReply(response)
+
+        assertTrue(result is MiniMaxChatResult.Success)
+        val success = result as MiniMaxChatResult.Success
+        assertEquals("Hello", success.reply)
+        assertEquals("thinking", success.reasoning)
     }
 }

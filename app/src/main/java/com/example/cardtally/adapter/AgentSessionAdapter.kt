@@ -43,7 +43,6 @@ class AgentSessionAdapter(
 
     override fun onBindViewHolder(holder: AgentSessionViewHolder, position: Int) {
         val item = items[position]
-        val context = holder.itemView.context
 
         holder.textTitle.text = item.title
         holder.textPreview.text = item.preview
@@ -53,12 +52,7 @@ class AgentSessionAdapter(
         val backgroundColor = MaterialColors.getColor(
             holder.cardView,
             if (item.isCurrent) com.google.android.material.R.attr.colorPrimaryContainer
-            else com.google.android.material.R.attr.colorSurfaceContainerLow
-        )
-        val strokeColor = MaterialColors.getColor(
-            holder.cardView,
-            if (item.isCurrent) com.google.android.material.R.attr.colorPrimary
-            else com.google.android.material.R.attr.colorOutlineVariant
+            else com.google.android.material.R.attr.colorSurface
         )
         val titleColor = MaterialColors.getColor(
             holder.textTitle,
@@ -67,8 +61,8 @@ class AgentSessionAdapter(
         )
 
         holder.cardView.setCardBackgroundColor(backgroundColor)
-        holder.cardView.strokeColor = strokeColor
-        holder.cardView.strokeWidth = if (item.isCurrent) 2.dp(context) else 1.dp(context)
+        holder.cardView.strokeWidth = 0
+        holder.cardView.isSelected = item.isCurrent
         holder.textTitle.setTextColor(titleColor)
 
         holder.cardView.isEnabled = interactionsEnabled
@@ -98,7 +92,4 @@ class AgentSessionAdapter(
         val textPreview: TextView = itemView.findViewById(R.id.text_agent_session_preview)
     }
 
-    private fun Int.dp(context: android.content.Context): Int {
-        return (this * context.resources.displayMetrics.density).toInt()
-    }
 }

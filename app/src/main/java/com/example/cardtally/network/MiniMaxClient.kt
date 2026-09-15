@@ -14,25 +14,65 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import okio.BufferedSource
 
-class MiniMaxClient(
-    private val okHttpClient: OkHttpClient = DEFAULT_CLIENT
+/**
+ * A per-request cancellation handle. Owning a handle lets a caller cancel exactly
+ * the request it created without disturbing any newer request, so a user stop of
+ * request A cannot be re-enabled by starting request B.
+ */
+class MiniMaxRequestHandle internal constructor(
+    private val cancelAction: () -> Unit
 ) {
+    internal val cancelled = AtomicBoolean(false)
+    private val call = AtomicReference<okhttp3.Call?>(null)
 
-    private val activeCall = AtomicReference<okhttp3.Call?>(null)
-    private val isCancelled = AtomicBoolean(false)
+    internal fun attachCall(newCall: okhttp3.Call) {
+        call.set(newCall)
+    }
 
+    fun cancel() {
+        if (cancelled.compareAndSet(false, true)) {
+            cancelAction()
+            call.getAndSet(null)?.cancel()
+        }
+    }
+
+    fun isCancelled(): Boolean = cancelled.get()
+}
+
+/**
+ * The minimal contract the Agent page uses to start an AI request. A fake can
+ * implement this in a test to deterministically drive stop/restart/late-callback
+ * sequences without a real network call.
+ */
+fun interface AiChatSender {
     fun sendChat(
         config: MiniMaxConfig,
         messages: List<AiChatMessage>,
         callback: (MiniMaxChatResult) -> Unit
-    ) {
+    ): MiniMaxRequestHandle
+}
+
+class MiniMaxClient(
+    private val okHttpClient: OkHttpClient = DEFAULT_CLIENT
+) : AiChatSender {
+
+    // The single most-recent in-flight call, kept only so a legacy broad cancel
+    // can be routed to the current request if needed. Each handle owns its own
+    // cancellation flag and call reference.
+    private val activeCall = AtomicReference<okhttp3.Call?>(null)
+
+    override fun sendChat(
+        config: MiniMaxConfig,
+        messages: List<AiChatMessage>,
+        callback: (MiniMaxChatResult) -> Unit
+    ): MiniMaxRequestHandle {
+        val handle = MiniMaxRequestHandle(cancelAction = { activeCall.compareAndSet(activeCall.get(), null) })
+
         val normalizedConfig = config.normalized()
         if (!normalizedConfig.isComplete()) {
             callback(MiniMaxChatResult.Failure(MiniMaxErrorType.INVALID_CONFIG))
-            return
+            return handle
         }
-
-        isCancelled.set(false)
 
         val requestBody = MiniMaxPayloadParser.buildRequestBody(
             model = normalizedConfig.model,
@@ -48,17 +88,18 @@ class MiniMaxClient(
                 .build()
         } catch (_: IllegalArgumentException) {
             callback(MiniMaxChatResult.Failure(MiniMaxErrorType.INVALID_URL))
-            return
+            return handle
         }
 
         val call = okHttpClient.newCall(request)
+        handle.attachCall(call)
         activeCall.set(call)
 
         call.enqueue(object : okhttp3.Callback {
             override fun onFailure(call: okhttp3.Call, e: IOException) {
                 activeCall.compareAndSet(call, null)
 
-                if (isCancelled.get()) {
+                if (handle.isCancelled()) {
                     callback(MiniMaxChatResult.Failure(MiniMaxErrorType.CANCELLED))
                     return
                 }
@@ -66,7 +107,7 @@ class MiniMaxClient(
                 val errorType = when (e) {
                     is SocketTimeoutException -> MiniMaxErrorType.TIMEOUT
                     is InterruptedIOException -> {
-                        if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.INTERRUPTED
+                        if (handle.isCancelled()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.INTERRUPTED
                     }
                     else -> MiniMaxErrorType.NETWORK
                 }
@@ -83,7 +124,7 @@ class MiniMaxClient(
             override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
                 activeCall.compareAndSet(call, null)
 
-                if (isCancelled.get()) {
+                if (handle.isCancelled()) {
                     callback(MiniMaxChatResult.Failure(MiniMaxErrorType.CANCELLED))
                     response.close()
                     return
@@ -101,15 +142,18 @@ class MiniMaxClient(
                         return
                     }
 
-                    handleSuccessBody(body.source(), callback)
+                    handleSuccessBody(body.source(), callback, handle)
                 }
             }
         })
+
+        return handle
     }
 
     fun cancel() {
-        isCancelled.set(true)
-        activeCall.getAndSet(null)?.cancel()
+        // Legacy broad cancel: cancels whatever single call is currently active.
+        val call = activeCall.getAndSet(null)
+        call?.cancel()
     }
 
     private fun handleHttpError(response: okhttp3.Response, callback: (MiniMaxChatResult) -> Unit) {
@@ -128,14 +172,15 @@ class MiniMaxClient(
 
     private fun handleSuccessBody(
         source: BufferedSource,
-        callback: (MiniMaxChatResult) -> Unit
+        callback: (MiniMaxChatResult) -> Unit,
+        handle: MiniMaxRequestHandle
     ) {
         try {
             source.use { bufferedSource ->
                 val bufferedLines = mutableListOf<String>()
 
                 while (true) {
-                    if (isCancelled.get()) {
+                    if (handle.isCancelled()) {
                         callback(MiniMaxChatResult.Failure(MiniMaxErrorType.CANCELLED))
                         return
                     }
@@ -169,7 +214,8 @@ class MiniMaxClient(
                         processStreamingSource(
                             source = bufferedSource,
                             firstChunk = parsedChunk,
-                            callback = callback
+                            callback = callback,
+                            handle = handle
                         )
                         return
                     }
@@ -183,7 +229,7 @@ class MiniMaxClient(
                         }
                     }
 
-                    if (isCancelled.get()) {
+                    if (handle.isCancelled()) {
                         callback(MiniMaxChatResult.Failure(MiniMaxErrorType.CANCELLED))
                     } else {
                         callback(MiniMaxPayloadParser.parseAssistantReply(fullBody))
@@ -196,14 +242,14 @@ class MiniMaxClient(
         } catch (e: InterruptedIOException) {
             callback(
                 MiniMaxChatResult.Failure(
-                    if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.INTERRUPTED,
+                    if (handle.isCancelled()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.INTERRUPTED,
                     e.localizedMessage
                 )
             )
         } catch (e: IOException) {
             callback(
                 MiniMaxChatResult.Failure(
-                    if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.NETWORK,
+                    if (handle.isCancelled()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.NETWORK,
                     e.localizedMessage
                 )
             )
@@ -213,21 +259,29 @@ class MiniMaxClient(
     private fun processStreamingSource(
         source: BufferedSource,
         firstChunk: MiniMaxPayloadParser.StreamingParseResult,
-        callback: (MiniMaxChatResult) -> Unit
+        callback: (MiniMaxChatResult) -> Unit,
+        handle: MiniMaxRequestHandle
     ) {
         val accumulatedContent = StringBuilder()
+        val accumulatedReasoning = StringBuilder()
 
         fun emitChunkResult(result: MiniMaxPayloadParser.StreamingParseResult): Boolean {
             return when (result) {
                 is MiniMaxPayloadParser.StreamingParseResult.Content -> {
-                    accumulatedContent.append(result.text)
-                    callback(MiniMaxChatResult.StreamingChunk(accumulatedContent.toString()))
+                    result.content?.let { accumulatedContent.append(it) }
+                    result.reasoning?.let { accumulatedReasoning.append(it) }
+                    callback(
+                        MiniMaxChatResult.StreamingChunk(
+                            accumulatedContent.toString(),
+                            accumulatedReasoning.toString()
+                        )
+                    )
                     false
                 }
                 is MiniMaxPayloadParser.StreamingParseResult.Done -> {
                     val finalContent = accumulatedContent.toString()
                     if (finalContent.isNotBlank()) {
-                        callback(MiniMaxChatResult.StreamingDone(finalContent))
+                        callback(MiniMaxChatResult.StreamingDone(finalContent, accumulatedReasoning.toString()))
                     } else {
                         callback(MiniMaxChatResult.Failure(MiniMaxErrorType.EMPTY_REPLY))
                     }
@@ -243,7 +297,7 @@ class MiniMaxClient(
             }
 
             while (true) {
-                if (isCancelled.get()) {
+                if (handle.isCancelled()) {
                     val partial = accumulatedContent.toString()
                     callback(
                         MiniMaxChatResult.Failure(
@@ -258,7 +312,7 @@ class MiniMaxClient(
                 if (line == null) {
                     val finalContent = accumulatedContent.toString()
                     if (finalContent.isNotBlank()) {
-                        callback(MiniMaxChatResult.StreamingDone(finalContent))
+                        callback(MiniMaxChatResult.StreamingDone(finalContent, accumulatedReasoning.toString()))
                     } else {
                         callback(MiniMaxChatResult.Failure(MiniMaxErrorType.EMPTY_REPLY))
                     }
@@ -281,7 +335,7 @@ class MiniMaxClient(
             val partial = accumulatedContent.toString()
             callback(
                 MiniMaxChatResult.Failure(
-                    type = if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.INTERRUPTED,
+                    type = if (handle.isCancelled()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.INTERRUPTED,
                     detail = partial.ifBlank { e.localizedMessage }
                 )
             )
@@ -289,7 +343,7 @@ class MiniMaxClient(
             val partial = accumulatedContent.toString()
             callback(
                 MiniMaxChatResult.Failure(
-                    type = if (partial.isNotBlank()) MiniMaxErrorType.INTERRUPTED else if (isCancelled.get()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.NETWORK,
+                    type = if (partial.isNotBlank()) MiniMaxErrorType.INTERRUPTED else if (handle.isCancelled()) MiniMaxErrorType.CANCELLED else MiniMaxErrorType.NETWORK,
                     detail = partial.ifBlank { e.localizedMessage }
                 )
             )

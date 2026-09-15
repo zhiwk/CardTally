@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -10,18 +10,19 @@
     <LinearLayout
         android:id="@+id/appbar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
         android:background="@android:color/transparent"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="12dp">
         <ImageButton
             android:id="@+id/btn_back"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/content_description_back"
-            android:padding="8dp"
+            android:padding="12dp"
             android:src="@drawable/ic_arrow_back"
             app:tint="?attr/colorOnSurface" />
         <TextView
@@ -30,11 +31,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
+            android:maxLines="1"
             android:text="@string/asset_title_add"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="20sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
-        <View android:layout_width="40dp" android:layout_height="40dp" />
+        <View android:layout_width="48dp" android:layout_height="48dp" />
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -55,7 +57,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="@color/surface_light"
-                app:cardCornerRadius="6dp"
+                app:cardCornerRadius="@dimen/card_corner_radius_medium"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
                 <LinearLayout
@@ -63,26 +65,26 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="20dp">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="账户信息" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/asset_form_account_info" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
                     <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:gravity="center_vertical" android:orientation="horizontal">
                         <FrameLayout android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_circle_primary_container" android:backgroundTint="@color/warning_container">
                             <ImageView android:id="@+id/image_asset_type" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:src="@drawable/tabler_cash" app:tint="@color/warning_primary" />
                         </FrameLayout>
-                        <TextView android:id="@+id/text_selected_asset_type" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="20dp" android:text="现金" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+                        <TextView android:id="@+id/text_selected_asset_type" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="20dp" android:text="@string/asset_type_cash" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
                     </LinearLayout>
                     <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:gravity="center_vertical" android:orientation="horizontal">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="账户名称" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
-                        <EditText android:id="@+id/edit_name" android:layout_width="140dp" android:layout_height="wrap_content" android:background="@null" android:gravity="end" android:hint="账户名称" android:inputType="textCapWords" android:maxLines="1" android:padding="0dp" android:textColor="?attr/colorOnSurface" android:textColorHint="?attr/colorOnSurfaceVariant" android:textSize="15sp" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/asset_form_account_name" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+                        <EditText android:id="@+id/edit_name" android:layout_width="140dp" android:layout_height="wrap_content" android:background="@null" android:gravity="end" android:hint="@string/asset_form_account_name" android:inputType="textCapWords" android:maxLines="1" android:padding="0dp" android:textColor="?attr/colorOnSurface" android:textColorHint="?attr/colorOnSurfaceVariant" android:textSize="15sp" />
                     </LinearLayout>
                     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/outlineVariant_light" />
                     <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:gravity="center_vertical" android:orientation="horizontal">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="账户余额" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/asset_form_account_balance" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
                         <EditText android:id="@+id/edit_amount" android:layout_width="140dp" android:layout_height="wrap_content" android:background="@null" android:gravity="end" android:hint="￥0.00" android:inputType="text" android:padding="0dp" android:textColor="?attr/colorOnSurface" android:textColorHint="?attr/colorOnSurfaceVariant" android:textSize="15sp" />
                     </LinearLayout>
                     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/outlineVariant_light" />
                     <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:gravity="center_vertical" android:orientation="horizontal">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="备注" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
-                        <EditText android:id="@+id/edit_note" android:layout_width="140dp" android:layout_height="wrap_content" android:background="@null" android:gravity="end" android:hint="选填" android:inputType="text" android:maxLines="1" android:padding="0dp" android:textColor="?attr/colorOnSurface" android:textColorHint="?attr/colorOnSurfaceVariant" android:textSize="15sp" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/asset_form_note" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+                        <EditText android:id="@+id/edit_note" android:layout_width="140dp" android:layout_height="wrap_content" android:background="@null" android:gravity="end" android:hint="@string/asset_form_note_optional" android:inputType="text" android:maxLines="1" android:padding="0dp" android:textColor="?attr/colorOnSurface" android:textColorHint="?attr/colorOnSurfaceVariant" android:textSize="15sp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -92,11 +94,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 app:cardBackgroundColor="@color/surface_light"
-                app:cardCornerRadius="6dp"
+                app:cardCornerRadius="@dimen/card_corner_radius_medium"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
                 <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="20dp">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="是否计入总资产" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/asset_form_include_in_total" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
                     <androidx.appcompat.widget.SwitchCompat android:id="@+id/switch_include_total" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="true" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -104,14 +106,15 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_save"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
+                android:minHeight="52dp"
                 android:text="@string/asset_save_cta"
                 android:textAllCaps="false"
                 android:textColor="@color/onPrimary_light"
-                android:textSize="17sp"
+                android:textSize="16sp"
                 app:backgroundTint="@color/buttonPrimary_light"
-                app:cornerRadius="4dp" />
+                app:cornerRadius="12dp" />
 
             <com.google.android.material.chip.ChipGroup android:id="@+id/chip_group_type" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone">
                 <com.google.android.material.chip.Chip android:id="@+id/chip_cash" android:layout_width="wrap_content" android:layout_height="wrap_content" />

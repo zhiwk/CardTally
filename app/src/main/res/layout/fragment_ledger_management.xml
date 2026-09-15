@@ -24,10 +24,10 @@
     <LinearLayout android:id="@+id/ledger_management_selection_actions" android:layout_width="match_parent" android:layout_height="56dp"
         android:orientation="horizontal" android:visibility="gone" android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingBottom="8dp">
         <Button android:id="@+id/button_ledger_management_delete_selected" android:layout_width="0dp" android:layout_height="48dp"
-            android:layout_weight="1" android:text="删除" android:textColor="@android:color/white" android:backgroundTint="@color/error" />
+            android:layout_weight="1" android:text="@string/ledger_management_delete_action" android:textColor="@android:color/white" android:backgroundTint="@color/error" />
         <Space android:layout_width="8dp" android:layout_height="1dp" />
         <Button android:id="@+id/button_ledger_management_merge_selected" android:layout_width="0dp" android:layout_height="48dp"
-            android:layout_weight="1" android:text="合并" android:textColor="@android:color/white" android:backgroundTint="?attr/colorPrimary" />
+            android:layout_weight="1" android:text="@string/ledger_management_merge_action" android:textColor="@android:color/white" android:backgroundTint="?attr/colorPrimary" />
     </LinearLayout>
     <TextView android:id="@+id/ledger_management_hint" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
         android:padding="12dp" android:text="@string/ledger_management_hint" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" />

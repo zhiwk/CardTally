@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_pin_asset"
+        android:icon="@drawable/ic_push_pin"
+        android:title="@string/menu_asset_pin"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_archive_asset"
+        android:icon="@drawable/tabler_archive"
+        android:title="@string/menu_asset_archive"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_delete_asset"
+        android:icon="@drawable/tabler_trash"
+        android:title="@string/menu_asset_delete"
+        app:showAsAction="never" />
+</menu>

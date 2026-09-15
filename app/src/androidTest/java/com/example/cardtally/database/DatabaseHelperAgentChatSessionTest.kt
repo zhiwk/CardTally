@@ -1,11 +1,13 @@
-package com.example.cardtally.database
+﻿package com.example.cardtally.database
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.cardtally.testing.IsolatedTestGuard
 import com.example.cardtally.model.AiChatMessage
 import com.example.cardtally.model.AiChatRole
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -18,6 +20,7 @@ class DatabaseHelperAgentChatSessionTest {
 
     @Before
     fun setUp() {
+        IsolatedTestGuard.requireIsolatedBuild()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         context.deleteDatabase("CardTally.db")
         databaseHelper = DatabaseHelper(context)
@@ -106,5 +109,32 @@ class DatabaseHelperAgentChatSessionTest {
         assertEquals(listOf(AiChatRole.ASSISTANT, AiChatRole.USER), firstSessionMessages.map { it.role })
         assertTrue(firstSessionMessages.last().isError)
         assertEquals(listOf(3_000L, 4_000L), firstSessionMessages.map { it.createdAt })
+    }
+
+    @Test
+    fun aiChatMessage_reasoningRoundTripsAndDefaultsToNull() {
+        val sessionId = databaseHelper.addAiChatSession("会话", createdAt = 1_000L, updatedAt = 1_000L)
+        databaseHelper.addAiChatMessage(
+            AiChatMessage(
+                sessionId = sessionId,
+                role = AiChatRole.ASSISTANT,
+                content = "回答",
+                reasoning = "思考内容",
+                createdAt = 3_000L
+            )
+        )
+        databaseHelper.addAiChatMessage(
+            AiChatMessage(
+                sessionId = sessionId,
+                role = AiChatRole.USER,
+                content = "问题",
+                createdAt = 4_000L
+            )
+        )
+
+        val messages = databaseHelper.getAiChatMessages(sessionId)
+
+        assertEquals("思考内容", messages.first { it.role == AiChatRole.ASSISTANT }.reasoning)
+        assertNull(messages.first { it.role == AiChatRole.USER }.reasoning)
     }
 }

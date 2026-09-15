@@ -3,6 +3,7 @@ package com.example.cardtally
 import android.app.AlertDialog
 import android.app.Dialog
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.net.Uri
 import android.content.res.ColorStateList
@@ -11,6 +12,8 @@ import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.view.MotionEvent
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
@@ -18,20 +21,26 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.FrameLayout
 import android.view.Gravity
+import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.FileProvider
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.example.cardtally.adapter.AssetSheetItem
-import com.example.cardtally.adapter.RecordAssetSheetAdapter
 import com.example.cardtally.adapter.RecordCategoryTreeAdapter
-import com.example.cardtally.adapter.IconPickerAdapter
+import com.example.cardtally.adapter.RecordCategoryGroupAdapter
+import com.example.cardtally.adapter.CategorySelectorAdapter
+import com.example.cardtally.adapter.IconPickerDialog
 import com.example.cardtally.adapter.LedgerCalendarAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
@@ -46,6 +55,12 @@ import com.example.cardtally.util.LedgerPeriodHelper
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.AmountKeypadController
+import com.example.cardtally.util.EntryAmountLayoutController
+import com.example.cardtally.util.Money
+import com.example.cardtally.util.RecordEntryMode
+import com.example.cardtally.util.RecordEntryModePreferences
+import com.example.cardtally.util.RecordCategoryOrderPreferences
+import com.example.cardtally.util.DefaultRecordAssetPreferences
 import com.example.cardtally.util.RecordPhotoSettingsHelper
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -61,11 +76,11 @@ open class AddRecordFragment : Fragment() {
 
     private lateinit var textDate: TextView
     private lateinit var textAssetValue: TextView
-    private lateinit var textCategoryValue: TextView
-    private lateinit var imageCategoryIcon: ImageView
+    private var textCategoryValue: TextView? = null
+    private var imageCategoryIcon: ImageView? = null
     private lateinit var editAmount: EditText
     private lateinit var editDescription: EditText
-    private lateinit var btnTakePhoto: ImageButton
+    private lateinit var btnTakePhoto: View
     private lateinit var cardPhotoPreview: View
     private lateinit var layoutPhotoThumbnails: LinearLayout
     private lateinit var btnExpense: Button
@@ -77,16 +92,32 @@ open class AddRecordFragment : Fragment() {
     private lateinit var rowDate: View
     private lateinit var rowAsset: View
     private lateinit var rowDestinationAsset: View
-    private lateinit var dividerDestinationAsset: View
-    private lateinit var dividerBeforeDate: View
-    private lateinit var dividerAfterCategory: View
+    private var dividerBeforeDate: View? = null
+    private var dividerAfterCategory: View? = null
     private lateinit var textAssetLabel: TextView
-    private lateinit var rowCategory: View
+    private var rowCategory: View? = null
+    private var rowAssetSingle: View? = null
+    private var textAssetSingleValue: TextView? = null
+    private var textSourceAssetLabel: TextView? = null
+    private var textDestinationAssetLabel: TextView? = null
+    private var textSourceAssetBalance: TextView? = null
+    private var textDestinationAssetBalance: TextView? = null
+    private var rowFee: View? = null
+    private var editFee: EditText? = null
+    private var transferAccountsBlock: View? = null
     private lateinit var textDestinationAssetValue: TextView
     private lateinit var databaseHelper: DatabaseHelper
     private lateinit var amountKeypadController: AmountKeypadController
+    private var entryAmountLayoutController: EntryAmountLayoutController? = null
+    private var rootView: View? = null
+    private var isSystemImeVisible = false
+    private var imeGlobalLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private var categoryAdapter: RecordCategoryTreeAdapter? = null
+    private var quickCategoryAdapter: CategorySelectorAdapter? = null
+    private var standardCategoryAdapter: RecordCategoryGroupAdapter? = null
+    private var isQuickMode = false
+    private var isQuickCategoryMode = false
     private var currentCategories = mutableListOf<Category>()
     private var currentAssets = mutableListOf<Asset>()
     private var currentType = 0
@@ -102,6 +133,28 @@ open class AddRecordFragment : Fragment() {
     private var photoUris = mutableListOf<String>()
     private var savedPhotoUris = emptyList<String>()
     private var pendingPhotoUri: Uri? = null
+    private var isInitialEntryLoad = true
+
+    /** Current record sheet, exposed internally for device interaction tests. */
+    internal var activeSheetDialogForTest: BottomSheetDialog? = null
+        private set
+
+    internal fun onAssetPickerDialogShown(dialog: BottomSheetDialog) {
+        activeSheetDialogForTest = dialog
+    }
+
+    internal fun onAssetPickerSelected(assetId: Long, selectDestination: Boolean) {
+        val asset = currentAssets.firstOrNull { it.id == assetId } ?: return
+        if (selectDestination) selectedDestinationAsset = asset else selectedAsset = asset
+        updateAssetSummary()
+        updateTransferRows()
+    }
+
+    internal fun onAssetPickerDismissed() {
+        openSheet = RecordSheet.NONE
+        restoreAmountKeypadAfterSheet()
+        activeSheetDialogForTest = null
+    }
 
     private val takePhotoLauncher = registerForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -130,10 +183,19 @@ open class AddRecordFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val view = inflater.inflate(R.layout.fragment_add_record, container, false)
+        isInitialEntryLoad = savedInstanceState == null
+        isQuickCategoryMode = RecordEntryModePreferences.getMode(requireContext()) == RecordEntryMode.QUICK
+        // Both modes use the compact entry shell; only their category surface differs.
+        isQuickMode = true
+        val view = inflater.inflate(R.layout.fragment_add_record_quick, container, false)
+        rootView = view
 
         textDate = view.findViewById(R.id.text_date)
         textAssetValue = view.findViewById(R.id.text_asset_value)
+        textSourceAssetLabel = view.findViewById(R.id.text_asset_label)
+        textDestinationAssetLabel = view.findViewById(R.id.text_destination_asset_label)
+        textSourceAssetBalance = view.findViewById(R.id.text_source_asset_balance)
+        textDestinationAssetBalance = view.findViewById(R.id.text_destination_asset_balance)
         textCategoryValue = view.findViewById(R.id.text_category_value)
         imageCategoryIcon = view.findViewById(R.id.image_category_icon)
         editAmount = view.findViewById(R.id.edit_amount)
@@ -148,19 +210,61 @@ open class AddRecordFragment : Fragment() {
         btnSave = view.findViewById(R.id.btn_save)
         btnSaveAndAdd = view.findViewById(R.id.btn_save_and_add)
         val amountKeypad = view.findViewById<View>(R.id.layout_amount_keypad)
-        amountKeypadController = AmountKeypadController(requireContext(), editAmount, amountKeypad, view.findViewById(R.id.layout_buttons)) {
+        amountKeypadController = AmountKeypadController(
+            requireContext(),
+            editAmount,
+            amountKeypad,
+            view.findViewById(R.id.layout_buttons),
+            alwaysVisible = isQuickMode,
+            onConfirm = {
             editAmount.clearFocus()
-        }.also { it.bind() }
+            }
+        ).also { it.bind() }
         rowDate = view.findViewById(R.id.row_date)
         rowAsset = view.findViewById(R.id.row_asset)
         rowDestinationAsset = view.findViewById(R.id.row_destination_asset)
-        dividerDestinationAsset = view.findViewById(R.id.divider_destination_asset)
         dividerBeforeDate = view.findViewById(R.id.divider_before_date)
         dividerAfterCategory = view.findViewById(R.id.divider_after_category)
         textAssetLabel = view.findViewById(R.id.text_asset_label)
         rowCategory = view.findViewById(R.id.row_category)
         textDestinationAssetValue = view.findViewById(R.id.text_destination_asset_value)
-        view.findViewById<View>(R.id.btn_swap_transfer_assets).setOnClickListener {
+        rowAssetSingle = view.findViewById(R.id.row_asset_single)
+        textAssetSingleValue = view.findViewById(R.id.text_asset_single_value)
+        rowFee = view.findViewById(R.id.row_fee)
+        editFee = view.findViewById(R.id.edit_fee)
+        transferAccountsBlock = view.findViewById(R.id.transfer_accounts_block)
+        editFee?.let { fee ->
+            amountKeypadController.bindTarget(fee)
+            fee.setOnTouchListener { _, event ->
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) prepareNumericTarget()
+                false
+            }
+            fee.setOnClickListener {
+                selectNumericTarget(fee)
+                updateActiveNumericField()
+            }
+        }
+        rowFee?.setOnClickListener {
+            val fee = editFee ?: return@setOnClickListener
+            selectNumericTarget(fee)
+            updateActiveNumericField()
+        }
+        editAmount.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) prepareNumericTarget()
+            false
+        }
+        editAmount.setOnClickListener {
+            selectNumericTarget(editAmount)
+            updateActiveNumericField()
+        }
+        (editAmount.parent as? View)?.let { amountRow ->
+            entryAmountLayoutController = EntryAmountLayoutController(
+                amountRow,
+                editAmount,
+                view.findViewById(R.id.text_amount_prefix)
+            ).also { it.attach() }
+        }
+        view.findViewById<View>(R.id.btn_swap_transfer_assets)?.setOnClickListener {
             val source = selectedAsset
             selectedAsset = selectedDestinationAsset
             selectedDestinationAsset = source
@@ -169,10 +273,122 @@ open class AddRecordFragment : Fragment() {
 
         databaseHelper = DatabaseHelper(requireContext())
 
+        view.findViewById<RecyclerView>(R.id.recycler_quick_categories)?.let { quickGrid ->
+            val columns = (resources.displayMetrics.widthPixels / resources.displayMetrics.density / 72f)
+                .toInt()
+                .coerceIn(3, 5)
+            quickGrid.layoutManager = GridLayoutManager(requireContext(), columns)
+            quickCategoryAdapter = CategorySelectorAdapter(
+                emptyList(), null,
+                { databaseHelper.buildCategoryPathLabel(it.id) ?: it.name }
+            ) { category ->
+                selectedCategory = category
+                updateCategorySummary()
+            }
+            quickGrid.adapter = quickCategoryAdapter
+            ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT,
+                0
+            ) {
+                private var moved = false
+
+                override fun onMove(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    target: RecyclerView.ViewHolder
+                ): Boolean {
+                    val from = viewHolder.adapterPosition
+                    val to = target.adapterPosition
+                    if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                    quickCategoryAdapter?.moveCategory(from, to)
+                    moved = true
+                    return true
+                }
+
+                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+                override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                    super.clearView(recyclerView, viewHolder)
+                    if (moved) {
+                        RecordCategoryOrderPreferences.saveOrder(
+                            requireContext(),
+                            currentType,
+                            quickMode = true,
+                            categoryIds = quickCategoryAdapter?.categoryIdsInOrder().orEmpty()
+                        )
+                        moved = false
+                    }
+                }
+            }).attachToRecyclerView(quickGrid)
+        }
+        view.findViewById<RecyclerView>(R.id.recycler_standard_categories)?.let { standardGrid ->
+            standardCategoryAdapter = RecordCategoryGroupAdapter(emptyList(), null) { category ->
+                selectedCategory = category
+                updateCategorySummary()
+            }
+            standardGrid.layoutManager = LinearLayoutManager(requireContext())
+            standardGrid.adapter = standardCategoryAdapter
+            ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.UP or ItemTouchHelper.DOWN,
+                0
+            ) {
+                private var moved = false
+
+                override fun onMove(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    target: RecyclerView.ViewHolder
+                ): Boolean {
+                    val from = viewHolder.adapterPosition
+                    val to = target.adapterPosition
+                    if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                    standardCategoryAdapter?.moveParent(from, to)
+                    moved = true
+                    return true
+                }
+
+                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+                override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                    super.clearView(recyclerView, viewHolder)
+                    if (moved) {
+                        RecordCategoryOrderPreferences.saveOrder(
+                            requireContext(),
+                            currentType,
+                            quickMode = false,
+                            categoryIds = standardCategoryAdapter?.parentIdsInOrder().orEmpty()
+                        )
+                        moved = false
+                    }
+                }
+            }).attachToRecyclerView(standardGrid)
+        }
+        view.findViewById<RecyclerView>(R.id.recycler_quick_categories)?.visibility =
+            if (isQuickCategoryMode) View.VISIBLE else View.GONE
+        view.findViewById<RecyclerView>(R.id.recycler_standard_categories)?.visibility =
+            if (isQuickCategoryMode) View.GONE else View.VISIBLE
+
+        editDescription.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                amountKeypadController.hideForSoftKeyboard()
+                updateQuickTransferLayout()
+            } else if (openSheet == RecordSheet.NONE) {
+                amountKeypadController.restoreAfterSoftKeyboard()
+                updateQuickTransferLayout()
+            }
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
+            onSystemImeVisibilityChanged(insets.isVisible(WindowInsetsCompat.Type.ime()))
+            insets
+        }
+        observeSystemImeVisibility(view)
+        ViewCompat.requestApplyInsets(view)
+
+
         editingRecord = editingRecordId?.let(databaseHelper::getRecordById)
         val defaultState = editingRecord?.let { record ->
             RecordFormState(
-                amountBuffer = String.format(Locale.US, "%.2f", record.amount),
+                amountBuffer = Money.formatYuan(record.amount),
                 recordType = when (record.type) {
                     1 -> RecordType.INCOME
                     2 -> RecordType.TRANSFER
@@ -183,6 +399,7 @@ open class AddRecordFragment : Fragment() {
                 selectedDestinationAssetId = record.destinationAssetId,
                 selectedCategoryId = record.categoryId,
                 description = record.description.orEmpty(),
+                feeBuffer = if (record.type == 2 && record.fee > 0.0) Money.formatYuan(record.fee) else "",
                 photoUri = record.photoUri,
                 photoUris = record.photoUris,
                 openSheet = RecordSheet.NONE,
@@ -199,7 +416,11 @@ open class AddRecordFragment : Fragment() {
         openSheet = restoredState.openSheet
         pendingCategoryId = restoredState.pendingCategoryId
         editAmount.setText(restoredState.amountBuffer)
+        if (isQuickMode && editAmount.text.toString() == getString(R.string.amount_default)) {
+            editAmount.setText("")
+        }
         editDescription.setText(restoredState.description)
+        editFee?.setText(restoredState.feeBuffer)
         photoUris = restoredState.photoUris.toMutableList().ifEmpty {
             restoredState.photoUri?.let { mutableListOf(it) } ?: mutableListOf()
         }
@@ -216,39 +437,77 @@ open class AddRecordFragment : Fragment() {
             if (isEditing()) R.string.record_title_edit else R.string.record_title_new
         )
         if (isEditing()) {
-            view.findViewById<TextView>(R.id.text_save_label).text = getString(R.string.record_update)
+            view.findViewById<TextView>(R.id.text_save_label)?.text = getString(R.string.record_update)
+            (btnSave as? TextView)?.text = getString(R.string.record_update)
         }
         updateTypeStyle()
+        updateActiveNumericField()
         setupBackNavigation()
 
         rowDate.setOnClickListener { showDateSheet() }
         rowAsset.setOnClickListener { showAssetSheet() }
         rowDestinationAsset.setOnClickListener { showAssetSheet(selectDestination = true) }
-        rowCategory.setOnClickListener { showCategorySheet() }
+        rowAssetSingle?.setOnClickListener { showAssetSheet() }
+        rowCategory?.setOnClickListener { showCategorySheet() }
         btnTakePhoto.setOnClickListener { takePhoto() }
 
         btnExpense.setOnClickListener {
-            if (currentType != 0) {
-                currentType = 0
-                updateTypeStyle()
-                loadCategories(0, null)
-            }
+            selectRecordType(0)
         }
 
         btnIncome.setOnClickListener {
-            if (currentType != 1) {
-                currentType = 1
-                updateTypeStyle()
-                loadCategories(1, null)
-            }
+            selectRecordType(1)
         }
 
         btnClose.setOnClickListener { navigateBack() }
         btnSave.setOnClickListener { saveRecord(true) }
         btnSaveAndAdd.setOnClickListener { saveRecord(false, true) }
 
-        view.post { restoreOpenSheet() }
+        view.post {
+            if (openSheet == RecordSheet.NONE) {
+                amountKeypadController.selectTarget(editAmount)
+            } else {
+                view.requestFocus()
+                hideSystemIme()
+            }
+            restoreOpenSheet()
+        }
         return view
+    }
+
+    private fun selectNumericTarget(target: EditText) {
+        prepareNumericTarget()
+        amountKeypadController.selectTarget(target)
+    }
+
+    private fun selectRecordType(type: Int) {
+        if (currentType == type) return
+
+        // Type tabs must leave note-editing mode before changing the quick layout.
+        selectNumericTarget(editAmount)
+        hideSystemIme()
+        currentType = type
+        if (type == 2) selectedCategory = null
+        updateTypeStyle()
+        if (type != 2) loadCategories(type, null)
+    }
+
+    private fun prepareNumericTarget() {
+        editDescription.clearFocus()
+        hideSystemIme()
+    }
+
+    private fun hideSystemIme() {
+        val root = rootView ?: view ?: return
+        val inputMethod = requireContext().getSystemService(InputMethodManager::class.java)
+        fun hide() {
+            val hostActivity = activity ?: return
+            inputMethod?.hideSoftInputFromWindow(root.windowToken, 0)
+            WindowInsetsControllerCompat(hostActivity.window, root).hide(WindowInsetsCompat.Type.ime())
+        }
+        hide()
+        root.post { hide() }
+        root.postDelayed({ hide() }, 250)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -265,6 +524,7 @@ open class AddRecordFragment : Fragment() {
             selectedDestinationAssetId = selectedDestinationAsset?.id,
             selectedCategoryId = selectedCategory?.id,
             description = editDescription.text.toString(),
+            feeBuffer = editFee?.text?.toString().orEmpty(),
             photoUri = photoUris.firstOrNull(),
             photoUris = photoUris,
             openSheet = openSheet,
@@ -293,11 +553,7 @@ open class AddRecordFragment : Fragment() {
         }
 
         btnTransfer.setOnClickListener {
-            if (currentType != 2) {
-                currentType = 2
-                selectedCategory = null
-                updateTypeStyle()
-            }
+            selectRecordType(2)
         }
         val selectedButton = when (currentType) {
             1 -> btnIncome
@@ -309,39 +565,69 @@ open class AddRecordFragment : Fragment() {
         selectedButton.setTypeface(null, Typeface.BOLD)
         selectedButton.isSelected = true
         updateTransferRows()
-        if (currentType == 2) {
-            rowCategory.visibility = View.GONE
-        } else {
-            rowCategory.visibility = View.VISIBLE
-        }
     }
 
     private fun updateTransferRows() {
         val visible = currentType == 2
-        val fields = rowAsset.parent as ViewGroup
-        fields.removeView(rowAsset)
-        fields.removeView(dividerBeforeDate)
-        if (visible) {
-            val destinationIndex = fields.indexOfChild(rowDestinationAsset)
-            fields.addView(rowAsset, (destinationIndex + 2).coerceAtMost(fields.childCount))
-            fields.addView(dividerBeforeDate, (fields.indexOfChild(rowAsset) + 1).coerceAtMost(fields.childCount))
-        } else {
-            val dateIndex = fields.indexOfChild(rowDate)
-            fields.addView(dividerBeforeDate, (dateIndex + 1).coerceAtMost(fields.childCount))
-            fields.addView(rowAsset, (dateIndex + 2).coerceAtMost(fields.childCount))
+        transferAccountsBlock?.visibility = if (visible) View.VISIBLE else View.GONE
+        rowAssetSingle?.visibility = if (visible) View.GONE else View.VISIBLE
+        rowFee?.visibility = if (visible) View.VISIBLE else View.GONE
+        rowCategory?.visibility = if (visible) View.GONE else View.VISIBLE
+        rootView?.findViewById<View>(R.id.card_quick_categories)?.visibility =
+            if (visible) View.GONE else View.VISIBLE
+        dividerAfterCategory?.visibility = if (visible) View.GONE else View.VISIBLE
+        textAssetLabel.setText(R.string.record_transfer_from_asset)
+        textSourceAssetLabel?.isSelected = true
+        textDestinationAssetLabel?.isSelected = true
+        updateAssetSummary()
+        textDestinationAssetValue.text =
+            selectedDestinationAsset?.name ?: getString(R.string.record_transfer_to_asset_hint)
+        textDestinationAssetValue.isSelected = true
+        if (isQuickMode) {
+            val destinationSelected = selectedDestinationAsset != null
+            textDestinationAssetValue.setTypeface(
+                null,
+                if (destinationSelected) Typeface.BOLD else Typeface.NORMAL
+            )
+            textDestinationAssetValue.setTextColor(
+                ThemeColorHelper.resolveColor(
+                    requireContext(),
+                    if (destinationSelected) {
+                        com.google.android.material.R.attr.colorOnSurface
+                    } else {
+                        com.google.android.material.R.attr.colorOnSurfaceVariant
+                    }
+                )
+            )
         }
-        rowDestinationAsset.visibility = if (visible) View.VISIBLE else View.GONE
-        dividerDestinationAsset.visibility = if (visible) View.VISIBLE else View.GONE
-        dividerAfterCategory.visibility = if (visible) View.GONE else View.VISIBLE
-        textAssetLabel.setText(if (visible) R.string.record_transfer_from_asset else R.string.record_asset_label)
-        textAssetValue.text = selectedAsset?.name ?: if (visible) getString(R.string.record_asset_select) else getString(R.string.record_asset_none)
-        textDestinationAssetValue.text = selectedDestinationAsset?.name ?: getString(R.string.record_asset_select)
+        updateQuickTransferLayout()
+        if (!visible) {
+            editFee?.setText("")
+            if (::amountKeypadController.isInitialized) {
+                amountKeypadController.resetTarget(editAmount)
+                updateActiveNumericField()
+            }
+        }
+    }
+
+    private fun updateActiveNumericField() {
+        if (!isQuickMode || !::amountKeypadController.isInitialized) return
+        val feeActive = amountKeypadController.currentTarget() === editFee
+        val activeColor = ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorPrimary)
+        val normalColor = ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface)
+        editAmount.setTextColor(if (feeActive) normalColor else activeColor)
+        editFee?.setTextColor(if (feeActive) activeColor else normalColor)
     }
 
     private fun loadCategories(type: Int, selectedCategoryId: Long? = null) {
         if (type == 2) {
             currentCategories = mutableListOf()
             selectedCategory = null
+            quickCategoryAdapter?.updateCategories(emptyList())
+            quickCategoryAdapter?.setSelectedCategoryId(null)
+            standardCategoryAdapter?.updateCategories(emptyList())
+            standardCategoryAdapter?.setSelectedCategoryId(null)
+            updateQuickCategoryEmpty()
             updateCategorySummary()
             return
         }
@@ -349,27 +635,154 @@ open class AddRecordFragment : Fragment() {
         selectedCategory = selectedCategoryId?.let { id ->
             currentCategories.firstOrNull { it.id == id && isLeafCategory(it) }
         } ?: currentCategories.firstOrNull { isLeafCategory(it) }
+        quickCategoryAdapter?.updateCategories(
+            RecordCategoryOrderPreferences.orderForMode(requireContext(), currentCategories, quickMode = true)
+        )
+        quickCategoryAdapter?.setSelectedCategoryId(selectedCategory?.id)
+        standardCategoryAdapter?.updateCategories(standardModeCategoriesInOrder())
+        standardCategoryAdapter?.setSelectedCategoryId(
+            selectedCategory?.id,
+            expandParent = !isQuickCategoryMode && isEditing()
+        )
+        updateQuickCategoryEmpty()
         updateCategorySummary()
     }
 
+    private fun updateQuickCategoryEmpty() {
+        val grid = rootView?.findViewById<RecyclerView>(
+            if (isQuickCategoryMode) R.id.recycler_quick_categories
+            else R.id.recycler_standard_categories
+        ) ?: return
+        val empty = rootView?.findViewById<TextView>(R.id.text_quick_category_empty)
+        val count = if (isQuickCategoryMode) {
+            quickCategoryAdapter?.itemCount ?: 0
+        } else {
+            standardCategoryAdapter?.itemCount ?: 0
+        }
+        grid.visibility = if (count == 0) View.GONE else View.VISIBLE
+        empty?.visibility = if (count == 0) View.VISIBLE else View.GONE
+    }
+
+
     private fun loadAssets(selectedAssetId: Long? = null, selectedDestinationAssetId: Long? = null) {
         currentAssets = databaseHelper.getAllAssets().toMutableList()
-        selectedAsset = selectedAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
+        val defaultAssetId = if (!isEditing() && isInitialEntryLoad && currentType != 2) {
+            if (currentType == 1) {
+                DefaultRecordAssetPreferences.getIncomeAssetId(requireContext())
+            } else {
+                DefaultRecordAssetPreferences.getExpenseAssetId(requireContext())
+            }
+        } else {
+            null
+        }
+        val requestedAssetId = selectedAssetId ?: defaultAssetId
+        selectedAsset = requestedAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
+        if (selectedAsset == null && defaultAssetId != null) {
+            if (currentType == 1) {
+                DefaultRecordAssetPreferences.saveIncomeAssetId(requireContext(), null)
+            } else {
+                DefaultRecordAssetPreferences.saveExpenseAssetId(requireContext(), null)
+            }
+        }
         selectedDestinationAsset = selectedDestinationAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
         updateAssetSummary()
         updateTransferRows()
     }
 
-    private fun hideAmountKeypad() {
-        if (::amountKeypadController.isInitialized) {
-            amountKeypadController.hide()
+    private fun standardModeCategoriesInOrder(): List<Category> {
+        val orderedParents = RecordCategoryOrderPreferences.orderForMode(
+            requireContext(),
+            currentCategories,
+            quickMode = false
+        )
+        val childrenByParent = currentCategories.filter { it.parentId != null }.groupBy { it.parentId }
+        return orderedParents.flatMap { parent ->
+            listOf(parent) + childrenByParent[parent.id].orEmpty()
         }
     }
 
+    private fun hideAmountKeypad() {
+        if (::amountKeypadController.isInitialized) {
+            amountKeypadController.hideForModal()
+        }
+    }
+
+    private fun restoreAmountKeypadAfterSheet() {
+        if (::amountKeypadController.isInitialized) {
+            amountKeypadController.restoreAfterModal()
+        }
+        updateQuickTransferLayout()
+    }
+
+    private fun updateQuickTransferLayout() {
+        if (!isQuickMode) return
+        val root = rootView ?: return
+        val transferBlock = root.findViewById<View>(R.id.transfer_accounts_block) ?: return
+        val categoryCard = root.findViewById<View>(R.id.card_quick_categories) ?: return
+        val panel = root.findViewById<View>(R.id.quick_record_panel) ?: return
+        val keypad = root.findViewById<View>(R.id.layout_amount_keypad) ?: return
+        val transferParams = transferBlock.layoutParams as? ConstraintLayout.LayoutParams ?: return
+        val categoryParams = categoryCard.layoutParams as? ConstraintLayout.LayoutParams ?: return
+        val panelParams = panel.layoutParams as? ConstraintLayout.LayoutParams ?: return
+
+        if (currentType == 2) {
+            // Transfer uses the same content-card chain as income and expense.
+            transferParams.height = 0
+            transferParams.bottomToTop = panel.id
+            transferParams.bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+            panelParams.topToBottom = ConstraintLayout.LayoutParams.UNSET
+        } else {
+            // A gone transfer card must not participate in the form's vertical chain.
+            panelParams.topToBottom = ConstraintLayout.LayoutParams.UNSET
+            categoryParams.bottomToTop = panel.id
+        }
+        panelParams.bottomToTop = keypad.id
+        panelParams.bottomToBottom = ConstraintLayout.LayoutParams.UNSET
+
+        transferBlock.layoutParams = transferParams
+        categoryCard.layoutParams = categoryParams
+        panel.layoutParams = panelParams
+    }
+
+    private fun restoreQuickAmountKeypadAfterImeDismissal() {
+        if (!isQuickMode || openSheet != RecordSheet.NONE || !editDescription.hasFocus()) return
+
+        editDescription.clearFocus()
+        updateQuickTransferLayout()
+        amountKeypadController.selectTarget(amountKeypadController.currentTarget())
+        updateActiveNumericField()
+    }
+
+    private fun observeSystemImeVisibility(root: View) {
+        imeGlobalLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+            if (!isAdded || view !== root) return@OnGlobalLayoutListener
+            val visibleFrame = Rect()
+            root.getWindowVisibleDisplayFrame(visibleFrame)
+            onSystemImeVisibilityChanged(root.rootView.height - visibleFrame.bottom > 120.dp())
+        }
+        root.viewTreeObserver.addOnGlobalLayoutListener(imeGlobalLayoutListener)
+    }
+
+    private fun onSystemImeVisibilityChanged(imeVisible: Boolean) {
+        val imeWasVisible = isSystemImeVisible
+        isSystemImeVisible = imeVisible
+        if (imeWasVisible && !imeVisible) {
+            restoreQuickAmountKeypadAfterImeDismissal()
+        }
+    }
+
+    private fun dismissKeyboardAndClearFocus() {
+        view?.clearFocus()
+        activity?.currentFocus?.clearFocus()
+        hideSystemIme()
+    }
+
     private fun showDateSheet() {
-        hideAmountKeypad()
         openSheet = RecordSheet.DATE
+        dismissKeyboardAndClearFocus()
+        hideAmountKeypad()
         val dialog = BottomSheetDialog(requireContext())
+        activeSheetDialogForTest = dialog
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_date, null)
         dialog.setContentView(sheetView)
 
@@ -410,7 +823,11 @@ open class AddRecordFragment : Fragment() {
         recyclerCalendar.adapter = adapter
         renderCalendar()
 
-        dialog.setOnDismissListener { openSheet = RecordSheet.NONE }
+        dialog.setOnDismissListener {
+            openSheet = RecordSheet.NONE
+            restoreAmountKeypadAfterSheet()
+            if (activeSheetDialogForTest === dialog) activeSheetDialogForTest = null
+        }
         btnCloseSheet.setOnClickListener { dialog.dismiss() }
         textSelectToday.setOnClickListener {
             val calendar = Calendar.getInstance()
@@ -443,6 +860,10 @@ open class AddRecordFragment : Fragment() {
             dialog.dismiss()
         }
         dialog.setOnShowListener {
+            dialog.window?.setLayout(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
             dialog.behavior.skipCollapsed = true
             dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
         }
@@ -450,37 +871,23 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun showAssetSheet(selectDestination: Boolean = false) {
-        hideAmountKeypad()
         openSheet = RecordSheet.ASSET
-        val dialog = BottomSheetDialog(requireContext())
-        val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_assets, null)
-        dialog.setContentView(sheetView)
-
-        val btnCloseSheet = sheetView.findViewById<ImageButton>(R.id.btn_close_sheet)
-        val recyclerAssets = sheetView.findViewById<RecyclerView>(R.id.recycler_assets)
+        dismissKeyboardAndClearFocus()
+        hideAmountKeypad()
         val selectedId = if (selectDestination) selectedDestinationAsset?.id else selectedAsset?.id
-        val adapter = RecordAssetSheetAdapter(buildAssetSheetItems(), selectedId) { item ->
-            if (selectDestination) {
-                selectedDestinationAsset = item.asset
-            } else {
-                selectedAsset = item.asset
-            }
-            updateAssetSummary()
-            updateTransferRows()
-            dialog.dismiss()
-        }
-
-        dialog.setOnDismissListener { openSheet = RecordSheet.NONE }
-        recyclerAssets.layoutManager = LinearLayoutManager(requireContext())
-        recyclerAssets.adapter = adapter
-        btnCloseSheet.setOnClickListener { dialog.dismiss() }
-        dialog.show()
+        RecordAssetPickerBottomSheetFragment.newInstance(
+            selectDestination = selectDestination,
+            excludedAssetId = if (selectDestination) selectedAsset?.id else selectedDestinationAsset?.id,
+            selectedAssetId = selectedId
+        ).show(parentFragmentManager, RecordAssetPickerBottomSheetFragment.TAG)
     }
 
     private fun showCategorySheet() {
-        hideAmountKeypad()
         openSheet = RecordSheet.CATEGORY
+        dismissKeyboardAndClearFocus()
+        hideAmountKeypad()
         val dialog = BottomSheetDialog(requireContext())
+        activeSheetDialogForTest = dialog
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_category, null)
         dialog.setContentView(sheetView)
 
@@ -517,6 +924,8 @@ open class AddRecordFragment : Fragment() {
         dialog.setOnDismissListener {
             openSheet = RecordSheet.NONE
             pendingCategoryId = null
+            restoreAmountKeypadAfterSheet()
+            if (activeSheetDialogForTest === dialog) activeSheetDialogForTest = null
         }
         btnCloseSheet.setOnClickListener { dialog.dismiss() }
         dialog.show()
@@ -580,25 +989,17 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun showIconPickerDialog(selectedIcon: String?, onIconSelected: (String?) -> Unit) {
-        val view = layoutInflater.inflate(R.layout.dialog_icon_picker, null)
-        val recyclerIcons = view.findViewById<RecyclerView>(R.id.recycler_icons)
-        val iconAdapter = IconPickerAdapter(TablerIconCatalog.icons, selectedIcon) { icon ->
-            onIconSelected(icon)
-        }
-        recyclerIcons.adapter = iconAdapter
-        val dialog = AlertDialog.Builder(requireContext())
-            .setTitle(R.string.category_icon_picker_title)
-            .setView(view)
-            .create()
-        iconAdapter.setOnIconSelected { icon ->
-            onIconSelected(icon)
-            dialog.dismiss()
-        }
-        dialog.show()
+        dismissKeyboardAndClearFocus()
+        IconPickerDialog.show(requireContext(), initialSelectedIcon = selectedIcon, onIconSelected = onIconSelected)
     }
 
+
     private fun updateDisplayedDate() {
-        textDate.text = formatDisplayDate(selectedDate)
+        textDate.text = if (isQuickMode && selectedDate == databaseHelper.getCurrentDate()) {
+            getString(R.string.record_date_today)
+        } else {
+            formatDisplayDate(selectedDate)
+        }
     }
 
     private fun formatDisplayDate(rawDate: String): String {
@@ -611,26 +1012,45 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun updateAssetSummary() {
+        val noneLabel = if (isQuickMode) R.string.record_asset_none_short else R.string.record_asset_none
+        textAssetSingleValue?.text = selectedAsset?.name ?: getString(noneLabel)
+        val sourceSelected = selectedAsset != null
         textAssetValue.text = selectedAsset?.name
-            ?: if (currentType == 2) getString(R.string.record_asset_select) else getString(R.string.record_asset_none)
+            ?: if (currentType == 2) {
+                getString(R.string.record_transfer_from_asset_hint)
+            } else {
+                getString(noneLabel)
+            }
+        textAssetValue.isSelected = true
+        textSourceAssetBalance?.apply {
+            text = "¥${Money.formatYuan(selectedAsset?.amount ?: 0.0)}"
+            isSelected = true
+        }
+        textDestinationAssetBalance?.apply {
+            text = "¥${Money.formatYuan(selectedDestinationAsset?.amount ?: 0.0)}"
+            isSelected = true
+        }
+        if (isQuickMode && currentType == 2) {
+            textAssetValue.setTypeface(null, if (sourceSelected) Typeface.BOLD else Typeface.NORMAL)
+            textAssetValue.setTextColor(
+                ThemeColorHelper.resolveColor(
+                    requireContext(),
+                    if (sourceSelected) {
+                        com.google.android.material.R.attr.colorOnSurface
+                    } else {
+                        com.google.android.material.R.attr.colorOnSurfaceVariant
+                    }
+                )
+            )
+        }
     }
 
     private fun updateCategorySummary() {
-        textCategoryValue.text = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel)
+        textCategoryValue?.text = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel)
             ?: getString(R.string.record_category_unselected)
-        bindCategoryIcon(imageCategoryIcon, selectedCategory?.icon)
-    }
-
-    private fun buildAssetSheetItems(): List<AssetSheetItem> {
-        return currentAssets.map { asset ->
-            AssetSheetItem(
-                id = asset.id,
-                asset = asset,
-                title = asset.name,
-                subtitle = getAssetTypeLabel(asset.type),
-                amountLabel = getString(R.string.currency_amount, asset.amount)
-            )
-        }
+        imageCategoryIcon?.let { bindCategoryIcon(it, selectedCategory?.icon) }
+        quickCategoryAdapter?.setSelectedCategoryId(selectedCategory?.id)
+        standardCategoryAdapter?.setSelectedCategoryId(selectedCategory?.id)
     }
 
     private fun getAssetTypeLabel(type: Int): String {
@@ -695,7 +1115,39 @@ open class AddRecordFragment : Fragment() {
             return
         }
 
+        val fee = if (currentType == 2) {
+            val feeStr = editFee?.text?.toString()?.trim().orEmpty()
+            if (feeStr.isEmpty()) {
+                0.0
+            } else {
+                val parsed = evaluateAmountExpression(feeStr)
+                if (parsed == null || parsed < 0.0) {
+                    Toast.makeText(requireContext(), getString(R.string.record_fee_invalid), Toast.LENGTH_SHORT).show()
+                    return
+                }
+                parsed
+            }
+        } else {
+            0.0
+        }
+
+        if (currentType == 2) {
+            if (selectedAsset == null || selectedDestinationAsset == null) {
+                Toast.makeText(requireContext(), getString(R.string.record_transfer_select_assets), Toast.LENGTH_SHORT).show()
+                return
+            }
+            if (selectedAsset?.id == selectedDestinationAsset?.id) {
+                Toast.makeText(requireContext(), getString(R.string.record_transfer_same_asset), Toast.LENGTH_SHORT).show()
+                return
+            }
+        }
+
         if (category == null) {
+            Toast.makeText(requireContext(), getString(R.string.validation_select_category), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (currentType != 2 && (selectedCategory?.let { isLeafCategory(it) } != true)) {
             Toast.makeText(requireContext(), getString(R.string.validation_select_category), Toast.LENGTH_SHORT).show()
             return
         }
@@ -709,6 +1161,7 @@ open class AddRecordFragment : Fragment() {
             categoryPathSnapshot = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel) ?: category,
             type = currentType,
             description = description,
+            fee = fee,
             assetId = selectedAsset?.id,
             destinationAssetId = selectedDestinationAsset?.id,
             assetSource = selectedAsset?.name,
@@ -755,25 +1208,8 @@ open class AddRecordFragment : Fragment() {
     private fun isEditing(): Boolean = editingRecordId != null && editingRecord != null
 
     /** Supports simple left-to-right expressions such as 12+3-1.5. */
-    private fun evaluateAmountExpression(expression: String): Double? {
-        val normalized = expression.replace(" ", "")
-        if (normalized.isEmpty() || !normalized.matches(Regex("\\d+(\\.\\d+)?([+-]\\d+(\\.\\d+)?)*"))) {
-            return null
-        }
-        val tokens = normalized.split(Regex("(?=[+-])|(?<=[+-])"))
-        var result = tokens.firstOrNull()?.toDoubleOrNull() ?: return null
-        var index = 1
-        while (index + 1 < tokens.size) {
-            val operand = tokens[index + 1].toDoubleOrNull() ?: return null
-            result = when (tokens[index]) {
-                "+" -> result + operand
-                "-" -> result - operand
-                else -> return null
-            }
-            index += 2
-        }
-        return result
-    }
+    private fun evaluateAmountExpression(expression: String): Double? =
+        Money.evaluateYuanExpression(expression)?.let(Money::toMajorDouble)
 
     private fun clearAmountAndDescription() {
         editAmount.setText(getString(R.string.amount_default))
@@ -787,17 +1223,17 @@ open class AddRecordFragment : Fragment() {
     private fun takePhoto() {
         val maxPhotos = RecordPhotoSettingsHelper.getMaxPhotos(requireContext())
         if (photoUris.size >= maxPhotos) {
-            Toast.makeText(requireContext(), "当前记录最多添加${maxPhotos}张图片", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.record_photo_limit_reached, maxPhotos), Toast.LENGTH_SHORT).show()
             return
         }
 
         if (currentType == 2) {
             if (selectedAsset == null || selectedDestinationAsset == null) {
-                Toast.makeText(requireContext(), "请选择转出和转入资产", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.record_transfer_select_assets), Toast.LENGTH_SHORT).show()
                 return
             }
             if (selectedAsset?.id == selectedDestinationAsset?.id) {
-                Toast.makeText(requireContext(), "转出和转入资产不能相同", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.record_transfer_same_asset), Toast.LENGTH_SHORT).show()
                 return
             }
         }
@@ -812,21 +1248,25 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun showPhotoPreview() {
+        val maxPhotos = RecordPhotoSettingsHelper.getMaxPhotos(requireContext())
+        rootView?.findViewById<TextView>(R.id.text_photo_count)?.text =
+            getString(R.string.record_attachment_count, photoUris.size, maxPhotos)
         layoutPhotoThumbnails.removeAllViews()
         if (photoUris.isEmpty()) {
             cardPhotoPreview.visibility = View.GONE
             return
         }
+        val thumbSize = if (isQuickMode) 64.dp() else 88.dp()
         photoUris.forEachIndexed { index, uriString ->
             val frame = FrameLayout(requireContext()).apply {
-                layoutParams = LinearLayout.LayoutParams(88.dp(), 88.dp()).apply {
+                layoutParams = LinearLayout.LayoutParams(thumbSize, thumbSize).apply {
                     if (index > 0) marginStart = 8.dp()
                 }
             }
             val image = ImageView(requireContext()).apply {
                 layoutParams = FrameLayout.LayoutParams(-1, -1)
                 scaleType = ImageView.ScaleType.CENTER_CROP
-                contentDescription = "查看第${index + 1}张照片"
+                contentDescription = getString(R.string.record_photo_preview_description, index + 1)
                 setImageURI(Uri.parse(uriString))
                 setOnClickListener { showPhotoFullScreen(uriString) }
             }
@@ -837,7 +1277,7 @@ open class AddRecordFragment : Fragment() {
                 imageTintList = ColorStateList.valueOf(
                     ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.error_primary)
                 )
-                contentDescription = "删除第${index + 1}张照片"
+                contentDescription = getString(R.string.record_photo_delete_description, index + 1)
                 setPadding(4.dp(), 4.dp(), 4.dp(), 4.dp())
                 setOnClickListener {
                     photoUris.removeAt(index)
@@ -859,7 +1299,7 @@ open class AddRecordFragment : Fragment() {
             scaleType = ImageView.ScaleType.FIT_CENTER
             setImageURI(uri)
             setOnClickListener { dialog.dismiss() }
-            contentDescription = "全屏查看照片，点击关闭"
+            contentDescription = getString(R.string.record_photo_fullscreen_description)
         }
         dialog.setContentView(imageView)
         dialog.window?.setBackgroundDrawableResource(android.R.color.black)
@@ -881,6 +1321,12 @@ open class AddRecordFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        rootView?.viewTreeObserver?.let { observer ->
+            imeGlobalLayoutListener?.let(observer::removeOnGlobalLayoutListener)
+        }
+        imeGlobalLayoutListener = null
+        entryAmountLayoutController?.detach()
+        entryAmountLayoutController = null
         deletePhotoUris(photoUris.filterNot { it in savedPhotoUris })
         super.onDestroyView()
     }

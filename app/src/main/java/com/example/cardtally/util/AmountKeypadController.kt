@@ -7,16 +7,31 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.TextView
-import java.util.Locale
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
-/** Shared in-app amount keypad for add and edit record flows. */
+/**
+ * Shared in-app amount keypad for the add/edit record and add/edit asset flows.
+ *
+ * [alwaysVisible] supports the quick record layout, where the keypad is pinned to
+ * the bottom of the page instead of opening below the amount field.
+ *
+ * Multiple numeric fields (record amount and transfer fee) can share one keypad:
+ * call [bindTarget] for each field and [selectTarget] to choose which buffer the
+ * next key press edits.
+ */
 class AmountKeypadController(
     private val context: Context,
     private val amount: EditText,
     private val keypad: View,
-    private val normalActions: View,
-    private val onConfirm: () -> Unit
+    private val normalActions: View?,
+    private val alwaysVisible: Boolean = false,
+    private val onConfirm: () -> Unit,
+    private val allowNegative: Boolean = false
 ) {
+    private var target: EditText = amount
+    private val boundTargets = mutableSetOf<EditText>()
+
     private val digitIds = mapOf(
         0 to com.example.cardtally.R.id.keypad_0,
         1 to com.example.cardtally.R.id.keypad_1,
@@ -31,45 +46,37 @@ class AmountKeypadController(
     )
 
     fun bind() {
-        amount.showSoftInputOnFocus = false
-        amount.setOnClickListener { show() }
-        amount.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) show() }
-        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_hide).setOnClickListener {
+        bindTarget(amount)
+        amount.setOnFocusChangeListener { _, hasFocus -> if (hasFocus && !alwaysVisible) show() }
+        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_hide)?.setOnClickListener {
             hide()
         }
-        amount.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                updateConfirmLabel()
-            }
-            override fun afterTextChanged(s: Editable?) = Unit
-        })
 
         digitIds.forEach { (digit, id) ->
-            keypad.findViewById<View>(id).setOnClickListener { insert(digit.toString()) }
+            keypad.findViewById<View>(id)?.setOnClickListener { insert(digit.toString()) }
         }
-        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_dot).setOnClickListener {
-            if (!amount.text.toString().substringAfterLast('+').substringAfterLast('-').contains('.')) {
+        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_dot)?.setOnClickListener {
+            if (!target.text.toString().substringAfterLast('+').substringAfterLast('-').contains('.')) {
                 insert(".")
             }
         }
-        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_minus).setOnClickListener {
+        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_minus)?.setOnClickListener {
             insertOperator("-")
         }
-        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_plus).setOnClickListener {
+        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_plus)?.setOnClickListener {
             insertOperator("+")
         }
-        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_delete).setOnClickListener {
-            val start = amount.selectionStart.coerceAtLeast(0)
-            val end = amount.selectionEnd.coerceAtLeast(0)
+        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_delete)?.setOnClickListener {
+            val start = target.selectionStart.coerceAtLeast(0)
+            val end = target.selectionEnd.coerceAtLeast(0)
             if (start != end) {
-                amount.text.delete(minOf(start, end), maxOf(start, end))
+                target.text.delete(minOf(start, end), maxOf(start, end))
             } else if (start > 0) {
-                amount.text.delete(start - 1, start)
+                target.text.delete(start - 1, start)
             }
         }
-        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_confirm).setOnClickListener {
-            if (amount.text.contains('+') || amount.text.contains('-')) {
+        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_confirm)?.setOnClickListener {
+            if (target.text.contains('+') || target.text.contains('-')) {
                 if (evaluateExpression()) updateConfirmLabel()
             } else {
                 hide()
@@ -77,65 +84,148 @@ class AmountKeypadController(
             }
         }
         updateConfirmLabel()
+
+        if (alwaysVisible) {
+            activateTarget(amount)
+            keypad.visibility = View.VISIBLE
+        }
+    }
+
+    /** Registers another numeric field that shares this keypad. */
+    fun bindTarget(editText: EditText) {
+        if (!boundTargets.add(editText)) return
+        editText.showSoftInputOnFocus = false
+        editText.setOnClickListener { selectTarget(editText) }
+        editText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (target === editText) updateConfirmLabel()
+            }
+            override fun afterTextChanged(s: Editable?) = Unit
+        })
+    }
+
+    /** Points subsequent key presses at [editText] and shows the keypad. */
+    fun selectTarget(editText: EditText) {
+        editText.rootView.findFocus()?.let { focusedView ->
+            if (focusedView !== editText) focusedView.clearFocus()
+        }
+        boundTargets.forEach { boundTarget ->
+            if (boundTarget !== editText) boundTarget.clearFocus()
+        }
+        activateTarget(editText)
+        show()
+    }
+
+    fun currentTarget(): EditText = target
+
+    /** Switches the active buffer without showing the keypad. */
+    fun resetTarget(editText: EditText) {
+        target = editText
+        if (alwaysVisible) activateTarget(editText)
     }
 
     private fun insert(value: String) {
-        val start = amount.selectionStart.coerceAtLeast(0)
-        val end = amount.selectionEnd.coerceAtLeast(0)
-        amount.text.replace(minOf(start, end), maxOf(start, end), value)
-        amount.setSelection((minOf(start, end) + value.length).coerceAtMost(amount.length()))
+        val start = target.selectionStart.coerceAtLeast(0)
+        val end = target.selectionEnd.coerceAtLeast(0)
+        target.text.replace(minOf(start, end), maxOf(start, end), value)
+        target.setSelection((minOf(start, end) + value.length).coerceAtMost(target.length()))
     }
 
     private fun insertOperator(operator: String) {
-        val current = amount.text.toString()
-        if (current.isBlank() || current.last() in charArrayOf('+', '-')) return
+        val current = target.text.toString()
+        if (current.isBlank()) {
+            if (allowNegative && operator == "-") insert(operator)
+            return
+        }
+        if (current.last() in charArrayOf('+', '-')) return
         insert(operator)
     }
 
     private fun evaluateExpression(): Boolean {
-        val expression = amount.text.toString().trim()
+        val expression = target.text.toString().trim()
         if (!expression.contains('+') && !expression.contains('-')) return false
-        val tokens = expression.split(Regex("(?=[+-])|(?<=[+-])"))
-            .filter { it.isNotBlank() }
-        if (tokens.isEmpty()) return false
-        var result = tokens.first().toDoubleOrNull() ?: return false
-        var index = 1
-        while (index + 1 < tokens.size) {
-            val operand = tokens[index + 1].toDoubleOrNull() ?: return false
-            result = when (tokens[index]) {
-                "+" -> result + operand
-                "-" -> result - operand
-                else -> return false
-            }
-            index += 2
-        }
-        amount.setText(String.format(Locale.US, "%.2f", result))
-        amount.setSelection(amount.length())
+        val result = Money.evaluateYuanExpression(expression) ?: return false
+        target.setText(Money.formatYuan(result))
+        target.setSelection(target.length())
         return true
     }
 
     private fun updateConfirmLabel() {
-        keypad.findViewById<TextView>(com.example.cardtally.R.id.keypad_confirm).text =
-            if (amount.text.contains('+') || amount.text.contains('-')) "=" else "确定"
+        keypad.findViewById<TextView>(com.example.cardtally.R.id.keypad_confirm)?.text =
+            context.getString(
+                if (target.text.contains('+') || target.text.contains('-')) {
+                    com.example.cardtally.R.string.record_keypad_equals
+                } else {
+                    com.example.cardtally.R.string.record_keypad_confirm
+                }
+            )
     }
 
     fun show() {
         val inputMethod = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        inputMethod.hideSoftInputFromWindow(amount.windowToken, 0)
-        if (amount.text.toString() == context.getString(com.example.cardtally.R.string.amount_default)) {
-            amount.setText("")
-            amount.setSelection(0)
+        fun hideSystemKeyboard() {
+            inputMethod.hideSoftInputFromWindow(target.windowToken, 0)
+            ViewCompat.getWindowInsetsController(target)?.hide(WindowInsetsCompat.Type.ime())
+        }
+        hideSystemKeyboard()
+        // The IME can finish its pending show animation after the click callback.
+        target.post { hideSystemKeyboard() }
+        target.postDelayed({ hideSystemKeyboard() }, 200)
+        if (target.text.toString() == context.getString(com.example.cardtally.R.string.amount_default)) {
+            target.setText("")
+            target.setSelection(0)
         }
         keypad.visibility = View.VISIBLE
-        normalActions.visibility = View.GONE
+        normalActions?.visibility = View.GONE
     }
 
     fun hide() {
         keypad.visibility = View.GONE
-        normalActions.visibility = View.VISIBLE
-        if (amount.text.isNullOrBlank()) {
-            amount.setText(context.getString(com.example.cardtally.R.string.amount_default))
+        normalActions?.visibility = View.VISIBLE
+        if (target.text.isNullOrBlank()) {
+            target.setText(context.getString(com.example.cardtally.R.string.amount_default))
         }
-        amount.clearFocus()
+        target.clearFocus()
+    }
+
+    /** Temporarily hides the pinned keypad while a modal surface is open. */
+    fun hideForModal() {
+        if (alwaysVisible) {
+            target.isCursorVisible = false
+            keypad.visibility = View.GONE
+        } else {
+            hide()
+        }
+    }
+
+    /** Restores a pinned keypad after a modal surface is dismissed. */
+    fun restoreAfterModal() {
+        if (alwaysVisible) {
+            activateTarget(target)
+            keypad.visibility = View.VISIBLE
+        }
+    }
+
+    /** Hides the pinned keypad while the soft keyboard (e.g. the note field) is used. */
+    fun hideForSoftKeyboard() {
+        if (alwaysVisible) {
+            target.isCursorVisible = false
+            keypad.visibility = View.GONE
+        }
+    }
+
+    fun restoreAfterSoftKeyboard() {
+        if (alwaysVisible) {
+            activateTarget(target)
+            keypad.visibility = View.VISIBLE
+        }
+    }
+
+    private fun activateTarget(editText: EditText) {
+        target = editText
+        editText.isCursorVisible = true
+        editText.requestFocus()
+        editText.setSelection(editText.length())
     }
 }

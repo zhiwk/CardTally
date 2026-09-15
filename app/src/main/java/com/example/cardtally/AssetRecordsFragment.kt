@@ -15,6 +15,7 @@ import com.example.cardtally.adapter.DateGroupAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
+import com.example.cardtally.util.Money
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class AssetRecordsFragment : Fragment() {
@@ -79,49 +80,11 @@ class AssetRecordsFragment : Fragment() {
                     .commit()
             }
         }
-        view.findViewById<ImageButton>(R.id.btn_pin_asset).setOnClickListener {
-            if (assetId != 0L) {
-                databaseHelper.setAssetPinned(assetId, true)
-                Toast.makeText(requireContext(), "已置顶", Toast.LENGTH_SHORT).show()
-            }
-        }
-        view.findViewById<ImageButton>(R.id.btn_archive_asset).setOnClickListener {
-            if (assetId != 0L) {
-                AlertDialog.Builder(requireContext())
-                    .setTitle("归档资产")
-                    .setMessage("确定归档“$assetName”吗？")
-                    .setNegativeButton("取消", null)
-                    .setPositiveButton("归档") { _, _ ->
-                        databaseHelper.archiveAsset(assetId)
-                        Toast.makeText(requireContext(), "已归档", Toast.LENGTH_SHORT).show()
-                        parentFragmentManager.popBackStack()
-                    }
-                    .show()
-            }
-        }
-        view.findViewById<ImageButton>(R.id.btn_delete_asset).setOnClickListener {
-            if (assetId != 0L) {
-                AlertDialog.Builder(requireContext())
-                    .setTitle("删除资产")
-                    .setMessage("确定删除“$assetName”吗？")
-                    .setNegativeButton("取消", null)
-                    .setPositiveButton("删除") { _, _ ->
-                        try {
-                            if (databaseHelper.deleteAsset(assetId)) {
-                                Toast.makeText(requireContext(), "已删除", Toast.LENGTH_SHORT).show()
-                                parentFragmentManager.popBackStack()
-                            } else {
-                                Toast.makeText(requireContext(), "删除失败", Toast.LENGTH_SHORT).show()
-                            }
-                        } catch (error: DatabaseHelper.AssetOperationException) {
-                            Toast.makeText(requireContext(), "该资产仍有关联账单，无法删除", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                    .show()
-            }
+        view.findViewById<ImageButton>(R.id.btn_more_asset).setOnClickListener { anchor ->
+            showAssetMoreMenu(anchor)
         }
         view.findViewById<View>(R.id.action_transfer).setOnClickListener {
-            Toast.makeText(requireContext(), "转账功能暂未配置", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.toast_transfer_not_configured, Toast.LENGTH_SHORT).show()
         }
         view.findViewById<View>(R.id.action_record).setOnClickListener {
             parentFragmentManager.beginTransaction()
@@ -129,23 +92,21 @@ class AssetRecordsFragment : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
-        view.findViewById<TextView>(R.id.text_asset_balance).text = String.format("¥%.2f", assetAmount)
+        view.findViewById<TextView>(R.id.text_asset_balance).text = "¥${Money.formatYuan(assetAmount)}"
 
         databaseHelper = DatabaseHelper(requireContext())
         val canManage = assetId == 0L || databaseHelper.canManageAsset(assetId)
         view.findViewById<ImageButton>(R.id.btn_edit_asset).visibility = if (canManage) View.VISIBLE else View.GONE
-        view.findViewById<ImageButton>(R.id.btn_pin_asset).visibility = if (canManage) View.VISIBLE else View.GONE
-        view.findViewById<ImageButton>(R.id.btn_archive_asset).visibility = if (canManage) View.VISIBLE else View.GONE
-        view.findViewById<ImageButton>(R.id.btn_delete_asset).visibility = if (canManage) View.VISIBLE else View.GONE
+        view.findViewById<ImageButton>(R.id.btn_more_asset).visibility = if (canManage) View.VISIBLE else View.GONE
 
-        textTitle.text = "账户详情"
+        textTitle.text = getString(R.string.asset_records_title)
         
         val fallbackTypeText = when (assetType) {
-            0 -> "现金"
-            1 -> "银行卡"
-            2 -> "支付宝"
-            3 -> "微信"
-            else -> "其他"
+            0 -> getString(R.string.asset_type_cash)
+            1 -> getString(R.string.asset_type_bank)
+            2 -> getString(R.string.asset_type_alipay)
+            3 -> getString(R.string.asset_type_wechat)
+            else -> getString(R.string.ledger_chart_other)
         }
         val typeText = assetCategoryLabel.ifBlank { fallbackTypeText }
         textAssetInfo.text = String.format("%s · %s", typeText, assetName)
@@ -155,6 +116,74 @@ class AssetRecordsFragment : Fragment() {
         loadRecords()
 
         return view
+    }
+
+    private fun showAssetMoreMenu(anchor: View) {
+        if (assetId == 0L) return
+        val popup = android.widget.PopupMenu(requireContext(), anchor)
+        popup.menuInflater.inflate(R.menu.menu_asset_records, popup.menu)
+        val isPinned = databaseHelper.getAllAssets().firstOrNull { it.id == assetId }?.isPinned == true
+        popup.menu.findItem(R.id.action_pin_asset).title = getString(
+            if (isPinned) R.string.menu_asset_unpin else R.string.menu_asset_pin
+        )
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_pin_asset -> {
+                    databaseHelper.setAssetPinned(assetId, !isPinned)
+                    Toast.makeText(
+                        requireContext(),
+                        if (isPinned) R.string.toast_asset_unpinned else R.string.toast_asset_pinned,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    true
+                }
+                R.id.action_archive_asset -> {
+                    showArchiveAssetDialog()
+                    true
+                }
+                R.id.action_delete_asset -> {
+                    showDeleteAssetDialog()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun showArchiveAssetDialog() {
+        if (assetId == 0L) return
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.asset_dialog_archive_title)
+            .setMessage(getString(R.string.asset_dialog_archive_message, assetName))
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .setPositiveButton(R.string.asset_dialog_archive_confirm) { _, _ ->
+                databaseHelper.archiveAsset(assetId)
+                Toast.makeText(requireContext(), R.string.toast_asset_archived, Toast.LENGTH_SHORT).show()
+                parentFragmentManager.popBackStack()
+            }
+            .show()
+    }
+
+    private fun showDeleteAssetDialog() {
+        if (assetId == 0L) return
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.asset_dialog_delete_title)
+            .setMessage(getString(R.string.asset_dialog_delete_message, assetName))
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .setPositiveButton(R.string.asset_dialog_delete_confirm) { _, _ ->
+                try {
+                    if (databaseHelper.deleteAsset(assetId)) {
+                        Toast.makeText(requireContext(), R.string.toast_asset_deleted, Toast.LENGTH_SHORT).show()
+                        parentFragmentManager.popBackStack()
+                    } else {
+                        Toast.makeText(requireContext(), R.string.toast_asset_delete_failed, Toast.LENGTH_SHORT).show()
+                    }
+                } catch (error: DatabaseHelper.AssetOperationException) {
+                    Toast.makeText(requireContext(), R.string.error_asset_in_use_by_records, Toast.LENGTH_LONG).show()
+                }
+            }
+            .show()
     }
 
     override fun onResume() {
@@ -170,7 +199,9 @@ class AssetRecordsFragment : Fragment() {
 
     private fun loadRecords() {
         val records = if (assetId != 0L) {
-            databaseHelper.getRecordsByAssetId(assetId)
+            // Asset history is a property of the asset id: every ledger that
+            // references it, including transfers in and out, each record once.
+            databaseHelper.getAllRecordsByAssetId(assetId)
         } else {
             databaseHelper.getRecordsByAssetSource(assetName)
         }
@@ -184,31 +215,46 @@ class AssetRecordsFragment : Fragment() {
             textEmpty.visibility = View.GONE
             recyclerRecords.visibility = View.VISIBLE
 
+            val ledgerNames = databaseHelper.getLedgerNamesByIds(
+                records.mapNotNull { it.ledgerId }.toSet()
+            )
+            records.forEach { record ->
+                record.ledgerName = record.ledgerId?.let { ledgerNames[it] }
+                    ?: getString(R.string.asset_records_unknown_ledger)
+            }
             val dateGroups = groupRecordsByDate(records)
+            val categoryIconsById = databaseHelper.getAllCategories()
+                .filter { !it.icon.isNullOrEmpty() }
+                .associate { it.id to it.icon.orEmpty() }
 
             if (adapter == null) {
-                adapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
-                    override fun onEdit(record: Record) {
-                        val editFragment = EditRecordFragment.newInstance(record.id)
-                        parentFragmentManager.beginTransaction()
-                            .replace(R.id.fragment_container, editFragment)
-                            .addToBackStack(null)
-                            .commit()
-                    }
+                adapter = DateGroupAdapter(
+                    dateGroups,
+                    object : DateGroupAdapter.OnRecordActionListener {
+                        override fun onEdit(record: Record) {
+                            val editFragment = EditRecordFragment.newInstance(record.id)
+                            parentFragmentManager.beginTransaction()
+                                .replace(R.id.fragment_container, editFragment)
+                                .addToBackStack(null)
+                                .commit()
+                        }
 
-                    override fun onDelete(record: Record) {
-                        databaseHelper.deleteRecord(record.id)
-                        loadRecords()
-                    }
+                        override fun onDelete(record: Record) {
+                            databaseHelper.deleteRecord(record.id)
+                            loadRecords()
+                        }
 
-                    override fun onMultiSelectChanged(selectedCount: Int) {}
+                        override fun onMultiSelectChanged(selectedCount: Int) {}
 
-                    override fun onDeleteSelected(records: List<Record>) {}
+                        override fun onDeleteSelected(records: List<Record>) {}
 
-                    override fun onEnterMultiSelectMode(record: Record) {}
+                        override fun onEnterMultiSelectMode(record: Record) {}
 
-                    override fun onToggleMultiSelect(record: Record) {}
-                })
+                        override fun onToggleMultiSelect(record: Record) {}
+                    },
+                    categoryIconsById = categoryIconsById,
+                    showAssetRoute = false
+                )
                 recyclerRecords.adapter = adapter
             } else {
                 adapter?.updateDateGroups(dateGroups)

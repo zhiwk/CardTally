@@ -7,15 +7,22 @@ import android.view.ViewGroup
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.NumberPicker
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.util.AiAssistantSettingsHelper
 import com.example.cardtally.util.AssetDisplayHelper
 import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.QuickAddHelper
+import com.example.cardtally.util.RecordEntryMode
+import com.example.cardtally.util.RecordEntryModePreferences
 import com.example.cardtally.util.RecordPhotoSettingsHelper
 import com.example.cardtally.util.ScrollTopFabHelper
 import com.example.cardtally.util.IncomeExpenseColorScheme
+import com.example.cardtally.util.DataTransferManager
+import com.example.cardtally.util.DefaultRecordAssetPreferences
+import java.util.concurrent.Executors
 
 class SettingsFragment : Fragment() {
     private lateinit var cardQuickAdd: View
@@ -34,13 +41,68 @@ class SettingsFragment : Fragment() {
     private lateinit var textCurrentLanguage: TextView
     private lateinit var cardRecordPhotoLimit: View
     private lateinit var textRecordPhotoLimit: TextView
+    private lateinit var cardRecordEntryMode: View
+    private lateinit var textRecordEntryMode: TextView
+    private lateinit var cardDefaultExpenseAsset: View
+    private lateinit var cardDefaultIncomeAsset: View
+    private lateinit var textDefaultExpenseAsset: TextView
+    private lateinit var textDefaultIncomeAsset: TextView
     private lateinit var databaseHelper: DatabaseHelper
+    private val transferExecutor = Executors.newSingleThreadExecutor()
+
+    private val exportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        val context = requireContext().applicationContext
+        transferExecutor.execute {
+            val error = runCatching {
+                val json = DataTransferManager(context).use { it.exportJson() }
+                context.contentResolver.openOutputStream(uri)?.use { output ->
+                    output.write(json.toByteArray(Charsets.UTF_8))
+                } ?: error("Unable to open export destination")
+            }.exceptionOrNull()
+            requireActivity().runOnUiThread {
+                Toast.makeText(requireContext(), if (error == null) R.string.settings_export_success else R.string.settings_transfer_failed, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private val importLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        val context = requireContext().applicationContext
+        transferExecutor.execute {
+            val result = runCatching {
+                val json = context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+                    ?: error("Unable to open import file")
+                DataTransferManager(context).use { it.importJson(json) }
+            }
+            requireActivity().runOnUiThread {
+                val message = result.fold(
+                    onSuccess = { getString(R.string.settings_import_success, it.ledgers, it.categories, it.assets, it.records, it.sessions, it.skipped) },
+                    onFailure = { getString(R.string.settings_transfer_failed) }
+                )
+                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        parentFragmentManager.setFragmentResultListener(
+            DefaultRecordAssetPickerBottomSheetFragment.RESULT_KEY,
+            this
+        ) { _, result ->
+            onDefaultRecordAssetSelected(
+                result.getLong("selected_id"),
+                result.getBoolean("for_income")
+            )
+        }
         val view = inflater.inflate(R.layout.fragment_settings_v2, container, false)
 
         cardQuickAdd = view.findViewById(R.id.card_quick_add)
@@ -59,6 +121,12 @@ class SettingsFragment : Fragment() {
         textCurrentLanguage = view.findViewById(R.id.text_current_language)
         cardRecordPhotoLimit = view.findViewById(R.id.card_record_photo_limit)
         textRecordPhotoLimit = view.findViewById(R.id.text_record_photo_limit)
+        cardRecordEntryMode = view.findViewById(R.id.card_record_entry_mode)
+        textRecordEntryMode = view.findViewById(R.id.text_record_entry_mode)
+        cardDefaultExpenseAsset = view.findViewById(R.id.card_default_expense_asset)
+        cardDefaultIncomeAsset = view.findViewById(R.id.card_default_income_asset)
+        textDefaultExpenseAsset = view.findViewById(R.id.text_default_expense_asset)
+        textDefaultIncomeAsset = view.findViewById(R.id.text_default_income_asset)
         databaseHelper = DatabaseHelper(requireContext())
 
         switchQuickAdd.isChecked = QuickAddHelper.getQuickAdd(requireContext())
@@ -70,6 +138,8 @@ class SettingsFragment : Fragment() {
         updateAiApiKeyStatus()
         updateRecordPhotoLimitText()
         updateIncomeExpenseColorText()
+        updateRecordEntryModeText()
+        updateDefaultRecordAssetText()
 
         switchQuickAdd.setOnClickListener {
             QuickAddHelper.saveQuickAdd(requireContext(), switchQuickAdd.isChecked)
@@ -89,6 +159,14 @@ class SettingsFragment : Fragment() {
         }
         cardRecordPhotoLimit.setOnClickListener { showRecordPhotoLimitDialog() }
         cardIncomeExpenseColor.setOnClickListener { showIncomeExpenseColorDialog() }
+        cardRecordEntryMode.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, RecordEntryModeSettingsFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+        cardDefaultExpenseAsset.setOnClickListener { showDefaultRecordAssetPicker(false) }
+        cardDefaultIncomeAsset.setOnClickListener { showDefaultRecordAssetPicker(true) }
 
         cardAiApiKey.setOnClickListener {
             parentFragmentManager.beginTransaction()
@@ -117,6 +195,12 @@ class SettingsFragment : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
+        view.findViewById<View>(R.id.card_export_data).setOnClickListener {
+            exportLauncher.launch("cardtally-${System.currentTimeMillis()}.json")
+        }
+        view.findViewById<View>(R.id.card_import_data).setOnClickListener {
+            importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+        }
 
         return view
     }
@@ -126,11 +210,12 @@ class SettingsFragment : Fragment() {
         if (view == null || !::switchQuickAdd.isInitialized || !::switchScrollTopFab.isInitialized) {
             return
         }
-
         updateCurrentLanguageText()
         updateAiApiKeyStatus()
         updateRecordPhotoLimitText()
         updateIncomeExpenseColorText()
+        updateRecordEntryModeText()
+        updateDefaultRecordAssetText()
         switchQuickAdd.isChecked = QuickAddHelper.getQuickAdd(requireContext())
         switchAiAssistant.isChecked = AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext())
         switchShowAsset.isChecked = AssetDisplayHelper.getShowAsset(requireContext())
@@ -142,6 +227,11 @@ class SettingsFragment : Fragment() {
             databaseHelper.close()
         }
         super.onDestroyView()
+    }
+
+    override fun onDestroy() {
+        transferExecutor.shutdownNow()
+        super.onDestroy()
     }
 
     private fun updateCurrentLanguageText() {
@@ -158,12 +248,51 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    private fun updateRecordEntryModeText() {
+        if (!::textRecordEntryMode.isInitialized || !isAdded) return
+        textRecordEntryMode.text = getString(
+            when (RecordEntryModePreferences.getMode(requireContext())) {
+                RecordEntryMode.QUICK -> R.string.record_entry_mode_quick_title
+                else -> R.string.record_entry_mode_standard_title
+            }
+        )
+    }
+
     private fun updateRecordPhotoLimitText() {
         if (!::textRecordPhotoLimit.isInitialized || !isAdded) return
         textRecordPhotoLimit.text = getString(
             R.string.settings_record_photo_limit_value,
             RecordPhotoSettingsHelper.getMaxPhotos(requireContext())
         )
+    }
+
+    private fun updateDefaultRecordAssetText() {
+        if (!isAdded) return
+        textDefaultExpenseAsset.text = defaultAssetName(DefaultRecordAssetPreferences.getExpenseAssetId(requireContext()))
+        textDefaultIncomeAsset.text = defaultAssetName(DefaultRecordAssetPreferences.getIncomeAssetId(requireContext()))
+    }
+
+    private fun defaultAssetName(assetId: Long?): String =
+        assetId?.let { id -> databaseHelper.getAllAssets().firstOrNull { it.id == id }?.name }
+            ?: getString(R.string.settings_default_asset_not_set)
+
+    private fun showDefaultRecordAssetPicker(forIncome: Boolean) {
+        val selectedId = if (forIncome) {
+            DefaultRecordAssetPreferences.getIncomeAssetId(requireContext())
+        } else {
+            DefaultRecordAssetPreferences.getExpenseAssetId(requireContext())
+        }
+        DefaultRecordAssetPickerBottomSheetFragment.newInstance(forIncome, selectedId)
+            .show(parentFragmentManager, DefaultRecordAssetPickerBottomSheetFragment.TAG)
+    }
+
+    private fun onDefaultRecordAssetSelected(assetId: Long, forIncome: Boolean) {
+        if (forIncome) {
+            DefaultRecordAssetPreferences.saveIncomeAssetId(requireContext(), assetId)
+        } else {
+            DefaultRecordAssetPreferences.saveExpenseAssetId(requireContext(), assetId)
+        }
+        updateDefaultRecordAssetText()
     }
 
     private fun showRecordPhotoLimitDialog() {

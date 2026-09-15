@@ -17,7 +17,7 @@ enum class MiniMaxErrorType {
 }
 
 sealed class MiniMaxChatResult {
-    data class Success(val reply: String) : MiniMaxChatResult()
+    data class Success(val reply: String, val reasoning: String? = null) : MiniMaxChatResult()
 
     data class Failure(
         val type: MiniMaxErrorType,
@@ -29,11 +29,11 @@ sealed class MiniMaxChatResult {
      * Represents a streaming chunk with partial assistant content.
      * Used for incremental UI updates during streaming responses.
      */
-    data class StreamingChunk(val partialContent: String) : MiniMaxChatResult()
+    data class StreamingChunk(val partialContent: String, val reasoning: String? = null) : MiniMaxChatResult()
 
     /**
      * Signifies the streaming response is complete.
      * The final accumulated content is provided.
      */
-    data class StreamingDone(val finalContent: String) : MiniMaxChatResult()
+    data class StreamingDone(val finalContent: String, val reasoning: String? = null) : MiniMaxChatResult()
 }

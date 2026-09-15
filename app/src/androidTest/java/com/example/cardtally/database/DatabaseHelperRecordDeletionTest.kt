@@ -1,7 +1,8 @@
-package com.example.cardtally.database
+﻿package com.example.cardtally.database
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.example.cardtally.testing.IsolatedTestGuard
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
@@ -22,6 +23,7 @@ class DatabaseHelperRecordDeletionTest {
 
     @Before
     fun setUp() {
+        IsolatedTestGuard.requireIsolatedBuild()
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         context.deleteDatabase(DATABASE_NAME)
         databaseHelper = DatabaseHelper(context)
@@ -48,6 +50,7 @@ class DatabaseHelperRecordDeletionTest {
                 categoryPathSnapshot = "Food / Breakfast snapshot",
                 type = EXPENSE_TYPE,
                 description = "Fixture note",
+                assetId = assetId,
                 assetSource = ASSET_NAME
             )
         )
@@ -74,6 +77,7 @@ class DatabaseHelperRecordDeletionTest {
                 amount = 100.0,
                 category = "Salary",
                 type = INCOME_TYPE,
+                assetId = assetId,
                 assetSource = ASSET_NAME
             )
         )
@@ -95,6 +99,7 @@ class DatabaseHelperRecordDeletionTest {
                 amount = 100.0,
                 category = "Food",
                 type = EXPENSE_TYPE,
+                assetId = assetId,
                 assetSource = ASSET_NAME
             )
         )

@@ -10,6 +10,8 @@ data class AiChatMessage(
     val sessionId: Long = 0L,
     val role: AiChatRole,
     val content: String,
+    /** Model reasoning/thinking text for assistant replies; null when none was returned. */
+    val reasoning: String? = null,
     val isError: Boolean = false,
     val createdAt: Long = 0L
 )
