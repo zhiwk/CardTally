@@ -63,7 +63,20 @@ object Money {
         return (if (negative) "-" else "") + yuan + "." + fen.toString().padStart(2, '0')
     }
 
-    fun formatYuan(yuan: Double): String = toMinor(yuan)?.let(::formatYuan) ?: "0.00"
+    /** Formats a legacy Double boundary without turning harmless FP noise into zero. */
+    fun formatYuan(yuan: Double): String {
+        if (!yuan.isFinite()) return "0.00"
+        return try {
+            formatYuan(
+                BigDecimal.valueOf(yuan)
+                    .movePointRight(SCALE)
+                    .setScale(0, RoundingMode.HALF_UP)
+                    .longValueExact()
+            )
+        } catch (_: ArithmeticException) {
+            "0.00"
+        }
+    }
 
     fun toMinor(yuan: Double): Long? {
         if (!yuan.isFinite()) return null

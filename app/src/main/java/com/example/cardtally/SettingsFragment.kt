@@ -45,6 +45,7 @@ class SettingsFragment : Fragment() {
     private lateinit var textRecordEntryMode: TextView
     private lateinit var cardDefaultExpenseAsset: View
     private lateinit var cardDefaultIncomeAsset: View
+    private lateinit var cardRecurringRecords: View
     private lateinit var textDefaultExpenseAsset: TextView
     private lateinit var textDefaultIncomeAsset: TextView
     private lateinit var databaseHelper: DatabaseHelper
@@ -81,7 +82,7 @@ class SettingsFragment : Fragment() {
             }
             requireActivity().runOnUiThread {
                 val message = result.fold(
-                    onSuccess = { getString(R.string.settings_import_success, it.ledgers, it.categories, it.assets, it.records, it.sessions, it.skipped) },
+                    onSuccess = { getString(R.string.settings_import_success, it.ledgers, it.categories, it.assets, it.records, it.recurring, it.sessions, it.skipped) },
                     onFailure = { getString(R.string.settings_transfer_failed) }
                 )
                 Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
@@ -125,6 +126,7 @@ class SettingsFragment : Fragment() {
         textRecordEntryMode = view.findViewById(R.id.text_record_entry_mode)
         cardDefaultExpenseAsset = view.findViewById(R.id.card_default_expense_asset)
         cardDefaultIncomeAsset = view.findViewById(R.id.card_default_income_asset)
+        cardRecurringRecords = view.findViewById(R.id.card_recurring_records)
         textDefaultExpenseAsset = view.findViewById(R.id.text_default_expense_asset)
         textDefaultIncomeAsset = view.findViewById(R.id.text_default_income_asset)
         databaseHelper = DatabaseHelper(requireContext())
@@ -167,6 +169,12 @@ class SettingsFragment : Fragment() {
         }
         cardDefaultExpenseAsset.setOnClickListener { showDefaultRecordAssetPicker(false) }
         cardDefaultIncomeAsset.setOnClickListener { showDefaultRecordAssetPicker(true) }
+        cardRecurringRecords.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, RecurringRecordsFragment())
+                .addToBackStack(null)
+                .commit()
+        }
 
         cardAiApiKey.setOnClickListener {
             parentFragmentManager.beginTransaction()

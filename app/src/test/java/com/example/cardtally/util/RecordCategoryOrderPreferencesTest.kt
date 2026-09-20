@@ -27,4 +27,18 @@ class RecordCategoryOrderPreferencesTest {
 
         assertEquals(listOf(1L, 2L), categories.map { it.id })
     }
+
+    @Test
+    fun firstLeafCategory_usesTheFirstLeafInTheProvidedModeOrder() {
+        val standardModeCategories = listOf(
+            Category(id = 2, name = "餐饮"),
+            Category(id = 21, name = "早餐", parentId = 2),
+            Category(id = 1, name = "购物"),
+            Category(id = 11, name = "日用", parentId = 1)
+        )
+
+        val selected = RecordCategoryOrderPreferences.firstLeafCategory(standardModeCategories)
+
+        assertEquals(21L, selected?.id)
+    }
 }

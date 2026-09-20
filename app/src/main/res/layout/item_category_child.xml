@@ -2,8 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="0dp"
     android:layout_height="wrap_content"
-    android:layout_marginStart="2dp"
-    android:layout_marginEnd="2dp"
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
     android:layout_weight="1"
     android:gravity="center_horizontal"
     android:orientation="vertical">
@@ -11,7 +11,7 @@
             android:id="@+id/child_icon_container"
             android:layout_width="36dp"
             android:layout_height="36dp"
-             android:background="@drawable/bg_circle_primary_container">
+              android:background="@drawable/bg_category_child_icon">
         <ImageView
             android:id="@+id/image_child_icon"
             android:layout_width="24dp"
@@ -26,15 +26,27 @@
             android:contentDescription="@string/category_drag_content_description"
             android:src="@drawable/tabler_grip_vertical"
             android:tint="@color/onSurfaceVariant_light" />
+        <ImageView
+            android:id="@+id/image_child_selected"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_gravity="bottom|end"
+            android:background="@drawable/bg_circle_primary_container"
+            android:contentDescription="@null"
+            android:padding="2dp"
+            android:src="@drawable/tabler_check"
+            android:tint="@color/onPrimaryContainer_light"
+            android:visibility="gone" />
     </FrameLayout>
     <TextView
         android:id="@+id/text_child_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="4dp"
         android:ellipsize="end"
         android:gravity="center"
-        android:maxLines="1"
+        android:maxLines="2"
+        android:minHeight="32dp"
         android:textColor="@color/onSurfaceVariant_light"
-        android:textSize="11sp" />
+        android:textSize="14sp" />
 </LinearLayout>

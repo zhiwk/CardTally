@@ -3,6 +3,7 @@ package com.example.cardtally
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.WindowManager
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -47,7 +48,7 @@ class LedgerSetupFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
     private lateinit var nameInput: EditText
     private lateinit var iconView: ImageView
-    private lateinit var iconLabel: TextView
+    private var iconLabel: TextView? = null
     private lateinit var groupSummary: TextView
     private lateinit var groupName: TextView
     private lateinit var groupRow: View
@@ -76,7 +77,6 @@ class LedgerSetupFragment : Fragment() {
 
         nameInput = view.findViewById(R.id.ledger_setup_name)
         iconView = view.findViewById(R.id.ledger_setup_icon)
-        iconLabel = view.findViewById(R.id.ledger_setup_icon_label)
         groupSummary = view.findViewById(R.id.ledger_setup_group_summary)
         groupName = view.findViewById(R.id.ledger_setup_group_name)
         groupRow = view.findViewById(R.id.ledger_setup_group_row)
@@ -108,10 +108,9 @@ class LedgerSetupFragment : Fragment() {
                 renderIcon()
             }
         }
+        view.findViewById<View>(R.id.ledger_setup_icon_picker).contentDescription =
+            getString(R.string.ledger_setup_icon_picker_accessibility)
         independentRow.setOnClickListener { selectIndependentGroup() }
-        // The mode rows only change the mode; only the dedicated group row opens the
-        // picker, so each tap produces exactly one action. The radios are
-        // display-only to avoid a second toggle from the same tap.
         existingRow.setOnClickListener { selectExistingGroup() }
         groupRow.setOnClickListener { openGroupPicker() }
         saveButton.setOnClickListener { saveLedger() }
@@ -123,13 +122,20 @@ class LedgerSetupFragment : Fragment() {
         restoreState(savedInstanceState, isEditing)
         renderIcon()
         renderGroupState()
+        focusNameWithoutOpeningKeyboard()
         return view
     }
 
-    /**
-     * Keeps the save button clear of the real system/IME bottom inset (applied
-     * once, so it is never double-counted) instead of a fixed guess.
-     */
+    private fun focusNameWithoutOpeningKeyboard() {
+        requireActivity().window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+        nameInput.post {
+            nameInput.requestFocus()
+            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                as? InputMethodManager
+            imm?.hideSoftInputFromWindow(nameInput.windowToken, 0)
+        }
+    }
+
     private fun applyInsets() {
         val density = resources.displayMetrics.density
         ViewCompat.setOnApplyWindowInsetsListener(saveButton) { target, insets ->
@@ -165,14 +171,11 @@ class LedgerSetupFragment : Fragment() {
             return
         }
         if (isEditing) {
-            // Editing only ever changes the name and icon; the stored values are
-            // prefilled and the asset relationship is not touched at all.
             val ledger = databaseHelper.getLedgers().firstOrNull { it.id == editingLedgerId }
             nameInput.setText(ledger?.name.orEmpty())
             selectedIconName = ledger?.iconName ?: "tabler_book"
             return
         }
-        // New ledgers default to the clearly visible master asset group.
         useExistingGroup = true
         selectedGroupRootId = databaseHelper.getMasterLedgerId()
     }
@@ -187,8 +190,6 @@ class LedgerSetupFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // The picker is a separate fragment-level surface; re-render on return so a
-        // restored draft always matches the stored selection.
         if (::groupSummary.isInitialized) renderGroupState()
     }
 
@@ -197,7 +198,6 @@ class LedgerSetupFragment : Fragment() {
         renderGroupState()
     }
 
-    /** Selects the existing-group mode without opening the picker. */
     private fun selectExistingGroup() {
         if (selectedGroupRootId == null) {
             selectedGroupRootId = databaseHelper.getMasterLedgerId()
@@ -210,7 +210,7 @@ class LedgerSetupFragment : Fragment() {
         iconView.setImageResource(
             TablerIconCatalog.resourceId(selectedIconName).takeIf { it != 0 } ?: R.drawable.ic_book
         )
-        iconLabel.text = getString(R.string.ledger_setup_icon_selected)
+        iconLabel?.text = getString(R.string.ledger_setup_icon_selected)
     }
 
     private fun renderGroupState() {
@@ -229,8 +229,6 @@ class LedgerSetupFragment : Fragment() {
         }
         selectedGroupRootId = selected?.rootLedgerId
 
-        // The mode row only states the mode; the group row below it owns the
-        // current selection, so the two never repeat the same summary.
         if (selected == null) {
             groupName.text = getString(R.string.ledger_asset_group_empty)
             groupSummary.text = ""

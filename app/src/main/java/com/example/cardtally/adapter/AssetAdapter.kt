@@ -24,6 +24,7 @@ import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.AssetTypeIconCatalog
 import com.example.cardtally.util.IncomeExpenseColorScheme
+import com.example.cardtally.util.SwipeToEditDeleteHelper
 
 class AssetAdapter(
     private var assets: List<Asset>,
@@ -56,6 +57,8 @@ class AssetAdapter(
     override fun onBindViewHolder(holder: AssetViewHolder, position: Int) {
         val asset = assets[position]
         val context = holder.itemView.context
+        holder.cardContent.translationX = 0f
+        holder.archivedActions.visibility = if (archivedMode) View.VISIBLE else View.GONE
         holder.textAssetName.text = assetNameLabel(context, asset)
         holder.textAssetAmount.text = if (amountsVisible) {
             "¥${Money.formatYuan(asset.amount)}"
@@ -81,17 +84,12 @@ class AssetAdapter(
             )
         )
         (holder.itemView.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
-            val margin = if (archivedMode) (16 * context.resources.displayMetrics.density).toInt() else 0
-            params.leftMargin = margin
-            params.rightMargin = margin
-            params.bottomMargin = if (archivedMode) (8 * context.resources.displayMetrics.density).toInt() else 0
+            params.leftMargin = 0
+            params.rightMargin = 0
+            params.bottomMargin = 0
             holder.itemView.layoutParams = params
         }
-        holder.cardContent.radius = if (archivedMode) {
-            12 * context.resources.displayMetrics.density
-        } else {
-            0f
-        }
+        holder.cardContent.radius = 0f
         holder.iconAssetPinned.visibility = if (asset.isPinned) View.VISIBLE else View.GONE
 
         val fallbackPresentation = when (asset.type) {
@@ -123,10 +121,20 @@ class AssetAdapter(
             ThemeColorHelper.resolveThemeAwareResource(context, presentation.iconBackground)
         )
 
-        if (pickerMode) {
-            holder.cardContent.setOnClickListener { listener.onClick(asset) }
+        holder.cardContent.setOnClickListener {
+            if (!archivedMode) listener.onClick(asset)
+        }
+        holder.swipeHelper = if (archivedMode) {
+            SwipeToEditDeleteHelper(
+                cardContent = holder.cardContent,
+                layoutActions = holder.archivedActions,
+                onEdit = {},
+                onDelete = { listener.onDelete(asset) },
+                onArchive = { listener.onArchive(asset) },
+                onClick = {}
+            )
         } else {
-            holder.cardContent.setOnClickListener { listener.onClick(asset) }
+            null
         }
     }
 
@@ -239,6 +247,8 @@ class AssetAdapter(
 
     class AssetViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val cardContent: CardView = itemView.findViewById(R.id.card_content)
+        val archivedActions: View = itemView.findViewById(R.id.archived_actions)
+        var swipeHelper: SwipeToEditDeleteHelper? = null
         val layoutAssetInfo: LinearLayout = itemView.findViewById(R.id.layout_asset_info)
         val iconContainer: View = itemView.findViewById(R.id.icon_container)
         val imageAssetIcon: ImageView = itemView.findViewById(R.id.image_asset_icon)

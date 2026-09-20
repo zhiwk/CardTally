@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/background_light" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:paddingHorizontal="8dp">
+        <ImageButton android:id="@+id/btn_recurring_back" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/record_cancel" android:src="@drawable/tabler_arrow_left" app:tint="?attr/colorOnSurface" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/recurring_records_title" android:textColor="?attr/colorOnSurface" android:textSize="22sp" android:textStyle="bold" />
+        <ImageButton android:id="@+id/btn_recurring_add" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/recurring_add_title" android:src="@drawable/tabler_plus" app:tint="?attr/colorOnSurface" />
+    </LinearLayout>
+    <TextView android:id="@+id/text_recurring_empty" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="32dp" android:text="@string/recurring_records_empty" android:textColor="@color/onSurfaceVariant_light" android:textSize="14sp" android:visibility="gone" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler_recurring_records" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:clipToPadding="false" android:paddingHorizontal="16dp" android:paddingTop="8dp" android:paddingBottom="112dp" />
+</LinearLayout>

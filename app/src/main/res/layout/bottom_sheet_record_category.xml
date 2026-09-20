@@ -30,6 +30,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/text_category_sheet_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/record_category_sheet_title"
@@ -37,6 +38,16 @@
                  android:textSize="22sp"
                  android:fontFamily="sans-serif" />
         </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btn_category_mode"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/recurring_category_mode_accessibility"
+            android:padding="12dp"
+            android:src="@drawable/tabler_layout_list"
+            app:tint="?attr/colorOnSurfaceVariant" />
 
         <ImageButton
             android:id="@+id/btn_close_sheet"

@@ -27,6 +27,10 @@ object RecordCategoryOrderPreferences {
         return ordered + categories.filterNot { it.id in orderedIds }
     }
 
+    /** Resolves the first recordable category after the caller has applied its mode order. */
+    internal fun firstLeafCategory(categories: List<Category>): Category? =
+        leafCategories(categories).firstOrNull()
+
     private fun readOrder(context: Context, key: String): List<Long> =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(key, "")

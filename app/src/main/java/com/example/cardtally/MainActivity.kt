@@ -10,7 +10,9 @@ import com.example.cardtally.util.AiAssistantSettingsHelper
 import com.example.cardtally.util.AssetDisplayHelper
 import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.QuickAddHelper
+import com.example.cardtally.util.RecurringRecordScheduler
 import com.example.cardtally.util.ThemeHelper
+import com.example.cardtally.database.DatabaseHelper
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -100,6 +102,15 @@ class MainActivity : AppCompatActivity() {
     private fun applyTheme() {
         ThemeHelper.getTheme(this)
         setTheme(R.style.Theme_CardTally_Light)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        DatabaseHelper(this).also {
+            it.processDueRecurringRecordsForAllLedgers()
+            it.close()
+        }
+        RecurringRecordScheduler.schedule(this)
     }
 
     private fun handlePendingLocaleTransition() {

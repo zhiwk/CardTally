@@ -19,7 +19,10 @@ class ScreenStateBundleTest {
             selectedDate = "2026-08-15", selectedAssetId = 7L,
             selectedCategoryId = 9L, description = "draft",
             feeBuffer = "3.50",
-            openSheet = RecordSheet.CATEGORY, pendingCategoryId = 10L
+            openSheet = RecordSheet.CATEGORY, pendingCategoryId = 10L,
+            expenseAssetId = 7L, incomeAssetId = 8L,
+            transferSourceAssetId = 11L, transferDestinationAssetId = 12L,
+            hasEnteredExpense = true, hasEnteredIncome = true, hasEnteredTransfer = true
         )
         val editState = EditRecordState(42L, addState)
         val bundle = Bundle()

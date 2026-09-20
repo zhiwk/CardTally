@@ -64,6 +64,7 @@ CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。�
 
 - 业务规则或数据逻辑任务，先读 `docs/requirements/decisions/business_rules.md`、`DatabaseHelper` 和相关页面、模型或适配器。
 - 页面、样式或文案任务，先读对应代码和资源；视觉任务还必须读 `DESIGN.md`。
+- 修改共享底部选择器时，必须同时核对所有宿主回调契约；普通记账页与重复记账页可以使用不同的资产选择回调，不能只验证新宿主。
 - 构建、单测或真机验证任务，先读 `docs/collaboration/skills/android-gradle-serial-verification.md`；根目录 `skills/` 提供编译、安装和截图的专项说明。
 - 具体任务入口、必读文件和当前实现细节分别以 `docs/collaboration/task-entrypoints.md` 与 `docs/collaboration/current-snapshot.md` 为准。
 

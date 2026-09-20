@@ -31,4 +31,9 @@ class MoneyTest {
         assertEquals("1.22", Money.formatYuan(122L))
         assertEquals("-0.01", Money.formatYuan(-1L))
     }
+
+    @Test
+    fun formatYuan_doubleDoesNotTurnFloatingPointNoiseIntoZero() {
+        assertEquals("16340.53", Money.formatYuan(20873.58 - 4533.05))
+    }
 }

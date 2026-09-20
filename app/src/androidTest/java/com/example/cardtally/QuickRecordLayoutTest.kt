@@ -7,6 +7,9 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
@@ -424,6 +427,48 @@ class QuickRecordLayoutTest {
                         "expense category card must fill down to the form panel",
                         panel.id,
                         categoryParams.bottomToTop
+                    )
+                }
+            }
+        } finally {
+            RecordEntryModePreferences.saveMode(instrumentation.targetContext, originalMode)
+        }
+    }
+
+    @Test
+    fun returningFromBackgroundWithAmountActive_keepsOnlyTheInAppKeypad() {
+        val originalMode = RecordEntryModePreferences.getMode(instrumentation.targetContext)
+        RecordEntryModePreferences.saveMode(instrumentation.targetContext, RecordEntryMode.QUICK)
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                scenario.onActivity { activity ->
+                    activity.supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, AddRecordFragment())
+                        .commitNow()
+                    val root = requireNotNull(
+                        activity.supportFragmentManager.findFragmentById(R.id.fragment_container)?.view
+                    )
+                    root.findViewById<View>(R.id.edit_amount).performClick()
+                }
+                instrumentation.waitForIdleSync()
+
+                scenario.moveToState(Lifecycle.State.CREATED)
+                scenario.moveToState(Lifecycle.State.RESUMED)
+                instrumentation.waitForIdleSync()
+
+                scenario.onActivity { activity ->
+                    val root = requireNotNull(
+                        activity.supportFragmentManager.findFragmentById(R.id.fragment_container)?.view
+                    )
+                    val amount = root.findViewById<android.widget.EditText>(R.id.edit_amount)
+                    val keypad = root.findViewById<View>(R.id.layout_amount_keypad)
+                    val insets = ViewCompat.getRootWindowInsets(root)
+
+                    assertTrue("amount input must remain active after foreground restore", amount.hasFocus())
+                    assertTrue("the in-app keypad must remain visible", keypad.isShown)
+                    assertFalse(
+                        "the system IME must stay hidden while the amount keypad is active",
+                        insets?.isVisible(WindowInsetsCompat.Type.ime()) == true
                     )
                 }
             }

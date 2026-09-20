@@ -48,6 +48,20 @@
 
 注意：当前录入页现实已经是“主页面极简壳 + 底部抽屉交互”，不要按旧的 `Spinner + 分类网格` 页面假设继续改。
 
+### 改重复记账 / 转账资产选择
+
+先读：
+
+1. `app/src/main/java/com/example/cardtally/RecurringRecordEditFragment.kt`
+2. `app/src/main/java/com/example/cardtally/RecurringRecordsFragment.kt`
+3. `app/src/main/java/com/example/cardtally/RecordAssetPickerBottomSheetFragment.kt`
+4. `app/src/main/java/com/example/cardtally/AssetFragment.kt`
+5. `app/src/main/java/com/example/cardtally/adapter/AssetAdapter.kt`
+6. `app/src/main/java/com/example/cardtally/database/DatabaseHelper.kt`
+7. `docs/requirements/decisions/business_rules.md`
+
+注意：资产选择器由普通「记一笔」和重复记账共用，但宿主回调不同。修改选择器时必须分别验证 `AddRecordFragment.onAssetPickerSelected(...)` 与重复记账的 `SelectionTarget` 回调；任务账本通过 `pickerLedgerId` 限制资产列表，不应改变当前账本。
+
 ### 改数据库或数据展示
 
 先读：

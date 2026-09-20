@@ -17,7 +17,14 @@ data class RecordFormState(
     val photoUri: String?,
     val photoUris: List<String>,
     val openSheet: RecordSheet,
-    val pendingCategoryId: Long?
+    val pendingCategoryId: Long?,
+    val expenseAssetId: Long? = null,
+    val incomeAssetId: Long? = null,
+    val transferSourceAssetId: Long? = null,
+    val transferDestinationAssetId: Long? = null,
+    val hasEnteredExpense: Boolean = false,
+    val hasEnteredIncome: Boolean = false,
+    val hasEnteredTransfer: Boolean = false
 ) {
     fun writeTo(bundle: Bundle) {
         bundle.putString(KEY_AMOUNT_BUFFER, amountBuffer)
@@ -32,6 +39,13 @@ data class RecordFormState(
         bundle.putStringArrayList(KEY_PHOTO_URIS, ArrayList(photoUris))
         bundle.putString(KEY_OPEN_SHEET, openSheet.token)
         bundle.putNullableLong(KEY_PENDING_CATEGORY_ID, pendingCategoryId)
+        bundle.putNullableLong(KEY_EXPENSE_ASSET_ID, expenseAssetId)
+        bundle.putNullableLong(KEY_INCOME_ASSET_ID, incomeAssetId)
+        bundle.putNullableLong(KEY_TRANSFER_SOURCE_ASSET_ID, transferSourceAssetId)
+        bundle.putNullableLong(KEY_TRANSFER_DESTINATION_ASSET_ID, transferDestinationAssetId)
+        bundle.putBoolean(KEY_HAS_ENTERED_EXPENSE, hasEnteredExpense)
+        bundle.putBoolean(KEY_HAS_ENTERED_INCOME, hasEnteredIncome)
+        bundle.putBoolean(KEY_HAS_ENTERED_TRANSFER, hasEnteredTransfer)
     }
 
     companion object {
@@ -48,6 +62,13 @@ data class RecordFormState(
         private const val KEY_PHOTO_URIS = "state_photo_uris"
         private const val KEY_OPEN_SHEET = "state_open_sheet"
         private const val KEY_PENDING_CATEGORY_ID = "state_pending_category_id"
+        private const val KEY_EXPENSE_ASSET_ID = "state_expense_asset_id"
+        private const val KEY_INCOME_ASSET_ID = "state_income_asset_id"
+        private const val KEY_TRANSFER_SOURCE_ASSET_ID = "state_transfer_source_asset_id"
+        private const val KEY_TRANSFER_DESTINATION_ASSET_ID = "state_transfer_destination_asset_id"
+        private const val KEY_HAS_ENTERED_EXPENSE = "state_has_entered_expense"
+        private const val KEY_HAS_ENTERED_INCOME = "state_has_entered_income"
+        private const val KEY_HAS_ENTERED_TRANSFER = "state_has_entered_transfer"
 
         fun readFrom(bundle: Bundle?, defaults: RecordFormState): RecordFormState {
             if (bundle == null) return defaults
@@ -63,7 +84,14 @@ data class RecordFormState(
                 photoUri = bundle.getString(KEY_PHOTO_URI, defaults.photoUri),
                 photoUris = bundle.getStringArrayList(KEY_PHOTO_URIS)?.toList() ?: defaults.photoUris,
                 openSheet = RecordSheet.values().firstOrNull { it.token == bundle.getString(KEY_OPEN_SHEET) } ?: RecordSheet.NONE,
-                pendingCategoryId = bundle.getNullableLong(KEY_PENDING_CATEGORY_ID)
+                pendingCategoryId = bundle.getNullableLong(KEY_PENDING_CATEGORY_ID),
+                expenseAssetId = bundle.getNullableLong(KEY_EXPENSE_ASSET_ID),
+                incomeAssetId = bundle.getNullableLong(KEY_INCOME_ASSET_ID),
+                transferSourceAssetId = bundle.getNullableLong(KEY_TRANSFER_SOURCE_ASSET_ID),
+                transferDestinationAssetId = bundle.getNullableLong(KEY_TRANSFER_DESTINATION_ASSET_ID),
+                hasEnteredExpense = bundle.getBoolean(KEY_HAS_ENTERED_EXPENSE, false),
+                hasEnteredIncome = bundle.getBoolean(KEY_HAS_ENTERED_INCOME, false),
+                hasEnteredTransfer = bundle.getBoolean(KEY_HAS_ENTERED_TRANSFER, false)
             )
         }
     }

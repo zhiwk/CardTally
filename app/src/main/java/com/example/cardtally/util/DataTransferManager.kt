@@ -14,6 +14,7 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
         val categories: Int,
         val assets: Int,
         val records: Int,
+        val recurring: Int,
         val sessions: Int,
         val skipped: Int
     )
@@ -47,6 +48,7 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
         var categoryCount = 0
         var assetCount = 0
         var recordCount = 0
+        var recurringCount = 0
         var sessionCount = 0
 
         db.beginTransaction()
@@ -138,6 +140,25 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
                 recordCount++
             }
 
+            rows(tables, "recurring_records").forEach { row ->
+                val oldId = row.optLong("id", 0L)
+                val ledger = ledgerMap[row.optLong("ledger_id", 0L)] ?: databaseHelper.getMasterLedgerId()
+                val category = row.optLong("category_id", 0L).takeIf { it > 0 }?.let { categoryMap[it] }
+                val asset = row.optLong("asset_id", 0L).takeIf { it > 0 }?.let { assetMap[it] }
+                val duplicate = db.rawQuery(
+                    "SELECT 1 FROM recurring_records WHERE ledger_id = ? AND name = ? AND amount = ? AND type = ? AND start_date = ? LIMIT 1",
+                    arrayOf(ledger.toString(), row.optString("name"), row.optLong("amount").toString(), row.optInt("type").toString(), row.optString("start_date"))
+                ).use { it.moveToFirst() }
+                if (!duplicate && oldId > 0L) {
+                    val content = values(row, setOf("id", "ledger_id", "category_id", "asset_id"), columns(db, "recurring_records"))
+                    content.put("ledger_id", ledger)
+                    if (category == null) content.putNull("category_id") else content.put("category_id", category)
+                    if (asset == null) content.putNull("asset_id") else content.put("asset_id", asset)
+                    db.insertOrThrow("recurring_records", null, content)
+                    recurringCount++
+                }
+            }
+
             rows(tables, "ledger_shared_ledgers").forEach { row ->
                 val ledger = ledgerMap[row.optLong("ledger_id", 0L)] ?: return@forEach
                 val source = ledgerMap[row.optLong("source_ledger_id", 0L)] ?: return@forEach
@@ -171,7 +192,7 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
             db.endTransaction()
         }
         writePreferences(root.optJSONObject("preferences"))
-        return ImportResult(ledgerCount, categoryCount, assetCount, recordCount, sessionCount, skipped)
+        return ImportResult(ledgerCount, categoryCount, assetCount, recordCount, recurringCount, sessionCount, skipped)
     }
 
     override fun close() = databaseHelper.close()
@@ -261,7 +282,7 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
     companion object {
         private val TABLES = listOf(
             "ledgers", "ledger_shared_assets", "ledger_shared_ledgers", "categories", "assets",
-            "records", "record_deletion_undo", "ai_chat_sessions", "ai_chat_messages"
+            "records", "record_deletion_undo", "recurring_records", "ai_chat_sessions", "ai_chat_messages"
         )
     }
 }

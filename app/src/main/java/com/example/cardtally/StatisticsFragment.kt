@@ -37,6 +37,8 @@ import com.example.cardtally.util.LedgerUxPreferences
 import com.example.cardtally.util.LedgerView
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.normalizeStatisticsCategoryLabel
+import com.example.cardtally.util.StatisticsRankingMode
+import com.example.cardtally.util.StatisticsRankingModePreferences
 import com.example.cardtally.view.LedgerDonutChartView
 import com.example.cardtally.view.LedgerLineChartView
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -62,6 +64,7 @@ class StatisticsFragment : Fragment() {
     private lateinit var viewStatisticsChart: LedgerDonutChartView
     private lateinit var viewStatisticsLineChart: LedgerLineChartView
     private lateinit var toggleChartMode: ImageButton
+    private lateinit var btnToggleRankingMode: ImageButton
     private lateinit var layoutChartLegend: LinearLayout
     private lateinit var layoutLineAxis: LinearLayout
     private lateinit var textAxisStart: TextView
@@ -84,6 +87,7 @@ class StatisticsFragment : Fragment() {
     private var currentPeriodPreset = LedgerPeriodPreset.WEEK
     private var currentRange = LedgerPeriodHelper.resolveRange(LedgerPeriodPreset.WEEK)
     private var currentChartMode = CHART_MODE_LINE
+    private var currentRankingMode = StatisticsRankingMode.SECONDARY
     private var openFilterSurface = FilterSurface.NONE
     private var restoredLedgerState: LedgerScreenState? = null
 
@@ -118,6 +122,7 @@ class StatisticsFragment : Fragment() {
         textSummaryIncome = view.findViewById(R.id.text_summary_income)
         textSummaryBalance = view.findViewById(R.id.text_summary_balance)
         textStatisticsSectionTitle = view.findViewById(R.id.text_statistics_section_title)
+        btnToggleRankingMode = view.findViewById(R.id.btn_toggle_ranking_mode)
         textChartTitle = view.findViewById(R.id.text_chart_title)
         textChartSubtitle = view.findViewById(R.id.text_chart_subtitle)
         recyclerStatistics = view.findViewById(R.id.recycler_statistics)
@@ -140,6 +145,9 @@ class StatisticsFragment : Fragment() {
         val btnRangeNext = view.findViewById<ImageButton>(R.id.btn_range_next)
 
         databaseHelper = DatabaseHelper(requireContext())
+        currentRankingMode = StatisticsRankingModePreferences.getMode(requireContext())
+        updateRankingModeUi()
+
         restoredLedgerState = LedgerScreenState.readFrom(savedInstanceState, resolveStartupView())
         applyLedgerState(restoredLedgerState!!)
         currentViewMode = VIEW_MODE_STATISTICS
@@ -179,6 +187,23 @@ class StatisticsFragment : Fragment() {
         toggleChartMode.setOnClickListener {
             currentChartMode = if (currentChartMode == CHART_MODE_LINE) CHART_MODE_PIE else CHART_MODE_LINE
             updateChartModeUi()
+        }
+
+        btnToggleRankingMode.setOnClickListener {
+            currentRankingMode = if (currentRankingMode == StatisticsRankingMode.PRIMARY) {
+                StatisticsRankingMode.SECONDARY
+            } else {
+                StatisticsRankingMode.PRIMARY
+            }
+            StatisticsRankingModePreferences.saveMode(requireContext(), currentRankingMode)
+            updateRankingModeUi()
+            loadCategoryStatistics()
+            val toastMsg = if (currentRankingMode == StatisticsRankingMode.PRIMARY) {
+                R.string.toast_ranking_mode_primary
+            } else {
+                R.string.toast_ranking_mode_secondary
+            }
+            Toast.makeText(requireContext(), toastMsg, Toast.LENGTH_SHORT).show()
         }
 
         togglePeriodPreset.addOnButtonCheckedListener { _, checkedId, isChecked ->
@@ -234,7 +259,20 @@ class StatisticsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        currentRankingMode = StatisticsRankingModePreferences.getMode(requireContext())
+        updateRankingModeUi()
         renderCurrentView()
+    }
+
+    private fun updateRankingModeUi() {
+        if (!::btnToggleRankingMode.isInitialized) return
+        val isPrimary = currentRankingMode == StatisticsRankingMode.PRIMARY
+        btnToggleRankingMode.setImageResource(
+            if (isPrimary) R.drawable.tabler_list_tree else R.drawable.tabler_list
+        )
+        btnToggleRankingMode.contentDescription = getString(
+            if (isPrimary) R.string.toast_ranking_mode_primary else R.string.toast_ranking_mode_secondary
+        )
     }
 
     private fun renderCurrentView() {
@@ -312,17 +350,115 @@ class StatisticsFragment : Fragment() {
         renderCurrentView()
     }
 
+    private fun buildPrimaryAdapterItems(
+        normalizedStats: Map<String, Double>,
+        entryCounts: Map<String, Int>,
+        categoryIcons: Map<String, String>,
+        categoriesById: Map<Long, com.example.cardtally.model.Category>,
+        categoriesByName: Map<String, com.example.cardtally.model.Category>
+    ): Pair<List<StatisticsAdapter.StatisticsAdapterItem>, Double> {
+        fun resolveRootCategory(cat: com.example.cardtally.model.Category): com.example.cardtally.model.Category {
+            var current = cat
+            val visited = mutableSetOf<Long>()
+            while (current.parentId != null && visited.add(current.id)) {
+                val parent = categoriesById[current.parentId] ?: break
+                current = parent
+            }
+            return current
+        }
+
+        data class ChildData(
+            val label: String,
+            val amount: Double,
+            val entryCount: Int,
+            val iconName: String?
+        )
+
+        data class ParentData(
+            val parentLabel: String,
+            var totalAmount: Double = 0.0,
+            var totalEntryCount: Int = 0,
+            var iconName: String? = null,
+            val childrenMap: MutableMap<String, ChildData> = mutableMapOf()
+        )
+
+        val parentMap = mutableMapOf<String, ParentData>()
+
+        normalizedStats.forEach { (rawKey, amount) ->
+            val catName = normalizeStatisticsCategoryLabel(rawKey)
+            val entryCount = entryCounts[catName] ?: 0
+            val icon = categoryIcons[catName]
+
+            val catObj = categoriesByName[catName]
+            val rootCatObj = catObj?.let { resolveRootCategory(it) }
+            val rootName = rootCatObj?.name ?: catName
+            val rootIcon = rootCatObj?.icon?.takeIf { it.isNotBlank() } ?: categoryIcons[rootName]
+
+            val parentData = parentMap.getOrPut(rootName) {
+                ParentData(parentLabel = rootName, iconName = rootIcon)
+            }
+            parentData.totalAmount += amount
+            parentData.totalEntryCount += entryCount
+            if (parentData.iconName.isNullOrBlank() && !rootIcon.isNullOrBlank()) {
+                parentData.iconName = rootIcon
+            }
+
+            if (catName != rootName || (catObj != null && catObj.parentId != null)) {
+                val existingChild = parentData.childrenMap[catName]
+                if (existingChild == null) {
+                    parentData.childrenMap[catName] = ChildData(catName, amount, entryCount, icon)
+                } else {
+                    parentData.childrenMap[catName] = ChildData(
+                        catName,
+                        existingChild.amount + amount,
+                        existingChild.entryCount + entryCount,
+                        icon ?: existingChild.iconName
+                    )
+                }
+            }
+        }
+
+        val totalAmount = parentMap.values.sumOf { kotlin.math.abs(it.totalAmount) }
+
+        val parentAdapterItems = parentMap.values
+            .sortedByDescending { kotlin.math.abs(it.totalAmount) }
+            .map { parent ->
+                val childItems = parent.childrenMap.values
+                    .sortedByDescending { kotlin.math.abs(it.amount) }
+                    .map { child ->
+                        StatisticsAdapter.StatisticsAdapterItem(
+                            type = StatisticsAdapter.ItemType.PRIMARY_CHILD,
+                            label = child.label,
+                            amount = child.amount,
+                            entryCount = child.entryCount,
+                            iconName = child.iconName,
+                            parentLabel = parent.parentLabel
+                        )
+                    }
+                StatisticsAdapter.StatisticsAdapterItem(
+                    type = StatisticsAdapter.ItemType.PRIMARY_PARENT,
+                    label = parent.parentLabel,
+                    amount = parent.totalAmount,
+                    entryCount = parent.totalEntryCount,
+                    iconName = parent.iconName,
+                    children = childItems
+                )
+            }
+
+        return parentAdapterItems to totalAmount
+    }
+
     private fun loadCategoryStatistics() {
         val range = currentQueryRange()
-        val expenseTotal = if (range == null) {
-            databaseHelper.getTotalByType(TYPE_EXPENSE)
+        val expenseTotalMinor = if (range == null) {
+            databaseHelper.getTotalByTypeMinor(TYPE_EXPENSE)
         } else {
-            databaseHelper.getTotalByTypeAndDateRange(TYPE_EXPENSE, range.startDate!!, range.endDate!!)
+            databaseHelper.getTotalByTypeAndDateRangeMinor(TYPE_EXPENSE, range.startDate!!, range.endDate!!)
         }
-        val incomeTotal = if (range == null) {
-            databaseHelper.getTotalByType(TYPE_INCOME)
+        val incomeTotalMinor = if (range == null) {
+            databaseHelper.getTotalByTypeMinor(TYPE_INCOME)
         } else {
-            databaseHelper.getTotalByTypeAndDateRange(TYPE_INCOME, range.startDate!!, range.endDate!!)
+            databaseHelper.getTotalByTypeAndDateRangeMinor(TYPE_INCOME, range.startDate!!, range.endDate!!)
         }
         val stats = if (range == null) {
             databaseHelper.getCategoryStatistics(currentStatsType)
@@ -330,10 +466,6 @@ class StatisticsFragment : Fragment() {
             databaseHelper.getCategoryStatisticsByDateRange(currentStatsType, range.startDate!!, range.endDate!!)
         }
         val categoryRecords = filteredRecordsForType(range, currentStatsType)
-        // Keep aliases for legacy records: current records use `category`, while
-        // older records may only have the category name snapshot populated.
-        // The statistics query groups by `category`, so either value must resolve
-        // to the same visible category when the count is rendered.
         val entryCounts = mutableMapOf<String, Int>()
         categoryRecords.forEach { record ->
             setOfNotNull(
@@ -372,11 +504,11 @@ class StatisticsFragment : Fragment() {
             if (currentStatsType == TYPE_EXPENSE) -amount else amount
         }
 
-        textSummaryExpense.text = "¥${Money.formatYuan(expenseTotal)}"
-        textSummaryIncome.text = "¥${Money.formatYuan(incomeTotal)}"
+        textSummaryExpense.text = "¥${Money.formatYuan(expenseTotalMinor)}"
+        textSummaryIncome.text = "¥${Money.formatYuan(incomeTotalMinor)}"
         textSummaryExpense.setTextColor(IncomeExpenseColorScheme.expensePrimary(requireContext()))
         textSummaryIncome.setTextColor(IncomeExpenseColorScheme.incomePrimary(requireContext()))
-        textSummaryBalance.text = "¥${Money.formatYuan(incomeTotal - expenseTotal)}"
+        textSummaryBalance.text = "¥${Money.formatYuan(incomeTotalMinor - expenseTotalMinor)}"
         textStatisticsSectionTitle.text = getString(
             if (currentStatsType == TYPE_EXPENSE) {
                 R.string.ledger_statistics_ranking_expense
@@ -404,7 +536,18 @@ class StatisticsFragment : Fragment() {
             textEmpty.visibility = View.GONE
             cardStatisticsRanking.visibility = View.VISIBLE
             recyclerStatistics.visibility = View.VISIBLE
-            statisticsAdapter.updateData(normalizedStats, entryCounts, categoryIcons)
+            if (currentRankingMode == StatisticsRankingMode.PRIMARY) {
+                val (parentItems, overallTotal) = buildPrimaryAdapterItems(
+                    normalizedStats,
+                    entryCounts,
+                    categoryIcons,
+                    categoriesById,
+                    categoriesByName
+                )
+                statisticsAdapter.updateTreeData(parentItems, overallTotal)
+            } else {
+                statisticsAdapter.updateFlatData(normalizedStats, entryCounts, categoryIcons)
+            }
             bindChart(normalizedStats, entryCounts, categoryRecords)
         }
     }
@@ -656,7 +799,6 @@ class StatisticsFragment : Fragment() {
         }
     }
 
-    /** Returns the complete horizontal axis even when the selected period has no records. */
     private fun buildChartAxisDates(): List<String> {
         val start = currentRange.startDate ?: return emptyList()
         val end = currentRange.endDate ?: return emptyList()

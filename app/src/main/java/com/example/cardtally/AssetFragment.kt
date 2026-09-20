@@ -67,6 +67,7 @@ class AssetFragment : Fragment() {
     private var pickerMode = false
     private var excludedAssetId: Long? = null
     private var selectedAssetId: Long? = null
+    private var pickerLedgerId: Long? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -78,6 +79,7 @@ class AssetFragment : Fragment() {
         pickerMode = arguments?.getBoolean(ARG_PICKER_MODE, false) == true
         excludedAssetId = arguments?.getLong(ARG_EXCLUDED_ASSET_ID)?.takeIf { it > 0L }
         selectedAssetId = arguments?.getLong(ARG_SELECTED_ASSET_ID)?.takeIf { it > 0L }
+        pickerLedgerId = arguments?.getLong(ARG_PICKER_LEDGER_ID)?.takeIf { it > 0L }
         amountsVisible = savedInstanceState?.getBoolean(KEY_AMOUNTS_VISIBLE, true) ?: true
 
         recyclerAssets = view.findViewById(R.id.recycler_assets)
@@ -170,7 +172,7 @@ class AssetFragment : Fragment() {
     }
 
     private fun loadAssets() {
-        val assets = databaseHelper.getAllAssets().filter { it.id != excludedAssetId }
+        val assets = databaseHelper.getAllAssets(pickerLedgerId).filter { it.id != excludedAssetId }
         val pinnedAssets = assets.filter { it.isPinned }
         val regularAssets = assets.filterNot { it.isPinned }
         val creditAssets = regularAssets.filter(::isCreditAsset)
@@ -183,20 +185,20 @@ class AssetFragment : Fragment() {
             it.categoryLabel in rechargeLabels || it.categoryLabel in investmentLabels ||
                 it.categoryLabel in receivableLabels || it.categoryLabel in payableLabels
         }
-        val total = databaseHelper.getTotalAssets()
+        val totalMinor = databaseHelper.getTotalAssetsMinor()
         val includedAssets = assets.filter { it.includeInTotal }
-        val totalAssets = includedAssets.filter { it.amount >= 0 }.sumOf { it.amount }
-        val totalLiabilities = includedAssets.filter { it.amount < 0 }.sumOf { -it.amount }
-        val regularFundsTotal = coreFundAssets.sumOf { it.amount }
-        val regularCreditTotal = creditAssets.filter { it.includeInTotal }.sumOf { it.amount }
+        val totalAssetsMinor = includedAssets.filter { it.amount >= 0 }.sumOf(::amountMinor)
+        val totalLiabilitiesMinor = includedAssets.filter { it.amount < 0 }.sumOf { -amountMinor(it) }
+        val regularFundsTotalMinor = coreFundAssets.sumOf(::amountMinor)
+        val regularCreditTotalMinor = creditAssets.filter { it.includeInTotal }.sumOf(::amountMinor)
 
-        textTotalAmount.text = moneyText(total)
-        textTotalAssets.text = moneyText(totalAssets)
-        textTotalLiabilities.text = moneyText(totalLiabilities)
+        textTotalAmount.text = moneyText(totalMinor)
+        textTotalAssets.text = moneyText(totalAssetsMinor)
+        textTotalLiabilities.text = moneyText(totalLiabilitiesMinor)
         textTotalAssets.setTextColor(IncomeExpenseColorScheme.incomePrimary(requireContext()))
         textTotalLiabilities.setTextColor(IncomeExpenseColorScheme.expensePrimary(requireContext()))
-        textFundsTotal.text = totalText(regularFundsTotal)
-        textCreditTotal.text = totalText(regularCreditTotal)
+        textFundsTotal.text = totalText(regularFundsTotalMinor)
+        textCreditTotal.text = totalText(regularCreditTotalMinor)
         textRechargeTotal.text = sectionTotal(rechargeAssets)
         textInvestmentTotal.text = sectionTotal(investmentAssets)
         textReceivableTotal.text = sectionTotal(receivableAssets)
@@ -265,7 +267,7 @@ class AssetFragment : Fragment() {
     }
 
     private fun isCreditAsset(asset: Asset): Boolean {
-        return asset.categoryLabel in setOf("信用卡", "花呗", "白条", "借呗 / 其他信用")
+        return asset.categoryLabel in setOf("信用卡", "花呗", "白条", "借呗", "其他信用")
     }
 
     private val rechargeLabels = setOf("交通卡", "饭卡", "话费", "会员卡", "押金", "其他充值卡")
@@ -274,14 +276,16 @@ class AssetFragment : Fragment() {
     private val payableLabels = setOf("借入", "其他应付")
 
     private fun sectionTotal(assets: List<Asset>): String {
-        return totalText(assets.sumOf { it.amount })
+        return totalText(assets.sumOf(::amountMinor))
     }
 
-    private fun moneyText(amount: Double): String =
-        if (amountsVisible) "¥${Money.formatYuan(amount)}" else "***"
+    private fun amountMinor(asset: Asset): Long = Money.toMinor(asset.amount) ?: 0L
 
-    private fun totalText(amount: Double): String =
-        if (amountsVisible) "共计:¥${Money.formatYuan(amount)}" else "共计:***"
+    private fun moneyText(amountMinor: Long): String =
+        if (amountsVisible) "¥${Money.formatYuan(amountMinor)}" else "***"
+
+    private fun totalText(amountMinor: Long): String =
+        if (amountsVisible) "共计:¥${Money.formatYuan(amountMinor)}" else "共计:***"
 
     private fun setAdapterAmountsVisibility() {
         adapter?.setAmountsVisible(amountsVisible)
@@ -308,13 +312,15 @@ class AssetFragment : Fragment() {
         private const val ARG_PICKER_MODE = "asset_picker_mode"
         private const val ARG_EXCLUDED_ASSET_ID = "excluded_asset_id"
         private const val ARG_SELECTED_ASSET_ID = "selected_asset_id"
+        private const val ARG_PICKER_LEDGER_ID = "picker_ledger_id"
 
-        fun newPickerInstance(excludedAssetId: Long?, selectedAssetId: Long?): AssetFragment =
+        fun newPickerInstance(excludedAssetId: Long?, selectedAssetId: Long?, ledgerId: Long? = null): AssetFragment =
             AssetFragment().apply {
                 arguments = Bundle().apply {
                     putBoolean(ARG_PICKER_MODE, true)
                     excludedAssetId?.let { putLong(ARG_EXCLUDED_ASSET_ID, it) }
                     selectedAssetId?.let { putLong(ARG_SELECTED_ASSET_ID, it) }
+                    ledgerId?.let { putLong(ARG_PICKER_LEDGER_ID, it) }
                 }
             }
     }

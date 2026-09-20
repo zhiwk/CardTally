@@ -62,6 +62,7 @@ import com.example.cardtally.util.RecordEntryModePreferences
 import com.example.cardtally.util.RecordCategoryOrderPreferences
 import com.example.cardtally.util.DefaultRecordAssetPreferences
 import com.example.cardtally.util.RecordPhotoSettingsHelper
+import com.example.cardtally.util.DateSelectionSheet
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.util.Calendar
@@ -112,6 +113,7 @@ open class AddRecordFragment : Fragment() {
     private var rootView: View? = null
     private var isSystemImeVisible = false
     private var imeGlobalLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
+    private var windowFocusChangeListener: ViewTreeObserver.OnWindowFocusChangeListener? = null
 
     private var categoryAdapter: RecordCategoryTreeAdapter? = null
     private var quickCategoryAdapter: CategorySelectorAdapter? = null
@@ -125,6 +127,13 @@ open class AddRecordFragment : Fragment() {
     private var selectedCategory: Category? = null
     private var selectedAsset: Asset? = null
     private var selectedDestinationAsset: Asset? = null
+    private var expenseAssetId: Long? = null
+    private var incomeAssetId: Long? = null
+    private var transferSourceAssetId: Long? = null
+    private var transferDestinationAssetId: Long? = null
+    private var hasEnteredExpense = false
+    private var hasEnteredIncome = false
+    private var hasEnteredTransfer = false
     private var openSheet = RecordSheet.NONE
     private var pendingCategoryId: Long? = null
     private lateinit var backPressedCallback: OnBackPressedCallback
@@ -133,7 +142,6 @@ open class AddRecordFragment : Fragment() {
     private var photoUris = mutableListOf<String>()
     private var savedPhotoUris = emptyList<String>()
     private var pendingPhotoUri: Uri? = null
-    private var isInitialEntryLoad = true
 
     /** Current record sheet, exposed internally for device interaction tests. */
     internal var activeSheetDialogForTest: BottomSheetDialog? = null
@@ -146,6 +154,7 @@ open class AddRecordFragment : Fragment() {
     internal fun onAssetPickerSelected(assetId: Long, selectDestination: Boolean) {
         val asset = currentAssets.firstOrNull { it.id == assetId } ?: return
         if (selectDestination) selectedDestinationAsset = asset else selectedAsset = asset
+        rememberCurrentAssetSelection()
         updateAssetSummary()
         updateTransferRows()
     }
@@ -183,7 +192,6 @@ open class AddRecordFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        isInitialEntryLoad = savedInstanceState == null
         isQuickCategoryMode = RecordEntryModePreferences.getMode(requireContext()) == RecordEntryMode.QUICK
         // Both modes use the compact entry shell; only their category surface differs.
         isQuickMode = true
@@ -268,6 +276,7 @@ open class AddRecordFragment : Fragment() {
             val source = selectedAsset
             selectedAsset = selectedDestinationAsset
             selectedDestinationAsset = source
+            rememberCurrentAssetSelection()
             updateTransferRows()
         }
 
@@ -382,6 +391,7 @@ open class AddRecordFragment : Fragment() {
             insets
         }
         observeSystemImeVisibility(view)
+        observeWindowFocus(view)
         ViewCompat.requestApplyInsets(view)
 
 
@@ -415,6 +425,7 @@ open class AddRecordFragment : Fragment() {
         selectedDate = restoredState.selectedDate
         openSheet = restoredState.openSheet
         pendingCategoryId = restoredState.pendingCategoryId
+        restoreAssetMemory(restoredState)
         editAmount.setText(restoredState.amountBuffer)
         if (isQuickMode && editAmount.text.toString() == getString(R.string.amount_default)) {
             editAmount.setText("")
@@ -428,7 +439,7 @@ open class AddRecordFragment : Fragment() {
         showPhotoPreview()
 
         loadCategories(currentType, restoredState.selectedCategoryId)
-        loadAssets(restoredState.selectedAssetId, restoredState.selectedDestinationAssetId)
+        loadAssets()
         if (savedInstanceState != null) {
             restoreSelections(restoredState)
         }
@@ -486,7 +497,9 @@ open class AddRecordFragment : Fragment() {
         // Type tabs must leave note-editing mode before changing the quick layout.
         selectNumericTarget(editAmount)
         hideSystemIme()
+        rememberCurrentAssetSelection()
         currentType = type
+        activateAssetSelectionForCurrentType()
         if (type == 2) selectedCategory = null
         updateTypeStyle()
         if (type != 2) loadCategories(type, null)
@@ -528,7 +541,14 @@ open class AddRecordFragment : Fragment() {
             photoUri = photoUris.firstOrNull(),
             photoUris = photoUris,
             openSheet = openSheet,
-            pendingCategoryId = pendingCategoryId
+            pendingCategoryId = pendingCategoryId,
+            expenseAssetId = expenseAssetId,
+            incomeAssetId = incomeAssetId,
+            transferSourceAssetId = transferSourceAssetId,
+            transferDestinationAssetId = transferDestinationAssetId,
+            hasEnteredExpense = hasEnteredExpense,
+            hasEnteredIncome = hasEnteredIncome,
+            hasEnteredTransfer = hasEnteredTransfer
         ).writeTo(outState)
         editingRecordId?.let { outState.putLong(KEY_RECORD_ID, it) }
     }
@@ -536,9 +556,11 @@ open class AddRecordFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         hideBottomNav()
+        suppressSystemImeForNumericInput()
     }
 
     override fun onPause() {
+        suppressSystemImeForNumericInput()
         super.onPause()
         showBottomNav()
     }
@@ -632,14 +654,20 @@ open class AddRecordFragment : Fragment() {
             return
         }
         currentCategories = databaseHelper.getCategoryTreeByType(type).toMutableList()
+        val quickModeCategories = RecordCategoryOrderPreferences.orderForMode(
+            requireContext(),
+            currentCategories,
+            quickMode = true
+        )
+        val standardModeCategories = standardModeCategoriesInOrder()
         selectedCategory = selectedCategoryId?.let { id ->
             currentCategories.firstOrNull { it.id == id && isLeafCategory(it) }
-        } ?: currentCategories.firstOrNull { isLeafCategory(it) }
-        quickCategoryAdapter?.updateCategories(
-            RecordCategoryOrderPreferences.orderForMode(requireContext(), currentCategories, quickMode = true)
+        } ?: RecordCategoryOrderPreferences.firstLeafCategory(
+            if (isQuickCategoryMode) quickModeCategories else standardModeCategories
         )
+        quickCategoryAdapter?.updateCategories(quickModeCategories)
         quickCategoryAdapter?.setSelectedCategoryId(selectedCategory?.id)
-        standardCategoryAdapter?.updateCategories(standardModeCategoriesInOrder())
+        standardCategoryAdapter?.updateCategories(standardModeCategories)
         standardCategoryAdapter?.setSelectedCategoryId(
             selectedCategory?.id,
             expandParent = !isQuickCategoryMode && isEditing()
@@ -664,29 +692,113 @@ open class AddRecordFragment : Fragment() {
     }
 
 
-    private fun loadAssets(selectedAssetId: Long? = null, selectedDestinationAssetId: Long? = null) {
+    private fun loadAssets() {
         currentAssets = databaseHelper.getAllAssets().toMutableList()
-        val defaultAssetId = if (!isEditing() && isInitialEntryLoad && currentType != 2) {
-            if (currentType == 1) {
-                DefaultRecordAssetPreferences.getIncomeAssetId(requireContext())
-            } else {
-                DefaultRecordAssetPreferences.getExpenseAssetId(requireContext())
+        activateAssetSelectionForCurrentType()
+        updateAssetSummary()
+        updateTransferRows()
+    }
+
+    private fun restoreAssetMemory(state: RecordFormState) {
+        expenseAssetId = state.expenseAssetId
+        incomeAssetId = state.incomeAssetId
+        transferSourceAssetId = state.transferSourceAssetId
+        transferDestinationAssetId = state.transferDestinationAssetId
+        hasEnteredExpense = state.hasEnteredExpense
+        hasEnteredIncome = state.hasEnteredIncome
+        hasEnteredTransfer = state.hasEnteredTransfer
+
+        // Bundles saved before per-type selections existed retain only the active type.
+        if (state.selectedAssetId != null || state.selectedDestinationAssetId != null) {
+            when (state.recordType) {
+                RecordType.EXPENSE -> {
+                    if (!hasEnteredExpense) {
+                        expenseAssetId = state.selectedAssetId
+                        hasEnteredExpense = true
+                    }
+                }
+                RecordType.INCOME -> {
+                    if (!hasEnteredIncome) {
+                        incomeAssetId = state.selectedAssetId
+                        hasEnteredIncome = true
+                    }
+                }
+                RecordType.TRANSFER -> {
+                    if (!hasEnteredTransfer) {
+                        transferSourceAssetId = state.selectedAssetId
+                        transferDestinationAssetId = state.selectedDestinationAssetId
+                        hasEnteredTransfer = true
+                    }
+                }
             }
-        } else {
-            null
         }
-        val requestedAssetId = selectedAssetId ?: defaultAssetId
-        selectedAsset = requestedAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
-        if (selectedAsset == null && defaultAssetId != null) {
-            if (currentType == 1) {
+    }
+
+    private fun activateAssetSelectionForCurrentType() {
+        when (currentType) {
+            1 -> {
+                if (!hasEnteredIncome) {
+                    hasEnteredIncome = true
+                    incomeAssetId = resolveDefaultAssetId(forIncome = true)
+                }
+                selectedAsset = assetForId(incomeAssetId)
+                selectedDestinationAsset = null
+            }
+            2 -> {
+                hasEnteredTransfer = true
+                selectedAsset = assetForId(transferSourceAssetId)
+                selectedDestinationAsset = assetForId(transferDestinationAssetId)
+            }
+            else -> {
+                if (!hasEnteredExpense) {
+                    hasEnteredExpense = true
+                    expenseAssetId = resolveDefaultAssetId(forIncome = false)
+                }
+                selectedAsset = assetForId(expenseAssetId)
+                selectedDestinationAsset = null
+            }
+        }
+    }
+
+    private fun resolveDefaultAssetId(forIncome: Boolean): Long? {
+        if (isEditing()) return null
+        val assetId = if (forIncome) {
+            DefaultRecordAssetPreferences.getIncomeAssetId(requireContext())
+        } else {
+            DefaultRecordAssetPreferences.getExpenseAssetId(requireContext())
+        }
+        if (assetId != null && assetForId(assetId) == null) {
+            if (forIncome) {
                 DefaultRecordAssetPreferences.saveIncomeAssetId(requireContext(), null)
             } else {
                 DefaultRecordAssetPreferences.saveExpenseAssetId(requireContext(), null)
             }
+            return null
         }
-        selectedDestinationAsset = selectedDestinationAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
-        updateAssetSummary()
-        updateTransferRows()
+        return assetId
+    }
+
+    private fun assetForId(assetId: Long?): Asset? {
+        val resolvedId = StableIdResolver.resolve(assetId, currentAssets.mapTo(mutableSetOf()) { it.id })
+        return resolvedId?.let { id -> currentAssets.firstOrNull { it.id == id } }
+    }
+
+    private fun rememberCurrentAssetSelection() {
+        when (currentType) {
+            1 -> {
+                incomeAssetId = selectedAsset?.id
+                hasEnteredIncome = true
+            }
+            2 -> {
+                transferSourceAssetId = selectedAsset?.id
+                transferDestinationAssetId = selectedDestinationAsset?.id
+                hasEnteredTransfer = true
+            }
+            else -> {
+                expenseAssetId = selectedAsset?.id
+                hasEnteredExpense = true
+            }
+        }
     }
 
     private fun standardModeCategoriesInOrder(): List<Category> {
@@ -766,8 +878,30 @@ open class AddRecordFragment : Fragment() {
     private fun onSystemImeVisibilityChanged(imeVisible: Boolean) {
         val imeWasVisible = isSystemImeVisible
         isSystemImeVisible = imeVisible
+        if (imeVisible && shouldSuppressSystemImeForNumericInput()) {
+            rootView?.post { suppressSystemImeForNumericInput() }
+            return
+        }
         if (imeWasVisible && !imeVisible) {
             restoreQuickAmountKeypadAfterImeDismissal()
+        }
+    }
+
+    private fun observeWindowFocus(root: View) {
+        windowFocusChangeListener = ViewTreeObserver.OnWindowFocusChangeListener { hasWindowFocus ->
+            if (hasWindowFocus) {
+                root.post { suppressSystemImeForNumericInput() }
+            }
+        }
+        root.viewTreeObserver.addOnWindowFocusChangeListener(windowFocusChangeListener)
+    }
+
+    private fun shouldSuppressSystemImeForNumericInput(): Boolean =
+        isQuickMode && openSheet == RecordSheet.NONE && !editDescription.hasFocus()
+
+    private fun suppressSystemImeForNumericInput() {
+        if (shouldSuppressSystemImeForNumericInput()) {
+            hideSystemIme()
         }
     }
 
@@ -781,91 +915,15 @@ open class AddRecordFragment : Fragment() {
         openSheet = RecordSheet.DATE
         dismissKeyboardAndClearFocus()
         hideAmountKeypad()
-        val dialog = BottomSheetDialog(requireContext())
+        val dialog = DateSelectionSheet.create(requireContext(), selectedDate) { picked ->
+            selectedDate = picked
+            updateDisplayedDate()
+        }
         activeSheetDialogForTest = dialog
-        val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_record_date, null)
-        dialog.setContentView(sheetView)
-
-        val btnCloseSheet = sheetView.findViewById<ImageButton>(R.id.btn_close_sheet)
-        val btnConfirmDate = sheetView.findViewById<View>(R.id.btn_confirm_date)
-        val textSelectToday = sheetView.findViewById<TextView>(R.id.text_select_today)
-        val monthTitle = sheetView.findViewById<TextView>(R.id.text_date_month_title)
-        val selectionValue = sheetView.findViewById<TextView>(R.id.text_date_selection_value)
-        val recyclerCalendar = sheetView.findViewById<RecyclerView>(R.id.recycler_date_calendar)
-        val btnPrevMonth = sheetView.findViewById<ImageButton>(R.id.btn_date_prev_month)
-        val btnNextMonth = sheetView.findViewById<ImageButton>(R.id.btn_date_next_month)
-
-        var localDate = selectedDate
-        var displayYear = localDate.substring(0, 4).toInt()
-        var displayMonth = localDate.substring(5, 7).toInt() - 1
-        lateinit var adapter: LedgerCalendarAdapter
-
-        fun renderCalendar() {
-            monthTitle.text = LedgerPeriodHelper.formatMonthTitle(displayYear, displayMonth)
-            selectionValue.text = formatDisplayDate(localDate)
-            adapter.submitList(
-                LedgerPeriodHelper.buildMonthCells(
-                    displayYear,
-                    displayMonth,
-                    LedgerDateRange(localDate, localDate)
-                )
-            )
-        }
-
-        adapter = LedgerCalendarAdapter(singleSelection = true, compact = true, showAmounts = false) { day ->
-            val picked = day.isoDate ?: return@LedgerCalendarAdapter
-            localDate = picked
-            displayYear = picked.substring(0, 4).toInt()
-            displayMonth = picked.substring(5, 7).toInt() - 1
-            renderCalendar()
-        }
-        recyclerCalendar.layoutManager = GridLayoutManager(requireContext(), 7)
-        recyclerCalendar.adapter = adapter
-        renderCalendar()
-
         dialog.setOnDismissListener {
             openSheet = RecordSheet.NONE
             restoreAmountKeypadAfterSheet()
             if (activeSheetDialogForTest === dialog) activeSheetDialogForTest = null
-        }
-        btnCloseSheet.setOnClickListener { dialog.dismiss() }
-        textSelectToday.setOnClickListener {
-            val calendar = Calendar.getInstance()
-            localDate = String.format(
-                Locale.US,
-                "%04d-%02d-%02d",
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.DAY_OF_MONTH)
-            )
-            displayYear = calendar.get(Calendar.YEAR)
-            displayMonth = calendar.get(Calendar.MONTH)
-            renderCalendar()
-        }
-        btnPrevMonth.setOnClickListener {
-            val shifted = LedgerPeriodHelper.shiftMonth(displayYear, displayMonth, -1)
-            displayYear = shifted.first
-            displayMonth = shifted.second
-            renderCalendar()
-        }
-        btnNextMonth.setOnClickListener {
-            val shifted = LedgerPeriodHelper.shiftMonth(displayYear, displayMonth, 1)
-            displayYear = shifted.first
-            displayMonth = shifted.second
-            renderCalendar()
-        }
-        btnConfirmDate.setOnClickListener {
-            selectedDate = localDate
-            updateDisplayedDate()
-            dialog.dismiss()
-        }
-        dialog.setOnShowListener {
-            dialog.window?.setLayout(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            dialog.behavior.skipCollapsed = true
-            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
         }
         dialog.show()
     }
@@ -1068,10 +1126,6 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun restoreSelections(state: RecordFormState) {
-        val assetId = StableIdResolver.resolve(state.selectedAssetId, currentAssets.mapTo(mutableSetOf()) { it.id })
-        selectedAsset = assetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
-        val destinationAssetId = StableIdResolver.resolve(state.selectedDestinationAssetId, currentAssets.mapTo(mutableSetOf()) { it.id })
-        selectedDestinationAsset = destinationAssetId?.let { id -> currentAssets.firstOrNull { it.id == id } }
         val categoryId = StableIdResolver.resolve(state.selectedCategoryId, currentCategories.mapTo(mutableSetOf()) { it.id })
         selectedCategory = categoryId?.let { id -> currentCategories.firstOrNull { it.id == id && isLeafCategory(it) } }
         pendingCategoryId = state.pendingCategoryId?.takeIf { id -> currentCategories.any { it.id == id && isLeafCategory(it) } }
@@ -1323,8 +1377,10 @@ open class AddRecordFragment : Fragment() {
     override fun onDestroyView() {
         rootView?.viewTreeObserver?.let { observer ->
             imeGlobalLayoutListener?.let(observer::removeOnGlobalLayoutListener)
+            windowFocusChangeListener?.let(observer::removeOnWindowFocusChangeListener)
         }
         imeGlobalLayoutListener = null
+        windowFocusChangeListener = null
         entryAmountLayoutController?.detach()
         entryAmountLayoutController = null
         deletePhotoUris(photoUris.filterNot { it in savedPhotoUris })

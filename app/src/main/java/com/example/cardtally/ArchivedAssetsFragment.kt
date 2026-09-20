@@ -1,13 +1,16 @@
 package com.example.cardtally
 
 import android.app.AlertDialog
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.AssetAdapter
@@ -15,12 +18,12 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.util.Money
 import com.example.cardtally.model.Asset
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.card.MaterialCardView
 
 class ArchivedAssetsFragment : Fragment() {
-    private lateinit var recyclerAssets: RecyclerView
+    private lateinit var sectionsContainer: LinearLayout
     private lateinit var textEmpty: TextView
     private lateinit var databaseHelper: DatabaseHelper
-    private var adapter: AssetAdapter? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -29,15 +32,13 @@ class ArchivedAssetsFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_archived_assets, container, false)
 
-        recyclerAssets = view.findViewById(R.id.recycler_assets)
+        sectionsContainer = view.findViewById(R.id.archived_sections)
         textEmpty = view.findViewById(R.id.text_empty)
         view.findViewById<View>(R.id.btn_back).setOnClickListener {
             parentFragmentManager.popBackStack()
         }
 
         databaseHelper = DatabaseHelper(requireContext())
-
-        recyclerAssets.layoutManager = LinearLayoutManager(requireContext())
 
         loadAssets()
 
@@ -59,52 +60,105 @@ class ArchivedAssetsFragment : Fragment() {
         val assets = databaseHelper.getArchivedAssets()
         if (assets.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
-            recyclerAssets.visibility = View.GONE
-            adapter = null
-            recyclerAssets.adapter = null
+            sectionsContainer.visibility = View.GONE
+            sectionsContainer.removeAllViews()
         } else {
             textEmpty.visibility = View.GONE
-            recyclerAssets.visibility = View.VISIBLE
-
-            if (adapter == null) {
-                adapter = AssetAdapter(assets, object : AssetAdapter.OnAssetActionListener {
-                    override fun onClick(asset: Asset) {
-                        val recordsFragment = AssetRecordsFragment.newInstance(
-                            asset.name,
-                            asset.amount,
-                            asset.type,
-                            asset.id,
-                            asset.categoryLabel
-                        )
-                        parentFragmentManager.beginTransaction()
-                            .replace(R.id.fragment_container, recordsFragment)
-                            .addToBackStack(null)
-                            .commit()
-                    }
-
-                    override fun onEdit(asset: Asset) {
-                        showEditDialog(asset)
-                    }
-
-                    override fun onDelete(asset: Asset) {
-                        showDeleteDialog(asset)
-                    }
-
-                    override fun onArchive(asset: Asset) {
-                        databaseHelper.unarchiveAsset(asset.id)
-                        Toast.makeText(requireContext(), "已恢复", Toast.LENGTH_SHORT).show()
-                        loadAssets()
-                    }
-                }, archivedMode = true, showAmount = true)
-                recyclerAssets.adapter = adapter
-            } else {
-                adapter?.updateAssets(assets)
-                if (recyclerAssets.adapter == null) {
-                    recyclerAssets.adapter = adapter
-                }
-            }
+            sectionsContainer.visibility = View.VISIBLE
+            renderSections(assets)
         }
     }
+
+    private fun renderSections(assets: List<Asset>) {
+        val regularAssets = assets.filterNot(::isCreditAsset)
+        val sections = listOf(
+            R.string.asset_account_cash to regularAssets.filter {
+                it.categoryLabel !in rechargeLabels &&
+                    it.categoryLabel !in investmentLabels &&
+                    it.categoryLabel !in receivableLabels &&
+                    it.categoryLabel !in payableLabels
+            },
+            R.string.asset_account_credit to assets.filter(::isCreditAsset),
+            R.string.asset_account_topup to assets.filter { it.categoryLabel in rechargeLabels },
+            R.string.asset_account_investment to assets.filter { it.categoryLabel in investmentLabels },
+            R.string.asset_account_receivable to assets.filter { it.categoryLabel in receivableLabels },
+            R.string.asset_account_payable to assets.filter { it.categoryLabel in payableLabels }
+        )
+
+        sectionsContainer.removeAllViews()
+        sections.filter { it.second.isNotEmpty() }.forEach { (titleRes, sectionAssets) ->
+            val section = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
+                    bottomMargin = 12.dp
+                }
+            }
+            val header = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                minimumHeight = 40.dp
+            }
+            header.addView(TextView(requireContext()).apply {
+                text = getString(titleRes)
+                textSize = 14f
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.onBackground_light))
+                layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+            })
+            header.addView(TextView(requireContext()).apply {
+                text = getString(R.string.asset_section_total, Money.formatYuan(sectionAssets.sumOf(::amountMinor)))
+                textSize = 12f
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.onSurfaceVariant_light))
+            })
+            section.addView(header)
+
+            val card = MaterialCardView(requireContext()).apply {
+                radius = 12.dp.toFloat()
+                cardElevation = 0f
+                strokeWidth = 0
+                setStrokeColor(Color.TRANSPARENT)
+                setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.surface_light))
+                layoutParams = LinearLayout.LayoutParams(-1, -2)
+            }
+            val recycler = RecyclerView(requireContext()).apply {
+                layoutManager = LinearLayoutManager(requireContext())
+                isNestedScrollingEnabled = false
+                adapter = createAdapter(sectionAssets)
+            }
+            card.addView(recycler)
+            section.addView(card)
+            sectionsContainer.addView(section)
+        }
+    }
+
+    private fun createAdapter(assets: List<Asset>): AssetAdapter {
+        return AssetAdapter(assets, object : AssetAdapter.OnAssetActionListener {
+            override fun onClick(asset: Asset) = Unit
+            override fun onEdit(asset: Asset) = Unit
+
+            override fun onDelete(asset: Asset) {
+                showDeleteDialog(asset)
+            }
+
+            override fun onArchive(asset: Asset) {
+                databaseHelper.unarchiveAsset(asset.id)
+                Toast.makeText(requireContext(), R.string.toast_asset_unarchived, Toast.LENGTH_SHORT).show()
+                loadAssets()
+            }
+        }, archivedMode = true, showAmount = true)
+    }
+
+    private fun isCreditAsset(asset: Asset): Boolean {
+        return asset.categoryLabel in setOf("信用卡", "花呗", "白条", "借呗", "其他信用")
+    }
+
+    private val rechargeLabels = setOf("交通卡", "饭卡", "话费", "会员卡", "押金", "其他充值卡")
+    private val investmentLabels = setOf("股票", "基金", "黄金", "其他理财")
+    private val receivableLabels = setOf("借出", "其他应收")
+    private val payableLabels = setOf("借入", "其他应付")
+    private fun amountMinor(asset: Asset): Long = Money.toMinor(asset.amount) ?: 0L
+
+    private val Int.dp: Int
+        get() = (this * resources.displayMetrics.density).toInt()
 
     private fun showEditDialog(asset: Asset) {
         val builder = AlertDialog.Builder(requireContext())

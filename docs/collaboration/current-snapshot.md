@@ -2,6 +2,12 @@
 
 ## 当前有效快照
 
+- 2026-09-20：重复记账功能已落地：支持每日/每周/每月/每年/间隔周期、结束日期、启停、跨账本展示，以及支出/收入/转账任务；转账任务分别保存转出与转入资产 ID，资产选择范围按任务账本过滤，选择任务账本不会切换应用当前账本。每月 31 日和每年 2 月 29 日在目标日期不存在时跳过执行。相关实现位于 `RecurringRecordEditFragment`、`RecurringRecordsFragment`、`RecurringRecordScheduler`、`RecurringRecordWorker` 与 `DatabaseHelper`。
+
+- 2026-09-20：修复普通「记一笔」转账资产点击无效的回归。根因是共享 `RecordAssetPickerBottomSheetFragment` 为支持重复记账改用宿主接口后，`AddRecordFragment` 未实现该接口，导致原有 `onAssetPickerSelected(assetId, selectDestination)` 回调丢失；同时关闭回调也不能恢复普通记账页状态。当前选择器按宿主分流：`AddRecordFragment` 走旧回调，重复记账走 `SelectionTarget`，并保留资产面板关闭后的状态恢复。
+
+- 2026-09-20：分类面板一级分类卡片保持白色：`item_record_category_group.xml` 显式设置卡片、标题区域和子分类区域为白色，并在 `RecordCategoryGroupAdapter` 绑定时清除 MaterialCardView 前景层与运行时背景覆盖。该视觉修复已完成 Debug/Release 构建并安装验证。
+
 - 2026-09-13：资产管理页统一使用一个多选入口，顶部独立“合并”入口已移除；普通状态右上角使用 `tabler_list_check` 多选图标，进入选择状态后切换关闭图标，底部保留删除与合并操作。合并选择同资产组内两个账本后再明确选择保留目标；资产组拆分入口和手势不再提供。
 
 - 2026-09-13：资产管理页保留页内“合并账本”入口，但合并改为在本页进入选择模式：先选择同一资产组的两个账本，再明确选择保留目标，主账本参与时固定保留主账本，跨组选择会在选择阶段拦截；确认前展示源/目标和记录数量，成功后才清理选择状态。移除了账本行上的“拆分为独立资产组”入口和手势，不再提供现有资产组拆分功能。

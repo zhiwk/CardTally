@@ -25,15 +25,16 @@ class AssetTypeSelectFragment : Fragment() {
 
         bindType(view, R.id.row_cash, "现金", R.drawable.tabler_cash, AssetType.CASH)
         bindType(view, R.id.row_bank, "储蓄卡", R.drawable.tabler_building_bank, AssetType.BANK)
-        bindType(view, R.id.row_alipay, "支付宝", R.drawable.tabler_wallet, AssetType.ALIPAY)
-        bindType(view, R.id.row_wechat, "微信钱包", R.drawable.tabler_wallet, AssetType.WECHAT)
-        bindType(view, R.id.row_qq, "QQ钱包", R.drawable.tabler_wallet, AssetType.ALIPAY)
-        bindType(view, R.id.row_jd, "京东", R.drawable.tabler_wallet, AssetType.ALIPAY)
+        bindType(view, R.id.row_alipay, "支付宝", R.drawable.tabler_brand_alipay, AssetType.ALIPAY)
+        bindType(view, R.id.row_wechat, "微信钱包", R.drawable.tabler_brand_wechat, AssetType.WECHAT)
+        bindType(view, R.id.row_qq, "QQ钱包", R.drawable.tabler_brand_qq, AssetType.ALIPAY)
+        bindType(view, R.id.row_jd, "京东", R.drawable.ic_brand_jd, AssetType.ALIPAY)
         bindType(view, R.id.row_other_fund, "其他", R.drawable.tabler_wallet, AssetType.BANK)
         bindType(view, R.id.row_credit_card, "信用卡", R.drawable.tabler_credit_card, AssetType.BANK)
-        bindType(view, R.id.row_huabei, "花呗", R.drawable.tabler_wallet, AssetType.ALIPAY)
-        bindType(view, R.id.row_baitiao, "白条", R.drawable.tabler_credit_card, AssetType.ALIPAY)
-        bindType(view, R.id.row_credit_other, "借呗 / 其他信用", R.drawable.tabler_credit_card, AssetType.BANK)
+        bindType(view, R.id.row_huabei, "花呗", R.drawable.tabler_brand_alipay, AssetType.ALIPAY)
+        bindType(view, R.id.row_baitiao, "白条", R.drawable.ic_brand_jd, AssetType.ALIPAY)
+        bindType(view, R.id.row_jiebei, "借呗", R.drawable.tabler_brand_wechat, AssetType.BANK)
+        bindType(view, R.id.row_credit_other, "其他信用", R.drawable.tabler_credit_card, AssetType.BANK)
         bindType(view, R.id.row_transport_card, "交通卡", R.drawable.tabler_bus, AssetType.BANK)
         bindType(view, R.id.row_meal_card, "饭卡", R.drawable.tabler_id, AssetType.BANK)
         bindType(view, R.id.row_phone_card, "话费", R.drawable.tabler_wallet, AssetType.BANK)
@@ -54,9 +55,8 @@ class AssetTypeSelectFragment : Fragment() {
     private fun bindType(view: View, rowId: Int, label: String, iconRes: Int, type: AssetType) {
         val row = view.findViewById<View>(rowId)
         row.findViewById<TextView>(R.id.option_label).text = label
-        row.findViewById<ImageView>(R.id.option_icon).setImageResource(
-            AssetTypeIconCatalog.resourceForLabel(label) ?: iconRes
-        )
+        val resolvedIcon = AssetTypeIconCatalog.resourceForLabel(label) ?: iconRes
+        row.findViewById<ImageView>(R.id.option_icon).setImageResource(resolvedIcon)
         row.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(
@@ -64,7 +64,7 @@ class AssetTypeSelectFragment : Fragment() {
                     AddAssetFragment.newInstance(
                         type,
                         label,
-                        resources.getResourceEntryName(iconRes)
+                         resources.getResourceEntryName(resolvedIcon)
                     )
                 )
                 .addToBackStack("asset_add")

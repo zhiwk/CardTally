@@ -1,6 +1,7 @@
 package com.example.cardtally.adapter
 
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.example.cardtally.R
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.TablerIconCatalog
@@ -97,6 +99,7 @@ class RecordCategoryGroupAdapter(
     class CategoryGroupViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val parentIcon: ImageView = itemView.findViewById(R.id.image_parent_icon)
         private val parentName: TextView = itemView.findViewById(R.id.text_parent_name)
+        private val selectedChild: TextView = itemView.findViewById(R.id.text_selected_child)
         private val expandIcon: ImageView = itemView.findViewById(R.id.image_expand)
         private val childrenContainer: LinearLayout = itemView.findViewById(R.id.children_container)
 
@@ -109,11 +112,19 @@ class RecordCategoryGroupAdapter(
             onSelect: (Category) -> Unit
         ) {
             val context = itemView.context
+            (itemView as? MaterialCardView)?.apply {
+                setCardBackgroundColor(Color.WHITE)
+                setCardForegroundColor(ColorStateList.valueOf(Color.TRANSPARENT))
+                foreground = null
+            }
             val children = allCategories.filter { it.parentId == parent.id }
+            val selectedChildCategory = children.firstOrNull { it.id == selectedCategoryId }
             parentName.text = parent.name
             parentIcon.setImageResource(resolveIcon(context, parent.icon))
             expandIcon.setImageResource(if (expanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more)
             expandIcon.visibility = if (children.isEmpty()) View.GONE else View.VISIBLE
+            selectedChild.text = selectedChildCategory?.name
+            selectedChild.visibility = if (!expanded && selectedChildCategory != null) View.VISIBLE else View.GONE
             childrenContainer.visibility = if (expanded) View.VISIBLE else View.GONE
             itemView.setOnClickListener {
                 if (children.isEmpty()) onSelect(parent) else onToggle(parent.id)
@@ -139,17 +150,27 @@ class RecordCategoryGroupAdapter(
                     ColorStateList.valueOf(
                         ThemeColorHelper.resolveColor(
                             context,
-                            if (selected) com.google.android.material.R.attr.colorSecondaryContainer
+                            if (selected) com.google.android.material.R.attr.colorPrimaryContainer
                             else com.google.android.material.R.attr.colorSurfaceContainerHigh
+                        )
+                    )
+                childView.findViewById<ImageView>(R.id.image_child_icon).imageTintList =
+                    ColorStateList.valueOf(
+                        ThemeColorHelper.resolveColor(
+                            context,
+                        if (selected) com.google.android.material.R.attr.colorOnPrimaryContainer
+                            else com.google.android.material.R.attr.colorOnSurfaceVariant
                         )
                     )
                 childView.findViewById<TextView>(R.id.text_child_name).setTextColor(
                     ThemeColorHelper.resolveColor(
                         context,
-                        if (selected) com.google.android.material.R.attr.colorSecondary
+                            if (selected) com.google.android.material.R.attr.colorOnPrimaryContainer
                         else com.google.android.material.R.attr.colorOnSurfaceVariant
                     )
                 )
+                childView.findViewById<ImageView>(R.id.image_child_selected).visibility =
+                    if (selected) View.VISIBLE else View.GONE
                 childView.setOnClickListener { onSelect(child) }
                 row.addView(childView)
             }

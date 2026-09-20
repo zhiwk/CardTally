@@ -6,10 +6,13 @@
     android:layout_height="wrap_content"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/primaryContainer_light"
-    app:cardCornerRadius="0dp"
+    android:foreground="@android:color/transparent"
+    android:layout_marginBottom="8dp"
+    app:cardBackgroundColor="@color/surface_light"
+    app:cardCornerRadius="@dimen/card_corner_radius_medium"
     app:cardElevation="0dp"
-    app:strokeColor="@color/surface_container_highest"
+    app:cardForegroundColor="@android:color/transparent"
+    app:strokeColor="@color/outlineVariant_light"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -20,7 +23,8 @@
         <LinearLayout
             android:id="@+id/record_category_group_header"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="52dp"
+            android:background="@color/surface_light"
             android:gravity="center_vertical"
             android:paddingHorizontal="12dp">
 
@@ -29,7 +33,7 @@
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="@drawable/bg_circle_primary_container"
-                android:backgroundTint="@color/surface_light">
+                android:backgroundTint="@color/surface_container_low">
 
                 <ImageView
                     android:id="@+id/image_parent_icon"
@@ -37,7 +41,7 @@
                     android:layout_height="20dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_category_other"
-                    app:tint="@color/onPrimaryContainer_light" />
+                    app:tint="@color/onSurfaceVariant_light" />
             </FrameLayout>
 
             <TextView
@@ -46,9 +50,22 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_weight="1"
-                android:textColor="@color/onPrimaryContainer_light"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/onSurface_light"
                 android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textStyle="normal" />
+
+            <TextView
+                android:id="@+id/text_selected_child"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:ellipsize="end"
+                android:maxEms="6"
+                android:maxLines="1"
+                android:textColor="@color/onPrimaryContainer_light"
+                android:textSize="14sp"
+                android:visibility="gone" />
 
             <ImageView
                 android:id="@+id/image_expand"
@@ -56,17 +73,17 @@
                 android:layout_height="24dp"
                 android:contentDescription="@string/category_expand_content_description"
                 android:src="@drawable/ic_expand_more"
-                app:tint="@color/onPrimaryContainer_light" />
+                app:tint="@color/onSurfaceVariant_light" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/children_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/surface_container_lowest"
+            android:background="@color/surface_light"
             android:orientation="vertical"
             android:paddingHorizontal="12dp"
-            android:paddingBottom="8dp"
+            android:paddingBottom="12dp"
             android:visibility="gone" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

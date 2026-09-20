@@ -19,6 +19,7 @@ import com.example.cardtally.state.AssetFormState
 import com.example.cardtally.state.AssetType
 import com.example.cardtally.util.AmountKeypadController
 import com.example.cardtally.util.Money
+import com.example.cardtally.util.AssetTypeIconCatalog
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.chip.ChipGroup
 
@@ -254,11 +255,11 @@ class AddAssetFragment : Fragment() {
         val (fallbackLabel, fallbackIcon) = when (state.assetType) {
             AssetType.CASH -> "现金" to R.drawable.tabler_cash
             AssetType.BANK -> "银行卡" to R.drawable.tabler_building_bank
-            AssetType.ALIPAY -> "支付宝" to R.drawable.tabler_wallet
-            AssetType.WECHAT -> "微信钱包" to R.drawable.tabler_wallet
+            AssetType.ALIPAY -> "支付宝" to R.drawable.tabler_brand_alipay
+            AssetType.WECHAT -> "微信钱包" to R.drawable.tabler_brand_wechat
         }
         val label = state.assetTypeLabel.ifBlank { fallbackLabel }
-        val icon = state.assetTypeIconName.takeIf { it.isNotBlank() }?.let {
+        val icon = AssetTypeIconCatalog.resourceForLabel(label) ?: state.assetTypeIconName.takeIf { it.isNotBlank() }?.let {
             resources.getIdentifier(it, "drawable", requireContext().packageName)
         }?.takeIf { it != 0 } ?: fallbackIcon
         view.findViewById<TextView>(R.id.text_selected_asset_type).text = label

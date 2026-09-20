@@ -62,6 +62,7 @@
                     <include android:id="@+id/row_credit_card" layout="@layout/item_asset_type_option" />
                     <include android:id="@+id/row_huabei" layout="@layout/item_asset_type_option" />
                     <include android:id="@+id/row_baitiao" layout="@layout/item_asset_type_option" />
+                    <include android:id="@+id/row_jiebei" layout="@layout/item_asset_type_option" />
                     <include android:id="@+id/row_credit_other" layout="@layout/item_asset_type_option" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
