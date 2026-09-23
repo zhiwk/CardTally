@@ -7,7 +7,6 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.example.cardtally.BuildConfig
 import com.example.cardtally.model.AiChatMessage
-import com.example.cardtally.model.AiChatRole
 import com.example.cardtally.model.AiChatSession
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
@@ -69,6 +68,13 @@ class DatabaseHelper(
             isReferencedByRecord = ::categoryIsReferencedByRecordId,
             throwError = { throw CategoryOperationException(it) },
             columns = CATEGORY_WRITE_COLUMNS
+        )
+    }
+    private val aiChatRepository by lazy {
+        AiChatRepository(
+            readableDatabase = { readableDatabase },
+            writableDatabase = { writableDatabase },
+            columns = AI_CHAT_COLUMNS
         )
     }
 
@@ -273,6 +279,21 @@ class DatabaseHelper(
         private const val COLUMN_AI_CHAT_MESSAGE_REASONING = "reasoning_content"
         private const val COLUMN_AI_CHAT_MESSAGE_IS_ERROR = "is_error"
         private const val COLUMN_AI_CHAT_MESSAGE_CREATED_AT = "created_at"
+        private val AI_CHAT_COLUMNS = AiChatRepository.Columns(
+            sessionsTable = TABLE_AI_CHAT_SESSIONS,
+            sessionId = COLUMN_AI_CHAT_SESSION_ID,
+            sessionTitle = COLUMN_AI_CHAT_SESSION_TITLE,
+            sessionCreatedAt = COLUMN_AI_CHAT_SESSION_CREATED_AT,
+            sessionUpdatedAt = COLUMN_AI_CHAT_SESSION_UPDATED_AT,
+            messagesTable = TABLE_AI_CHAT_MESSAGES,
+            messageId = COLUMN_AI_CHAT_MESSAGE_ID,
+            messageSessionId = COLUMN_AI_CHAT_MESSAGE_SESSION_ID,
+            messageRole = COLUMN_AI_CHAT_MESSAGE_ROLE,
+            messageContent = COLUMN_AI_CHAT_MESSAGE_CONTENT,
+            messageReasoning = COLUMN_AI_CHAT_MESSAGE_REASONING,
+            messageIsError = COLUMN_AI_CHAT_MESSAGE_IS_ERROR,
+            messageCreatedAt = COLUMN_AI_CHAT_MESSAGE_CREATED_AT
+        )
 
         private const val CREATE_TABLE_RECORDS =
             "CREATE TABLE $TABLE_RECORDS (" +
@@ -2811,159 +2832,22 @@ class DatabaseHelper(
         title: String,
         createdAt: Long = System.currentTimeMillis(),
         updatedAt: Long = createdAt
-    ): Long {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_AI_CHAT_SESSION_TITLE, title)
-            put(COLUMN_AI_CHAT_SESSION_CREATED_AT, createdAt)
-            put(COLUMN_AI_CHAT_SESSION_UPDATED_AT, updatedAt)
-        }
+    ): Long = aiChatRepository.addSession(title, createdAt, updatedAt)
 
-        val id = db.insert(TABLE_AI_CHAT_SESSIONS, null, values)
-        db.close()
-        return id
-    }
+    fun getAiChatSessions(): List<AiChatSession> = aiChatRepository.getSessions()
 
-    fun getAiChatSessions(): List<AiChatSession> {
-        val sessions = mutableListOf<AiChatSession>()
-        val selectQuery = "SELECT * FROM $TABLE_AI_CHAT_SESSIONS ORDER BY $COLUMN_AI_CHAT_SESSION_UPDATED_AT DESC, $COLUMN_AI_CHAT_SESSION_ID DESC"
-
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, null)
-
-        if (cursor.moveToFirst()) {
-            do {
-                sessions.add(
-                    AiChatSession(
-                        id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_ID)),
-                        title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_TITLE)),
-                        createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_CREATED_AT)),
-                        updatedAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_UPDATED_AT))
-                    )
-                )
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        db.close()
-        return sessions
-    }
-
-    fun getAiChatSessionById(id: Long): AiChatSession? {
-        val db = readableDatabase
-        val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_AI_CHAT_SESSIONS WHERE $COLUMN_AI_CHAT_SESSION_ID = ?",
-            arrayOf(id.toString())
-        )
-
-        val session = if (cursor.moveToFirst()) {
-            AiChatSession(
-                id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_ID)),
-                title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_TITLE)),
-                createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_CREATED_AT)),
-                updatedAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_SESSION_UPDATED_AT))
-            )
-        } else {
-            null
-        }
-
-        cursor.close()
-        db.close()
-        return session
-    }
+    fun getAiChatSessionById(id: Long): AiChatSession? = aiChatRepository.getSessionById(id)
 
     fun updateAiChatSessionTitle(
         id: Long,
         title: String,
         updatedAt: Long = System.currentTimeMillis()
-    ): Int {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_AI_CHAT_SESSION_TITLE, title)
-            put(COLUMN_AI_CHAT_SESSION_UPDATED_AT, updatedAt)
-        }
+    ): Int = aiChatRepository.updateSessionTitle(id, title, updatedAt)
 
-        val rowsAffected = db.update(
-            TABLE_AI_CHAT_SESSIONS,
-            values,
-            "$COLUMN_AI_CHAT_SESSION_ID = ?",
-            arrayOf(id.toString())
-        )
-        db.close()
-        return rowsAffected
-    }
+    fun touchAiChatSession(id: Long, updatedAt: Long = System.currentTimeMillis()): Int =
+        aiChatRepository.touchSession(id, updatedAt)
 
-    fun touchAiChatSession(id: Long, updatedAt: Long = System.currentTimeMillis()): Int {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_AI_CHAT_SESSION_UPDATED_AT, updatedAt)
-        }
+    fun addAiChatMessage(message: AiChatMessage): Long = aiChatRepository.addMessage(message)
 
-        val rowsAffected = db.update(
-            TABLE_AI_CHAT_SESSIONS,
-            values,
-            "$COLUMN_AI_CHAT_SESSION_ID = ?",
-            arrayOf(id.toString())
-        )
-        db.close()
-        return rowsAffected
-    }
-
-    fun addAiChatMessage(message: AiChatMessage): Long {
-        val db = writableDatabase
-        val createdAt = message.createdAt.takeIf { it > 0L } ?: System.currentTimeMillis()
-        val values = ContentValues().apply {
-            put(COLUMN_AI_CHAT_MESSAGE_SESSION_ID, message.sessionId)
-            put(COLUMN_AI_CHAT_MESSAGE_ROLE, message.role.apiValue)
-            put(COLUMN_AI_CHAT_MESSAGE_CONTENT, message.content)
-            put(COLUMN_AI_CHAT_MESSAGE_REASONING, message.reasoning)
-            put(COLUMN_AI_CHAT_MESSAGE_IS_ERROR, if (message.isError) 1 else 0)
-            put(COLUMN_AI_CHAT_MESSAGE_CREATED_AT, createdAt)
-        }
-
-        val id = db.insert(TABLE_AI_CHAT_MESSAGES, null, values)
-        if (message.sessionId > 0L) {
-            val sessionValues = ContentValues().apply {
-                put(COLUMN_AI_CHAT_SESSION_UPDATED_AT, createdAt)
-            }
-            db.update(
-                TABLE_AI_CHAT_SESSIONS,
-                sessionValues,
-                "$COLUMN_AI_CHAT_SESSION_ID = ?",
-                arrayOf(message.sessionId.toString())
-            )
-        }
-        db.close()
-        return id
-    }
-
-    fun getAiChatMessages(sessionId: Long): List<AiChatMessage> {
-        val messages = mutableListOf<AiChatMessage>()
-        val selectQuery = "SELECT * FROM $TABLE_AI_CHAT_MESSAGES WHERE $COLUMN_AI_CHAT_MESSAGE_SESSION_ID = ? ORDER BY $COLUMN_AI_CHAT_MESSAGE_CREATED_AT ASC, $COLUMN_AI_CHAT_MESSAGE_ID ASC"
-
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, arrayOf(sessionId.toString()))
-
-        if (cursor.moveToFirst()) {
-            do {
-                messages.add(
-                    AiChatMessage(
-                        id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_ID)),
-                        sessionId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_SESSION_ID)),
-                        role = AiChatRole.values().firstOrNull {
-                            it.apiValue == cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_ROLE))
-                        } ?: AiChatRole.ASSISTANT,
-                        content = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_CONTENT)),
-                        reasoning = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_REASONING)),
-                        isError = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_IS_ERROR)) == 1,
-                        createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AI_CHAT_MESSAGE_CREATED_AT))
-                    )
-                )
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        db.close()
-        return messages
-    }
+    fun getAiChatMessages(sessionId: Long): List<AiChatMessage> = aiChatRepository.getMessages(sessionId)
 }
