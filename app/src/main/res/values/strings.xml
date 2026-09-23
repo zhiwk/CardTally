@@ -176,8 +176,12 @@
     <string name="record_keypad_hide">收起数字键盘</string>
     <string name="record_keypad_delete">删除一位</string>
     <string name="record_keypad_delete_glyph">⌫</string>
+    <string name="record_keypad_minus">减法</string>
+    <string name="record_keypad_plus">加法</string>
     <string name="record_keypad_confirm">确定</string>
     <string name="record_keypad_equals">=</string>
+    <string name="record_keypad_calculate">计算金额</string>
+    <string name="record_keypad_complete_save">完成并保存</string>
     <string name="record_update">更新</string>
     <string name="record_editor_prompt">“这一刻，值得被记下一笔。”</string>
     <string name="record_date_display">%1$d月%2$d日</string>
@@ -665,10 +669,22 @@
     <string name="recurring_category_mode_accessibility">切换分类面板模式</string>
     <string name="recurring_type_expense">支出</string>
     <string name="recurring_type_income">收入</string>
+    <string name="recurring_type_transfer">转账</string>
+    <string name="recurring_source_asset">转出账户</string>
+    <string name="recurring_destination_asset">转入账户</string>
+    <string name="recurring_select_ledger">选择账本</string>
+    <string name="recurring_select_category">选择分类</string>
+    <string name="recurring_select_frequency">选择周期</string>
+    <string name="recurring_confirm">确定</string>
+    <string name="recurring_amount_default">¥0.00</string>
+    <string name="recurring_monthly_31_notice">部分月份没有 31 日，这些月份将跳过，不自动按月末执行。</string>
+    <string name="recurring_yearly_leap_notice">2 月 29 日仅在闰年执行，非闰年将跳过。</string>
     <string name="recurring_select">请选择</string>
     <string name="recurring_type">类型</string>
     <string name="recurring_period_section">周期信息</string>
     <string name="recurring_bill_section">账单信息</string>
+    <string name="recurring_content_section">任务内容</string>
+    <string name="recurring_settings_section">记账设置</string>
     <string name="recurring_status_running">进行中</string>
     <string name="recurring_status_stopped">已停止</string>
     <string name="statistics_ranking_mode_title">排行榜展示方式</string>

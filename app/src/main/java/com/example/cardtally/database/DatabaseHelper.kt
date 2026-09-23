@@ -16,6 +16,7 @@ import com.example.cardtally.model.RecurringRecord
 import com.example.cardtally.util.CategoryHierarchySettingsHelper
 import com.example.cardtally.util.LedgerSession
 import com.example.cardtally.util.Money
+import com.example.cardtally.util.RecurringScheduleCalculator
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -24,6 +25,26 @@ import java.util.UUID
 class DatabaseHelper(
     private val appContext: Context
 ) : SQLiteOpenHelper(appContext, DATABASE_NAME, null, DATABASE_VERSION) {
+
+    private val recurringRepository by lazy {
+        RecurringRecordRepository(
+            readableDatabase = { readableDatabase },
+            writableDatabase = { writableDatabase },
+            currentLedgerId = ::currentLedgerId,
+            validateCategory = { db, recurring ->
+                val categoryId = requireNotNull(recurring.categoryId)
+                val category = getCategoryByIdInternal(db, categoryId) ?: error("Category missing")
+                require(recurring.type != 2 && category.type == recurring.type && !categoryHasChildren(db, categoryId))
+            },
+            isAssetAvailable = { db, ledgerId, assetId ->
+                db.rawQuery(
+                    "SELECT 1 FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
+                    arrayOf(ledgerId.toString(), assetId.toString())
+                ).use { it.moveToFirst() }
+            },
+            columns = RECURRING_RECORD_COLUMNS
+        )
+    }
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -81,6 +102,27 @@ class DatabaseHelper(
         private const val PHOTO_URI_SEPARATOR = "|"
         private const val COLUMN_SORT_ORDER = "sort_order"
         private const val COLUMN_LEDGER_ID = "ledger_id"
+        private val RECORD_SQL_COLUMNS = RecordSqlMapper.Columns(
+            id = COLUMN_ID,
+            ledgerId = COLUMN_LEDGER_ID,
+            date = COLUMN_DATE,
+            amount = COLUMN_AMOUNT,
+            category = COLUMN_CATEGORY,
+            categoryId = COLUMN_RECORD_CATEGORY_ID,
+            categoryNameSnapshot = COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT,
+            categoryPathSnapshot = COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT,
+            type = COLUMN_TYPE,
+            description = COLUMN_DESCRIPTION,
+            fee = COLUMN_RECORD_FEE,
+            assetId = COLUMN_RECORD_ASSET_ID,
+            destinationAssetId = COLUMN_RECORD_DESTINATION_ASSET_ID,
+            assetSource = COLUMN_ASSET_SOURCE,
+            destinationAssetSource = COLUMN_DESTINATION_ASSET_SOURCE,
+            photoUri = COLUMN_PHOTO_URI,
+            photoUris = COLUMN_PHOTO_URIS,
+            sortOrder = COLUMN_SORT_ORDER,
+            photoUriSeparator = PHOTO_URI_SEPARATOR
+        )
 
         private const val TABLE_RECURRING_RECORDS = "recurring_records"
         private const val COLUMN_RECURRING_ID = "id"
@@ -105,6 +147,32 @@ class DatabaseHelper(
         private const val COLUMN_RECURRING_END_DATE = "end_date"
         private const val COLUMN_RECURRING_ENABLED = "enabled"
         private const val COLUMN_RECURRING_NEXT_DUE_DATE = "next_due_date"
+        private val RECURRING_RECORD_COLUMNS = RecurringRecordRepository.Columns(
+            table = TABLE_RECURRING_RECORDS,
+            id = COLUMN_RECURRING_ID,
+            ledgerId = COLUMN_LEDGER_ID,
+            type = COLUMN_RECURRING_TYPE,
+            name = COLUMN_RECURRING_NAME,
+            amount = COLUMN_RECURRING_AMOUNT,
+            categoryId = COLUMN_RECURRING_CATEGORY_ID,
+            categoryName = COLUMN_RECURRING_CATEGORY_NAME,
+            categoryPath = COLUMN_RECURRING_CATEGORY_PATH,
+            assetId = COLUMN_RECURRING_ASSET_ID,
+            assetSource = COLUMN_RECURRING_ASSET_SOURCE,
+            destinationAssetId = COLUMN_RECURRING_DESTINATION_ASSET_ID,
+            destinationAssetSource = COLUMN_RECURRING_DESTINATION_ASSET_SOURCE,
+            note = COLUMN_RECURRING_NOTE,
+            frequency = COLUMN_RECURRING_FREQUENCY,
+            weeklyDay = COLUMN_RECURRING_WEEKLY_DAY,
+            monthlyDay = COLUMN_RECURRING_MONTHLY_DAY,
+            yearlyMonth = COLUMN_RECURRING_YEARLY_MONTH,
+            yearlyDay = COLUMN_RECURRING_YEARLY_DAY,
+            intervalDays = COLUMN_RECURRING_INTERVAL_DAYS,
+            startDate = COLUMN_RECURRING_START_DATE,
+            endDate = COLUMN_RECURRING_END_DATE,
+            enabled = COLUMN_RECURRING_ENABLED,
+            nextDueDate = COLUMN_RECURRING_NEXT_DUE_DATE
+        )
 
         private const val TABLE_LEDGERS = "ledgers"
         private const val COLUMN_LEDGER_NAME = "name"
@@ -1229,61 +1297,11 @@ class DatabaseHelper(
         )
     }
 
-    private fun createRecordValues(record: Record): ContentValues {
-        val categoryNameSnapshot = record.categoryNameSnapshot ?: record.category
-        val categoryPathSnapshot = record.categoryPathSnapshot ?: record.category
+    private fun createRecordValues(record: Record): ContentValues =
+        RecordSqlMapper.toContentValues(record, currentLedgerId(), RECORD_SQL_COLUMNS)
 
-        return ContentValues().apply {
-            put(COLUMN_LEDGER_ID, currentLedgerId())
-            put(COLUMN_DATE, record.date)
-            put(COLUMN_AMOUNT, requireNotNull(Money.toMinor(record.amount)))
-            put(COLUMN_CATEGORY, record.category)
-            if (record.categoryId != null) {
-                put(COLUMN_RECORD_CATEGORY_ID, record.categoryId)
-            } else {
-                putNull(COLUMN_RECORD_CATEGORY_ID)
-            }
-            put(COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT, categoryNameSnapshot)
-            put(COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT, categoryPathSnapshot)
-            put(COLUMN_TYPE, record.type)
-            put(COLUMN_DESCRIPTION, record.description)
-            put(COLUMN_RECORD_FEE, if (record.type == 2) requireNotNull(Money.toMinor(record.fee)) else 0L)
-            putNullable(COLUMN_RECORD_ASSET_ID, record.assetId)
-            putNullable(COLUMN_RECORD_DESTINATION_ASSET_ID, record.destinationAssetId)
-            put(COLUMN_ASSET_SOURCE, record.assetSource)
-            put(COLUMN_DESTINATION_ASSET_SOURCE, record.destinationAssetSource)
-            put(COLUMN_PHOTO_URI, record.photoUri)
-            put(COLUMN_PHOTO_URIS, record.photoUris.joinToString(PHOTO_URI_SEPARATOR))
-        }
-    }
-
-    private fun createRecordFromCursor(cursor: Cursor): Record {
-        return Record(
-            id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID)),
-            date = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DATE)),
-            amount = Money.toMajorDouble(cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_AMOUNT))),
-            category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY)),
-            categoryId = getNullableLong(cursor, COLUMN_RECORD_CATEGORY_ID),
-            categoryNameSnapshot = getNullableString(cursor, COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT),
-            categoryPathSnapshot = getNullableString(cursor, COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT),
-            type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TYPE)),
-            description = getNullableString(cursor, COLUMN_DESCRIPTION),
-            fee = Money.toMajorDouble(cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_RECORD_FEE))),
-            assetId = getNullableLong(cursor, COLUMN_RECORD_ASSET_ID),
-            destinationAssetId = getNullableLong(cursor, COLUMN_RECORD_DESTINATION_ASSET_ID),
-            assetSource = getNullableString(cursor, COLUMN_ASSET_SOURCE),
-            destinationAssetSource = getNullableString(cursor, COLUMN_DESTINATION_ASSET_SOURCE),
-            photoUri = getNullableString(cursor, COLUMN_PHOTO_URI),
-            photoUris = getNullableString(cursor, COLUMN_PHOTO_URIS)
-                ?.split(PHOTO_URI_SEPARATOR)
-                ?.filter { it.isNotBlank() }
-                ?.ifEmpty { getNullableString(cursor, COLUMN_PHOTO_URI)?.let(::listOf) ?: emptyList() }
-                ?: getNullableString(cursor, COLUMN_PHOTO_URI)?.let(::listOf)
-                ?: emptyList(),
-            ledgerId = getNullableLong(cursor, COLUMN_LEDGER_ID),
-            sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_SORT_ORDER))
-        )
-    }
+    private fun createRecordFromCursor(cursor: Cursor): Record =
+        RecordSqlMapper.fromCursor(cursor, RECORD_SQL_COLUMNS)
 
     private fun createCategoryFromCursor(cursor: Cursor): Category {
         return Category(
@@ -1500,120 +1518,21 @@ class DatabaseHelper(
         }
     }
 
-    fun getRecurringRecords(): List<RecurringRecord> {
-        val result = mutableListOf<RecurringRecord>()
-        readableDatabase.rawQuery(
-            "SELECT * FROM $TABLE_RECURRING_RECORDS WHERE $COLUMN_LEDGER_ID = ? ORDER BY $COLUMN_RECURRING_ENABLED DESC, $COLUMN_RECURRING_NEXT_DUE_DATE, $COLUMN_RECURRING_ID",
-            arrayOf(currentLedgerId().toString())
-        ).use { cursor ->
-            while (cursor.moveToNext()) result += createRecurringRecordFromCursor(cursor)
-        }
-        return result
-    }
+    fun getRecurringRecords(): List<RecurringRecord> = recurringRepository.getForCurrentLedger()
 
-    fun getAllRecurringRecords(): List<RecurringRecord> {
-        val result = mutableListOf<RecurringRecord>()
-        readableDatabase.rawQuery(
-            "SELECT * FROM $TABLE_RECURRING_RECORDS ORDER BY $COLUMN_RECURRING_ENABLED DESC, $COLUMN_RECURRING_NEXT_DUE_DATE, $COLUMN_RECURRING_ID",
-            null
-        ).use { cursor ->
-            while (cursor.moveToNext()) result += createRecurringRecordFromCursor(cursor)
-        }
-        return result
-    }
+    fun getAllRecurringRecords(): List<RecurringRecord> = recurringRepository.getAll()
 
-    fun getRecurringRecord(id: Long): RecurringRecord? =
-        readableDatabase.rawQuery(
-            "SELECT * FROM $TABLE_RECURRING_RECORDS WHERE $COLUMN_ID = ? AND $COLUMN_LEDGER_ID = ?",
-            arrayOf(id.toString(), currentLedgerId().toString())
-        ).use { cursor ->
-            if (cursor.moveToFirst()) createRecurringRecordFromCursor(cursor) else null
-        }
+    fun getRecurringRecord(id: Long): RecurringRecord? = recurringRepository.getForCurrentLedger(id)
 
-    fun getRecurringRecordById(id: Long): RecurringRecord? =
-        readableDatabase.rawQuery(
-            "SELECT * FROM $TABLE_RECURRING_RECORDS WHERE $COLUMN_ID = ?",
-            arrayOf(id.toString())
-        ).use { cursor ->
-            if (cursor.moveToFirst()) createRecurringRecordFromCursor(cursor) else null
-        }
+    fun getRecurringRecordById(id: Long): RecurringRecord? = recurringRepository.getById(id)
 
-    fun saveRecurringRecord(recurring: RecurringRecord): Long {
-        require(recurring.type in 0..2)
-        require(recurring.name.isNotBlank())
-        require(recurring.amountMinor > 0L)
-        require(recurring.frequency in setOf(RecurringRecord.DAILY, RecurringRecord.WEEKLY, RecurringRecord.MONTHLY, RecurringRecord.YEARLY, RecurringRecord.INTERVAL))
-        require(recurring.startDate.isNotBlank() && recurring.nextDueDate.isNotBlank())
-        val db = writableDatabase
-        val ledgerId = recurring.ledgerId.takeIf { it > 0L } ?: currentLedgerId()
-        recurring.categoryId?.let { categoryId ->
-            val category = getCategoryByIdInternal(db, categoryId) ?: error("Category missing")
-            require(recurring.type != 2 && category.type == recurring.type && !categoryHasChildren(db, categoryId))
-        }
-            recurring.assetId?.let { assetId ->
-            require(db.rawQuery(
-                "SELECT 1 FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
-                arrayOf(ledgerId.toString(), assetId.toString())
-            ).use { it.moveToFirst() })
-        }
-        recurring.destinationAssetId?.let { destinationAssetId ->
-            require(recurring.type == 2 && destinationAssetId != recurring.assetId)
-            require(db.rawQuery(
-                "SELECT 1 FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
-                arrayOf(ledgerId.toString(), destinationAssetId.toString())
-            ).use { it.moveToFirst() })
-        }
-        if (recurring.type == 2) require(recurring.assetId != null && recurring.destinationAssetId != null)
-        val values = ContentValues().apply {
-            put(COLUMN_LEDGER_ID, ledgerId)
-            put(COLUMN_RECURRING_TYPE, recurring.type)
-            put(COLUMN_RECURRING_NAME, recurring.name.trim())
-            put(COLUMN_RECURRING_AMOUNT, recurring.amountMinor)
-            putNullable(COLUMN_RECURRING_CATEGORY_ID, recurring.categoryId)
-            put(COLUMN_RECURRING_CATEGORY_NAME, recurring.categoryName)
-            put(COLUMN_RECURRING_CATEGORY_PATH, recurring.categoryPath)
-            putNullable(COLUMN_RECURRING_ASSET_ID, recurring.assetId)
-            put(COLUMN_RECURRING_ASSET_SOURCE, recurring.assetSource)
-            putNullable(COLUMN_RECURRING_DESTINATION_ASSET_ID, recurring.destinationAssetId)
-            put(COLUMN_RECURRING_DESTINATION_ASSET_SOURCE, recurring.destinationAssetSource)
-            put(COLUMN_RECURRING_NOTE, recurring.note)
-            put(COLUMN_RECURRING_FREQUENCY, recurring.frequency)
-            putNullable(COLUMN_RECURRING_WEEKLY_DAY, recurring.weeklyDay?.toLong())
-            putNullable(COLUMN_RECURRING_MONTHLY_DAY, recurring.monthlyDay?.toLong())
-            putNullable(COLUMN_RECURRING_YEARLY_MONTH, recurring.yearlyMonth?.toLong())
-            putNullable(COLUMN_RECURRING_YEARLY_DAY, recurring.yearlyDay?.toLong())
-            putNullable(COLUMN_RECURRING_INTERVAL_DAYS, recurring.intervalDays?.toLong())
-            put(COLUMN_RECURRING_START_DATE, recurring.startDate)
-            put(COLUMN_RECURRING_END_DATE, recurring.endDate)
-            put(COLUMN_RECURRING_ENABLED, if (recurring.enabled) 1 else 0)
-            put(COLUMN_RECURRING_NEXT_DUE_DATE, recurring.nextDueDate)
-        }
-        return if (recurring.id == 0L) {
-            db.insertOrThrow(TABLE_RECURRING_RECORDS, null, values)
-        } else {
-            check(db.update(TABLE_RECURRING_RECORDS, values, "$COLUMN_ID = ?", arrayOf(recurring.id.toString())) == 1)
-            recurring.id
-        }
-    }
+    fun saveRecurringRecord(recurring: RecurringRecord): Long = recurringRepository.save(recurring)
 
-    fun setRecurringEnabled(id: Long, enabled: Boolean): Boolean =
-        writableDatabase.update(
-            TABLE_RECURRING_RECORDS,
-            ContentValues().apply { put(COLUMN_RECURRING_ENABLED, if (enabled) 1 else 0) },
-            "$COLUMN_ID = ?",
-            arrayOf(id.toString())
-        ) == 1
+    fun setRecurringEnabled(id: Long, enabled: Boolean): Boolean = recurringRepository.setEnabled(id, enabled)
 
-    fun deleteRecurringRecord(id: Long): Boolean =
-        writableDatabase.delete(TABLE_RECURRING_RECORDS, "$COLUMN_ID = ?", arrayOf(id.toString())) == 1
+    fun deleteRecurringRecord(id: Long): Boolean = recurringRepository.delete(id)
 
-    fun getEarliestRecurringDueDate(): String? =
-        readableDatabase.rawQuery(
-            "SELECT MIN($COLUMN_RECURRING_NEXT_DUE_DATE) FROM $TABLE_RECURRING_RECORDS WHERE $COLUMN_RECURRING_ENABLED = 1",
-            null
-        ).use { cursor ->
-            if (cursor.moveToFirst()) cursor.getString(0) else null
-        }
+    fun getEarliestRecurringDueDate(): String? = recurringRepository.getEarliestDueDate()
 
     /** Repairs stale due dates left behind when a recurring rule was changed. */
     fun repairInvalidRecurringNextDueDates(today: String = getCurrentDate()): Int =
@@ -1623,14 +1542,9 @@ class DatabaseHelper(
             getLedgers().forEach { ledger ->
                 LedgerSession.setCurrentId(appContext, ledger.id)
                 getRecurringRecords().forEach { template ->
-                    val normalized = normalizeRecurringDueDate(template.nextDueDate, template)
+                    val normalized = RecurringScheduleCalculator.normalizeDueDate(template.nextDueDate, template)
                     if (normalized != template.nextDueDate) {
-                        writableDatabase.update(
-                            TABLE_RECURRING_RECORDS,
-                            ContentValues().apply { put(COLUMN_RECURRING_NEXT_DUE_DATE, normalized) },
-                            "$COLUMN_ID = ? AND $COLUMN_LEDGER_ID = ?",
-                            arrayOf(template.id.toString(), ledger.id.toString())
-                        )
+                        recurringRepository.updateNextDueDate(template.id, ledger.id, normalized)
                         repaired++
                     }
                 }
@@ -1661,7 +1575,7 @@ class DatabaseHelper(
     private fun processDueRecurringRecordsForCurrentLedger(today: String): Int {
         var generated = 0
         getRecurringRecords().filter { it.enabled }.forEach { template ->
-            var due = normalizeRecurringDueDate(template.nextDueDate, template)
+            var due = RecurringScheduleCalculator.normalizeDueDate(template.nextDueDate, template)
             while (due <= today && (template.endDate == null || due <= template.endDate!!)) {
                 val recordId = addRecord(Record(
                     date = due,
@@ -1680,119 +1594,18 @@ class DatabaseHelper(
                 ))
                 if (recordId <= 0L) break
                 generated++
-                due = nextRecurringDate(due, template)
+                due = RecurringScheduleCalculator.nextDate(due, template)
             }
             val stillActive = template.endDate == null || due <= template.endDate!!
-            val db = writableDatabase
-            db.update(
-                TABLE_RECURRING_RECORDS,
-                ContentValues().apply {
-                    put(COLUMN_RECURRING_NEXT_DUE_DATE, due)
-                    if (!stillActive) put(COLUMN_RECURRING_ENABLED, 0)
-                },
-                "$COLUMN_ID = ? AND $COLUMN_LEDGER_ID = ?",
-                arrayOf(template.id.toString(), currentLedgerId().toString())
+            recurringRepository.updateNextDueDate(
+                template.id,
+                currentLedgerId(),
+                due,
+                enabled = if (stillActive) null else false
             )
         }
         return generated
     }
-
-    private fun nextRecurringDate(date: String, recurring: RecurringRecord): String {
-        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
-        val calendar = java.util.Calendar.getInstance().apply { time = parser.parse(date)!! }
-        when (recurring.frequency) {
-            RecurringRecord.WEEKLY -> calendar.add(java.util.Calendar.DAY_OF_YEAR, 7)
-            RecurringRecord.MONTHLY -> {
-                val day = recurring.monthlyDay ?: calendar.get(java.util.Calendar.DAY_OF_MONTH)
-                do {
-                    calendar.add(java.util.Calendar.MONTH, 1)
-                    val maximum = calendar.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
-                    if (day <= maximum) {
-                        calendar.set(java.util.Calendar.DAY_OF_MONTH, day)
-                        break
-                    }
-                } while (true)
-            }
-            RecurringRecord.YEARLY -> {
-                val month = (recurring.yearlyMonth ?: calendar.get(java.util.Calendar.MONTH) + 1) - 1
-                val day = recurring.yearlyDay ?: calendar.get(java.util.Calendar.DAY_OF_MONTH)
-                do {
-                    calendar.add(java.util.Calendar.YEAR, 1)
-                    calendar.set(java.util.Calendar.MONTH, month)
-                    val maximum = calendar.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
-                    if (day <= maximum) {
-                        calendar.set(java.util.Calendar.DAY_OF_MONTH, day)
-                        break
-                    }
-                } while (true)
-            }
-            RecurringRecord.INTERVAL -> calendar.add(java.util.Calendar.DAY_OF_YEAR, (recurring.intervalDays ?: 1).coerceAtLeast(1))
-            else -> calendar.add(java.util.Calendar.DAY_OF_YEAR, 1)
-        }
-        return parser.format(calendar.time)
-    }
-
-    private fun normalizeRecurringDueDate(date: String, recurring: RecurringRecord): String {
-        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
-        val calendar = java.util.Calendar.getInstance().apply { time = parser.parse(date)!! }
-        var attempts = 0
-        while (!matchesRecurringDate(calendar, recurring) && attempts < 4000) {
-            calendar.add(java.util.Calendar.DAY_OF_YEAR, 1)
-            attempts++
-        }
-        return parser.format(calendar.time)
-    }
-
-    private fun matchesRecurringDate(calendar: java.util.Calendar, recurring: RecurringRecord): Boolean {
-        return when (recurring.frequency) {
-            RecurringRecord.WEEKLY -> {
-                val day = if (calendar.get(java.util.Calendar.DAY_OF_WEEK) == java.util.Calendar.SUNDAY) 7
-                else calendar.get(java.util.Calendar.DAY_OF_WEEK) - 1
-                day == (recurring.weeklyDay ?: day)
-            }
-            RecurringRecord.MONTHLY -> {
-                val day = recurring.monthlyDay
-                day == null || if (day == 0) {
-                    calendar.get(java.util.Calendar.DAY_OF_MONTH) == calendar.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
-                } else {
-                    calendar.get(java.util.Calendar.DAY_OF_MONTH) == day
-                }
-            }
-            RecurringRecord.YEARLY -> {
-                val month = recurring.yearlyMonth
-                val day = recurring.yearlyDay
-                (month == null || calendar.get(java.util.Calendar.MONTH) + 1 == month) &&
-                    (day == null || calendar.get(java.util.Calendar.DAY_OF_MONTH) == day)
-            }
-            else -> true
-        }
-    }
-
-    private fun createRecurringRecordFromCursor(cursor: Cursor): RecurringRecord = RecurringRecord(
-        id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_RECURRING_ID)),
-        ledgerId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_LEDGER_ID)),
-        type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RECURRING_TYPE)),
-        name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RECURRING_NAME)),
-        amountMinor = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_RECURRING_AMOUNT)),
-        categoryId = getNullableLong(cursor, COLUMN_RECURRING_CATEGORY_ID),
-        categoryName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RECURRING_CATEGORY_NAME)),
-        categoryPath = getNullableString(cursor, COLUMN_RECURRING_CATEGORY_PATH),
-        assetId = getNullableLong(cursor, COLUMN_RECURRING_ASSET_ID),
-        assetSource = getNullableString(cursor, COLUMN_RECURRING_ASSET_SOURCE),
-        destinationAssetId = getNullableLong(cursor, COLUMN_RECURRING_DESTINATION_ASSET_ID),
-        destinationAssetSource = getNullableString(cursor, COLUMN_RECURRING_DESTINATION_ASSET_SOURCE),
-        note = getNullableString(cursor, COLUMN_RECURRING_NOTE),
-        frequency = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RECURRING_FREQUENCY)),
-        weeklyDay = getNullableInt(cursor, COLUMN_RECURRING_WEEKLY_DAY),
-        monthlyDay = getNullableInt(cursor, COLUMN_RECURRING_MONTHLY_DAY),
-        yearlyMonth = getNullableInt(cursor, COLUMN_RECURRING_YEARLY_MONTH),
-        yearlyDay = getNullableInt(cursor, COLUMN_RECURRING_YEARLY_DAY),
-        intervalDays = getNullableInt(cursor, COLUMN_RECURRING_INTERVAL_DAYS),
-        startDate = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RECURRING_START_DATE)),
-        endDate = getNullableString(cursor, COLUMN_RECURRING_END_DATE),
-        enabled = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_RECURRING_ENABLED)) == 1,
-        nextDueDate = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_RECURRING_NEXT_DUE_DATE))
-    )
 
     private fun validateRecordForWrite(db: SQLiteDatabase, record: Record) {
         require(record.type in 0..2) { "Unsupported record type" }
@@ -2373,29 +2186,7 @@ class DatabaseHelper(
         val categories = getCategoriesByTypeInternal(db, type)
         db.close()
 
-        if (categories.isEmpty()) {
-            return emptyList()
-        }
-
-        val categoriesByParentId = categories.groupBy { parentId ->
-            val parentExists = parentId.parentId != null && categories.any { it.id == parentId.parentId }
-            if (parentExists) {
-                parentId.parentId
-            } else {
-                null
-            }
-        }
-        val orderedCategories = mutableListOf<Category>()
-
-        fun appendChildren(parentId: Long?) {
-            categoriesByParentId[parentId]?.forEach { category ->
-                orderedCategories.add(category)
-                appendChildren(category.id)
-            }
-        }
-
-        appendChildren(null)
-        return orderedCategories
+        return CategoryTreeOrdering.order(categories)
     }
 
     private fun ensureDefaultCategoriesForCurrentLedger(db: SQLiteDatabase) {

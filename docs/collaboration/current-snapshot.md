@@ -2,9 +2,13 @@
 
 ## 当前有效快照
 
+- 2026-09-23：录入与重复记账的共享资产选择器改为 `FragmentResult` 回传资产 ID 和转入选择标志，普通录入及重复记账页分别用 view 生命周期订阅；弹层显示与关闭时普通录入页仍恢复键盘状态。重复任务页已去掉按子视图索引修改分隔线的运行时代码，并改为滚动区域与固定金额键盘在垂直方向各自占位，防止状态行被键盘覆盖。定向测试通过；此前一次 129 项全套超过 8 分钟未结束，但 2026-09-23 后续完整复跑已 130/130 通过（约 59 秒），超时未复现。日常 APK 已覆盖安装，真机核对重复任务状态行滚到键盘上方、普通录入转账双资产和重复任务资产选择结果。`fragment_add_record.xml` 当前不用于生产录入页，但仍由部分设备布局测试引用，不应直接删除。
+
+- 2026-09-23：继续提取录入、统计和数据库边界：新增纯 Kotlin `RecordEntryValidator` 统一金额、手续费、叶子分类及双资产转账校验；新增 `RecurringScheduleCalculator` 集中初次到期日、缺失日跳过、间隔和后续日期计算，`DatabaseHelper` 与重复任务编辑页均调用该计算器；统计分类父子聚合及排名迁至 `StatisticsRankingBuilder`；记录 SQLite `ContentValues` 与 Cursor 映射移至 `RecordSqlMapper`，分类树排序移至 `CategoryTreeOrdering`；重复任务读写、校验、Cursor/ContentValues 映射迁至 `RecurringRecordRepository`，`DatabaseHelper` 保留原兼容 API 和跨账本记录生成编排。单元测试覆盖调度、录入校验、统计聚合和分类树；全套隔离设备测试 **130/130 通过，约 59 秒**。分类一级卡片描边按 `DESIGN.md` 归零；`verify-ux-resources.ps1` 检查 84 个布局及 60 个引用布局通过。日常 Debug APK 已覆盖安装并确认 `MainActivity` 启动。
+
 - 2026-09-20：重复记账功能已落地：支持每日/每周/每月/每年/间隔周期、结束日期、启停、跨账本展示，以及支出/收入/转账任务；转账任务分别保存转出与转入资产 ID，资产选择范围按任务账本过滤，选择任务账本不会切换应用当前账本。每月 31 日和每年 2 月 29 日在目标日期不存在时跳过执行。相关实现位于 `RecurringRecordEditFragment`、`RecurringRecordsFragment`、`RecurringRecordScheduler`、`RecurringRecordWorker` 与 `DatabaseHelper`。
 
-- 2026-09-20：修复普通「记一笔」转账资产点击无效的回归。根因是共享 `RecordAssetPickerBottomSheetFragment` 为支持重复记账改用宿主接口后，`AddRecordFragment` 未实现该接口，导致原有 `onAssetPickerSelected(assetId, selectDestination)` 回调丢失；同时关闭回调也不能恢复普通记账页状态。当前选择器按宿主分流：`AddRecordFragment` 走旧回调，重复记账走 `SelectionTarget`，并保留资产面板关闭后的状态恢复。
+- 2026-09-20：曾修复普通「记一笔」转账资产点击无效的回归：当时共享选择器改用宿主接口后，普通录入页未收到选中回调；弹层关闭还需恢复金额键盘。后续回调契约已由 2026-09-23 项改为 `FragmentResult`，不再按宿主类型分流选择事件。
 
 - 2026-09-20：分类面板一级分类卡片保持白色：`item_record_category_group.xml` 显式设置卡片、标题区域和子分类区域为白色，并在 `RecordCategoryGroupAdapter` 绑定时清除 MaterialCardView 前景层与运行时背景覆盖。该视觉修复已完成 Debug/Release 构建并安装验证。
 

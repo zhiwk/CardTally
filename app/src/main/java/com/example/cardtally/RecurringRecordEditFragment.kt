@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.GridLayout
 import android.widget.LinearLayout
@@ -21,7 +22,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.example.cardtally.database.DatabaseHelper
-import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.RecurringRecord
 import com.example.cardtally.adapter.RecordCategoryTreeAdapter
@@ -30,7 +30,10 @@ import com.example.cardtally.adapter.CategorySelectorAdapter
 import com.example.cardtally.util.LedgerSession
 import com.example.cardtally.util.Money
 import com.example.cardtally.util.RecurringRecordScheduler
+import com.example.cardtally.util.RecurringScheduleCalculator
 import com.example.cardtally.util.DateSelectionSheet
+import com.example.cardtally.util.AmountKeypadController
+import com.example.cardtally.util.AmountKeypadCompletionMode
 import com.example.cardtally.util.TablerIconCatalog
 import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
@@ -39,7 +42,7 @@ import java.util.Calendar
 import java.util.Locale
 import kotlin.math.roundToInt
 
-class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost, RecordAssetPickerBottomSheetFragment.SelectionTarget {
+class RecurringRecordEditFragment : Fragment() {
     private lateinit var database: DatabaseHelper
     private var recurringId: Long? = null
     private var type = 0
@@ -62,7 +65,7 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
     private var startDate = today()
     private var endDate: String? = null
     private lateinit var switchEnabled: Switch
-    private lateinit var textType: View
+    private lateinit var typeSegments: List<TextView>
     private lateinit var textLedger: View
     private lateinit var textCategory: View
     private lateinit var textAsset: View
@@ -70,7 +73,6 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
     private lateinit var textFrequency: View
     private lateinit var textStart: View
     private lateinit var textEnd: View
-    private lateinit var valueType: TextView
     private lateinit var valueLedger: TextView
     private lateinit var valueCategory: TextView
     private lateinit var valueAsset: TextView
@@ -81,6 +83,7 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
     private lateinit var editName: EditText
     private lateinit var editAmount: EditText
     private lateinit var editNote: EditText
+    private lateinit var amountKeypadController: AmountKeypadController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,7 +94,11 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
         val view = inflater.inflate(R.layout.fragment_recurring_record_edit, container, false)
         database = DatabaseHelper(requireContext())
         switchEnabled = view.findViewById(R.id.switch_recurring_enabled)
-        textType = view.findViewById(R.id.text_recurring_type)
+        typeSegments = listOf(
+            view.findViewById(R.id.recurring_type_expense),
+            view.findViewById(R.id.recurring_type_income),
+            view.findViewById(R.id.recurring_type_transfer)
+        )
         textLedger = view.findViewById(R.id.text_recurring_ledger)
         textCategory = view.findViewById(R.id.text_recurring_category)
         textAsset = view.findViewById(R.id.text_recurring_asset)
@@ -99,7 +106,6 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
         textFrequency = view.findViewById(R.id.text_recurring_frequency)
         textStart = view.findViewById(R.id.text_recurring_start_date)
         textEnd = view.findViewById(R.id.text_recurring_end_date)
-        valueType = view.findViewById(R.id.value_recurring_type)
         valueLedger = view.findViewById(R.id.value_recurring_ledger)
         valueCategory = view.findViewById(R.id.value_recurring_category)
         valueAsset = view.findViewById(R.id.value_recurring_asset)
@@ -110,6 +116,15 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
         editName = view.findViewById(R.id.edit_recurring_name)
         editAmount = view.findViewById(R.id.edit_recurring_amount)
         editNote = view.findViewById(R.id.edit_recurring_note)
+        editName.layoutParams = editName.layoutParams.apply { width = ViewGroup.LayoutParams.MATCH_PARENT }
+        amountKeypadController = AmountKeypadController(
+            requireContext(),
+            editAmount,
+            view.findViewById(R.id.layout_amount_keypad),
+            normalActions = null,
+            onConfirm = { },
+            completionMode = AmountKeypadCompletionMode.DISMISS_KEYPAD
+        ).also { it.bind() }
         val title = view.findViewById<TextView>(R.id.text_recurring_edit_title)
         val delete = view.findViewById<View>(R.id.btn_recurring_delete)
 
@@ -123,17 +138,47 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
         bindLabels()
 
         view.findViewById<View>(R.id.btn_recurring_edit_back).setOnClickListener { parentFragmentManager.popBackStack() }
-        textType.setOnClickListener { chooseType() }
-        textLedger.setOnClickListener { chooseLedger() }
-        textCategory.setOnClickListener { chooseCategory() }
-        textAsset.setOnClickListener { chooseAsset() }
-        textDestinationAsset.setOnClickListener { chooseAsset(selectDestination = true) }
-        textFrequency.setOnClickListener { chooseFrequency() }
-        textStart.setOnClickListener { chooseDate(false) }
-        textEnd.setOnClickListener { chooseDate(true) }
+        typeSegments.forEachIndexed { index, segment -> segment.setOnClickListener { selectType(index) } }
+        textLedger.setOnClickListener { prepareForSelector(); chooseLedger() }
+        textCategory.setOnClickListener { prepareForSelector(); chooseCategory() }
+        textAsset.setOnClickListener { prepareForSelector(); chooseAsset() }
+        textDestinationAsset.setOnClickListener { prepareForSelector(); chooseAsset(selectDestination = true) }
+        textFrequency.setOnClickListener { prepareForSelector(); chooseFrequency() }
+        textStart.setOnClickListener { prepareForSelector(); chooseDate(false) }
+        textEnd.setOnClickListener { prepareForSelector(); chooseDate(true) }
         view.findViewById<View>(R.id.btn_recurring_save).setOnClickListener { save() }
         delete.setOnClickListener { confirmDelete() }
+        editName.setOnEditorActionListener { _, _, _ ->
+            editNote.requestFocus()
+            true
+        }
+        listOf(editName, editNote).forEach { input ->
+            input.setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus && ::amountKeypadController.isInitialized) amountKeypadController.hide()
+            }
+        }
+        editNote.setOnEditorActionListener { _, _, _ ->
+            prepareForSelector()
+            true
+        }
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        parentFragmentManager.setFragmentResultListener(
+            RecordAssetPickerBottomSheetFragment.RESULT_KEY,
+            viewLifecycleOwner
+        ) { _, result ->
+            val asset = database.getAllAssets(ledgerId).firstOrNull {
+                it.id == result.getLong(RecordAssetPickerBottomSheetFragment.RESULT_ASSET_ID)
+            } ?: return@setFragmentResultListener
+            onAssetPickerSelected(
+                asset.id,
+                asset.name,
+                result.getBoolean(RecordAssetPickerBottomSheetFragment.RESULT_SELECT_DESTINATION)
+            )
+        }
     }
 
     override fun onDestroyView() {
@@ -162,43 +207,37 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
         endDate = item.endDate
         switchEnabled.isChecked = item.enabled
         editName.setText(item.name)
-        editAmount.setText(Money.formatYuan(item.amountMinor))
+        editAmount.setText(if (item.amountMinor > 0L) Money.formatYuan(item.amountMinor) else "")
         editNote.setText(item.note.orEmpty())
     }
 
     private fun bindLabels() {
-        valueType.text = if (type == 0) getString(R.string.recurring_type_expense) else getString(R.string.recurring_type_income)
         valueLedger.text = ledgerName.ifBlank { database.getCurrentLedger()?.name ?: getString(R.string.recurring_select) }
         valueCategory.text = categoryName.ifBlank { getString(R.string.recurring_select) }
         valueAsset.text = assetSource ?: getString(R.string.recurring_select)
         valueDestinationAsset.text = destinationAssetSource ?: getString(R.string.recurring_select)
         textCategory.visibility = if (type == 2) View.GONE else View.VISIBLE
+        view?.findViewById<View>(R.id.divider_recurring_category)?.visibility = if (type == 2) View.GONE else View.VISIBLE
         textAsset.visibility = View.VISIBLE
         textDestinationAsset.visibility = if (type == 2) View.VISIBLE else View.GONE
-        view?.findViewById<TextView>(R.id.label_recurring_category)?.text = if (type == 2) "" else getString(R.string.recurring_category)
-        view?.findViewById<TextView>(R.id.label_recurring_asset)?.text = if (type == 2) "转出账户" else getString(R.string.recurring_asset)
-        valueType.text = when (type) {
-            1 -> getString(R.string.recurring_type_income)
-            2 -> "转账"
-            else -> getString(R.string.recurring_type_expense)
-        }
+        view?.findViewById<View>(R.id.divider_recurring_destination_asset)?.visibility = if (type == 2) View.VISIBLE else View.GONE
+        view?.findViewById<TextView>(R.id.label_recurring_asset)?.text = if (type == 2) getString(R.string.recurring_source_asset) else getString(R.string.recurring_asset)
         valueFrequency.text = frequencyLabel()
         valueStart.text = startDate
         valueEnd.text = endDate ?: getString(R.string.recurring_no_end)
+        typeSegments.forEachIndexed { index, segment -> segment.isActivated = index == type }
     }
 
-    private fun chooseType() {
-        showSimpleSelectionSheet("类型", listOf(getString(R.string.recurring_type_expense), getString(R.string.recurring_type_income), "转账"), type) { which ->
-                type = which
-                categoryId = null
-                categoryName = ""
-                categoryPath = null
-                if (type != 2) {
-                    destinationAssetId = null
-                    destinationAssetSource = null
-                }
-                bindLabels()
-            }
+    private fun selectType(which: Int) {
+        type = which
+        categoryId = null
+        categoryName = ""
+        categoryPath = null
+        if (type != 2) {
+            destinationAssetId = null
+            destinationAssetSource = null
+        }
+        bindLabels()
     }
 
     private fun chooseLedger() {
@@ -208,7 +247,26 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(12), dp(16), dp(24))
         }
-        content.addView(TextView(requireContext()).apply { text = "选择账本"; textSize = 22f; setTextColor(themeColor(com.google.android.material.R.attr.colorOnSurface)); setPadding(0, dp(8), 0, dp(12)) })
+        content.addView(View(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(44), dp(4)).apply { gravity = android.view.Gravity.CENTER_HORIZONTAL; bottomMargin = dp(8) }
+            setBackgroundResource(R.drawable.bg_bottom_sheet_handle)
+        })
+        content.addView(LinearLayout(requireContext()).apply {
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            addView(TextView(requireContext()).apply {
+                text = getString(R.string.recurring_select_ledger)
+                textSize = 22f
+                setTextColor(themeColor(com.google.android.material.R.attr.colorOnSurface))
+                layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f)
+            })
+            addView(ImageButton(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+                setBackgroundResource(android.R.color.transparent)
+                setImageResource(R.drawable.ic_close)
+                contentDescription = getString(R.string.dialog_cancel)
+                setOnClickListener { dialog.dismiss() }
+            })
+        })
         database.getLedgers().forEach { ledger ->
             val row = LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -240,9 +298,7 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
         }
         scroll.addView(content)
         dialog.setContentView(scroll)
-        dialog.behavior.skipCollapsed = true
-        dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-        dialog.show()
+        showStandardSheet(dialog)
     }
 
     private fun chooseCategory() {
@@ -251,7 +307,7 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
         val categories = database.getCategoryTreeByType(type)
         val recycler = sheet.findViewById<RecyclerView>(R.id.recycler_categories)
         val modeButton = sheet.findViewById<ImageButton>(R.id.btn_category_mode)
-        sheet.findViewById<TextView>(R.id.text_category_sheet_title).text = "选择分类"
+        sheet.findViewById<TextView>(R.id.text_category_sheet_title).text = getString(R.string.recurring_select_category)
         val select = { category: Category ->
             categoryId = category.id
             categoryName = category.name
@@ -280,7 +336,8 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
             renderCategoryPanel()
         }
         sheet.findViewById<View>(R.id.btn_close_sheet).setOnClickListener { dialog.dismiss() }
-        dialog.setContentView(sheet); dialog.show()
+        dialog.setContentView(sheet)
+        showStandardSheet(dialog)
     }
 
     private fun updateCategoryModeButton(button: ImageButton) {
@@ -323,31 +380,26 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
         updateFrequencyTabStyles(tabViews, draft)
         sheet.findViewById<View>(R.id.btn_recurring_sheet_cancel).setOnClickListener { dialog.dismiss() }
         sheet.findViewById<View>(R.id.btn_recurring_sheet_confirm).setOnClickListener { dialog.dismiss(); onSelected(draft) }
-        dialog.setContentView(sheet); dialog.show()
+        dialog.setContentView(sheet)
+        showStandardSheet(dialog)
     }
 
-    override fun onAssetSelected(asset: Asset) {
-        onAssetSelected(asset, false)
-    }
-
-    override fun onAssetSelected(asset: Asset, selectDestination: Boolean) {
+    private fun onAssetPickerSelected(assetId: Long, assetName: String, selectDestination: Boolean) {
         if (selectDestination) {
-            destinationAssetId = asset.id
-            destinationAssetSource = asset.name
+            destinationAssetId = assetId
+            destinationAssetSource = assetName
         } else {
-            assetId = asset.id
-            assetSource = asset.name
+            this.assetId = assetId
+            assetSource = assetName
         }
         bindLabels()
     }
-
-    override fun onAssetSelectionClosed() = Unit
 
     private fun chooseFrequency() {
         val dialog = BottomSheetDialog(requireContext())
         val sheet = layoutInflater.inflate(R.layout.bottom_sheet_recurring_frequency, null)
         sheet.background = recurringSheetBackground()
-        sheet.findViewById<TextView>(R.id.text_recurring_sheet_title).text = "选择周期"
+        sheet.findViewById<TextView>(R.id.text_recurring_sheet_title).text = getString(R.string.recurring_select_frequency)
         val tabs = sheet.findViewById<ViewGroup>(R.id.layout_recurring_sheet_tabs)
         val content = sheet.findViewById<ViewGroup>(R.id.layout_recurring_sheet_options)
         val values = listOf("每天", "每周", "每月", "每年", "每间隔")
@@ -413,15 +465,9 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
             intervalDays = draftIntervalDays
             dialog.dismiss()
             bindLabels()
-            if (frequency == RecurringRecord.MONTHLY && monthlyDay == 31) {
-                showRuleNotice("每月 31 日", "部分月份没有 31 日，这些月份将跳过，不自动按月末执行。")
-            } else if (frequency == RecurringRecord.YEARLY && yearlyMonth == 2 && yearlyDay == 29) {
-                showRuleNotice("每年 2 月 29 日", "2 月 29 日仅在闰年执行，非闰年将跳过。")
-            }
         }
         dialog.setContentView(sheet)
-        dialog.behavior.isFitToContents = true
-        dialog.show()
+        showStandardSheet(dialog)
     }
 
     private fun renderFrequencySheetContent(
@@ -487,6 +533,19 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
                 content.addView(row)
             }
         }
+        val warning = when {
+            selectedFrequency == RecurringRecord.MONTHLY && monthly == 31 -> getString(R.string.recurring_monthly_31_notice)
+            selectedFrequency == RecurringRecord.YEARLY && yearMonth == 2 && yearDay == 29 -> getString(R.string.recurring_yearly_leap_notice)
+            else -> null
+        }
+        warning?.let {
+            content.addView(TextView(requireContext()).apply {
+                text = it
+                textSize = 14f
+                setTextColor(requireContext().getColor(R.color.warning_primary))
+                setPadding(dp(12), dp(12), dp(12), 0)
+            })
+        }
     }
 
     private fun optionCell(label: String, selected: Boolean, height: Int, action: () -> Unit): TextView = TextView(requireContext()).apply {
@@ -533,9 +592,27 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
     private fun recurringSheetBackground() = GradientDrawable().apply {
         setColor(themeColor(com.google.android.material.R.attr.colorSurface))
         cornerRadii = floatArrayOf(
-            dp(24).toFloat(), dp(24).toFloat(), dp(24).toFloat(), dp(24).toFloat(),
+            dp(16).toFloat(), dp(16).toFloat(), dp(16).toFloat(), dp(16).toFloat(),
             0f, 0f, 0f, 0f
         )
+    }
+
+    private fun prepareForSelector() {
+        if (::amountKeypadController.isInitialized) amountKeypadController.hide()
+        view?.clearFocus()
+        activity?.currentFocus?.let { focused ->
+            (requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .hideSoftInputFromWindow(focused.windowToken, 0)
+            focused.clearFocus()
+        }
+    }
+
+    private fun showStandardSheet(dialog: BottomSheetDialog) {
+        dialog.show()
+        dialog.behavior.isFitToContents = true
+        dialog.behavior.skipCollapsed = true
+        dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        dialog.behavior.peekHeight = (resources.displayMetrics.heightPixels * 0.8f).roundToInt()
     }
 
     private fun showRuleNotice(title: String, message: String) {
@@ -560,7 +637,7 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
 
     private fun chooseDate(end: Boolean) {
         val value = (if (end) endDate else startDate) ?: today()
-        DateSelectionSheet.create(requireContext(), value) { selected ->
+        DateSelectionSheet.create(requireContext(), value, commitOnSelection = true) { selected ->
             if (end) {
                 endDate = selected
             } else {
@@ -647,37 +724,17 @@ class RecurringRecordEditFragment : Fragment(), AssetFragment.AssetSelectionHost
             existing.startDate != startDate
 
     private fun initialDueDate(): String {
-        val parser = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
-        val calendar = parseDate(startDate)
-        when (frequency) {
-            RecurringRecord.WEEKLY -> {
-                val target = weeklyDay ?: if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else calendar.get(Calendar.DAY_OF_WEEK) - 1
-                val current = if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else calendar.get(Calendar.DAY_OF_WEEK) - 1
-                calendar.add(Calendar.DAY_OF_YEAR, (target - current + 7) % 7)
-            }
-            RecurringRecord.MONTHLY -> {
-                val day = monthlyDay ?: calendar.get(Calendar.DAY_OF_MONTH)
-                if (day == 0) calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
-                else {
-                    while (day > calendar.getActualMaximum(Calendar.DAY_OF_MONTH)) calendar.add(Calendar.MONTH, 1)
-                    calendar.set(Calendar.DAY_OF_MONTH, day)
-                    if (calendar.time.before(parseDate(startDate).time)) calendar.add(Calendar.MONTH, 1)
-                }
-            }
-            RecurringRecord.YEARLY -> {
-                val month = (yearlyMonth ?: calendar.get(Calendar.MONTH) + 1) - 1
-                val day = yearlyDay ?: calendar.get(Calendar.DAY_OF_MONTH)
-                calendar.set(Calendar.MONTH, month)
-                calendar.set(Calendar.DAY_OF_MONTH, 1)
-                while (day > calendar.getActualMaximum(Calendar.DAY_OF_MONTH) || calendar.time.before(parseDate(startDate).time)) {
-                    calendar.add(Calendar.YEAR, 1)
-                    calendar.set(Calendar.MONTH, month)
-                    calendar.set(Calendar.DAY_OF_MONTH, 1)
-                }
-                calendar.set(Calendar.DAY_OF_MONTH, day)
-            }
-        }
-        return parser.format(calendar.time)
+        return RecurringScheduleCalculator.initialDueDate(
+            startDate,
+            RecurringRecord(
+                frequency = frequency,
+                weeklyDay = weeklyDay,
+                monthlyDay = monthlyDay,
+                yearlyMonth = yearlyMonth,
+                yearlyDay = yearlyDay,
+                intervalDays = intervalDays
+            )
+        )
     }
 
     companion object {

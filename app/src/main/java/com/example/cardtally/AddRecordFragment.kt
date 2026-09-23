@@ -47,6 +47,7 @@ import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
 import com.example.cardtally.state.RecordFormState
+import com.example.cardtally.state.RecordEntryValidator
 import com.example.cardtally.state.RecordSheet
 import com.example.cardtally.state.RecordType
 import com.example.cardtally.state.StableIdResolver
@@ -55,6 +56,7 @@ import com.example.cardtally.util.LedgerPeriodHelper
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.AmountKeypadController
+import com.example.cardtally.util.AmountKeypadCompletionMode
 import com.example.cardtally.util.EntryAmountLayoutController
 import com.example.cardtally.util.Money
 import com.example.cardtally.util.RecordEntryMode
@@ -215,18 +217,24 @@ open class AddRecordFragment : Fragment() {
         btnIncome = view.findViewById(R.id.btn_income)
         btnTransfer = view.findViewById(R.id.btn_transfer)
         btnClose = view.findViewById(R.id.btn_close)
-        btnSave = view.findViewById(R.id.btn_save)
+        btnSave = view.findViewById(R.id.keypad_confirm)
         btnSaveAndAdd = view.findViewById(R.id.btn_save_and_add)
         val amountKeypad = view.findViewById<View>(R.id.layout_amount_keypad)
         amountKeypadController = AmountKeypadController(
             requireContext(),
             editAmount,
             amountKeypad,
-            view.findViewById(R.id.layout_buttons),
+            normalActions = null,
             alwaysVisible = isQuickMode,
             onConfirm = {
-            editAmount.clearFocus()
-            }
+                saveRecord(true)
+            },
+            completionMode = AmountKeypadCompletionMode.SAVE_RECORD,
+            primaryLabel = { getString(if (isEditing()) R.string.record_update else R.string.record_quick_complete) },
+            onSecondaryAction = { saveRecord(false, true) },
+            // “再记” is a normal action on the record-entry page, including
+            // edit mode: save the current record and then open a fresh entry.
+            secondaryEnabled = { true }
         ).also { it.bind() }
         rowDate = view.findViewById(R.id.row_date)
         rowAsset = view.findViewById(R.id.row_asset)
@@ -451,6 +459,7 @@ open class AddRecordFragment : Fragment() {
             view.findViewById<TextView>(R.id.text_save_label)?.text = getString(R.string.record_update)
             (btnSave as? TextView)?.text = getString(R.string.record_update)
         }
+        amountKeypadController.refreshActions()
         updateTypeStyle()
         updateActiveNumericField()
         setupBackNavigation()
@@ -471,8 +480,6 @@ open class AddRecordFragment : Fragment() {
         }
 
         btnClose.setOnClickListener { navigateBack() }
-        btnSave.setOnClickListener { saveRecord(true) }
-        btnSaveAndAdd.setOnClickListener { saveRecord(false, true) }
 
         view.post {
             if (openSheet == RecordSheet.NONE) {
@@ -484,6 +491,19 @@ open class AddRecordFragment : Fragment() {
             restoreOpenSheet()
         }
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        parentFragmentManager.setFragmentResultListener(
+            RecordAssetPickerBottomSheetFragment.RESULT_KEY,
+            viewLifecycleOwner
+        ) { _, result ->
+            onAssetPickerSelected(
+                result.getLong(RecordAssetPickerBottomSheetFragment.RESULT_ASSET_ID),
+                result.getBoolean(RecordAssetPickerBottomSheetFragment.RESULT_SELECT_DESTINATION)
+            )
+        }
     }
 
     private fun selectNumericTarget(target: EditText) {
@@ -1147,72 +1167,44 @@ open class AddRecordFragment : Fragment() {
         val amountStr = editAmount.text.toString().trim()
         val category = if (currentType == 2) "资产转资产" else selectedCategory?.name
         val description = editDescription.text.toString().trim()
-
-        if (selectedDate.isEmpty()) {
-            Toast.makeText(requireContext(), getString(R.string.validation_select_date), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (amountStr.isEmpty()) {
-            Toast.makeText(requireContext(), getString(R.string.validation_enter_amount), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val amount = evaluateAmountExpression(amountStr)
-        if (amount == null) {
-            Toast.makeText(requireContext(), getString(R.string.validation_enter_valid_amount), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (amount == 0.0) {
-            Toast.makeText(requireContext(), getString(R.string.validation_zero_amount), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val fee = if (currentType == 2) {
-            val feeStr = editFee?.text?.toString()?.trim().orEmpty()
-            if (feeStr.isEmpty()) {
-                0.0
-            } else {
-                val parsed = evaluateAmountExpression(feeStr)
-                if (parsed == null || parsed < 0.0) {
-                    Toast.makeText(requireContext(), getString(R.string.record_fee_invalid), Toast.LENGTH_SHORT).show()
-                    return
-                }
-                parsed
+        val validation = RecordEntryValidator.validate(
+            RecordEntryValidator.Input(
+                type = currentType,
+                date = selectedDate,
+                amount = amountStr,
+                fee = editFee?.text?.toString()?.trim().orEmpty(),
+                sourceAssetId = selectedAsset?.id,
+                destinationAssetId = selectedDestinationAsset?.id,
+                hasCategory = category != null,
+                categoryIsLeaf = selectedCategory?.let(::isLeafCategory) == true
+            ),
+            ::evaluateAmountExpression
+        )
+        val validated = (validation as? RecordEntryValidator.Result.Valid)?.value ?: run {
+            val message = when ((validation as RecordEntryValidator.Result.Invalid).error) {
+                RecordEntryValidator.Error.DATE_REQUIRED -> R.string.validation_select_date
+                RecordEntryValidator.Error.AMOUNT_REQUIRED -> R.string.validation_enter_amount
+                RecordEntryValidator.Error.AMOUNT_INVALID -> R.string.validation_enter_valid_amount
+                RecordEntryValidator.Error.AMOUNT_ZERO -> R.string.validation_zero_amount
+                RecordEntryValidator.Error.FEE_INVALID -> R.string.record_fee_invalid
+                RecordEntryValidator.Error.TRANSFER_ASSETS_REQUIRED -> R.string.record_transfer_select_assets
+                RecordEntryValidator.Error.TRANSFER_ASSETS_MUST_DIFFER -> R.string.record_transfer_same_asset
+                RecordEntryValidator.Error.CATEGORY_REQUIRED,
+                RecordEntryValidator.Error.CATEGORY_MUST_BE_LEAF -> R.string.validation_select_category
             }
-        } else {
-            0.0
-        }
-
-        if (currentType == 2) {
-            if (selectedAsset == null || selectedDestinationAsset == null) {
-                Toast.makeText(requireContext(), getString(R.string.record_transfer_select_assets), Toast.LENGTH_SHORT).show()
-                return
-            }
-            if (selectedAsset?.id == selectedDestinationAsset?.id) {
-                Toast.makeText(requireContext(), getString(R.string.record_transfer_same_asset), Toast.LENGTH_SHORT).show()
-                return
-            }
-        }
-
-        if (category == null) {
-            Toast.makeText(requireContext(), getString(R.string.validation_select_category), Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(message), Toast.LENGTH_SHORT).show()
             return
         }
-
-        if (currentType != 2 && (selectedCategory?.let { isLeafCategory(it) } != true)) {
-            Toast.makeText(requireContext(), getString(R.string.validation_select_category), Toast.LENGTH_SHORT).show()
-            return
-        }
+        val amount = validated.amount
+        val fee = validated.fee
 
         val record = Record(
             date = selectedDate,
             amount = amount,
-            category = category,
+            category = category.orEmpty(),
             categoryId = selectedCategory?.id,
             categoryNameSnapshot = selectedCategory?.name,
-            categoryPathSnapshot = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel) ?: category,
+            categoryPathSnapshot = selectedCategory?.id?.let(databaseHelper::buildCategoryPathLabel) ?: category.orEmpty(),
             type = currentType,
             description = description,
             fee = fee,

@@ -165,7 +165,10 @@ class AmountKeypadRenderTest {
                     failures += "key $id ('$label') touch target ${key.width}x${key.height} < 48dp"
                 }
                 val glyphColors = distinctColorsInCenter(key, location, bitmap)
-                if (glyphColors < 2) {
+                // The contextual primary action can be rendered as an icon by
+                // AmountKeypadController (dismiss mode), so its TextView may
+                // intentionally have no painted glyph in the raw layout.
+                if (glyphColors < 2 && id != R.id.keypad_confirm) {
                     failures += "key $id ('$label') painted no visible glyph ($glyphColors colour)"
                 }
             }
@@ -177,6 +180,8 @@ class AmountKeypadRenderTest {
     fun primaryKey_usesASeparateHighContrastSurface() {
         instrumentation.runOnMainSync {
             val keypad = layoutKeypad()
+            val hideId = instrumentation.targetContext.resources.getIdentifier("keypad_hide", "id", instrumentation.targetContext.packageName)
+            assertTrue("the shared keypad must not have a separate top hide button", hideId == 0 || keypad.findViewById<View>(hideId) == null)
             val confirm = keypad.findViewById<TextView>(R.id.keypad_confirm)
             val digit = keypad.findViewById<TextView>(R.id.keypad_7)
             assertTrue(
@@ -191,6 +196,40 @@ class AmountKeypadRenderTest {
                 "digit keys must not inherit the primary surface",
                 surfaceColorOf(digit) != surfaceColorOf(confirm)
             )
+        }
+    }
+
+    @Test
+    fun rightColumn_rowsAlignWithTheLeftColumn_andKeepTouchTargets() {
+        instrumentation.runOnMainSync {
+            val keypad = layoutKeypad()
+            val pairs = listOf(
+                R.id.keypad_1 to R.id.keypad_delete,
+                R.id.keypad_4 to R.id.keypad_minus,
+                R.id.keypad_7 to R.id.keypad_plus,
+                R.id.keypad_dot to R.id.keypad_confirm
+            )
+            val failures = mutableListOf<String>()
+            pairs.forEach { (leftId, rightId) ->
+                val left = keypad.findViewById<View>(leftId)
+                val right = keypad.findViewById<View>(rightId)
+                val leftLocation = IntArray(2)
+                val rightLocation = IntArray(2)
+                left.getLocationInWindow(leftLocation)
+                right.getLocationInWindow(rightLocation)
+                if (kotlin.math.abs(leftLocation[1] - rightLocation[1]) > 1) {
+                    failures += "row $leftId/$rightId top differs: " +
+                        "${leftLocation[1]} vs ${rightLocation[1]}"
+                }
+                if (kotlin.math.abs(left.height - right.height) > 1) {
+                    failures += "row $leftId/$rightId height differs: " +
+                        "${left.height} vs ${right.height}"
+                }
+                if (left.height < dp(48) || right.height < dp(48)) {
+                    failures += "row $leftId/$rightId touch height below 48dp"
+                }
+            }
+            assertTrue(failures.joinToString("\n"), failures.isEmpty())
         }
     }
 
@@ -251,7 +290,7 @@ class AmountKeypadRenderTest {
                     View.MeasureSpec.makeMeasureSpec(dp(900), View.MeasureSpec.AT_MOST)
                 )
                 screen.layout(0, 0, dp(360), screen.measuredHeight)
-                listOf(R.id.keypad_7, R.id.keypad_dot, R.id.keypad_minus, R.id.btn_save)
+                listOf(R.id.keypad_7, R.id.keypad_dot, R.id.keypad_minus, R.id.keypad_confirm)
                     .forEach { id ->
                         val key = keypad!!.findViewById<TextView>(id)
                         assertTrue(
@@ -259,6 +298,11 @@ class AmountKeypadRenderTest {
                             contrastRatio(key.currentTextColor, surfaceColorOf(key)!!) >= MIN_CONTRAST
                         )
                     }
+                val saveAndAdd = keypad!!.findViewById<View>(R.id.btn_save_and_add)
+                assertTrue(
+                    "a new record must keep 再记 enabled",
+                    saveAndAdd.isEnabled
+                )
             }
         }
     }

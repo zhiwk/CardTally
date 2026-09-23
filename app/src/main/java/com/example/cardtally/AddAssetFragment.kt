@@ -18,6 +18,7 @@ import com.example.cardtally.model.Asset
 import com.example.cardtally.state.AssetFormState
 import com.example.cardtally.state.AssetType
 import com.example.cardtally.util.AmountKeypadController
+import com.example.cardtally.util.AmountKeypadCompletionMode
 import com.example.cardtally.util.Money
 import com.example.cardtally.util.AssetTypeIconCatalog
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -82,10 +83,11 @@ class AddAssetFragment : Fragment() {
             view.findViewById(R.id.layout_amount_keypad),
             btnSave,
             onConfirm = {
-            // The keypad confirms the amount only. The page CTA owns saving.
-            editAmount.clearFocus()
+                btnSave.performClick()
             },
-            allowNegative = true
+            allowNegative = true,
+            completionMode = AmountKeypadCompletionMode.SAVE_ASSET,
+            primaryLabel = { btnSave.text.toString() }
         ).bind()
 
         databaseHelper = DatabaseHelper(requireContext())

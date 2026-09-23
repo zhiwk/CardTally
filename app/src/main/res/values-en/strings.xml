@@ -165,8 +165,12 @@
     <string name="record_keypad_hide">Hide numeric keypad</string>
     <string name="record_keypad_delete">Delete one character</string>
     <string name="record_keypad_delete_glyph">⌫</string>
+    <string name="record_keypad_minus">Subtract</string>
+    <string name="record_keypad_plus">Add</string>
     <string name="record_keypad_confirm">Confirm</string>
     <string name="record_keypad_equals">=</string>
+    <string name="record_keypad_calculate">Calculate amount</string>
+    <string name="record_keypad_complete_save">Complete and save</string>
     <string name="record_update">UPDATE</string>
     <string name="record_editor_prompt">&quot;A small moment is still worth recording.&quot;</string>
     <string name="record_date_display">%1$d/%2$d</string>
@@ -636,10 +640,22 @@ Default request URL: https://api.minimax.io/v1/text/chatcompletion_v2</string>
     <string name="recurring_category_mode_accessibility">Switch category panel mode</string>
     <string name="recurring_type_expense">Expense</string>
     <string name="recurring_type_income">Income</string>
+    <string name="recurring_type_transfer">Transfer</string>
+    <string name="recurring_source_asset">From account</string>
+    <string name="recurring_destination_asset">To account</string>
+    <string name="recurring_select_ledger">Choose ledger</string>
+    <string name="recurring_select_category">Choose category</string>
+    <string name="recurring_select_frequency">Choose frequency</string>
+    <string name="recurring_confirm">Confirm</string>
+    <string name="recurring_amount_default">¥0.00</string>
+    <string name="recurring_monthly_31_notice">Months without the 31st are skipped; this does not run on the last day.</string>
+    <string name="recurring_yearly_leap_notice">February 29 runs only in leap years; non-leap years are skipped.</string>
     <string name="recurring_select">Select</string>
     <string name="recurring_type">Type</string>
     <string name="recurring_period_section">Period information</string>
     <string name="recurring_bill_section">Bill information</string>
+    <string name="recurring_content_section">Task details</string>
+    <string name="recurring_settings_section">Booking settings</string>
     <string name="recurring_status_running">Running</string>
     <string name="recurring_status_stopped">Stopped</string>
     <string name="statistics_ranking_mode_title">Ranking display mode</string>

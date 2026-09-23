@@ -1,6 +1,7 @@
 package com.example.cardtally
 
 import android.os.Bundle
+import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +23,8 @@ import com.example.cardtally.util.ScrollTopFabHelper
 import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.example.cardtally.util.DataTransferManager
 import com.example.cardtally.util.DefaultRecordAssetPreferences
+import com.example.cardtally.util.ThemeColorHelper
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.util.concurrent.Executors
 
 class SettingsFragment : Fragment() {
@@ -331,21 +334,81 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showIncomeExpenseColorDialog() {
-        val labels = arrayOf(
+        val labels = listOf(
             getString(R.string.settings_income_expense_color_income_green_expense_red),
             getString(R.string.settings_income_expense_color_income_red_expense_green),
             getString(R.string.settings_income_expense_color_both_black)
         )
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle(R.string.settings_income_expense_color)
-            .setSingleChoiceItems(labels, IncomeExpenseColorScheme.getMode(requireContext())) { dialog, which ->
-                IncomeExpenseColorScheme.saveMode(requireContext(), which)
+        val dialog = BottomSheetDialog(requireContext())
+        val sheet = layoutInflater.inflate(R.layout.bottom_sheet_income_expense_color, null)
+        val options = sheet.findViewById<android.widget.LinearLayout>(R.id.radio_income_expense_color_options)
+        labels.forEachIndexed { index, label ->
+            val row = android.widget.LinearLayout(requireContext()).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    56.dp()
+                ).apply {
+                    leftMargin = 14.dp()
+                    rightMargin = 14.dp()
+                }
+                setPadding(0, 0, 0, 0)
+                isClickable = true
+                isFocusable = true
+            }
+            row.addView(android.widget.TextView(requireContext()).apply {
+                text = label
+                textSize = 16f
+                setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface))
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    1f
+                )
+            })
+            row.addView(android.widget.RadioButton(requireContext()).apply {
+                isChecked = index == IncomeExpenseColorScheme.getMode(requireContext())
+                minWidth = 48.dp()
+                minHeight = 48.dp()
+                buttonTintList = androidx.core.content.ContextCompat.getColorStateList(
+                    requireContext(),
+                    R.color.outlineVariant_light
+                )
+                layoutParams = android.widget.LinearLayout.LayoutParams(48.dp(), 48.dp())
+            })
+            row.setOnClickListener {
+                IncomeExpenseColorScheme.saveMode(requireContext(), index)
                 updateIncomeExpenseColorText()
                 dialog.dismiss()
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            options.addView(row)
+            if (index < labels.lastIndex) {
+                options.addView(View(requireContext()).apply {
+                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        1.dp()
+                    ).apply {
+                        leftMargin = 14.dp()
+                        rightMargin = 14.dp()
+                    }
+                    setBackgroundColor(requireContext().getColor(R.color.outlineVariant_light))
+                })
+            }
+        }
+        sheet.findViewById<View>(R.id.btn_income_expense_color_close).setOnClickListener { dialog.dismiss() }
+        dialog.setContentView(sheet)
+        dialog.setOnShowListener {
+            dialog.findViewById<android.widget.FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+                ?.background = ColorDrawable(requireContext().getColor(R.color.background_light))
+            dialog.behavior.isDraggable = true
+            dialog.behavior.skipCollapsed = false
+            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        }
+        dialog.show()
     }
+
+    private fun Int.dp(): Int = (this * resources.displayMetrics.density).toInt()
 
     private fun updateBottomNavigation() {
         val showAiAssistant = AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext())

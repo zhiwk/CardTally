@@ -21,6 +21,7 @@ object DateSelectionSheet {
     fun create(
         context: Context,
         initialDate: String,
+        commitOnSelection: Boolean = false,
         onConfirmed: (String) -> Unit
     ): BottomSheetDialog {
         val dialog = BottomSheetDialog(context)
@@ -57,6 +58,10 @@ object DateSelectionSheet {
             displayYear = picked.substring(0, 4).toInt()
             displayMonth = picked.substring(5, 7).toInt() - 1
             renderCalendar()
+            if (commitOnSelection) {
+                onConfirmed(localDate)
+                dialog.dismiss()
+            }
         }
         recyclerCalendar.layoutManager = GridLayoutManager(context, 7)
         recyclerCalendar.adapter = adapter

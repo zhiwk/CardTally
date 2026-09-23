@@ -40,13 +40,13 @@
 
 1. `app/src/main/java/com/example/cardtally/AddRecordFragment.kt`
 2. `app/src/main/java/com/example/cardtally/EditRecordFragment.kt`
-3. `app/src/main/res/layout/fragment_add_record.xml`
+3. `app/src/main/res/layout/fragment_add_record_quick.xml`（当前两种模式共用的录入壳）
 4. `app/src/main/java/com/example/cardtally/adapter/RecordAssetSheetAdapter.kt`
 5. `app/src/main/java/com/example/cardtally/adapter/RecordCategoryTreeAdapter.kt`
 6. `app/src/main/res/layout/bottom_sheet_record_*.xml`
 7. `app/src/main/java/com/example/cardtally/database/DatabaseHelper.kt`
 
-注意：当前录入页现实已经是“主页面极简壳 + 底部抽屉交互”，不要按旧的 `Spinner + 分类网格` 页面假设继续改。
+注意：两种模式共用 `fragment_add_record_quick.xml`，区别在页内分类列表；金额键盘常驻，日期和资产仍使用底部选择器。
 
 ### 改重复记账 / 转账资产选择
 
@@ -60,7 +60,7 @@
 6. `app/src/main/java/com/example/cardtally/database/DatabaseHelper.kt`
 7. `docs/requirements/decisions/business_rules.md`
 
-注意：资产选择器由普通「记一笔」和重复记账共用，但宿主回调不同。修改选择器时必须分别验证 `AddRecordFragment.onAssetPickerSelected(...)` 与重复记账的 `SelectionTarget` 回调；任务账本通过 `pickerLedgerId` 限制资产列表，不应改变当前账本。
+注意：普通「记一笔」和重复记账共用资产选择器，通过 `FragmentResult` 回传资产 ID 与是否为转入资产；分别验证两个宿主的结果处理及弹层关闭行为。任务账本通过 `pickerLedgerId` 限制资产列表，不应改变当前账本。默认资产设置使用独立的 `DefaultRecordAssetPickerBottomSheetFragment` 结果契约。
 
 ### 改数据库或数据展示
 

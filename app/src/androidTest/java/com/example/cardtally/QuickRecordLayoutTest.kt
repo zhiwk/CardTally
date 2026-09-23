@@ -173,7 +173,7 @@ class QuickRecordLayoutTest {
             val ctx = themedContext()
             val root = LinearLayout(ctx)
             val keypad = android.view.LayoutInflater.from(ctx)
-                .inflate(R.layout.layout_amount_keypad_quick, root, false)
+                .inflate(R.layout.layout_amount_keypad, root, false)
             root.addView(keypad)
             val amount = android.widget.EditText(ctx)
             val fee = android.widget.EditText(ctx)
@@ -483,7 +483,7 @@ class QuickRecordLayoutTest {
             val ctx = themedContext()
             val root = LinearLayout(ctx)
             val keypad = android.view.LayoutInflater.from(ctx)
-                .inflate(R.layout.layout_amount_keypad_quick, root, false)
+                .inflate(R.layout.layout_amount_keypad, root, false)
             keypad.visibility = View.VISIBLE
             root.addView(keypad)
             val width = dp(360)
@@ -505,9 +505,13 @@ class QuickRecordLayoutTest {
                     "quick keypad key $id must be at least 48dp",
                     key!!.width >= dp(48) && key.height >= dp(48)
                 )
+                assertTrue(
+                    "quick keypad key $id must stay within the 56dp row",
+                    key.height <= dp(56)
+                )
             }
 
-            val save = keypad.findViewById<TextView>(R.id.btn_save)
+            val save = keypad.findViewById<TextView>(R.id.keypad_confirm)
             val saveAndAdd = keypad.findViewById<TextView>(R.id.btn_save_and_add)
             assertNotNull("quick keypad must integrate the complete action", save)
             assertNotNull("quick keypad must integrate the save-and-add action", saveAndAdd)
@@ -518,6 +522,66 @@ class QuickRecordLayoutTest {
                 save.width >= dp(48) && save.height >= dp(48) &&
                     saveAndAdd.width >= dp(48) && saveAndAdd.height >= dp(48)
             )
+        }
+    }
+
+    @Test
+    fun sharedKeypad_keepsSaveAndAddVisibleButDisablesItWithoutHostAction() {
+        instrumentation.runOnMainSync {
+            val ctx = themedContext()
+            val root = LinearLayout(ctx)
+            val keypad = android.view.LayoutInflater.from(ctx)
+                .inflate(R.layout.layout_amount_keypad, root, false)
+            root.addView(keypad)
+            val amount = android.widget.EditText(ctx)
+            val controller = com.example.cardtally.util.AmountKeypadController(
+                ctx,
+                amount,
+                keypad,
+                null,
+                alwaysVisible = true,
+                onConfirm = {}
+            )
+            controller.bind()
+
+            val saveAndAdd = keypad.findViewById<View>(R.id.btn_save_and_add)
+            assertEquals(View.VISIBLE, saveAndAdd.visibility)
+            assertTrue("save-and-add must be disabled when the host has no action", !saveAndAdd.isEnabled)
+            assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO, saveAndAdd.importantForAccessibility)
+        }
+    }
+
+    @Test
+    fun keypadOperators_editTheActiveAmountAndRejectRepeatedOperators() {
+        instrumentation.runOnMainSync {
+            val ctx = themedContext()
+            val root = LinearLayout(ctx)
+            val keypad = android.view.LayoutInflater.from(ctx)
+                .inflate(R.layout.layout_amount_keypad, root, false)
+            root.addView(keypad)
+            val amount = android.widget.EditText(ctx)
+            root.addView(amount)
+            val controller = com.example.cardtally.util.AmountKeypadController(
+                ctx,
+                amount,
+                keypad,
+                null,
+                alwaysVisible = true,
+                onConfirm = {}
+            )
+            controller.bind()
+
+            amount.setText("3.00")
+            controller.selectTarget(amount)
+            keypad.findViewById<View>(R.id.keypad_plus).performClick()
+            assertEquals("3.00+", amount.text.toString())
+            keypad.findViewById<View>(R.id.keypad_plus).performClick()
+            assertEquals("3.00+", amount.text.toString())
+
+            amount.setText("3.00")
+            controller.selectTarget(amount)
+            keypad.findViewById<View>(R.id.keypad_minus).performClick()
+            assertEquals("3.00-", amount.text.toString())
         }
     }
 

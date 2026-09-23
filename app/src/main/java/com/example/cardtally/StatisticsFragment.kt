@@ -39,6 +39,7 @@ import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.normalizeStatisticsCategoryLabel
 import com.example.cardtally.util.StatisticsRankingMode
 import com.example.cardtally.util.StatisticsRankingModePreferences
+import com.example.cardtally.util.StatisticsRankingBuilder
 import com.example.cardtally.view.LedgerDonutChartView
 import com.example.cardtally.view.LedgerLineChartView
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -356,97 +357,8 @@ class StatisticsFragment : Fragment() {
         categoryIcons: Map<String, String>,
         categoriesById: Map<Long, com.example.cardtally.model.Category>,
         categoriesByName: Map<String, com.example.cardtally.model.Category>
-    ): Pair<List<StatisticsAdapter.StatisticsAdapterItem>, Double> {
-        fun resolveRootCategory(cat: com.example.cardtally.model.Category): com.example.cardtally.model.Category {
-            var current = cat
-            val visited = mutableSetOf<Long>()
-            while (current.parentId != null && visited.add(current.id)) {
-                val parent = categoriesById[current.parentId] ?: break
-                current = parent
-            }
-            return current
-        }
-
-        data class ChildData(
-            val label: String,
-            val amount: Double,
-            val entryCount: Int,
-            val iconName: String?
-        )
-
-        data class ParentData(
-            val parentLabel: String,
-            var totalAmount: Double = 0.0,
-            var totalEntryCount: Int = 0,
-            var iconName: String? = null,
-            val childrenMap: MutableMap<String, ChildData> = mutableMapOf()
-        )
-
-        val parentMap = mutableMapOf<String, ParentData>()
-
-        normalizedStats.forEach { (rawKey, amount) ->
-            val catName = normalizeStatisticsCategoryLabel(rawKey)
-            val entryCount = entryCounts[catName] ?: 0
-            val icon = categoryIcons[catName]
-
-            val catObj = categoriesByName[catName]
-            val rootCatObj = catObj?.let { resolveRootCategory(it) }
-            val rootName = rootCatObj?.name ?: catName
-            val rootIcon = rootCatObj?.icon?.takeIf { it.isNotBlank() } ?: categoryIcons[rootName]
-
-            val parentData = parentMap.getOrPut(rootName) {
-                ParentData(parentLabel = rootName, iconName = rootIcon)
-            }
-            parentData.totalAmount += amount
-            parentData.totalEntryCount += entryCount
-            if (parentData.iconName.isNullOrBlank() && !rootIcon.isNullOrBlank()) {
-                parentData.iconName = rootIcon
-            }
-
-            if (catName != rootName || (catObj != null && catObj.parentId != null)) {
-                val existingChild = parentData.childrenMap[catName]
-                if (existingChild == null) {
-                    parentData.childrenMap[catName] = ChildData(catName, amount, entryCount, icon)
-                } else {
-                    parentData.childrenMap[catName] = ChildData(
-                        catName,
-                        existingChild.amount + amount,
-                        existingChild.entryCount + entryCount,
-                        icon ?: existingChild.iconName
-                    )
-                }
-            }
-        }
-
-        val totalAmount = parentMap.values.sumOf { kotlin.math.abs(it.totalAmount) }
-
-        val parentAdapterItems = parentMap.values
-            .sortedByDescending { kotlin.math.abs(it.totalAmount) }
-            .map { parent ->
-                val childItems = parent.childrenMap.values
-                    .sortedByDescending { kotlin.math.abs(it.amount) }
-                    .map { child ->
-                        StatisticsAdapter.StatisticsAdapterItem(
-                            type = StatisticsAdapter.ItemType.PRIMARY_CHILD,
-                            label = child.label,
-                            amount = child.amount,
-                            entryCount = child.entryCount,
-                            iconName = child.iconName,
-                            parentLabel = parent.parentLabel
-                        )
-                    }
-                StatisticsAdapter.StatisticsAdapterItem(
-                    type = StatisticsAdapter.ItemType.PRIMARY_PARENT,
-                    label = parent.parentLabel,
-                    amount = parent.totalAmount,
-                    entryCount = parent.totalEntryCount,
-                    iconName = parent.iconName,
-                    children = childItems
-                )
-            }
-
-        return parentAdapterItems to totalAmount
-    }
+    ): Pair<List<StatisticsAdapter.StatisticsAdapterItem>, Double> =
+        StatisticsRankingBuilder.build(normalizedStats, entryCounts, categoryIcons, categoriesById, categoriesByName)
 
     private fun loadCategoryStatistics() {
         val range = currentQueryRange()

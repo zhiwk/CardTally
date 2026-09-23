@@ -1,6 +1,7 @@
 package com.example.cardtally
 
 import android.content.Context
+import android.os.Bundle
 import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -70,9 +71,17 @@ class RecordAssetSelectionMemoryTest {
                     root.findViewById<TextView>(R.id.text_destination_asset_value).text
                 )
 
-                val fragment = activity.supportFragmentManager.findFragmentById(R.id.fragment_container) as AddRecordFragment
-                fragment.onAssetPickerSelected(transferSourceAssetId, selectDestination = false)
-                fragment.onAssetPickerSelected(transferDestinationAssetId, selectDestination = true)
+                fun select(id: Long, destination: Boolean) {
+                    activity.supportFragmentManager.setFragmentResult(
+                        RecordAssetPickerBottomSheetFragment.RESULT_KEY,
+                        Bundle().apply {
+                            putLong(RecordAssetPickerBottomSheetFragment.RESULT_ASSET_ID, id)
+                            putBoolean(RecordAssetPickerBottomSheetFragment.RESULT_SELECT_DESTINATION, destination)
+                        }
+                    )
+                }
+                select(transferSourceAssetId, false)
+                select(transferDestinationAssetId, true)
 
                 root.findViewById<TextView>(R.id.btn_income).performClick()
                 assertEquals("默认收入", root.findViewById<TextView>(R.id.text_asset_single_value).text)
@@ -83,6 +92,33 @@ class RecordAssetSelectionMemoryTest {
                 root.findViewById<TextView>(R.id.btn_transfer).performClick()
                 assertEquals("转出账户", root.findViewById<TextView>(R.id.text_asset_value).text)
                 assertEquals("转入账户", root.findViewById<TextView>(R.id.text_destination_asset_value).text)
+            }
+        }
+    }
+
+    @Test
+    fun recurringTransfer_consumesBothAssetPickerResults() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            scenario.onActivity { activity ->
+                activity.supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, RecurringRecordEditFragment())
+                    .commitNow()
+                val root = requireNotNull(
+                    activity.supportFragmentManager.findFragmentById(R.id.fragment_container)?.view
+                )
+                root.findViewById<TextView>(R.id.recurring_type_transfer).performClick()
+                listOf(transferSourceAssetId to false, transferDestinationAssetId to true).forEach { (id, destination) ->
+                    activity.supportFragmentManager.setFragmentResult(
+                        RecordAssetPickerBottomSheetFragment.RESULT_KEY,
+                        Bundle().apply {
+                            putLong(RecordAssetPickerBottomSheetFragment.RESULT_ASSET_ID, id)
+                            putBoolean(RecordAssetPickerBottomSheetFragment.RESULT_SELECT_DESTINATION, destination)
+                        }
+                    )
+                }
+                assertEquals("转出账户", root.findViewById<TextView>(R.id.value_recurring_asset).text)
+                assertEquals("转入账户", root.findViewById<TextView>(R.id.value_recurring_destination_asset).text)
             }
         }
     }

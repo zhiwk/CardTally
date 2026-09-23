@@ -20,6 +20,12 @@ import androidx.core.view.WindowInsetsCompat
  * call [bindTarget] for each field and [selectTarget] to choose which buffer the
  * next key press edits.
  */
+enum class AmountKeypadCompletionMode {
+    DISMISS_KEYPAD,
+    SAVE_RECORD,
+    SAVE_ASSET
+}
+
 class AmountKeypadController(
     private val context: Context,
     private val amount: EditText,
@@ -27,10 +33,30 @@ class AmountKeypadController(
     private val normalActions: View?,
     private val alwaysVisible: Boolean = false,
     private val onConfirm: () -> Unit,
-    private val allowNegative: Boolean = false
+    private val allowNegative: Boolean = false,
+    private val completionMode: AmountKeypadCompletionMode = AmountKeypadCompletionMode.DISMISS_KEYPAD,
+    private val primaryLabel: () -> String = { context.getString(com.example.cardtally.R.string.record_keypad_confirm) },
+    private val onSecondaryAction: (() -> Unit)? = null,
+    private val secondaryEnabled: () -> Boolean = { true }
 ) {
     private var target: EditText = amount
     private val boundTargets = mutableSetOf<EditText>()
+
+    private fun suppressSystemIme() {
+        val inputMethod = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val token = target.windowToken ?: keypad.windowToken
+        if (token != null) inputMethod.hideSoftInputFromWindow(token, 0)
+        listOf(target, keypad, keypad.rootView).forEach { view ->
+            ViewCompat.getWindowInsetsController(view)?.hide(WindowInsetsCompat.Type.ime())
+        }
+    }
+
+    private fun scheduleImeSuppression() {
+        suppressSystemIme()
+        target.post { suppressSystemIme() }
+        target.postDelayed({ suppressSystemIme() }, 200)
+        target.postDelayed({ suppressSystemIme() }, 600)
+    }
 
     private val digitIds = mapOf(
         0 to com.example.cardtally.R.id.keypad_0,
@@ -47,11 +73,10 @@ class AmountKeypadController(
 
     fun bind() {
         bindTarget(amount)
-        amount.setOnFocusChangeListener { _, hasFocus -> if (hasFocus && !alwaysVisible) show() }
-        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_hide)?.setOnClickListener {
-            hide()
+        amount.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && !alwaysVisible) show()
+            else if (hasFocus) scheduleImeSuppression()
         }
-
         digitIds.forEach { (digit, id) ->
             keypad.findViewById<View>(id)?.setOnClickListener { insert(digit.toString()) }
         }
@@ -60,13 +85,33 @@ class AmountKeypadController(
                 insert(".")
             }
         }
-        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_minus)?.setOnClickListener {
+        // Handle these as touch actions instead of relying on a click generated
+        // after focus navigation. The keypad is layered over a ScrollView on
+        // the recurring form; consuming the gesture on the operator cell keeps
+        // its hit area and its action in sync on both touch and accessibility
+        // driven interactions.
+        val minusKey = keypad.findViewById<View>(com.example.cardtally.R.id.keypad_minus)
+        minusKey?.isFocusable = false
+        minusKey?.isFocusableInTouchMode = false
+        minusKey?.setOnClickListener {
             insertOperator("-")
         }
-        keypad.findViewById<View>(com.example.cardtally.R.id.keypad_plus)?.setOnClickListener {
+        minusKey?.setOnTouchListener { _, event ->
+            if (event.actionMasked == android.view.MotionEvent.ACTION_UP) insertOperator("-")
+            true
+        }
+        val plusKey = keypad.findViewById<View>(com.example.cardtally.R.id.keypad_plus)
+        plusKey?.isFocusable = false
+        plusKey?.isFocusableInTouchMode = false
+        plusKey?.setOnClickListener {
             insertOperator("+")
         }
+        plusKey?.setOnTouchListener { _, event ->
+            if (event.actionMasked == android.view.MotionEvent.ACTION_UP) insertOperator("+")
+            true
+        }
         keypad.findViewById<View>(com.example.cardtally.R.id.keypad_delete)?.setOnClickListener {
+            ensureTargetSelection()
             val start = target.selectionStart.coerceAtLeast(0)
             val end = target.selectionEnd.coerceAtLeast(0)
             if (start != end) {
@@ -79,21 +124,60 @@ class AmountKeypadController(
             if (target.text.contains('+') || target.text.contains('-')) {
                 if (evaluateExpression()) updateConfirmLabel()
             } else {
-                hide()
-                onConfirm()
+                when (completionMode) {
+                    AmountKeypadCompletionMode.DISMISS_KEYPAD -> {
+                        hide()
+                        onConfirm()
+                    }
+                    AmountKeypadCompletionMode.SAVE_RECORD,
+                    AmountKeypadCompletionMode.SAVE_ASSET -> onConfirm()
+                }
             }
+        }
+        keypad.findViewById<View>(com.example.cardtally.R.id.btn_save_and_add)?.let { secondary ->
+            secondary.visibility = View.VISIBLE
+            secondary.isEnabled = onSecondaryAction != null && secondaryEnabled()
+            secondary.alpha = if (secondary.isEnabled) 1f else 0.45f
+            secondary.importantForAccessibility = if (secondary.isEnabled) {
+                View.IMPORTANT_FOR_ACCESSIBILITY_YES
+            } else {
+                View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+            secondary.setOnClickListener { if (secondary.isEnabled) onSecondaryAction?.invoke() }
         }
         updateConfirmLabel()
 
         if (alwaysVisible) {
             activateTarget(amount)
             keypad.visibility = View.VISIBLE
+            scheduleImeSuppression()
+        } else {
+            keypad.visibility = View.GONE
         }
+    }
+
+    fun refreshActions() {
+        keypad.findViewById<View>(com.example.cardtally.R.id.btn_save_and_add)?.let { secondary ->
+            secondary.visibility = View.VISIBLE
+            secondary.isEnabled = onSecondaryAction != null && secondaryEnabled()
+            secondary.alpha = if (secondary.isEnabled) 1f else 0.45f
+            secondary.importantForAccessibility = if (secondary.isEnabled) {
+                View.IMPORTANT_FOR_ACCESSIBILITY_YES
+            } else {
+                View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+        }
+        updateConfirmLabel()
     }
 
     /** Registers another numeric field that shares this keypad. */
     fun bindTarget(editText: EditText) {
         if (!boundTargets.add(editText)) return
+        // The shared keypad supports expressions (for example, 3.00+2).
+        // A numberDecimal key listener rejects the operator characters before
+        // the controller can insert them, so keep the field text-backed while
+        // still suppressing the system IME below.
+        editText.inputType = android.text.InputType.TYPE_CLASS_TEXT
         editText.showSoftInputOnFocus = false
         editText.setOnClickListener { selectTarget(editText) }
         editText.addTextChangedListener(object : TextWatcher {
@@ -122,10 +206,14 @@ class AmountKeypadController(
     /** Switches the active buffer without showing the keypad. */
     fun resetTarget(editText: EditText) {
         target = editText
-        if (alwaysVisible) activateTarget(editText)
+        if (alwaysVisible) {
+            activateTarget(editText)
+            scheduleImeSuppression()
+        }
     }
 
     private fun insert(value: String) {
+        ensureTargetSelection()
         val start = target.selectionStart.coerceAtLeast(0)
         val end = target.selectionEnd.coerceAtLeast(0)
         target.text.replace(minOf(start, end), maxOf(start, end), value)
@@ -133,13 +221,27 @@ class AmountKeypadController(
     }
 
     private fun insertOperator(operator: String) {
+        ensureTargetSelection()
         val current = target.text.toString()
         if (current.isBlank()) {
             if (allowNegative && operator == "-") insert(operator)
             return
         }
+        if (target.selectionStart == 0 && target.selectionEnd == 0) {
+            target.setSelection(target.length())
+        }
         if (current.last() in charArrayOf('+', '-')) return
         insert(operator)
+    }
+
+    private fun ensureTargetSelection() {
+        val wasFocused = target.hasFocus()
+        if (!wasFocused) {
+            target.requestFocus()
+            target.setSelection(target.length())
+        } else if (target.selectionStart < 0 || target.selectionEnd < 0) {
+            target.setSelection(target.length())
+        }
     }
 
     private fun evaluateExpression(): Boolean {
@@ -152,32 +254,43 @@ class AmountKeypadController(
     }
 
     private fun updateConfirmLabel() {
-        keypad.findViewById<TextView>(com.example.cardtally.R.id.keypad_confirm)?.text =
-            context.getString(
-                if (target.text.contains('+') || target.text.contains('-')) {
-                    com.example.cardtally.R.string.record_keypad_equals
-                } else {
-                    com.example.cardtally.R.string.record_keypad_confirm
-                }
-            )
+        val button = keypad.findViewById<TextView>(com.example.cardtally.R.id.keypad_confirm) ?: return
+        val hasExpression = target.text.contains('+') || target.text.contains('-')
+        button.text = when {
+            hasExpression -> context.getString(com.example.cardtally.R.string.record_keypad_equals)
+            completionMode == AmountKeypadCompletionMode.DISMISS_KEYPAD -> ""
+            else -> primaryLabel()
+        }
+        button.contentDescription = context.getString(
+            when {
+                hasExpression -> com.example.cardtally.R.string.record_keypad_calculate
+                completionMode == AmountKeypadCompletionMode.DISMISS_KEYPAD -> com.example.cardtally.R.string.record_keypad_hide
+                else -> com.example.cardtally.R.string.record_keypad_complete_save
+            }
+        )
+        val icon = keypad.findViewById<android.widget.ImageView>(com.example.cardtally.R.id.keypad_confirm_icon)
+        if (icon != null) {
+            icon.visibility = if (!hasExpression && completionMode == AmountKeypadCompletionMode.DISMISS_KEYPAD) View.VISIBLE else View.GONE
+            icon.setImageResource(com.example.cardtally.R.drawable.tabler_chevron_down)
+        }
     }
 
     fun show() {
-        val inputMethod = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        fun hideSystemKeyboard() {
-            inputMethod.hideSoftInputFromWindow(target.windowToken, 0)
-            ViewCompat.getWindowInsetsController(target)?.hide(WindowInsetsCompat.Type.ime())
-        }
-        hideSystemKeyboard()
-        // The IME can finish its pending show animation after the click callback.
-        target.post { hideSystemKeyboard() }
-        target.postDelayed({ hideSystemKeyboard() }, 200)
+        target.showSoftInputOnFocus = false
         if (target.text.toString() == context.getString(com.example.cardtally.R.string.amount_default)) {
             target.setText("")
             target.setSelection(0)
         }
         keypad.visibility = View.VISIBLE
         normalActions?.visibility = View.GONE
+        // Amount entry starts from the end of the current value. This also
+        // prevents the inputType hand-off from leaving the cursor at index 0,
+        // which would turn 3.00 + into +3.00.
+        target.setSelection(target.length())
+        ensureTargetSelection()
+        // Focus changes can schedule an IME show after this callback returns;
+        // suppress it both now and after the focus/animation settles.
+        scheduleImeSuppression()
     }
 
     fun hide() {
@@ -192,7 +305,9 @@ class AmountKeypadController(
     /** Temporarily hides the pinned keypad while a modal surface is open. */
     fun hideForModal() {
         if (alwaysVisible) {
+            suppressSystemIme()
             target.isCursorVisible = false
+            target.clearFocus()
             keypad.visibility = View.GONE
         } else {
             hide()
@@ -204,6 +319,7 @@ class AmountKeypadController(
         if (alwaysVisible) {
             activateTarget(target)
             keypad.visibility = View.VISIBLE
+            scheduleImeSuppression()
         }
     }
 
@@ -211,6 +327,7 @@ class AmountKeypadController(
     fun hideForSoftKeyboard() {
         if (alwaysVisible) {
             target.isCursorVisible = false
+            target.clearFocus()
             keypad.visibility = View.GONE
         }
     }
@@ -219,6 +336,7 @@ class AmountKeypadController(
         if (alwaysVisible) {
             activateTarget(target)
             keypad.visibility = View.VISIBLE
+            scheduleImeSuppression()
         }
     }
 

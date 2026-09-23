@@ -4,17 +4,12 @@ import android.app.Dialog
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import com.example.cardtally.model.Asset
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 /** Hosts the asset page in selection mode without duplicating its grouped list UI. */
 class RecordAssetPickerBottomSheetFragment : BottomSheetDialogFragment(), AssetFragment.AssetSelectionHost {
-    interface SelectionTarget {
-        fun onAssetSelected(asset: Asset, selectDestination: Boolean)
-    }
-
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         BottomSheetDialog(requireContext(), theme)
 
@@ -39,20 +34,22 @@ class RecordAssetPickerBottomSheetFragment : BottomSheetDialogFragment(), AssetF
     override fun onStart() {
         super.onStart()
         (dialog as? BottomSheetDialog)?.let { dialog ->
-            dialog.behavior.peekHeight = (resources.displayMetrics.heightPixels * 0.72f).toInt()
-            dialog.behavior.skipCollapsed = false
+            dialog.behavior.peekHeight = (resources.displayMetrics.heightPixels * 0.8f).toInt()
+            dialog.behavior.skipCollapsed = true
             dialog.behavior.isDraggable = true
-            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_COLLAPSED
+            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             (hostFragment() as? AddRecordFragment)?.onAssetPickerDialogShown(dialog)
         }
     }
 
     override fun onAssetSelected(asset: Asset) {
-        when (val host = hostFragment()) {
-            is SelectionTarget -> host.onAssetSelected(asset, selectDestination)
-            is AddRecordFragment -> host.onAssetPickerSelected(asset.id, selectDestination)
-            is AssetFragment.AssetSelectionHost -> host.onAssetSelected(asset)
-        }
+        parentFragmentManager.setFragmentResult(
+            RESULT_KEY,
+            Bundle().apply {
+                putLong(RESULT_ASSET_ID, asset.id)
+                putBoolean(RESULT_SELECT_DESTINATION, selectDestination)
+            }
+        )
         dismiss()
     }
 
@@ -65,7 +62,7 @@ class RecordAssetPickerBottomSheetFragment : BottomSheetDialogFragment(), AssetF
         (hostFragment() as? AddRecordFragment)?.onAssetPickerDismissed()
     }
 
-    private fun hostFragment(): Fragment? =
+    private fun hostFragment() =
         parentFragmentManager.findFragmentById(R.id.fragment_container)
 
     private val selectDestination: Boolean
@@ -82,6 +79,9 @@ class RecordAssetPickerBottomSheetFragment : BottomSheetDialogFragment(), AssetF
 
     companion object {
         const val TAG = "record_asset_picker"
+        const val RESULT_KEY = "record_asset_selected"
+        const val RESULT_ASSET_ID = "selected_asset_id"
+        const val RESULT_SELECT_DESTINATION = "select_destination"
         private const val ARG_SELECT_DESTINATION = "select_destination"
         private const val ARG_EXCLUDED_ASSET_ID = "excluded_asset_id"
         private const val ARG_SELECTED_ASSET_ID = "selected_asset_id"

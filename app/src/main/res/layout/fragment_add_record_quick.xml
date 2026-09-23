@@ -649,7 +649,7 @@
     </com.google.android.material.card.MaterialCardView>
 
     <include
-        layout="@layout/layout_amount_keypad_quick"
+        layout="@layout/layout_amount_keypad"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
