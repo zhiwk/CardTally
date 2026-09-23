@@ -70,6 +70,16 @@
 2. 相关 `model/*.kt`
 3. 发起查询或渲染数据的 Fragment / Adapter
 
+数据协作者边界：
+
+- 记录行映射：`database/RecordSqlMapper.kt`
+- 重复记账模板读写：`database/RecurringRecordRepository.kt`
+- 分类只读查询及路径：`database/CategoryReadRepository.kt`
+- 分类父子关系校验：`database/CategoryHierarchyValidator.kt`
+- 分类树展示顺序：`database/CategoryTreeOrdering.kt`
+
+这些类由 `DatabaseHelper` 保持兼容门面调用；Schema、资产／账本写入、记录余额事务、统计聚合和 AI 持久化仍在 `DatabaseHelper`，后续职责拆分需分别保持原事务与作用域语义。
+
 ### 改 AI 助手 / MiniMax 对话 / 会话持久化
 
 先读：

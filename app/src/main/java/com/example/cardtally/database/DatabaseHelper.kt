@@ -45,6 +45,19 @@ class DatabaseHelper(
             columns = RECURRING_RECORD_COLUMNS
         )
     }
+    private val categoryHierarchyValidator by lazy {
+        CategoryHierarchyValidator(
+            findCategory = ::getCategoryByIdInternal,
+            configuredMaxDepth = { CategoryHierarchySettingsHelper.getCategoryMaxDepth(appContext) },
+            throwError = { throw CategoryOperationException(it) }
+        )
+    }
+    private val categoryReadRepository by lazy {
+        CategoryReadRepository(
+            readableDatabase = { readableDatabase },
+            columns = CATEGORY_READ_COLUMNS
+        )
+    }
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -199,6 +212,16 @@ class DatabaseHelper(
         private const val COLUMN_CATEGORY_PARENT_ID = "parent_id"
         private const val COLUMN_CATEGORY_SORT_ORDER = "sort_order"
         private const val COLUMN_CATEGORY_COLOR = "color"
+        private val CATEGORY_READ_COLUMNS = CategoryReadRepository.Columns(
+            table = TABLE_CATEGORIES,
+            id = COLUMN_CATEGORY_ID,
+            name = COLUMN_CATEGORY_NAME,
+            type = COLUMN_CATEGORY_TYPE,
+            icon = COLUMN_CATEGORY_ICON,
+            color = COLUMN_CATEGORY_COLOR,
+            parentId = COLUMN_CATEGORY_PARENT_ID,
+            sortOrder = COLUMN_CATEGORY_SORT_ORDER
+        )
 
         private const val TABLE_ASSETS = "assets"
         private const val COLUMN_ASSET_ID = "id"
@@ -1303,18 +1326,6 @@ class DatabaseHelper(
     private fun createRecordFromCursor(cursor: Cursor): Record =
         RecordSqlMapper.fromCursor(cursor, RECORD_SQL_COLUMNS)
 
-    private fun createCategoryFromCursor(cursor: Cursor): Category {
-        return Category(
-            id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_ID)),
-            name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_NAME)),
-            type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_TYPE)),
-            icon = getNullableString(cursor, COLUMN_CATEGORY_ICON),
-            color = getNullableString(cursor, COLUMN_CATEGORY_COLOR),
-            parentId = getNullableLong(cursor, COLUMN_CATEGORY_PARENT_ID),
-            sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY_SORT_ORDER))
-        )
-    }
-
     private fun getNullableString(cursor: Cursor, columnName: String): String? {
         val columnIndex = cursor.getColumnIndex(columnName)
         if (columnIndex == -1 || cursor.isNull(columnIndex)) {
@@ -1337,94 +1348,14 @@ class DatabaseHelper(
         return cursor.getInt(columnIndex)
     }
 
-    private fun getCategoryByIdInternal(db: SQLiteDatabase, id: Long): Category? {
-        val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_ID = ?",
-            arrayOf(id.toString())
-        )
+    private fun getCategoryByIdInternal(db: SQLiteDatabase, id: Long): Category? =
+        categoryReadRepository.getById(db, id)
 
-        cursor.use {
-            if (!it.moveToFirst()) {
-                return null
-            }
-            return createCategoryFromCursor(it)
-        }
-    }
-
-    private fun getCategoriesByTypeInternal(db: SQLiteDatabase, type: Int): List<Category> {
-        val categories = mutableListOf<Category>()
-        val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_TYPE = ? " +
-                "ORDER BY CASE WHEN $COLUMN_CATEGORY_PARENT_ID IS NULL THEN 0 ELSE 1 END, " +
-                "$COLUMN_CATEGORY_PARENT_ID, $COLUMN_CATEGORY_SORT_ORDER ASC, " +
-                "$COLUMN_CATEGORY_NAME COLLATE NOCASE ASC, $COLUMN_CATEGORY_ID ASC",
-            arrayOf(type.toString())
-        )
-
-        cursor.use {
-            if (it.moveToFirst()) {
-                do {
-                    categories.add(createCategoryFromCursor(it))
-                } while (it.moveToNext())
-            }
-        }
-
-        return categories
-    }
+    private fun getCategoriesByTypeInternal(db: SQLiteDatabase, type: Int): List<Category> =
+        categoryReadRepository.getByType(db, type)
 
     private fun validateParentAssignment(db: SQLiteDatabase, category: Category) {
-        val parentId = category.parentId ?: return
-        val categoryId = category.id.takeIf { it > 0L }
-        val parent = getCategoryByIdInternal(db, parentId)
-            ?: throw CategoryOperationException(CategoryOperationError.PARENT_NOT_FOUND)
-
-        if (parent.type != category.type) {
-            throw CategoryOperationException(CategoryOperationError.PARENT_TYPE_MISMATCH)
-        }
-        if (categoryId != null && parentId == categoryId) {
-            throw CategoryOperationException(CategoryOperationError.SELF_PARENT)
-        }
-        if (categoryId != null && isDescendantCategory(db, categoryId, parentId)) {
-            throw CategoryOperationException(CategoryOperationError.DESCENDANT_CYCLE)
-        }
-
-        val assignedDepth = resolveCategoryDepth(db, parentId, mutableSetOf()) + 1
-        val maxDepth = CategoryHierarchySettingsHelper.getCategoryMaxDepth(appContext)
-        if (assignedDepth > maxDepth) {
-            throw CategoryOperationException(CategoryOperationError.MAX_DEPTH_EXCEEDED)
-        }
-    }
-
-    private fun isDescendantCategory(db: SQLiteDatabase, categoryId: Long, candidateParentId: Long): Boolean {
-        var currentParentId: Long? = candidateParentId
-        val visited = mutableSetOf<Long>()
-
-        while (currentParentId != null) {
-            if (!visited.add(currentParentId)) {
-                break
-            }
-            if (currentParentId == categoryId) {
-                return true
-            }
-            currentParentId = getCategoryByIdInternal(db, currentParentId)?.parentId
-        }
-
-        return false
-    }
-
-    private fun resolveCategoryDepth(
-        db: SQLiteDatabase,
-        categoryId: Long,
-        visiting: MutableSet<Long>
-    ): Int {
-        if (!visiting.add(categoryId)) {
-            return 1
-        }
-
-        val category = getCategoryByIdInternal(db, categoryId) ?: return 1
-        val depth = category.parentId?.let { resolveCategoryDepth(db, it, visiting) + 1 } ?: 1
-        visiting.remove(categoryId)
-        return depth
+        categoryHierarchyValidator.validateParentAssignment(db, category)
     }
 
     private fun categoryHasChildren(db: SQLiteDatabase, id: Long): Boolean {
@@ -2160,25 +2091,7 @@ class DatabaseHelper(
         }
     }
 
-    fun getCategoriesByType(type: Int): List<Category> {
-        val categories = mutableListOf<Category>()
-        val db = readableDatabase
-        val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_CATEGORIES WHERE $COLUMN_CATEGORY_TYPE = ?",
-            arrayOf(type.toString())
-        )
-
-        cursor.use {
-            if (it.moveToFirst()) {
-                do {
-                    categories.add(createCategoryFromCursor(it))
-                } while (it.moveToNext())
-            }
-        }
-
-        db.close()
-        return categories
-    }
+    fun getCategoriesByType(type: Int): List<Category> = categoryReadRepository.getByType(type)
 
     fun getCategoryTreeByType(type: Int): List<Category> {
         val db = readableDatabase
@@ -2196,54 +2109,14 @@ class DatabaseHelper(
         }
     }
 
-    fun getLeafCategoriesByType(type: Int): List<Category> {
-        val categories = mutableListOf<Category>()
-        val selectQuery =
-            "SELECT c.* FROM $TABLE_CATEGORIES c " +
-                "WHERE c.$COLUMN_CATEGORY_TYPE = ? " +
-                "AND NOT EXISTS (" +
-                "SELECT 1 FROM $TABLE_CATEGORIES child " +
-                "WHERE child.$COLUMN_CATEGORY_PARENT_ID = c.$COLUMN_CATEGORY_ID " +
-                "AND child.$COLUMN_CATEGORY_TYPE = c.$COLUMN_CATEGORY_TYPE) " +
-                "ORDER BY c.$COLUMN_CATEGORY_NAME"
+    fun getLeafCategoriesByType(type: Int): List<Category> =
+        categoryReadRepository.getLeavesByType(type)
 
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, arrayOf(type.toString()))
+    fun buildCategoryPathLabel(categoryId: Long): String? =
+        categoryReadRepository.buildPathLabel(categoryId)
 
-        if (cursor.moveToFirst()) {
-            do {
-                categories.add(createCategoryFromCursor(cursor))
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        db.close()
-        return categories
-    }
-
-    fun buildCategoryPathLabel(categoryId: Long): String? {
-        val db = readableDatabase
-        val segments = mutableListOf<String>()
-        val visited = mutableSetOf<Long>()
-        var currentCategory = getCategoryByIdInternal(db, categoryId)
-
-        while (currentCategory != null && visited.add(currentCategory.id)) {
-            segments.add(currentCategory.name)
-            currentCategory = currentCategory.parentId?.let { parentId ->
-                getCategoryByIdInternal(db, parentId)
-            }
-        }
-
-        db.close()
-        return segments.takeIf { it.isNotEmpty() }?.asReversed()?.joinToString(" / ")
-    }
-
-    fun getCategoryById(id: Long): Category? {
-        val db = readableDatabase
-        val category = getCategoryByIdInternal(db, id)
-        db.close()
-        return category
-    }
+    fun getCategoryById(id: Long): Category? =
+        categoryReadRepository.getById(readableDatabase, id)
 
     fun getAllCategories(): List<Category> {
         val db = readableDatabase
