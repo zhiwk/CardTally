@@ -75,6 +75,7 @@
 - 记录行映射：`database/RecordSqlMapper.kt`
 - 重复记账模板读写：`database/RecurringRecordRepository.kt`
 - 分类只读查询及路径：`database/CategoryReadRepository.kt`
+- 分类写入与排序：`database/CategoryWriteRepository.kt`
 - 分类父子关系校验：`database/CategoryHierarchyValidator.kt`
 - 分类树展示顺序：`database/CategoryTreeOrdering.kt`
 

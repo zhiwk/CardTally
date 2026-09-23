@@ -58,6 +58,19 @@ class DatabaseHelper(
             columns = CATEGORY_READ_COLUMNS
         )
     }
+    private val categoryWriteRepository by lazy {
+        CategoryWriteRepository(
+            writableDatabase = { writableDatabase },
+            validateParent = ::validateParentAssignment,
+            findExistingId = { db, category ->
+                findCategoryId(db, category.name, category.type, category.parentId)
+            },
+            hasChildren = ::categoryHasChildren,
+            isReferencedByRecord = ::categoryIsReferencedByRecordId,
+            throwError = { throw CategoryOperationException(it) },
+            columns = CATEGORY_WRITE_COLUMNS
+        )
+    }
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -221,6 +234,17 @@ class DatabaseHelper(
             color = COLUMN_CATEGORY_COLOR,
             parentId = COLUMN_CATEGORY_PARENT_ID,
             sortOrder = COLUMN_CATEGORY_SORT_ORDER
+        )
+        private val CATEGORY_WRITE_COLUMNS = CategoryWriteRepository.Columns(
+            table = TABLE_CATEGORIES,
+            id = COLUMN_CATEGORY_ID,
+            name = COLUMN_CATEGORY_NAME,
+            type = COLUMN_CATEGORY_TYPE,
+            icon = COLUMN_CATEGORY_ICON,
+            color = COLUMN_CATEGORY_COLOR,
+            parentId = COLUMN_CATEGORY_PARENT_ID,
+            sortOrder = COLUMN_CATEGORY_SORT_ORDER,
+            ledgerId = COLUMN_LEDGER_ID
         )
 
         private const val TABLE_ASSETS = "assets"
@@ -1981,98 +2005,13 @@ class DatabaseHelper(
         return sdf.format(Date(nowMillis))
     }
 
-    fun addCategory(category: Category): Long {
-        val db = writableDatabase
-        validateParentAssignment(db, category)
-        findCategoryId(db, category.name, category.type, category.parentId)?.let { return it }
-        val values = ContentValues().apply {
-            put(COLUMN_CATEGORY_NAME, category.name)
-            put(COLUMN_CATEGORY_TYPE, category.type)
-            put(COLUMN_CATEGORY_ICON, category.icon)
-            put(COLUMN_CATEGORY_COLOR, category.color ?: "#F5F5F5")
-            if (category.parentId != null) {
-                put(COLUMN_CATEGORY_PARENT_ID, category.parentId)
-            } else {
-                putNull(COLUMN_CATEGORY_PARENT_ID)
-            }
-            put(COLUMN_CATEGORY_SORT_ORDER, nextCategorySortOrder(db, category.type, category.parentId))
-            put(COLUMN_LEDGER_ID, 1L)
-        }
+    fun addCategory(category: Category): Long = categoryWriteRepository.add(category)
 
-        return db.insert(TABLE_CATEGORIES, null, values)
-    }
+    fun updateCategorySortOrders(categoryIds: List<Long>) =
+        categoryWriteRepository.updateSortOrders(categoryIds)
 
-    fun updateCategorySortOrders(categoryIds: List<Long>) {
-        if (categoryIds.isEmpty()) return
-        val db = writableDatabase
-        db.beginTransaction()
-        try {
-            categoryIds.forEachIndexed { index, id ->
-                val values = ContentValues().apply {
-                    put(COLUMN_CATEGORY_SORT_ORDER, index)
-                }
-                db.update(
-                    TABLE_CATEGORIES,
-                    values,
-                    "$COLUMN_CATEGORY_ID = ?",
-                    arrayOf(id.toString())
-                )
-            }
-            db.setTransactionSuccessful()
-        } finally {
-            db.endTransaction()
-            db.close()
-        }
-    }
-
-    private fun nextCategorySortOrder(db: SQLiteDatabase, type: Int, parentId: Long?): Int {
-        val selection = if (parentId == null) {
-            "$COLUMN_CATEGORY_TYPE = ? AND $COLUMN_CATEGORY_PARENT_ID IS NULL"
-        } else {
-            "$COLUMN_CATEGORY_TYPE = ? AND $COLUMN_CATEGORY_PARENT_ID = ?"
-        }
-        val args = if (parentId == null) {
-            arrayOf(type.toString())
-        } else {
-            arrayOf(type.toString(), parentId.toString())
-        }
-        return db.query(
-            TABLE_CATEGORIES,
-            arrayOf("MAX($COLUMN_CATEGORY_SORT_ORDER)"),
-            selection,
-            args,
-            null,
-            null,
-            null
-        ).use { cursor ->
-            if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getInt(0) + 1 else 0
-        }
-    }
-
-    private fun initializeCategorySortOrders(db: SQLiteDatabase) {
-        val cursor = db.rawQuery(
-            "SELECT $COLUMN_CATEGORY_ID, $COLUMN_CATEGORY_TYPE, $COLUMN_CATEGORY_PARENT_ID " +
-                "FROM $TABLE_CATEGORIES ORDER BY $COLUMN_CATEGORY_TYPE, " +
-                "$COLUMN_CATEGORY_PARENT_ID, $COLUMN_CATEGORY_NAME COLLATE NOCASE, $COLUMN_CATEGORY_ID",
-            null
-        )
-        val nextByGroup = mutableMapOf<String, Int>()
-        cursor.use {
-            if (it.moveToFirst()) {
-                do {
-                    val id = it.getLong(0)
-                    val type = it.getInt(1)
-                    val parentId = getNullableLong(it, COLUMN_CATEGORY_PARENT_ID)
-                    val groupKey = "$type:${parentId ?: "root"}"
-                    val values = ContentValues().apply {
-                        put(COLUMN_CATEGORY_SORT_ORDER, nextByGroup.getOrDefault(groupKey, 0))
-                    }
-                    db.update(TABLE_CATEGORIES, values, "$COLUMN_CATEGORY_ID = ?", arrayOf(id.toString()))
-                    nextByGroup[groupKey] = values.getAsInteger(COLUMN_CATEGORY_SORT_ORDER) + 1
-                } while (it.moveToNext())
-            }
-        }
-    }
+    private fun initializeCategorySortOrders(db: SQLiteDatabase) =
+        categoryWriteRepository.initializeSortOrders(db)
 
     private fun initializeAssetSortOrders(db: SQLiteDatabase) {
         db.rawQuery(
@@ -2127,40 +2066,9 @@ class DatabaseHelper(
         return categories
     }
 
-    fun updateCategory(category: Category): Int {
-        val db = writableDatabase
-        validateParentAssignment(db, category)
-        val values = ContentValues().apply {
-            put(COLUMN_CATEGORY_NAME, category.name)
-            put(COLUMN_CATEGORY_TYPE, category.type)
-            put(COLUMN_CATEGORY_ICON, category.icon)
-            put(COLUMN_CATEGORY_COLOR, category.color ?: "#F5F5F5")
-            if (category.parentId != null) {
-                put(COLUMN_CATEGORY_PARENT_ID, category.parentId)
-            } else {
-                putNull(COLUMN_CATEGORY_PARENT_ID)
-            }
-        }
+    fun updateCategory(category: Category): Int = categoryWriteRepository.update(category)
 
-        val rowsAffected = db.update(TABLE_CATEGORIES, values, "$COLUMN_CATEGORY_ID = ?",
-            arrayOf(category.id.toString()))
-        db.close()
-        return rowsAffected
-    }
-
-    fun deleteCategory(id: Long) {
-        val db = writableDatabase
-        if (categoryHasChildren(db, id)) {
-            db.close()
-            throw CategoryOperationException(CategoryOperationError.HAS_CHILDREN)
-        }
-        if (categoryIsReferencedByRecordId(db, id)) {
-            db.close()
-            throw CategoryOperationException(CategoryOperationError.IN_USE_BY_RECORDS)
-        }
-        db.delete(TABLE_CATEGORIES, "$COLUMN_CATEGORY_ID = ?", arrayOf(id.toString()))
-        db.close()
-    }
+    fun deleteCategory(id: Long) = categoryWriteRepository.delete(id)
 
     fun getTotalByType(type: Int): Double = Money.toMajorDouble(getTotalByTypeMinor(type))
 
