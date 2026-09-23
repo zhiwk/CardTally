@@ -84,6 +84,23 @@ class DatabaseHelper(
             columns = RECORD_STATISTICS_COLUMNS
         )
     }
+    private val assetReadRepository by lazy {
+        AssetReadRepository(
+            readableDatabase = { readableDatabase },
+            activeAssetScope = ::assetScope,
+            columns = ASSET_READ_COLUMNS
+        )
+    }
+    private val assetWriteRepository by lazy {
+        AssetWriteRepository(
+            writableDatabase = { writableDatabase },
+            currentLedgerId = ::currentLedgerId,
+            activeAssetScope = ::assetScope,
+            isAssetNameReferenced = ::assetNameIsReferenced,
+            throwError = { throw AssetOperationException(it) },
+            columns = ASSET_WRITE_COLUMNS
+        )
+    }
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -271,6 +288,34 @@ class DatabaseHelper(
         private const val COLUMN_ASSET_IS_PINNED = "is_pinned"
         private const val COLUMN_ASSET_INCLUDE_IN_TOTAL = "include_in_total"
         private const val COLUMN_ASSET_SORT_ORDER = "sort_order"
+        private val ASSET_READ_COLUMNS = AssetReadRepository.Columns(
+            table = TABLE_ASSETS,
+            id = COLUMN_ASSET_ID,
+            ledgerId = COLUMN_LEDGER_ID,
+            name = COLUMN_ASSET_NAME,
+            amount = COLUMN_ASSET_AMOUNT,
+            type = COLUMN_ASSET_TYPE,
+            categoryLabel = COLUMN_ASSET_CATEGORY_LABEL,
+            categoryIcon = COLUMN_ASSET_CATEGORY_ICON_NAME,
+            archived = COLUMN_ASSET_IS_ARCHIVED,
+            pinned = COLUMN_ASSET_IS_PINNED,
+            includeInTotal = COLUMN_ASSET_INCLUDE_IN_TOTAL,
+            sortOrder = COLUMN_ASSET_SORT_ORDER
+        )
+        private val ASSET_WRITE_COLUMNS = AssetWriteRepository.Columns(
+            table = TABLE_ASSETS,
+            id = COLUMN_ASSET_ID,
+            ledgerId = COLUMN_LEDGER_ID,
+            name = COLUMN_ASSET_NAME,
+            amount = COLUMN_ASSET_AMOUNT,
+            type = COLUMN_ASSET_TYPE,
+            categoryLabel = COLUMN_ASSET_CATEGORY_LABEL,
+            categoryIcon = COLUMN_ASSET_CATEGORY_ICON_NAME,
+            archived = COLUMN_ASSET_IS_ARCHIVED,
+            pinned = COLUMN_ASSET_IS_PINNED,
+            includeInTotal = COLUMN_ASSET_INCLUDE_IN_TOTAL,
+            sortOrder = COLUMN_ASSET_SORT_ORDER
+        )
 
         private const val TABLE_AI_CHAT_SESSIONS = "ai_chat_sessions"
         private const val COLUMN_AI_CHAT_SESSION_ID = "id"
@@ -2494,228 +2539,25 @@ class DatabaseHelper(
     fun getMonthlyStatistics(type: Int, year: Int): Map<String, Double> =
         recordStatisticsRepository.monthlyStatistics(type, year)
 
-    fun addAsset(asset: Asset): Long {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_LEDGER_ID, currentLedgerId())
-            put(COLUMN_ASSET_NAME, asset.name)
-            put(COLUMN_ASSET_AMOUNT, requireNotNull(Money.toMinor(asset.amount)))
-            put(COLUMN_ASSET_TYPE, asset.type)
-            put(COLUMN_ASSET_CATEGORY_LABEL, asset.categoryLabel)
-            put(COLUMN_ASSET_CATEGORY_ICON_NAME, asset.categoryIconName)
-            put(COLUMN_ASSET_IS_ARCHIVED, if (asset.isArchived) 1 else 0)
-            put(COLUMN_ASSET_IS_PINNED, if (asset.isPinned) 1 else 0)
-            put(COLUMN_ASSET_INCLUDE_IN_TOTAL, if (asset.includeInTotal) 1 else 0)
-            put(COLUMN_ASSET_SORT_ORDER, nextAssetSortOrder(db))
-        }
+    fun addAsset(asset: Asset): Long = assetWriteRepository.add(asset)
 
-        val id = db.insert(TABLE_ASSETS, null, values)
-        db.close()
-        return id
-    }
+    fun getAllAssets(ledgerId: Long? = null): List<Asset> = assetReadRepository.getActive(ledgerId)
 
-    fun getAllAssets(ledgerId: Long? = null): List<Asset> {
-        val assets = mutableListOf<Asset>()
-        val selectQuery = if (ledgerId == null) {
-            "SELECT * FROM $TABLE_ASSETS WHERE ${assetScope()} AND $COLUMN_ASSET_IS_ARCHIVED = 0 ORDER BY $COLUMN_ASSET_SORT_ORDER, $COLUMN_ASSET_ID"
-        } else {
-            "SELECT * FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0 ORDER BY $COLUMN_ASSET_SORT_ORDER, $COLUMN_ASSET_ID"
-        }
+    fun getArchivedAssets(): List<Asset> = assetReadRepository.getArchived()
 
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, ledgerId?.let { arrayOf(it.toString()) })
+    fun archiveAsset(id: Long) = assetWriteRepository.archive(id)
 
-        if (cursor.moveToFirst()) {
-            do {
-                val asset = Asset(
-                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_ID)),
-                    ledgerId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_LEDGER_ID)),
-                    name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_NAME)),
-                    amount = Money.toMajorDouble(cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT))),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE)),
-                    categoryLabel = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_LABEL)),
-                    categoryIconName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_ICON_NAME)),
-                    isArchived = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_IS_ARCHIVED)) == 1,
-                    isPinned = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_IS_PINNED)) == 1
-                    ,includeInTotal = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_INCLUDE_IN_TOTAL)) == 1,
-                    sortOrder = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_SORT_ORDER))
-                )
-                assets.add(asset)
-            } while (cursor.moveToNext())
-        }
+    fun unarchiveAsset(id: Long) = assetWriteRepository.unarchive(id)
 
-        cursor.close()
-        db.close()
-        return assets
-    }
+    fun updateAsset(asset: Asset): Int = assetWriteRepository.update(asset)
 
-    fun getArchivedAssets(): List<Asset> {
-        val assets = mutableListOf<Asset>()
-        val selectQuery = "SELECT * FROM $TABLE_ASSETS WHERE ${assetScope()} AND $COLUMN_ASSET_IS_ARCHIVED = 1 ORDER BY $COLUMN_ASSET_NAME"
+    fun setAssetPinned(id: Long, pinned: Boolean): Int = assetWriteRepository.setPinned(id, pinned)
 
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, null)
+    fun updateAssetSortOrder(assetIds: List<Long>): Boolean = assetWriteRepository.updateSortOrder(assetIds)
 
-        if (cursor.moveToFirst()) {
-            do {
-                val asset = Asset(
-                    id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_ID)),
-                    ledgerId = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_LEDGER_ID)),
-                    name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_NAME)),
-                    amount = Money.toMajorDouble(cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT))),
-                    type = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE)),
-                    categoryLabel = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_LABEL)),
-                    categoryIconName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_ICON_NAME)),
-                    isArchived = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_IS_ARCHIVED)) == 1,
-                    isPinned = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_IS_PINNED)) == 1
-                    ,includeInTotal = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_INCLUDE_IN_TOTAL)) == 1
-                )
-                assets.add(asset)
-            } while (cursor.moveToNext())
-        }
+    fun deleteArchivedAsset(id: Long): Boolean = assetWriteRepository.deleteArchived(id)
 
-        cursor.close()
-        db.close()
-        return assets
-    }
-
-    fun archiveAsset(id: Long) {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_ASSET_IS_ARCHIVED, 1)
-            put(COLUMN_ASSET_IS_PINNED, 0)
-        }
-        db.update(TABLE_ASSETS, values, "$COLUMN_LEDGER_ID = ${currentLedgerId()} AND $COLUMN_ASSET_ID = ?", arrayOf(id.toString()))
-        db.close()
-    }
-
-    fun unarchiveAsset(id: Long) {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_ASSET_IS_ARCHIVED, 0)
-        }
-        db.update(TABLE_ASSETS, values, "$COLUMN_LEDGER_ID = ${currentLedgerId()} AND $COLUMN_ASSET_ID = ?", arrayOf(id.toString()))
-        db.close()
-    }
-
-    fun updateAsset(asset: Asset): Int {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_ASSET_NAME, asset.name)
-            put(COLUMN_ASSET_AMOUNT, requireNotNull(Money.toMinor(asset.amount)))
-            put(COLUMN_ASSET_TYPE, asset.type)
-            put(COLUMN_ASSET_CATEGORY_LABEL, asset.categoryLabel)
-            put(COLUMN_ASSET_CATEGORY_ICON_NAME, asset.categoryIconName)
-            put(COLUMN_ASSET_IS_ARCHIVED, if (asset.isArchived) 1 else 0)
-            put(COLUMN_ASSET_IS_PINNED, if (asset.isPinned) 1 else 0)
-            put(COLUMN_ASSET_INCLUDE_IN_TOTAL, if (asset.includeInTotal) 1 else 0)
-        }
-
-        val rowsAffected = db.update(TABLE_ASSETS, values, "$COLUMN_LEDGER_ID = ${currentLedgerId()} AND $COLUMN_ASSET_ID = ?",
-            arrayOf(asset.id.toString()))
-        db.close()
-        return rowsAffected
-    }
-
-    fun setAssetPinned(id: Long, pinned: Boolean): Int {
-        val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_ASSET_IS_PINNED, if (pinned) 1 else 0)
-            put(COLUMN_ASSET_SORT_ORDER, nextAssetSortOrder(db))
-        }
-        val rows = db.update(
-            TABLE_ASSETS,
-            values,
-            "$COLUMN_LEDGER_ID = ${currentLedgerId()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
-            arrayOf(id.toString())
-        )
-        db.close()
-        return rows
-    }
-
-    fun updateAssetSortOrder(assetIds: List<Long>): Boolean {
-        if (assetIds.isEmpty() || assetIds.distinct().size != assetIds.size) return false
-        val db = writableDatabase
-        db.beginTransaction()
-        return try {
-            assetIds.forEachIndexed { order, id ->
-                val changed = db.update(
-                    TABLE_ASSETS,
-                    ContentValues().apply { put(COLUMN_ASSET_SORT_ORDER, order) },
-                    "${assetScope()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
-                    arrayOf(id.toString())
-                )
-                if (changed != 1) return false
-            }
-            db.setTransactionSuccessful()
-            true
-        } finally {
-            db.endTransaction()
-            db.close()
-        }
-    }
-
-    private fun nextAssetSortOrder(db: SQLiteDatabase): Int = db.rawQuery(
-        "SELECT COALESCE(MAX($COLUMN_ASSET_SORT_ORDER), -1) + 1 FROM $TABLE_ASSETS WHERE ${assetScope()}",
-        null
-    ).use { cursor ->
-        if (cursor.moveToFirst()) cursor.getInt(0) else 0
-    }
-
-    fun deleteArchivedAsset(id: Long): Boolean {
-        val db = writableDatabase
-        db.beginTransaction()
-        try {
-            val cursor = db.rawQuery(
-                "SELECT $COLUMN_ASSET_NAME, $COLUMN_ASSET_IS_ARCHIVED FROM $TABLE_ASSETS " +
-                    "WHERE $COLUMN_LEDGER_ID = ${currentLedgerId()} AND $COLUMN_ASSET_ID = ?",
-                arrayOf(id.toString())
-            )
-            val asset = cursor.use {
-                if (!it.moveToFirst()) null else Pair(it.getString(0), it.getInt(1) == 1)
-            }
-            if (asset == null) {
-                db.setTransactionSuccessful()
-                return false
-            }
-            if (!asset.second) {
-                throw AssetOperationException(AssetOperationError.NOT_ARCHIVED)
-            }
-            if (assetNameIsReferenced(db, asset.first)) {
-                throw AssetOperationException(AssetOperationError.IN_USE_BY_RECORDS)
-            }
-
-            val deleted = db.delete(TABLE_ASSETS, "$COLUMN_LEDGER_ID = ${currentLedgerId()} AND $COLUMN_ASSET_ID = ?", arrayOf(id.toString())) == 1
-            db.setTransactionSuccessful()
-            return deleted
-        } finally {
-            db.endTransaction()
-        }
-    }
-
-    fun deleteAsset(id: Long): Boolean {
-        val db = writableDatabase
-        db.beginTransaction()
-        try {
-            val cursor = db.rawQuery(
-                "SELECT $COLUMN_ASSET_NAME FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ${currentLedgerId()} AND $COLUMN_ASSET_ID = ?",
-                arrayOf(id.toString())
-            )
-            val assetName = cursor.use { if (it.moveToFirst()) it.getString(0) else null }
-            if (assetName == null) {
-                db.setTransactionSuccessful()
-                return false
-            }
-            if (assetNameIsReferenced(db, assetName)) {
-                throw AssetOperationException(AssetOperationError.IN_USE_BY_RECORDS)
-            }
-            val deleted = db.delete(TABLE_ASSETS, "$COLUMN_LEDGER_ID = ${currentLedgerId()} AND $COLUMN_ASSET_ID = ?", arrayOf(id.toString())) == 1
-            db.setTransactionSuccessful()
-            return deleted
-        } finally {
-            db.endTransaction()
-        }
-    }
+    fun deleteAsset(id: Long): Boolean = assetWriteRepository.delete(id)
 
     private fun assetNameIsReferenced(db: SQLiteDatabase, assetName: String): Boolean {
         val cursor = db.rawQuery(

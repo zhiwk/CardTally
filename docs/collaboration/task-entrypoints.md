@@ -78,10 +78,12 @@
 - 分类写入与排序：`database/CategoryWriteRepository.kt`
 - 分类父子关系校验：`database/CategoryHierarchyValidator.kt`
 - 分类树展示顺序：`database/CategoryTreeOrdering.kt`
+- 资产行读取与映射：`database/AssetReadRepository.kt`
+- 资产元数据及归档/排序写入：`database/AssetWriteRepository.kt`
 - AI 会话与消息 SQLite 读写：`database/AiChatRepository.kt`
 - 统计总额、手续费和周期聚合 SQL：`database/RecordStatisticsRepository.kt`
 
-这些类由 `DatabaseHelper` 保持兼容门面调用；Schema/版本迁移、资产／账本写入、记录余额事务和普通记录查询仍在 `DatabaseHelper`，后续职责拆分需分别保持原事务与作用域语义。
+这些类由 `DatabaseHelper` 保持兼容门面调用；Schema/版本迁移、资产池与账本关系、记录余额事务和普通记录查询仍在 `DatabaseHelper`，后续职责拆分需分别保持原事务与作用域语义。
 
 ### 改 AI 助手 / MiniMax 对话 / 会话持久化
 
