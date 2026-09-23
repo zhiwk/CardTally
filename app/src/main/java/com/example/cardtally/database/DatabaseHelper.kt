@@ -77,6 +77,13 @@ class DatabaseHelper(
             columns = AI_CHAT_COLUMNS
         )
     }
+    private val recordStatisticsRepository by lazy {
+        RecordStatisticsRepository(
+            readableDatabase = { readableDatabase },
+            currentLedgerId = ::currentLedgerId,
+            columns = RECORD_STATISTICS_COLUMNS
+        )
+    }
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
@@ -293,6 +300,15 @@ class DatabaseHelper(
             messageReasoning = COLUMN_AI_CHAT_MESSAGE_REASONING,
             messageIsError = COLUMN_AI_CHAT_MESSAGE_IS_ERROR,
             messageCreatedAt = COLUMN_AI_CHAT_MESSAGE_CREATED_AT
+        )
+        private val RECORD_STATISTICS_COLUMNS = RecordStatisticsRepository.Columns(
+            table = TABLE_RECORDS,
+            ledgerId = COLUMN_LEDGER_ID,
+            date = COLUMN_DATE,
+            amount = COLUMN_AMOUNT,
+            category = COLUMN_CATEGORY,
+            type = COLUMN_TYPE,
+            fee = COLUMN_RECORD_FEE
         )
 
         private const val CREATE_TABLE_RECORDS =
@@ -2093,49 +2109,13 @@ class DatabaseHelper(
 
     fun getTotalByType(type: Int): Double = Money.toMajorDouble(getTotalByTypeMinor(type))
 
-    fun getTotalByTypeMinor(type: Int): Long {
-        val db = readableDatabase
-        val amount = db.rawQuery(
-            "SELECT COALESCE(SUM($COLUMN_AMOUNT), 0) FROM $TABLE_RECORDS " +
-                "WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = ?",
-            arrayOf(currentLedgerId().toString(), type.toString())
-        ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
-        val fee = if (type == 0) getTransferFeeSumMinor(db, null, null) else 0L
-        db.close()
-        return Math.addExact(amount, fee)
-    }
-
-    /** Transfer fees count toward the expense total even though transfers are not income/expense. */
-    private fun getTransferFeeSumMinor(db: SQLiteDatabase, startDate: String?, endDate: String?): Long {
-        val rangeClause = if (startDate != null && endDate != null) " AND $COLUMN_DATE BETWEEN ? AND ?" else ""
-        val args = if (rangeClause.isEmpty()) {
-            arrayOf(currentLedgerId().toString(), "2")
-        } else {
-            arrayOf(currentLedgerId().toString(), "2", startDate!!, endDate!!)
-        }
-        val cursor = db.rawQuery(
-            "SELECT COALESCE(SUM($COLUMN_RECORD_FEE), 0) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = ?$rangeClause",
-            args
-        )
-        val sum = if (cursor.moveToFirst()) cursor.getLong(0) else 0L
-        cursor.close()
-        return sum
-    }
+    fun getTotalByTypeMinor(type: Int): Long = recordStatisticsRepository.totalByTypeMinor(type)
 
     fun getTotalByTypeAndDateRange(type: Int, startDate: String, endDate: String): Double =
         Money.toMajorDouble(getTotalByTypeAndDateRangeMinor(type, startDate, endDate))
 
-    fun getTotalByTypeAndDateRangeMinor(type: Int, startDate: String, endDate: String): Long {
-        val db = readableDatabase
-        val amount = db.rawQuery(
-            "SELECT COALESCE(SUM($COLUMN_AMOUNT), 0) FROM $TABLE_RECORDS " +
-                "WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = ? AND $COLUMN_DATE BETWEEN ? AND ?",
-            arrayOf(currentLedgerId().toString(), type.toString(), startDate, endDate)
-        ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
-        val fee = if (type == 0) getTransferFeeSumMinor(db, startDate, endDate) else 0L
-        db.close()
-        return Math.addExact(amount, fee)
-    }
+    fun getTotalByTypeAndDateRangeMinor(type: Int, startDate: String, endDate: String): Long =
+        recordStatisticsRepository.totalByTypeAndDateRangeMinor(type, startDate, endDate)
 
     fun getRecordsByDateRange(startDate: String, endDate: String): List<Record> {
         val records = mutableListOf<Record>()
@@ -2505,79 +2485,14 @@ class DatabaseHelper(
         }
     }
 
-    fun getCategoryStatistics(type: Int): Map<String, Double> {
-        val categoryStats = mutableMapOf<String, Double>()
-        val selectQuery = "SELECT $COLUMN_CATEGORY, SUM($COLUMN_AMOUNT) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = ? GROUP BY $COLUMN_CATEGORY"
+    fun getCategoryStatistics(type: Int): Map<String, Double> =
+        recordStatisticsRepository.categoryStatistics(type)
 
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, arrayOf(currentLedgerId().toString(), type.toString()))
+    fun getCategoryStatisticsByDateRange(type: Int, startDate: String, endDate: String): Map<String, Double> =
+        recordStatisticsRepository.categoryStatisticsByDateRange(type, startDate, endDate)
 
-        if (cursor.moveToFirst()) {
-            do {
-                val category = cursor.getString(0)
-                val total = Money.toMajorDouble(cursor.getLong(1))
-                categoryStats[category] = total
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        db.close()
-        return categoryStats
-    }
-
-    fun getCategoryStatisticsByDateRange(type: Int, startDate: String, endDate: String): Map<String, Double> {
-        val categoryStats = mutableMapOf<String, Double>()
-        val selectQuery = "SELECT $COLUMN_CATEGORY, SUM($COLUMN_AMOUNT) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = ? AND $COLUMN_DATE BETWEEN ? AND ? GROUP BY $COLUMN_CATEGORY"
-
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, arrayOf(currentLedgerId().toString(), type.toString(), startDate, endDate))
-
-        if (cursor.moveToFirst()) {
-            do {
-                val category = cursor.getString(0)
-                val total = Money.toMajorDouble(cursor.getLong(1))
-                categoryStats[category] = total
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        db.close()
-        return categoryStats
-    }
-
-    fun getMonthlyStatistics(type: Int, year: Int): Map<String, Double> {
-        val monthlyStats = mutableMapOf<String, Double>()
-        val selectQuery = "SELECT SUBSTR($COLUMN_DATE, 1, 7) as month, SUM($COLUMN_AMOUNT) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = ? AND SUBSTR($COLUMN_DATE, 1, 4) = ? GROUP BY month ORDER BY month"
-
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, arrayOf(currentLedgerId().toString(), type.toString(), year.toString()))
-
-        if (cursor.moveToFirst()) {
-            do {
-                val month = cursor.getString(0)
-                val total = Money.toMajorDouble(cursor.getLong(1))
-                monthlyStats[month] = total
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        if (type == 0) {
-            val feeCursor = db.rawQuery(
-                "SELECT SUBSTR($COLUMN_DATE, 1, 7) as month, SUM($COLUMN_RECORD_FEE) FROM $TABLE_RECORDS " +
-                    "WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_TYPE = 2 AND SUBSTR($COLUMN_DATE, 1, 4) = ? GROUP BY month",
-                arrayOf(currentLedgerId().toString(), year.toString())
-            )
-            if (feeCursor.moveToFirst()) {
-                do {
-                    val month = feeCursor.getString(0)
-                    monthlyStats[month] = (monthlyStats[month] ?: 0.0) + Money.toMajorDouble(feeCursor.getLong(1))
-                } while (feeCursor.moveToNext())
-            }
-            feeCursor.close()
-        }
-        db.close()
-        return monthlyStats
-    }
+    fun getMonthlyStatistics(type: Int, year: Int): Map<String, Double> =
+        recordStatisticsRepository.monthlyStatistics(type, year)
 
     fun addAsset(asset: Asset): Long {
         val db = writableDatabase

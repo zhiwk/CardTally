@@ -6,7 +6,7 @@
 
 - 2026-09-23：继续提取录入、统计和数据库边界：新增纯 Kotlin `RecordEntryValidator` 统一金额、手续费、叶子分类及双资产转账校验；新增 `RecurringScheduleCalculator` 集中初次到期日、缺失日跳过、间隔和后续日期计算，`DatabaseHelper` 与重复任务编辑页均调用该计算器；统计分类父子聚合及排名迁至 `StatisticsRankingBuilder`；记录 SQLite `ContentValues` 与 Cursor 映射移至 `RecordSqlMapper`，分类树排序移至 `CategoryTreeOrdering`；重复任务读写、校验、Cursor/ContentValues 映射迁至 `RecurringRecordRepository`，`DatabaseHelper` 保留原兼容 API 和跨账本记录生成编排。单元测试覆盖调度、录入校验、统计聚合和分类树；全套隔离设备测试 **130/130 通过**，仪器报告运行 446.5 秒。分类一级卡片描边按 `DESIGN.md` 归零；`verify-ux-resources.ps1` 检查 84 个布局及 60 个引用布局通过。日常 Debug APK 已覆盖安装并确认 `MainActivity` 启动。
 
-- 2026-09-23：分类数据职责继续拆分：层级规则由 `CategoryHierarchyValidator` 管理，只读分类查询、叶子查询和路径构建由 `CategoryReadRepository` 管理；`CategoryWriteRepository` 处理分类新增/修改/删除、排序和排序迁移。AI 会话/消息读写迁至 `AiChatRepository`，`DatabaseHelper` 保留兼容 API、Schema 迁移与应用侧编排。验证：完整验证脚本此前三阶段 PASS、设备 130 项；本轮 JVM 单测及 Debug 编译通过；分类树/递归查询/迁移/删除撤销/schema/AI 会话消息共 21 项隔离设备测试通过。
+- 2026-09-23：分类数据职责继续拆分：层级规则由 `CategoryHierarchyValidator` 管理，只读分类查询、叶子查询和路径构建由 `CategoryReadRepository` 管理；`CategoryWriteRepository` 处理分类新增/修改/删除、排序和排序迁移；统计总额/手续费及分类、月份聚合查询迁至 `RecordStatisticsRepository`。AI 会话/消息读写迁至 `AiChatRepository`，`DatabaseHelper` 保留兼容 API、Schema 迁移与应用侧编排。验证：完整验证脚本此前三阶段 PASS、设备 130 项；本轮 JVM 单测及 Debug 编译通过；分类树/递归查询/迁移/删除撤销/schema/AI 会话消息 21 项通过，统计总额/手续费/分类聚合 9 项通过。
 
 - 2026-09-20：重复记账功能已落地：支持每日/每周/每月/每年/间隔周期、结束日期、启停、跨账本展示，以及支出/收入/转账任务；转账任务分别保存转出与转入资产 ID，资产选择范围按任务账本过滤，选择任务账本不会切换应用当前账本。每月 31 日和每年 2 月 29 日在目标日期不存在时跳过执行。相关实现位于 `RecurringRecordEditFragment`、`RecurringRecordsFragment`、`RecurringRecordScheduler`、`RecurringRecordWorker` 与 `DatabaseHelper`。
 
