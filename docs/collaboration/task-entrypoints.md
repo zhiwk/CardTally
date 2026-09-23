@@ -73,6 +73,7 @@
 数据协作者边界：
 
 - 记录行映射：`database/RecordSqlMapper.kt`
+- 记录查询与分页：`database/RecordReadRepository.kt`
 - 重复记账模板读写：`database/RecurringRecordRepository.kt`
 - 分类只读查询及路径：`database/CategoryReadRepository.kt`
 - 分类写入与排序：`database/CategoryWriteRepository.kt`
@@ -82,6 +83,7 @@
 - 资产元数据及归档/排序写入：`database/AssetWriteRepository.kt`
 - AI 会话与消息 SQLite 读写：`database/AiChatRepository.kt`
 - 统计总额、手续费和周期聚合 SQL：`database/RecordStatisticsRepository.kt`
+- 账本/资产池及资产归属查询：`database/LedgerReadRepository.kt`
 
 这些类由 `DatabaseHelper` 保持兼容门面调用；Schema/版本迁移、资产池与账本关系、记录余额事务和普通记录查询仍在 `DatabaseHelper`，后续职责拆分需分别保持原事务与作用域语义。
 

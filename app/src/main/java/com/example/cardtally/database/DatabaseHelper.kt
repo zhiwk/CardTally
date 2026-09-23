@@ -84,6 +84,15 @@ class DatabaseHelper(
             columns = RECORD_STATISTICS_COLUMNS
         )
     }
+    private val recordReadRepository by lazy {
+        RecordReadRepository(
+            readableDatabase = { readableDatabase },
+            currentLedgerId = ::currentLedgerId,
+            fromCursor = ::createRecordFromCursor,
+            columns = RECORD_READ_COLUMNS,
+            pageLimit = MAX_RECORD_QUERY_LIMIT
+        )
+    }
     private val assetReadRepository by lazy {
         AssetReadRepository(
             readableDatabase = { readableDatabase },
@@ -99,6 +108,12 @@ class DatabaseHelper(
             isAssetNameReferenced = ::assetNameIsReferenced,
             throwError = { throw AssetOperationException(it) },
             columns = ASSET_WRITE_COLUMNS
+        )
+    }
+    private val ledgerReadRepository by lazy {
+        LedgerReadRepository(
+            readableDatabase = { readableDatabase },
+            columns = LEDGER_READ_COLUMNS
         )
     }
 
@@ -178,6 +193,16 @@ class DatabaseHelper(
             photoUris = COLUMN_PHOTO_URIS,
             sortOrder = COLUMN_SORT_ORDER,
             photoUriSeparator = PHOTO_URI_SEPARATOR
+        )
+        private val RECORD_READ_COLUMNS = RecordReadRepository.Columns(
+            table = TABLE_RECORDS,
+            id = COLUMN_ID,
+            ledgerId = COLUMN_LEDGER_ID,
+            date = COLUMN_DATE,
+            sortOrder = COLUMN_SORT_ORDER,
+            sourceAssetId = COLUMN_RECORD_ASSET_ID,
+            destinationAssetId = COLUMN_RECORD_DESTINATION_ASSET_ID,
+            assetSource = COLUMN_ASSET_SOURCE
         )
 
         private const val TABLE_RECURRING_RECORDS = "recurring_records"
@@ -275,6 +300,28 @@ class DatabaseHelper(
             parentId = COLUMN_CATEGORY_PARENT_ID,
             sortOrder = COLUMN_CATEGORY_SORT_ORDER,
             ledgerId = COLUMN_LEDGER_ID
+        )
+        private val LEDGER_READ_COLUMNS = LedgerReadRepository.Columns(
+            ledgersTable = TABLE_LEDGERS,
+            ledgerId = COLUMN_ID,
+            ledgerName = COLUMN_LEDGER_NAME,
+            ledgerSubtitle = COLUMN_LEDGER_SUBTITLE,
+            ledgerSortOrder = COLUMN_LEDGER_SORT_ORDER,
+            ledgerIcon = COLUMN_LEDGER_ICON_NAME,
+            sharedLedgersTable = TABLE_LEDGER_SHARED_LEDGERS,
+            sharedLedgerId = COLUMN_SHARED_LEDGER_ID,
+            sharedSourceLedgerId = COLUMN_SHARED_SOURCE_LEDGER_ID,
+            sharedAssetsTable = TABLE_LEDGER_SHARED_ASSETS,
+            sharedAssetId = COLUMN_SHARED_ASSET_ID,
+            assetsTable = TABLE_ASSETS,
+            assetId = COLUMN_ASSET_ID,
+            assetLedgerId = COLUMN_LEDGER_ID,
+            assetAmount = COLUMN_ASSET_AMOUNT,
+            assetArchived = COLUMN_ASSET_IS_ARCHIVED,
+            assetIncludeInTotal = COLUMN_ASSET_INCLUDE_IN_TOTAL,
+            recordsTable = TABLE_RECORDS,
+            recordId = COLUMN_ID,
+            recordLedgerId = COLUMN_LEDGER_ID
         )
 
         private const val TABLE_ASSETS = "assets"
@@ -532,16 +579,8 @@ class DatabaseHelper(
 
     private fun currentLedgerId(): Long {
         val saved = LedgerSession.getCurrentId(appContext)
-        if (saved != null) {
-            val exists = readableDatabase.rawQuery(
-                "SELECT 1 FROM $TABLE_LEDGERS WHERE $COLUMN_ID = ? LIMIT 1",
-                arrayOf(saved.toString())
-            ).use { it.moveToFirst() }
-            if (exists) return saved
-        }
-        val id = readableDatabase.rawQuery(
-            "SELECT $COLUMN_ID FROM $TABLE_LEDGERS ORDER BY $COLUMN_LEDGER_SORT_ORDER, $COLUMN_ID LIMIT 1", null
-        ).use { if (it.moveToFirst()) it.getLong(0) else 1L }
+        if (saved != null && ledgerReadRepository.containsLedger(saved)) return saved
+        val id = ledgerReadRepository.getMasterLedgerId()
         LedgerSession.setCurrentId(appContext, id)
         return id
     }
@@ -558,21 +597,10 @@ class DatabaseHelper(
         return "$COLUMN_LEDGER_ID = ${assetPoolRootId(currentLedgerId())}"
     }
 
-    fun getLedgers(): List<com.example.cardtally.model.Ledger> {
-        val result = mutableListOf<com.example.cardtally.model.Ledger>()
-        readableDatabase.rawQuery(
-            "SELECT $COLUMN_ID, $COLUMN_LEDGER_NAME, $COLUMN_LEDGER_SUBTITLE, $COLUMN_LEDGER_SORT_ORDER, $COLUMN_LEDGER_ICON_NAME " +
-                "FROM $TABLE_LEDGERS ORDER BY $COLUMN_LEDGER_SORT_ORDER, $COLUMN_ID", null
-        ).use { c ->
-            while (c.moveToNext()) result += com.example.cardtally.model.Ledger(c.getLong(0), c.getString(1), c.getString(2), c.getInt(3), c.getString(4))
-        }
-        return result
-    }
+    fun getLedgers(): List<com.example.cardtally.model.Ledger> = ledgerReadRepository.getLedgers()
 
     /** The first ledger owns the permanent master asset pool. */
-    fun getMasterLedgerId(): Long = readableDatabase.rawQuery(
-        "SELECT $COLUMN_ID FROM $TABLE_LEDGERS ORDER BY $COLUMN_LEDGER_SORT_ORDER, $COLUMN_ID LIMIT 1", null
-    ).use { if (it.moveToFirst()) it.getLong(0) else 1L }
+    fun getMasterLedgerId(): Long = ledgerReadRepository.getMasterLedgerId()
 
     fun addLedger(name: String, subtitle: String = "", iconName: String = "tabler_book"): Long {
         val db = writableDatabase
@@ -606,10 +634,8 @@ class DatabaseHelper(
         return id
     }
 
-    fun getSharedSourceLedgerId(ledgerId: Long): Long? = readableDatabase.rawQuery(
-        "SELECT $COLUMN_SHARED_SOURCE_LEDGER_ID FROM $TABLE_LEDGER_SHARED_LEDGERS WHERE $COLUMN_SHARED_LEDGER_ID = ?",
-        arrayOf(ledgerId.toString())
-    ).use { if (it.moveToFirst()) it.getLong(0) else null }
+    fun getSharedSourceLedgerId(ledgerId: Long): Long? =
+        ledgerReadRepository.getSharedSourceLedgerId(ledgerId)
 
     /** Copies a shared pool to one ledger and normalizes a one-ledger remainder to independent pools. */
     fun forkLedgerAssetPool(ledgerId: Long): Boolean {
@@ -662,16 +688,8 @@ class DatabaseHelper(
         }
     }
 
-    fun getLedgerAssetPoolSummary(ledgerId: Long): Pair<Int, Double> {
-        val sourceId = assetPoolRootId(ledgerId)
-        return readableDatabase.rawQuery(
-            "SELECT COUNT(*), COALESCE(SUM(CASE WHEN $COLUMN_ASSET_INCLUDE_IN_TOTAL = 1 THEN $COLUMN_ASSET_AMOUNT ELSE 0 END), 0) " +
-                "FROM $TABLE_ASSETS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0",
-            arrayOf(sourceId.toString())
-        ).use { cursor ->
-            if (cursor.moveToFirst()) cursor.getInt(0) to Money.toMajorDouble(cursor.getLong(1)) else 0 to 0.0
-        }
-    }
+    fun getLedgerAssetPoolSummary(ledgerId: Long): Pair<Int, Double> =
+        ledgerReadRepository.getAssetPoolSummary(assetPoolRootId(ledgerId))
 
     fun updateLedgerAssetPool(ledgerId: Long, sharedSourceLedgerId: Long?, iconName: String? = null, name: String? = null): Boolean {
         if (ledgerId != currentLedgerId()) return false
@@ -773,21 +791,11 @@ class DatabaseHelper(
         }
     }
 
-    fun getSharedAssetIds(ledgerId: Long): Set<Long> = readableDatabase.rawQuery(
-        "SELECT $COLUMN_SHARED_ASSET_ID FROM $TABLE_LEDGER_SHARED_ASSETS WHERE $COLUMN_SHARED_LEDGER_ID = ?",
-        arrayOf(ledgerId.toString())
-    ).use { cursor ->
-        buildSet { while (cursor.moveToNext()) add(cursor.getLong(0)) }
-    }
+    fun getSharedAssetIds(ledgerId: Long): Set<Long> = ledgerReadRepository.getSharedAssetIds(ledgerId)
 
-    fun canManageAsset(assetId: Long): Boolean = readableDatabase.rawQuery(
-        "SELECT 1 FROM $TABLE_ASSETS WHERE $COLUMN_ASSET_ID = ? AND $COLUMN_LEDGER_ID = ? LIMIT 1",
-        arrayOf(assetId.toString(), currentLedgerId().toString())
-    ).use { it.moveToFirst() }
+    fun canManageAsset(assetId: Long): Boolean = ledgerReadRepository.canManageAsset(assetId, currentLedgerId())
 
-    fun getLedgerRecordCount(ledgerId: Long): Int = readableDatabase.rawQuery(
-        "SELECT COUNT(*) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ?", arrayOf(ledgerId.toString())
-    ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
+    fun getLedgerRecordCount(ledgerId: Long): Int = ledgerReadRepository.getLedgerRecordCount(ledgerId)
 
     /** Deletes ledgers and their records while retaining a shared pool for surviving ledgers. */
     fun deleteLedgers(ledgerIds: Set<Long>): Boolean {
@@ -1514,22 +1522,7 @@ class DatabaseHelper(
         }
     }
 
-    fun getAllRecords(): List<Record> {
-        val records = mutableListOf<Record>()
-        val selectQuery = "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ${currentLedgerId()} ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC"
-
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, null)
-
-        if (cursor.moveToFirst()) {
-            do {
-                records.add(createRecordFromCursor(cursor))
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        return records
-    }
+    fun getAllRecords(): List<Record> = recordReadRepository.getAll()
 
     fun updateRecord(record: Record): Int {
         val db = writableDatabase
@@ -1674,19 +1667,8 @@ class DatabaseHelper(
         return record
     }
 
-    private fun getRecordByIdInternal(db: SQLiteDatabase, id: Long): Record? {
-        val selectQuery = "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_ID = ? AND $COLUMN_LEDGER_ID = ${currentLedgerId()}"
-        
-        val cursor = db.rawQuery(selectQuery, arrayOf(id.toString()))
-        
-        var record: Record? = null
-        if (cursor.moveToFirst()) {
-            record = createRecordFromCursor(cursor)
-        }
-        
-        cursor.close()
-        return record
-    }
+    private fun getRecordByIdInternal(db: SQLiteDatabase, id: Long): Record? =
+        recordReadRepository.getById(db, id)
 
     fun deleteRecord(
         id: Long,
@@ -2162,96 +2144,18 @@ class DatabaseHelper(
     fun getTotalByTypeAndDateRangeMinor(type: Int, startDate: String, endDate: String): Long =
         recordStatisticsRepository.totalByTypeAndDateRangeMinor(type, startDate, endDate)
 
-    fun getRecordsByDateRange(startDate: String, endDate: String): List<Record> {
-        val records = mutableListOf<Record>()
-        val selectQuery = "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_DATE BETWEEN ? AND ? ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC"
-
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, arrayOf(currentLedgerId().toString(), startDate, endDate))
-
-        if (cursor.moveToFirst()) {
-            do {
-                records.add(createRecordFromCursor(cursor))
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        db.close()
-        return records
-    }
+    fun getRecordsByDateRange(startDate: String, endDate: String): List<Record> =
+        recordReadRepository.byDateRange(startDate, endDate)
 
     fun getTodayRecordsPage(
         todayDate: String = getCurrentDate(),
         after: RecordPageCursor? = null
-    ): RecordPage {
-        val records = mutableListOf<Record>()
-        val query: String
-        val arguments: Array<String>
-        if (after == null) {
-            query =
-                "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_DATE = ? " +
-                    "ORDER BY $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC LIMIT $MAX_RECORD_QUERY_LIMIT"
-            arguments = arrayOf(currentLedgerId().toString(), todayDate)
-        } else {
-            query =
-                "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_DATE = ? " +
-                    "AND ($COLUMN_SORT_ORDER > ? OR ($COLUMN_SORT_ORDER = ? AND $COLUMN_ID > ?)) " +
-                    "ORDER BY $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC LIMIT $MAX_RECORD_QUERY_LIMIT"
-            arguments = arrayOf(
-                currentLedgerId().toString(),
-                todayDate,
-                after.sortOrder.toString(),
-                after.sortOrder.toString(),
-                after.recordId.toString()
-            )
-        }
+    ): RecordPage = recordReadRepository.todayPage(todayDate, after)
 
-        val cursor = readableDatabase.rawQuery(query, arguments)
-        if (cursor.moveToFirst()) {
-            do {
-                records.add(createRecordFromCursor(cursor))
-            } while (cursor.moveToNext())
-        }
-        cursor.close()
+    fun getRecordsByAssetSource(assetSource: String): List<Record> =
+        recordReadRepository.byAssetSource(assetSource)
 
-        val nextCursor = if (records.size == MAX_RECORD_QUERY_LIMIT) {
-            records.last().let { RecordPageCursor(it.sortOrder, it.id) }
-        } else {
-            null
-        }
-        return RecordPage(records, nextCursor)
-    }
-
-    fun getRecordsByAssetSource(assetSource: String): List<Record> {
-        val records = mutableListOf<Record>()
-        val selectQuery = "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ${currentLedgerId()} AND $COLUMN_ASSET_SOURCE = ? ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC"
-
-        val db = readableDatabase
-        val cursor = db.rawQuery(selectQuery, arrayOf(assetSource))
-
-        if (cursor.moveToFirst()) {
-            do {
-                records.add(createRecordFromCursor(cursor))
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        db.close()
-        return records
-    }
-
-    fun getRecordsByAssetId(assetId: Long): List<Record> {
-        val records = mutableListOf<Record>()
-        readableDatabase.rawQuery(
-            "SELECT * FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? " +
-                "AND ($COLUMN_RECORD_ASSET_ID = ? OR $COLUMN_RECORD_DESTINATION_ASSET_ID = ?) " +
-                "ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC",
-            arrayOf(currentLedgerId().toString(), assetId.toString(), assetId.toString())
-        ).use { cursor ->
-            while (cursor.moveToNext()) records += createRecordFromCursor(cursor)
-        }
-        return records
-    }
+    fun getRecordsByAssetId(assetId: Long): List<Record> = recordReadRepository.byAssetId(assetId)
 
     /**
      * Every ledger that references [assetId], in every ledger — the asset-detail
@@ -2259,40 +2163,14 @@ class DatabaseHelper(
      * Each row appears once even when the same asset is both source and
      * destination (a transfer to itself is still a single record).
      */
-    fun getAllRecordsByAssetId(assetId: Long): List<Record> {
-        val records = mutableListOf<Record>()
-        readableDatabase.rawQuery(
-            "SELECT * FROM $TABLE_RECORDS " +
-                "WHERE ($COLUMN_RECORD_ASSET_ID = ? OR $COLUMN_RECORD_DESTINATION_ASSET_ID = ?) " +
-                "ORDER BY $COLUMN_DATE DESC, $COLUMN_SORT_ORDER ASC, $COLUMN_ID ASC",
-            arrayOf(assetId.toString(), assetId.toString())
-        ).use { cursor ->
-            while (cursor.moveToNext()) records += createRecordFromCursor(cursor)
-        }
-        return records
-    }
+    fun getAllRecordsByAssetId(assetId: Long): List<Record> = recordReadRepository.allByAssetId(assetId)
 
     /** Ledger names keyed by id, for bulk provenance labels (one query, no N+1). */
-    fun getLedgerNamesByIds(ledgerIds: Set<Long>): Map<Long, String> {
-        if (ledgerIds.isEmpty()) return emptyMap()
-        val names = HashMap<Long, String>()
-        readableDatabase.rawQuery(
-            "SELECT $COLUMN_ID, $COLUMN_LEDGER_NAME FROM $TABLE_LEDGERS",
-            null
-        ).use { cursor ->
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(0)
-                if (id in ledgerIds) names[id] = cursor.getString(1)
-            }
-        }
-        return names
-    }
+    fun getLedgerNamesByIds(ledgerIds: Set<Long>): Map<Long, String> =
+        ledgerReadRepository.getLedgerNamesByIds(ledgerIds)
 
     /** A ledger's ledger-row id, needed to flag "this row belongs to this ledger". */
-    fun getLedgerIdForRecord(recordId: Long): Long? = readableDatabase.rawQuery(
-        "SELECT $COLUMN_LEDGER_ID FROM $TABLE_RECORDS WHERE $COLUMN_ID = ?",
-        arrayOf(recordId.toString())
-    ).use { if (it.moveToFirst()) it.getLong(0) else null }
+    fun getLedgerIdForRecord(recordId: Long): Long? = ledgerReadRepository.getLedgerIdForRecord(recordId)
 
     /**
      * One row per distinct asset group (pool root). [rootLedgerId] and
