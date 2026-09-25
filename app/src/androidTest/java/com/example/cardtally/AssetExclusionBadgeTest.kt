@@ -24,10 +24,11 @@ class AssetExclusionBadgeTest {
                 InstrumentationRegistry.getInstrumentation().targetContext,
                 R.style.Theme_CardTally_Light
             )
+            val excludedAssetName = "不计入账户"
             val parent = FrameLayout(context)
             val adapter = AssetAdapter(
                 listOf(
-                    Asset(name = "不计入账户", categoryLabel = "借出", includeInTotal = false),
+                    Asset(name = excludedAssetName, categoryLabel = "借出", includeInTotal = false),
                     Asset(name = "正常账户", categoryLabel = "现金", includeInTotal = true)
                 ),
                 NoOpAssetActionListener
@@ -36,7 +37,11 @@ class AssetExclusionBadgeTest {
 
             adapter.onBindViewHolder(holder, 0)
             val excludedName = holder.itemView.findViewById<TextView>(R.id.text_asset_name).text
-            assertEquals("不计入账户 不计入", excludedName.toString())
+            assertEquals(
+                "asset exclusion badge should use the active app locale",
+                "$excludedAssetName ${context.getString(R.string.asset_excluded_badge)}",
+                excludedName.toString()
+            )
             assertEquals(1, (excludedName as Spanned).getSpans(0, excludedName.length, ReplacementSpan::class.java).size)
             assertEquals("借出", holder.itemView.findViewById<android.widget.TextView>(R.id.text_asset_type).text)
 

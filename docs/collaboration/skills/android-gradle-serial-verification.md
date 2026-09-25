@@ -55,7 +55,7 @@
 .\scripts\run-android-verification.ps1
 ```
 
-该入口串行执行 Debug 编译、JVM 单测和隔离设备测试；默认超时分别为 10、5、8 分钟。任何阶段都会明确返回 `PASS`、`FAIL` 或 `TIMEOUT`，并把 stdout/stderr 保存到 `app/build/reports/verification/<run-id>/`。超时会清理 Gradle 子进程和 verification 包，但不会触碰日常或 release 包。
+该入口串行执行 Debug 编译、JVM 单测和隔离设备测试；默认超时分别为 10、5、8 分钟。任何阶段都会明确返回 `PASS`、`FAIL` 或 `TIMEOUT`，并把 stdout/stderr 保存到 `app/build/reports/verification/<run-id>/`。成功判定同时要求 Gradle 进程返回 0 且日志包含 `BUILD SUCCESSFUL`，失败标记优先于进程码。设备阶段开始时，脚本会唤醒设备并临时把屏幕超时设为 30 分钟，结束或失败时恢复原值，避免 ActivityScenario 因手机熄屏进入保存状态。超时会清理 Gradle 子进程和 verification 包，但不会触碰日常或 release 包。
 
 需要只验证编译和 JVM 单测时使用：
 

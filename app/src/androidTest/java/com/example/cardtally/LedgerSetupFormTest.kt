@@ -173,7 +173,7 @@ class LedgerSetupFormTest {
             )
             assertTrue(
                 "the mode row must carry a generic hint",
-                modeTexts.any { it.contains("资产组") }
+                modeTexts.any { it == context.getString(R.string.ledger_asset_existing_group_hint) }
             )
         }
     }
