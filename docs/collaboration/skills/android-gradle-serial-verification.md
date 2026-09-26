@@ -2,6 +2,12 @@
 
 用于处理 CardTally 里的 Android 构建、单元测试、真机测试验证，避免因为并行执行 Gradle 命令而误判结果。
 
+## 执行授权
+
+- 默认不运行 Debug 构建、JVM 单测或设备测试；只有用户明确要求构建或测试时才执行。
+- 一次明确要求只执行对应范围；不要因后续代码修改自动重跑，也不要把指定测试扩展成全量回归。
+- 用户要求构建本身不代表已获准安装 APK 或执行真机验证；这些步骤也需用户明确要求。
+
 ## 适用场景
 
 - 需要执行 `assembleDebug`
@@ -39,7 +45,7 @@
 
 ## 推荐执行顺序
 
-在同一工作区里，按下面顺序串行执行：
+用户明确要求执行多项验证时，在同一工作区里按下面顺序串行执行：
 
 1. `assembleDebug`
 2. `testDebugUnitTest`
@@ -49,15 +55,30 @@
 
 ### 有限时验证入口
 
-为避免单个 UI 测试、UTP 或 ADB 子进程无限等待，优先使用：
+用户明确要求运行完整验证时，为避免单个 UI 测试、UTP 或 ADB 子进程无限等待，优先使用：
 
 ```powershell
 .\scripts\run-android-verification.ps1
 ```
 
-该入口串行执行 Debug 编译、JVM 单测和隔离设备测试；默认超时分别为 10、5、8 分钟。任何阶段都会明确返回 `PASS`、`FAIL` 或 `TIMEOUT`，并把 stdout/stderr 保存到 `app/build/reports/verification/<run-id>/`。成功判定同时要求 Gradle 进程返回 0 且日志包含 `BUILD SUCCESSFUL`，失败标记优先于进程码。设备阶段开始时，脚本会唤醒设备并临时把屏幕超时设为 30 分钟，结束或失败时恢复原值，避免 ActivityScenario 因手机熄屏进入保存状态。超时会清理 Gradle 子进程和 verification 包，但不会触碰日常或 release 包。
+不带参数时该命令会运行完整的 Debug 构建、JVM 单测和 13 组隔离设备测试，仅在用户明确要求全套验证时调用。需要定向验证时，可跳过无关阶段：
 
-需要只验证编译和 JVM 单测时使用：
+```powershell
+# 仅 JVM 单测
+.\scripts\run-android-verification.ps1 -SkipDebugBuild -SkipDeviceTests
+
+# 单个或多个设备测试组；组名见 scripts/verification-device-groups.ps1
+.\scripts\run-android-verification.ps1 -SkipDebugBuild -SkipUnitTests -DeviceGroups category-db,record-db
+
+# 仅日常 Debug 构建
+.\scripts\run-android-verification.ps1 -SkipUnitTests -SkipDeviceTests
+```
+
+按指定组运行时仍会检查完整分组清单，但只预编译 verification 测试 APK 并运行所选组；不会执行日常 Debug APK 构建或 JVM 单测。
+
+该入口串行执行日常 Debug 编译、JVM 单测、隔离设备测试 APK 预编译，再按 `scripts/verification-device-groups.ps1` 串行运行 13 个设备组。构建不计入组时限；**每组从 Gradle 启动至退出最多 60 秒**，设备阶段总时限默认 15 分钟。脚本先检查分组恰好覆盖全部 `*Test.kt` 类，再核对每组新生成的 XML 测试数、失败/跳过数和测试类，最终合计必须为 130 项。每组独立保存 stdout/stderr 至 `app/build/reports/verification/<run-id>/`；超时额外记录最后完成用例与设备进程/唤醒状态，并停止该组。只有明确“0 项启动且设备连接或 instrumentation 启动失败”时才自动重试一次（两次仍失败即 FAIL），运行中的测试超时不重试。成功判定同时要求 Gradle 进程返回 0 且日志包含 `BUILD SUCCESSFUL`。设备阶段会唤醒手机并临时将熄屏时间设为 30 分钟，结束后恢复原值；只清理 `.verification` 包进程，不触碰日常或 release 数据。
+
+用户明确要求运行日常 Debug 构建和 JVM 单测、跳过设备测试时使用：
 
 ```powershell
 .\scripts\run-android-verification.ps1 -SkipDeviceTests
@@ -101,4 +122,4 @@
 
 ## 一句话记忆
 
-> 在 CardTally 里，Android Gradle 构建与测试验证默认串行，不要并发跑任何 `gradlew` / Gradle 任务；看到 `Tool execution aborted` 时，先排查并发冲突，再决定是不是代码真的失败。
+> 在 CardTally 里，未经用户明确要求不要运行 Android Gradle 构建或测试；获准运行后，Gradle 任务必须串行。看到 `Tool execution aborted` 时，先排查并发冲突，再决定是不是代码真的失败。

@@ -2,11 +2,17 @@
 
 ## 当前有效快照
 
+以下按时间记录交接事实；较早条目中的页面、主题和验证状态可能已被上方新条目取代，接手时仍以当前源码为准。
+
+- 2026-09-26：OpenSpec `ux-consistency-handoff` 的实现项均已勾选，但最终视觉复审仍由用户安排；`visual-review-checklist.md` 整理了复审范围，报告所引用的 UX 截图当前不在工作区。产品所有者已在 `2026-09-26-ai-financial-tools.md` 确认未来账本/资产工具的全 CRUD、安全确认、逐请求外发授权及本地可清除审计；当前 AI 文本聊天实现尚未变化。案头验证和源码差异见 `openspec/changes/ai-ledger-asset-tools/opportunity-validation.md`。
+
+- 2026-09-26：设备验证入口改为 13 个串行组（清单在 `scripts/verification-device-groups.ps1`），独立预编译 verification 测试 APK，每组包括 Gradle 启动/安装/执行最多 60 秒、总设备预算 15 分钟；逐组保存日志并校验全体 34 个测试类、130 项、0 failures/errors/skipped。支持 `-DeviceGroups` 仅运行指定组，`-SkipDebugBuild` / `-SkipUnitTests` 可跳过非目标阶段；未选择设备测试时不触碰设备。超时输出最后完成的用例和有限时设备诊断，0 项启动的设备连接或 instrumentation 启动异常只重试一次。此前连接真机两轮分组完整验证均 **130/130 PASS**，各成功组约 18–42 秒；无线 ADB/UTP 偶发 0 项启动崩溃仍可能发生，日志保留初次失败，重试通过不等于该设备问题已根治。1 秒强制超时演练正确返回 TIMEOUT，写入诊断并恢复设备原熄屏设置。协作规则现明确：Debug 构建、单测、设备测试、安装和真机验证只在用户明确要求时执行。本次收拢已分别提交数据层拆分和验证脚本，本次未运行构建或测试；此前通过记录不等于对当前提交组合重新验证。
+
 - 2026-09-23：录入与重复记账的共享资产选择器改为 `FragmentResult` 回传资产 ID 和转入选择标志，普通录入及重复记账页分别用 view 生命周期订阅；弹层显示与关闭时普通录入页仍恢复键盘状态。重复任务页已去掉按子视图索引修改分隔线的运行时代码，并改为滚动区域与固定金额键盘在垂直方向各自占位，防止状态行被键盘覆盖。设备全套回归曾因 10 分钟熄屏后 Activity 进入 saved state 而产生 `Can not perform this action after onSaveInstanceState`；验证脚本现临时延长到 30 分钟、唤醒设备并在完成后恢复原设置，还会检查 Gradle 成功/失败标记。最终完整验证 **130/130，0 failures / 0 skipped，报告用例耗时 21.795 秒**。日常 APK 已覆盖安装，真机核对重复任务状态行滚到键盘上方、普通录入转账双资产和重复任务资产选择结果。`fragment_add_record.xml` 当前不用于生产录入页，但仍由部分设备布局测试引用，不应直接删除。
 
 - 2026-09-23：继续提取录入、统计和数据库边界：新增纯 Kotlin `RecordEntryValidator` 统一金额、手续费、叶子分类及双资产转账校验；新增 `RecurringScheduleCalculator` 集中初次到期日、缺失日跳过、间隔和后续日期计算，`DatabaseHelper` 与重复任务编辑页均调用该计算器；统计分类父子聚合及排名迁至 `StatisticsRankingBuilder`；记录 SQLite `ContentValues` 与 Cursor 映射移至 `RecordSqlMapper`，分类树排序移至 `CategoryTreeOrdering`；重复任务读写、校验、Cursor/ContentValues 映射迁至 `RecurringRecordRepository`，`DatabaseHelper` 保留原兼容 API 和跨账本记录生成编排。单元测试覆盖调度、录入校验、统计聚合和分类树。分类一级卡片描边按 `DESIGN.md` 归零；`verify-ux-resources.ps1` 检查 84 个布局及 60 个引用布局通过。日常 Debug APK 已覆盖安装并确认 `MainActivity` 启动。
 
-- 2026-09-23：分类数据职责继续拆分：层级规则由 `CategoryHierarchyValidator` 管理，只读分类查询、叶子查询和路径构建由 `CategoryReadRepository` 管理；`CategoryWriteRepository` 处理分类新增/修改/删除、排序和排序迁移；统计聚合迁至 `RecordStatisticsRepository`；AI 会话/消息读写迁至 `AiChatRepository`；资产读取/映射和元数据生命周期写入分别迁至 `AssetReadRepository`、`AssetWriteRepository`；记录查询/分页迁至 `RecordReadRepository`；账本、主资产池及资产归属查询迁至 `LedgerReadRepository`。`DatabaseHelper` 保留兼容 API、资产池/账本写入、记录余额事务和 Schema 迁移。验证：本轮 JVM 单测及 Debug 编译通过；资产读写/归档/删除/账本关联测试 20 项，记录分页/删除撤销/账本记录测试 19 项，统计/手续费聚合测试 9 项通过。
+- 2026-09-23：数据职责继续拆分：记录存储、查询、写事务、写校验与资产余额效果分别由 `RecordSqlMapper`、`RecordReadRepository`、`RecordWriteRepository`、`RecordWriteValidator`、`RecordAssetBalanceRepository` 管理；重复记账由 `RecurringRecordRepository` / `RecurringScheduleCalculator` 管理；分类读写/校验/排序/default seeding 分别由 `CategoryReadRepository`、`CategoryWriteRepository`、`CategoryHierarchyValidator`、`CategoryTreeOrdering`、`CategoryDefaultsSeeder` 管理；资产与账本/资产池读写分别由 `AssetReadRepository`、`AssetWriteRepository`、`LedgerReadRepository`、`LedgerWriteRepository` 管理；统计和 AI 持久化分别由 `RecordStatisticsRepository`、`AiChatRepository` 管理。`DatabaseSchemaCreator`、`DatabaseSchemaUpgradeManager` 负责建表/升级分发，已删除 return 后不可达的旧迁移代码。`DatabaseHelper` 留作兼容门面、表与索引常量、版本 migration hooks 及少量跨协作者协调。验证：最新完整验证脚本 130/130 通过，JVM 单测、Debug 构建通过，日常 Debug APK 已安装并启动。后续只剩把版本 hook/表常量进一步移出门面等可选收口。
 
 - 2026-09-20：重复记账功能已落地：支持每日/每周/每月/每年/间隔周期、结束日期、启停、跨账本展示，以及支出/收入/转账任务；转账任务分别保存转出与转入资产 ID，资产选择范围按任务账本过滤，选择任务账本不会切换应用当前账本。每月 31 日和每年 2 月 29 日在目标日期不存在时跳过执行。相关实现位于 `RecurringRecordEditFragment`、`RecurringRecordsFragment`、`RecurringRecordScheduler`、`RecurringRecordWorker` 与 `DatabaseHelper`。
 

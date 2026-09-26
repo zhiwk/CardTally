@@ -53,7 +53,7 @@ CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。�
 - 记账与财务数据以本地核算为核心，不能把本地优先改成依赖云端的基本流程。
 - 工程保持 Kotlin、Fragment、XML、Material Components 和手写 SQLite（`DatabaseHelper`）的现有路线。不要假定或顺手引入 Room、Navigation Component 或第二套架构。
 - 记录只能选择叶子分类。分类层级或展示调整不能破坏这条绑定规则。
-- AI 仅是可选的 MiniMax BYOK 持久化文本聊天能力。不要把 AI 记账操作、自动执行或审计日志写成已经实现的能力。
+- 当前 AI 实现仍是可选的 MiniMax BYOK 持久化文本聊天。`docs/requirements/decisions/2026-09-26-ai-financial-tools.md` 已确认未来可选多 Provider 的账本/资产工具，但尚未实现；公开说明不得把计划写成现有能力。AI 不得直接操作记录、分类、转账、预算或执行自由文本指令；实现账本/资产工具必须满足该决策的逐请求外发授权、原生确认、业务规则复用及本地审计。
 - 视觉方向以根目录 `DESIGN.md` 为准；旧的“静奢理财日记”方向已废弃。
 
 ## 5 工作流程与任务路由
@@ -73,13 +73,14 @@ CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。�
 ## 6 工程、测试与运营安全
 
 - 同一工作区中的 Android Gradle 任务必须串行执行。`assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest` 及其他共享 `app/build/` 的任务都不能并行运行。
-- 构建完成后，若设备可用，OpenCode 应自行通过 `adb` 安装最新 APK，并按改动范围进行真机验证；必要时使用 `adb shell input` 模拟点击、输入、返回等操作，再通过截图或层级信息核对结果。不得仅以编译通过代替页面验证。
+- 用户明确要求构建、安装或真机验证后，才执行相应操作；构建后也不要自动安装 APK 或继续真机检查。得到授权后，必要时使用 `adb shell input` 和截图/层级信息完成用户要求的验证。
+- 默认不运行 Debug/Release 构建、JVM 单测、设备测试、安装或其他验证命令；只有用户明确要求构建或测试时才执行。一次明确的测试要求只覆盖该次要求的范围，不因后续代码修改自动重跑；用户未要求全量回归时，优先只运行其指定或与改动直接相关的检查。
 - `local.properties` 是本机环境文件，绝不提交。API Key、用户财务数据和设备相关信息也不得写入源码、文档、截图或对外材料。
 - 修改业务行为前必须过业务规则门槛，修改视觉前必须过 `DESIGN.md` 门槛。没有对应任务就不扩大改动范围。
 
 ### 6.1 构建产物与双应用（dev / release）
 
-- 除非用户明确要求编译 release，否则一律不要执行 release 构建（`assembleEverydayRelease` / `assembleDevRelease` 及任何 release 变体任务），默认只做 debug 编译与测试，避免无谓的签名与长时间构建。
+- 默认不执行任何构建。用户明确要求构建时，除非同时明确要求 release，否则只构建 Debug，避免无谓的签名与长时间构建；release 构建（`assembleEverydayRelease` / `assembleDevRelease` 及任何 release 变体任务）仍须用户明确要求。
 - 同一份代码产出两个可并存的安装：日常 `dev`（applicationId `com.example.cardtally`）与签名发布 `release`（applicationId `com.example.cardtally.release`）；两者数据沙箱相互隔离，互不读取对方数据库与偏好。
 - 所有测试只针对 Debug 代码执行，默认使用 `dev`；release 是发布构建，不得用于 JVM、设备、回归或真机测试。只有用户在单次命令中明确要求时，才构建或安装 release。
 - 日常 Debug：`.\gradlew.bat :app:assembleEverydayDebug`（等价 `:app:assembleDevDebug`），产物镜像到 `app/build/outputs/apk/debug/app-debug.apk`；这是文档与真机验证默认使用的包。
@@ -96,7 +97,7 @@ CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。�
 
 ## 8 完成标准与维护边界
 
-代码或资源任务完成前，必须重新阅读改动文件，执行与改动相关的测试，并完成 `assembleDebug`。涉及业务规则时核对决策文档，涉及视觉时核对 `DESIGN.md`。
+代码或资源任务完成前，必须重新阅读改动文件。只有用户明确要求构建或测试时，才执行相应检查；未被要求的构建、单测、设备测试、安装和真机验证均不自动补跑，并在交付时如实说明验证状态。用户要求测试时按其指定范围执行；未指定全量回归时优先运行相关测试，Gradle 任务保持串行。涉及业务规则时核对决策文档，涉及视觉时核对 `DESIGN.md`。
 
 文档任务完成前，必须确认内容与当前仓库事实一致，清楚区分已实现、计划和历史材料，不用愿景替代实现说明。
 

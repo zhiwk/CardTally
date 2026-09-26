@@ -74,9 +74,13 @@
 
 - 记录行映射：`database/RecordSqlMapper.kt`
 - 记录查询与分页：`database/RecordReadRepository.kt`
+- 记录写入/删除撤销事务编排：`database/RecordWriteRepository.kt`
+- 记录写入规则校验：`database/RecordWriteValidator.kt`
+- 收支/转账手续费对资产余额的效果：`database/RecordAssetBalanceRepository.kt`
 - 重复记账模板读写：`database/RecurringRecordRepository.kt`
 - 分类只读查询及路径：`database/CategoryReadRepository.kt`
 - 分类写入与排序：`database/CategoryWriteRepository.kt`
+- 新数据库默认分类初始化：`database/CategoryDefaultsSeeder.kt`
 - 分类父子关系校验：`database/CategoryHierarchyValidator.kt`
 - 分类树展示顺序：`database/CategoryTreeOrdering.kt`
 - 资产行读取与映射：`database/AssetReadRepository.kt`
@@ -84,8 +88,10 @@
 - AI 会话与消息 SQLite 读写：`database/AiChatRepository.kt`
 - 统计总额、手续费和周期聚合 SQL：`database/RecordStatisticsRepository.kt`
 - 账本/资产池及资产归属查询：`database/LedgerReadRepository.kt`
+- 账本/共享资产池写入与合并：`database/LedgerWriteRepository.kt`
+- 建表与数据库版本升级编排：`database/DatabaseSchemaCreator.kt`、`database/DatabaseSchemaUpgradeManager.kt`
 
-这些类由 `DatabaseHelper` 保持兼容门面调用；Schema/版本迁移、资产池与账本关系、记录余额事务和普通记录查询仍在 `DatabaseHelper`，后续职责拆分需分别保持原事务与作用域语义。
+这些类由 `DatabaseHelper` 保持兼容门面调用；表/索引常量、版本升级配置和剩余账本 UI 编排仍在 `DatabaseHelper`，后续调整需保持原事务与资产池作用域语义。
 
 ### 改 AI 助手 / MiniMax 对话 / 会话持久化
 
@@ -128,13 +134,13 @@
 先读：
 
 1. `util/ThemeHelper.kt`
-2. `ThemeSettingsFragment.kt` 与 `fragment_theme_settings.xml`
-3. `res/values/*.xml` 与 `res/values-night/*.xml`
+2. `MainActivity.kt` 与 `res/values/styles.xml`
+3. `res/values/*.xml` 及受影响页面的资源文件
 4. `util/ThemeColorHelper.kt`（如果涉及 Kotlin 运行时取色）
 5. 受影响页面布局 / Adapter / Fragment
 6. `DESIGN.md`
 
-注意：当前视觉方向以 `DESIGN.md` 为准，不要继续沿用已删除的历史设计指南或 Stitch 导出。
+注意：当前只支持浅色外观，视觉方向以 `DESIGN.md` 为准，不要继续沿用已删除的历史设计指南或 Stitch 导出。
 
 ### 改文案 / 国际化 / 语言切换
 

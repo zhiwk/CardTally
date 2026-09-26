@@ -15,14 +15,12 @@
 - 颜色、尺寸、样式优先落到 `res/values/` 资源文件中，避免把设计 token 硬编码进布局或 Kotlin。
 - 涉及主题、卡片、排版等 UI 变更时，优先复用已有资源文件，例如：
   - `colors_light.xml`
-  - `colors_dark.xml`
-  - `values-night/*.xml`
   - `styles.xml`
   - `styles_cards.xml`
   - `styles_typography.xml`
   - `dimens.xml`
 - 当前视觉方向以根目录 `DESIGN.md` 为准；不要恢复已废弃的旧主题或旧设计语言。
-- 当前深色模式修复策略是：优先使用主题属性（如 `?attr/colorOnSurface`），必要时通过 `values-night` 做兼容覆盖；不要继续新增 `@color/*_light` 或 `R.color.*_light` 直接引用。
+- 当前只支持浅色外观；视觉调整以 `DESIGN.md` 和实际资源为准，不恢复旧三主题方向。
 
 ## 业务规则约束
 
@@ -51,8 +49,7 @@ CardTally 当前视觉与交互方向以根目录 `DESIGN.md` 为准。
 ```powershell
 .\gradlew.bat assembleDebug
 .\gradlew.bat testDebugUnitTest
-.\gradlew.bat connectedDebugAndroidTest
-.\gradlew.bat clean
+.\gradlew.bat :app:connectedVerificationDebugAndroidTest
 ```
 
 ### macOS / Linux
@@ -60,13 +57,12 @@ CardTally 当前视觉与交互方向以根目录 `DESIGN.md` 为准。
 ```bash
 ./gradlew assembleDebug
 ./gradlew testDebugUnitTest
-./gradlew connectedDebugAndroidTest
-./gradlew clean
+./gradlew :app:connectedVerificationDebugAndroidTest
 ```
 
 ### 产物位置
 
-`app/build/outputs/apk/debug/CardTally-debug.apk`
+`app/build/outputs/apk/debug/app-debug.apk`
 
 ### 测试现状
 
@@ -77,9 +73,8 @@ CardTally 当前视觉与交互方向以根目录 `DESIGN.md` 为准。
   - `app/src/androidTest/java/com/example/cardtally/util/AiAssistantSettingsHelperTest.kt`
   - `app/src/androidTest/java/com/example/cardtally/MainActivityThemeApplicationTest.kt`
   - `app/src/androidTest/java/com/example/cardtally/util/ThemeHelperTest.kt`
-- 涉及 AI 助手多会话持久化时，优先先跑相关单测 / 真机测试，再补 `assembleDebug` 与人工验证。
-- 涉及主题 / 深色模式修复时，优先先跑 `ThemeHelperTest`、`MainActivityThemeApplicationTest` 这类主题回归，再补 `assembleDebug` 与人工验证。
-- 同一工作区内执行 Android Gradle 验证时，默认串行运行 `assembleDebug`、`testDebugUnitTest`、`connectedDebugAndroidTest`；不要并行跑任何 `gradlew` / Gradle 任务，尤其不要并行跑共享 `app/build/` 产物的任务。详见 `docs/collaboration/skills/android-gradle-serial-verification.md`
+- 用户明确要求验证时，按改动范围选择相关单测、设备测试或 `assembleDebug`；涉及 AI 助手多会话时可选 `AgentSessionTitleHelperTest` / `DatabaseHelperAgentChatSessionTest`，涉及主题时可选 `ThemeHelperTest` / `MainActivityThemeApplicationTest`。不要因代码修改自动启动这些检查。
+- 默认不执行 Android Gradle 构建或测试；用户明确要求后，只运行其指定范围。同一工作区内的 Gradle 命令仍必须串行，尤其不要并行运行共享 `app/build/` 产物的任务。详见 `docs/collaboration/skills/android-gradle-serial-verification.md`。
 
 ## 文档可信度排序
 
@@ -97,7 +92,7 @@ CardTally 当前视觉与交互方向以根目录 `DESIGN.md` 为准。
 如果修改了代码或资源，而不是只改文档：
 
 1. 重新阅读所有改动文件，确认风格一致
-2. 执行 `assembleDebug`
+2. 仅当用户明确要求构建时，执行 `assembleDebug`；否则不构建
 3. 检查受影响页面是否符合 `DESIGN.md`
 4. 如果动了业务规则，核对 `docs/requirements/decisions/business_rules.md`
 5. 如果动了视觉设计，核对 `DESIGN.md`

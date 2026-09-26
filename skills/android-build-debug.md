@@ -2,6 +2,8 @@
 
 用于在 CardTally 中执行本地 Android Debug 构建，并确认 `debug apk` 是否成功产出。
 
+只有用户明确要求构建时才执行本 Skill 中的 Gradle 命令；代码修改完成后不自动构建。构建要求本身也不代表已获准安装 APK 或执行真机验证。
+
 ## 适用场景
 
 - 需要验证当前改动是否还能成功编译
@@ -11,7 +13,7 @@
 ## 核心规则
 
 1. 优先使用仓库自带 wrapper
-2. 当前仓库默认执行 `assembleDebug`；`verification` flavor（仅供隔离设备测试）会把变体名拆成 `devDebug`，等价显式任务是 `:app:assembleEverydayDebug`
+2. 用户明确要求 Debug 构建时执行 `assembleDebug`；`verification` flavor（仅供隔离设备测试）会把变体名拆成 `devDebug`，等价显式任务是 `:app:assembleEverydayDebug`
 3. 同一工作区里的 Gradle 构建与测试命令默认串行，不要并发执行
 4. 会重置数据库的设备测试只在 `:app:connectedVerificationDebugAndroidTest` 下运行，不要在 `dev` 变体上跑
 
@@ -52,16 +54,17 @@
 - `FileNotFoundException` 指向 `app/build/intermediates/...`
 - Dex 或 desugar 中间目录异常
 
-如果怀疑是并发问题，先停止其他 Gradle 任务，再单独重跑一次 `assembleDebug`。
+如果用户已要求构建且怀疑是并发问题，先停止其他 Gradle 任务，再单独重跑一次 `assembleDebug`；不要在未获要求时自行重跑。
 
 ## 推荐执行顺序
 
-1. 确认当前就在仓库根目录
-2. 执行 `assembleDebug`
-3. 检查 `BUILD SUCCESSFUL`
-4. 检查 `app/build/outputs/apk/debug/app-debug.apk` 是否存在
-5. 如需装机，再继续使用 `skills/android-install-debug-apk.md`
+1. 确认用户已明确要求 Debug 构建
+2. 确认当前就在仓库根目录
+3. 执行 `assembleDebug`
+4. 检查 `BUILD SUCCESSFUL`
+5. 检查 `app/build/outputs/apk/debug/app-debug.apk` 是否存在
+6. 只有用户另行要求安装时，再使用 `skills/android-install-debug-apk.md`
 
 ## 一句话记忆
 
-> 在 CardTally 里先用 wrapper 跑 `assembleDebug`，确认 `BUILD SUCCESSFUL` 和 `app-debug.apk` 都存在，再进入后续安装或真机验证。
+> 在 CardTally 里，仅在用户明确要求时用 wrapper 跑 `assembleDebug`；安装或真机验证也需明确要求。

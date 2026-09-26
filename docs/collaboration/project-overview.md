@@ -23,7 +23,7 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 
 - `app/src/main/java/com/example/cardtally/`
 - `MainActivity.kt`：主 Activity
-- `*Fragment.kt`：页面级逻辑，例如 `AddRecordFragment`、`EditRecordFragment`、`AddAssetFragment`、`EditAssetFragment`、`StatisticsFragment`、`SettingsFragment`、`SearchFragment`、`AgentFragment`、`AssetFragment`；其中当前“账本”一级页由 `StatisticsFragment` 承载，并在页内切换 `统计 / 明细` 两种视图
+- `*Fragment.kt`：页面级逻辑；当前底部导航的账本、统计、资产、AI 助手、我的分别由 `LedgerFragment`、`StatisticsFragment`、`AssetFragment`、`AgentFragment`、`SettingsFragment` 承载
 - `adapter/`：RecyclerView 相关适配器；当前除通用列表外，也包含录入页抽屉相关适配器，如 `RecordAssetSheetAdapter`、`RecordCategoryTreeAdapter`
 - `database/`：SQLite 数据访问，核心在 `DatabaseHelper.kt`
 - `model/`：数据模型，包括记录、资产，以及 AI 助手会话 / 消息模型
@@ -53,9 +53,8 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 - 当前数据层是 `SQLite + DatabaseHelper`，不要默认已经迁移到 Room。
 - 当前语言切换基于应用级 locale，不要再额外引入第二套手写国际化状态。
 - 当前 AI 助手已经不是静态示例页，而是带 SQLite 持久化多会话的 MiniMax BYOK 聊天页；不要再按“单会话内存态”理解 `AgentFragment`。
-- 当前主题设置现实是 `浅色 / 深色 / 跟随系统` 三档，不要再按旧的蓝 / 绿 / 橙彩色主题理解设置页。
-- 当前深色模式适配依赖 `ThemeHelper`、主题属性与 `values-night` 覆盖；不要继续往布局和 Kotlin 里新增 `*_light` 直接引用。
+- 当前运行时只使用浅色外观；`ThemeHelper` 会把旧主题偏好归一为浅色，视觉约束以根目录 `DESIGN.md` 为准。
 - 当前底部导航由 `MainActivity` 统一控制一级 / 二级页显隐，不要在各个二级页里继续各自维护一套 hide/show 规则；`AgentFragment` 的会话抽屉显隐也应通过 `MainActivity` 的导航壳控制链路协同。
-- 当前录入页不是“表单全铺开 + Spinner + 分类网格”的旧形态；当前现实是主页面极简录入壳，日期 / 资产 / 分类通过底部抽屉完成选择。
+- 当前新增与编辑记录共用 `fragment_add_record_quick.xml`；日期和资产使用底部选择器，分类在页内按标准或快速模式选择，金额键盘常驻。
 - README 和规划文档里出现的目标架构，不等于当前代码已经实现。
 - 若只是在修 bug 或补局部功能，优先沿用现有模式，避免顺手做大规模架构迁移。
