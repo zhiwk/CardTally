@@ -19,7 +19,6 @@ import com.example.cardtally.util.RecurringScheduleCalculator
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.UUID
 
 class DatabaseHelper(
     private val appContext: Context
@@ -93,6 +92,40 @@ class DatabaseHelper(
             pageLimit = MAX_RECORD_QUERY_LIMIT
         )
     }
+    private val recordWriteRepository by lazy {
+        RecordWriteRepository(
+            writableDatabase = { writableDatabase },
+            currentLedgerId = ::currentLedgerId,
+            validateRecord = ::validateRecordForWrite,
+            findRecord = ::getRecordByIdInternal,
+            recordFromCursor = ::createRecordFromCursor,
+            recordValues = ::createRecordValues,
+            undoValues = ::createRecordDeletionUndoValues,
+            applyAssetEffect = recordAssetBalanceRepository::applyRecordEffect,
+            adjustAssetBalance = recordAssetBalanceRepository::adjustBalance,
+            deleteRecordPhotos = ::deleteRecordPhotoUris,
+            columns = RECORD_WRITE_COLUMNS
+        )
+    }
+    private val recordWriteValidator by lazy {
+        RecordWriteValidator(
+            findCategory = ::getCategoryByIdInternal,
+            categoryHasChildren = ::categoryHasChildren,
+            isAvailableAsset = { db, assetId ->
+                db.rawQuery(
+                    "SELECT 1 FROM $TABLE_ASSETS WHERE ${assetScope()} AND $COLUMN_ASSET_ID = ? " +
+                        "AND $COLUMN_ASSET_IS_ARCHIVED = 0 LIMIT 1",
+                    arrayOf(assetId.toString())
+                ).use { it.moveToFirst() }
+            }
+        )
+    }
+    private val recordAssetBalanceRepository by lazy {
+        RecordAssetBalanceRepository(
+            assetScope = ::assetScope,
+            columns = RECORD_ASSET_BALANCE_COLUMNS
+        )
+    }
     private val assetReadRepository by lazy {
         AssetReadRepository(
             readableDatabase = { readableDatabase },
@@ -115,6 +148,129 @@ class DatabaseHelper(
             readableDatabase = { readableDatabase },
             columns = LEDGER_READ_COLUMNS
         )
+    }
+    private val ledgerWriteRepository by lazy {
+        LedgerWriteRepository(
+            writableDatabase = { writableDatabase },
+            currentLedgerId = ::currentLedgerId,
+            getLedgers = ::getLedgers,
+            getMasterLedgerId = ::getMasterLedgerId,
+            getSharedSourceLedgerId = ::getSharedSourceLedgerId,
+            columns = LEDGER_WRITE_COLUMNS
+        )
+    }
+    private val schemaUpgradeManager by lazy {
+        DatabaseSchemaUpgradeManager(
+            isVerificationBuild = BuildConfig.APPLICATION_ID.endsWith(".verification"),
+            resetVerificationDatabase = ::resetAllDataForVerification,
+            ensureColumn = ::ensureColumn,
+            initializeAssetSortOrders = ::initializeAssetSortOrders,
+            createRecurringTableAndIndex = { db ->
+                db.execSQL(CREATE_TABLE_RECURRING_RECORDS)
+                db.execSQL(CREATE_INDEX_RECURRING_DUE)
+            },
+            normalizeLegacyAssetCategory = { db ->
+                db.execSQL(
+                    "UPDATE $TABLE_ASSETS SET $COLUMN_ASSET_CATEGORY_LABEL = ?, " +
+                        "$COLUMN_ASSET_CATEGORY_ICON_NAME = ? WHERE $COLUMN_ASSET_CATEGORY_LABEL = ?",
+                    arrayOf("其他信用", "tabler_credit_card", "借呗 / 其他信用")
+                )
+            },
+            recurringScheduleColumns = listOf(
+                DatabaseSchemaUpgradeManager.ColumnMigration(
+                    TABLE_RECURRING_RECORDS,
+                    COLUMN_RECURRING_WEEKLY_DAY,
+                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_WEEKLY_DAY INTEGER"
+                ),
+                DatabaseSchemaUpgradeManager.ColumnMigration(
+                    TABLE_RECURRING_RECORDS,
+                    COLUMN_RECURRING_MONTHLY_DAY,
+                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_MONTHLY_DAY INTEGER"
+                ),
+                DatabaseSchemaUpgradeManager.ColumnMigration(
+                    TABLE_RECURRING_RECORDS,
+                    COLUMN_RECURRING_YEARLY_MONTH,
+                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_YEARLY_MONTH INTEGER"
+                ),
+                DatabaseSchemaUpgradeManager.ColumnMigration(
+                    TABLE_RECURRING_RECORDS,
+                    COLUMN_RECURRING_YEARLY_DAY,
+                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_YEARLY_DAY INTEGER"
+                ),
+                DatabaseSchemaUpgradeManager.ColumnMigration(
+                    TABLE_RECURRING_RECORDS,
+                    COLUMN_RECURRING_INTERVAL_DAYS,
+                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_INTERVAL_DAYS INTEGER"
+                )
+            ),
+            recurringTableRebuild = DatabaseSchemaUpgradeManager.TableRebuildMigration(
+                table = TABLE_RECURRING_RECORDS,
+                createTableSql = CREATE_TABLE_RECURRING_RECORDS,
+                copiedColumns = listOf(
+                    COLUMN_RECURRING_ID,
+                    COLUMN_LEDGER_ID,
+                    COLUMN_RECURRING_TYPE,
+                    COLUMN_RECURRING_NAME,
+                    COLUMN_RECURRING_AMOUNT,
+                    COLUMN_RECURRING_CATEGORY_ID,
+                    COLUMN_RECURRING_CATEGORY_NAME,
+                    COLUMN_RECURRING_CATEGORY_PATH,
+                    COLUMN_RECURRING_ASSET_ID,
+                    COLUMN_RECURRING_ASSET_SOURCE,
+                    COLUMN_RECURRING_NOTE,
+                    COLUMN_RECURRING_FREQUENCY,
+                    COLUMN_RECURRING_START_DATE,
+                    COLUMN_RECURRING_END_DATE,
+                    COLUMN_RECURRING_ENABLED,
+                    COLUMN_RECURRING_NEXT_DUE_DATE
+                )
+            ),
+            createPerformanceIndices = ::createPerformanceIndices,
+            config = DatabaseSchemaUpgradeManager.Config(
+                assetTable = TABLE_ASSETS,
+                assetSortOrderColumn = COLUMN_ASSET_SORT_ORDER,
+                assetSortOrderSql = "ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_SORT_ORDER INTEGER NOT NULL DEFAULT 0",
+                recurringDueIndexSql = CREATE_INDEX_RECURRING_DUE
+            )
+        )
+    }
+    private val schemaCreator by lazy {
+        DatabaseSchemaCreator(
+            createTablesBeforeDefaultLedger = listOf(
+                CREATE_TABLE_LEDGERS,
+                CREATE_TABLE_LEDGER_SHARED_ASSETS,
+                CREATE_TABLE_LEDGER_SHARED_LEDGERS
+            ),
+            defaultLedgerTable = TABLE_LEDGERS,
+            defaultLedgerNameColumn = COLUMN_LEDGER_NAME,
+            defaultLedgerSubtitleColumn = COLUMN_LEDGER_SUBTITLE,
+            defaultLedgerOrderColumn = COLUMN_LEDGER_SORT_ORDER,
+            createTablesAfterDefaultLedger = listOf(
+                CREATE_TABLE_RECORDS,
+                CREATE_TABLE_CATEGORIES,
+                CREATE_TABLE_ASSETS,
+                CREATE_TABLE_RECORD_DELETION_UNDO,
+                CREATE_TABLE_AI_CHAT_SESSIONS,
+                CREATE_TABLE_AI_CHAT_MESSAGES,
+                CREATE_TABLE_RECURRING_RECORDS
+            ),
+            createIndices = listOf(
+                CREATE_INDEX_RECORDS_LEDGER_DATE,
+                CREATE_INDEX_RECORDS_LEDGER_TYPE_DATE,
+                CREATE_INDEX_RECORDS_SOURCE_ASSET,
+                CREATE_INDEX_RECORDS_DESTINATION_ASSET,
+                CREATE_INDEX_CATEGORIES_TYPE_PARENT,
+                CREATE_INDEX_ASSETS_LEDGER_ARCHIVED,
+                CREATE_INDEX_ASSETS_LEDGER_ARCHIVED_ORDER,
+                CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT,
+                CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT,
+                CREATE_INDEX_RECURRING_DUE
+            ),
+            insertDefaultCategories = categoryDefaultsSeeder::seed
+        )
+    }
+    private val categoryDefaultsSeeder by lazy {
+        CategoryDefaultsSeeder(CATEGORY_DEFAULTS_COLUMNS)
     }
 
     override fun onConfigure(db: SQLiteDatabase) {
@@ -203,6 +359,19 @@ class DatabaseHelper(
             sourceAssetId = COLUMN_RECORD_ASSET_ID,
             destinationAssetId = COLUMN_RECORD_DESTINATION_ASSET_ID,
             assetSource = COLUMN_ASSET_SOURCE
+        )
+        private val RECORD_WRITE_COLUMNS = RecordWriteRepository.Columns(
+            recordsTable = TABLE_RECORDS,
+            recordId = COLUMN_ID,
+            recordLedgerId = COLUMN_LEDGER_ID,
+            recordDate = COLUMN_DATE,
+            recordSortOrder = COLUMN_SORT_ORDER,
+            categoryNameSnapshot = COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT,
+            categoryPathSnapshot = COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT,
+            undoTable = TABLE_RECORD_DELETION_UNDO,
+            undoToken = COLUMN_UNDO_TOKEN,
+            undoExpiresAt = COLUMN_UNDO_EXPIRES_AT,
+            undoBalanceDelta = COLUMN_UNDO_BALANCE_DELTA
         )
 
         private const val TABLE_RECURRING_RECORDS = "recurring_records"
@@ -301,6 +470,16 @@ class DatabaseHelper(
             sortOrder = COLUMN_CATEGORY_SORT_ORDER,
             ledgerId = COLUMN_LEDGER_ID
         )
+        private val CATEGORY_DEFAULTS_COLUMNS = CategoryDefaultsSeeder.Columns(
+            table = TABLE_CATEGORIES,
+            id = COLUMN_CATEGORY_ID,
+            name = COLUMN_CATEGORY_NAME,
+            type = COLUMN_CATEGORY_TYPE,
+            icon = COLUMN_CATEGORY_ICON,
+            parentId = COLUMN_CATEGORY_PARENT_ID,
+            sortOrder = COLUMN_CATEGORY_SORT_ORDER,
+            ledgerId = COLUMN_LEDGER_ID
+        )
         private val LEDGER_READ_COLUMNS = LedgerReadRepository.Columns(
             ledgersTable = TABLE_LEDGERS,
             ledgerId = COLUMN_ID,
@@ -321,6 +500,32 @@ class DatabaseHelper(
             assetIncludeInTotal = COLUMN_ASSET_INCLUDE_IN_TOTAL,
             recordsTable = TABLE_RECORDS,
             recordId = COLUMN_ID,
+            recordLedgerId = COLUMN_LEDGER_ID
+        )
+        private val LEDGER_WRITE_COLUMNS = LedgerWriteRepository.Columns(
+            ledgersTable = TABLE_LEDGERS,
+            ledgerId = COLUMN_ID,
+            ledgerName = COLUMN_LEDGER_NAME,
+            ledgerSubtitle = COLUMN_LEDGER_SUBTITLE,
+            ledgerSortOrder = COLUMN_LEDGER_SORT_ORDER,
+            ledgerIcon = COLUMN_LEDGER_ICON_NAME,
+            sharedLedgersTable = TABLE_LEDGER_SHARED_LEDGERS,
+            sharedLedgerId = COLUMN_SHARED_LEDGER_ID,
+            sharedSourceLedgerId = COLUMN_SHARED_SOURCE_LEDGER_ID,
+            sharedAssetsTable = TABLE_LEDGER_SHARED_ASSETS,
+            sharedAssetId = COLUMN_SHARED_ASSET_ID,
+            assetsTable = TABLE_ASSETS,
+            assetId = COLUMN_ASSET_ID,
+            assetLedgerId = COLUMN_LEDGER_ID,
+            assetName = COLUMN_ASSET_NAME,
+            assetAmount = COLUMN_ASSET_AMOUNT,
+            assetType = COLUMN_ASSET_TYPE,
+            assetCategoryLabel = COLUMN_ASSET_CATEGORY_LABEL,
+            assetCategoryIcon = COLUMN_ASSET_CATEGORY_ICON_NAME,
+            assetArchived = COLUMN_ASSET_IS_ARCHIVED,
+            assetPinned = COLUMN_ASSET_IS_PINNED,
+            assetIncludeInTotal = COLUMN_ASSET_INCLUDE_IN_TOTAL,
+            recordsTable = TABLE_RECORDS,
             recordLedgerId = COLUMN_LEDGER_ID
         )
 
@@ -362,6 +567,13 @@ class DatabaseHelper(
             pinned = COLUMN_ASSET_IS_PINNED,
             includeInTotal = COLUMN_ASSET_INCLUDE_IN_TOTAL,
             sortOrder = COLUMN_ASSET_SORT_ORDER
+        )
+        private val RECORD_ASSET_BALANCE_COLUMNS = RecordAssetBalanceRepository.Columns(
+            assetsTable = TABLE_ASSETS,
+            assetId = COLUMN_ASSET_ID,
+            assetName = COLUMN_ASSET_NAME,
+            assetAmount = COLUMN_ASSET_AMOUNT,
+            assetArchived = COLUMN_ASSET_IS_ARCHIVED
         )
 
         private const val TABLE_AI_CHAT_SESSIONS = "ai_chat_sessions"
@@ -602,194 +814,42 @@ class DatabaseHelper(
     /** The first ledger owns the permanent master asset pool. */
     fun getMasterLedgerId(): Long = ledgerReadRepository.getMasterLedgerId()
 
-    fun addLedger(name: String, subtitle: String = "", iconName: String = "tabler_book"): Long {
-        val db = writableDatabase
-        val id = db.insertOrThrow(TABLE_LEDGERS, null, ContentValues().apply {
-            put(COLUMN_LEDGER_NAME, name)
-            put(COLUMN_LEDGER_SUBTITLE, subtitle.ifBlank { "${name}账本" })
-            put(COLUMN_LEDGER_SORT_ORDER, getLedgers().size)
-            put(COLUMN_LEDGER_ICON_NAME, iconName)
-        })
-        return id
-    }
+    fun addLedger(name: String, subtitle: String = "", iconName: String = "tabler_book"): Long =
+        ledgerWriteRepository.addLedger(name, subtitle, iconName)
 
-    fun addLedger(name: String, subtitle: String = "", sharedAssetIds: List<Long>): Long {
-        return addLedger(name, subtitle, sharedAssetIds, emptyList())
-    }
+    fun addLedger(name: String, subtitle: String = "", sharedAssetIds: List<Long>): Long =
+        ledgerWriteRepository.addLedgerWithAssetLinks(name, subtitle, sharedAssetIds, emptyList())
 
-    fun addLedgerWithAssetPool(name: String, sharedSourceLedgerId: Long? = null, copyFromLedgerId: Long? = null, iconName: String = "tabler_book"): Long {
-        val id = addLedger(name, iconName = iconName)
-        val db = writableDatabase
-        if (sharedSourceLedgerId != null) {
-            db.insertOrThrow(TABLE_LEDGER_SHARED_LEDGERS, null, ContentValues().apply {
-                put(COLUMN_SHARED_LEDGER_ID, id)
-                put(COLUMN_SHARED_SOURCE_LEDGER_ID, sharedSourceLedgerId)
-            })
-        }
-        if (copyFromLedgerId != null) {
-            db.query(TABLE_ASSETS, arrayOf(COLUMN_ASSET_ID), "$COLUMN_LEDGER_ID = ?", arrayOf(copyFromLedgerId.toString()), null, null, null).use { cursor ->
-                while (cursor.moveToNext()) copyAssetToLedgerInternal(db, cursor.getLong(0), id)
-            }
-        }
-        return id
-    }
+    fun addLedgerWithAssetPool(
+        name: String,
+        sharedSourceLedgerId: Long? = null,
+        copyFromLedgerId: Long? = null,
+        iconName: String = "tabler_book"
+    ): Long = ledgerWriteRepository.addLedgerWithAssetPool(name, sharedSourceLedgerId, copyFromLedgerId, iconName)
 
     fun getSharedSourceLedgerId(ledgerId: Long): Long? =
         ledgerReadRepository.getSharedSourceLedgerId(ledgerId)
 
     /** Copies a shared pool to one ledger and normalizes a one-ledger remainder to independent pools. */
-    fun forkLedgerAssetPool(ledgerId: Long): Boolean {
-        fun poolRoot(id: Long): Long {
-            val visited = mutableSetOf<Long>()
-            var root = id
-            while (visited.add(root)) root = getSharedSourceLedgerId(root) ?: break
-            return root
-        }
-        val root = poolRoot(ledgerId)
-        if (root == ledgerId) return false
-        val members = getLedgers().map { it.id }.filter { poolRoot(it) == root }
-        val db = writableDatabase
-        db.beginTransaction()
-        return try {
-            val poolAssetIds = mutableSetOf<Long>()
-            members.forEach { memberId ->
-                db.query(TABLE_ASSETS, arrayOf(COLUMN_ASSET_ID), "$COLUMN_LEDGER_ID = ?", arrayOf(memberId.toString()), null, null, null).use { cursor ->
-                    while (cursor.moveToNext()) poolAssetIds += cursor.getLong(0)
-                }
-            }
-            poolAssetIds.forEach { assetId ->
-                val alreadyCopied = db.query(
-                    TABLE_ASSETS,
-                    arrayOf(COLUMN_ASSET_ID),
-                    "$COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_ID = ?",
-                    arrayOf(ledgerId.toString(), assetId.toString()), null, null, null
-                ).use { it.moveToFirst() }
-                if (!alreadyCopied) copyAssetToLedgerInternal(db, assetId, ledgerId)
-            }
-            db.delete(TABLE_LEDGER_SHARED_LEDGERS, "$COLUMN_SHARED_LEDGER_ID = ?", arrayOf(ledgerId.toString()))
-            val remaining = members.filter { it != ledgerId }
-            if (remaining.size == 1) {
-                val onlyLedger = remaining.single()
-                poolAssetIds.forEach { assetId ->
-                    val alreadyCopied = db.query(
-                        TABLE_ASSETS,
-                        arrayOf(COLUMN_ASSET_ID),
-                        "$COLUMN_LEDGER_ID = ? AND $COLUMN_ASSET_ID = ?",
-                        arrayOf(onlyLedger.toString(), assetId.toString()), null, null, null
-                    ).use { it.moveToFirst() }
-                    if (!alreadyCopied) copyAssetToLedgerInternal(db, assetId, onlyLedger)
-                }
-                db.delete(TABLE_LEDGER_SHARED_LEDGERS, "$COLUMN_SHARED_LEDGER_ID = ?", arrayOf(onlyLedger.toString()))
-            }
-            db.setTransactionSuccessful()
-            true
-        } finally {
-            db.endTransaction()
-        }
-    }
+    fun forkLedgerAssetPool(ledgerId: Long): Boolean = ledgerWriteRepository.forkAssetPool(ledgerId)
 
     fun getLedgerAssetPoolSummary(ledgerId: Long): Pair<Int, Double> =
         ledgerReadRepository.getAssetPoolSummary(assetPoolRootId(ledgerId))
 
-    fun updateLedgerAssetPool(ledgerId: Long, sharedSourceLedgerId: Long?, iconName: String? = null, name: String? = null): Boolean {
-        if (ledgerId != currentLedgerId()) return false
-        val db = writableDatabase
-        if (iconName != null || name != null) {
-            db.update(TABLE_LEDGERS, ContentValues().apply {
-                iconName?.let { put(COLUMN_LEDGER_ICON_NAME, it) }
-                name?.let {
-                    put(COLUMN_LEDGER_NAME, it)
-                    put(COLUMN_LEDGER_SUBTITLE, "${it}账本")
-                }
-            }, "$COLUMN_ID = ?", arrayOf(ledgerId.toString()))
-        }
-        db.delete(TABLE_LEDGER_SHARED_LEDGERS, "$COLUMN_SHARED_LEDGER_ID = ?", arrayOf(ledgerId.toString()))
-        if (sharedSourceLedgerId != null && sharedSourceLedgerId != ledgerId) {
-            db.insertOrThrow(TABLE_LEDGER_SHARED_LEDGERS, null, ContentValues().apply {
-                put(COLUMN_SHARED_LEDGER_ID, ledgerId)
-                put(COLUMN_SHARED_SOURCE_LEDGER_ID, sharedSourceLedgerId)
-            })
-        }
-        return true
-    }
+    fun updateLedgerAssetPool(ledgerId: Long, sharedSourceLedgerId: Long?, iconName: String? = null, name: String? = null): Boolean =
+        ledgerWriteRepository.updateAssetPool(ledgerId, sharedSourceLedgerId, iconName, name)
 
-    fun updateLedgerDetails(ledgerId: Long, iconName: String? = null, name: String? = null): Boolean {
-        if (ledgerId != currentLedgerId()) return false
-        if (iconName == null && name == null) return true
-        return writableDatabase.update(TABLE_LEDGERS, ContentValues().apply {
-            iconName?.let { put(COLUMN_LEDGER_ICON_NAME, it) }
-            name?.let {
-                put(COLUMN_LEDGER_NAME, it)
-                put(COLUMN_LEDGER_SUBTITLE, "${it}账本")
-            }
-        }, "$COLUMN_ID = ?", arrayOf(ledgerId.toString())) > 0
-    }
+    fun updateLedgerDetails(ledgerId: Long, iconName: String? = null, name: String? = null): Boolean =
+        ledgerWriteRepository.updateLedgerDetails(ledgerId, iconName, name)
 
-    fun addLedger(name: String, subtitle: String = "", sharedAssetIds: List<Long>, copiedAssetIds: List<Long>): Long {
-        val id = addLedger(name, subtitle)
-        val db = writableDatabase
-        sharedAssetIds.distinct().forEach { assetId ->
-            db.insertWithOnConflict(TABLE_LEDGER_SHARED_ASSETS, null, ContentValues().apply {
-                put(COLUMN_SHARED_LEDGER_ID, id)
-                put(COLUMN_SHARED_ASSET_ID, assetId)
-            }, SQLiteDatabase.CONFLICT_IGNORE)
-        }
-        copiedAssetIds.distinct().forEach { assetId -> copyAssetToLedgerInternal(db, assetId, id) }
-        return id
-    }
-
-    private fun copyAssetToLedgerInternal(db: SQLiteDatabase, assetId: Long, targetLedgerId: Long): Long {
-        val values = db.query(TABLE_ASSETS, null, "$COLUMN_ASSET_ID = ?", arrayOf(assetId.toString()), null, null, null).use { cursor ->
-            if (!cursor.moveToFirst()) return -1L
-            ContentValues().apply {
-                put(COLUMN_LEDGER_ID, targetLedgerId)
-                put(COLUMN_ASSET_NAME, cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_NAME)))
-                put(COLUMN_ASSET_AMOUNT, cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ASSET_AMOUNT)))
-                put(COLUMN_ASSET_TYPE, cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_TYPE)))
-                put(COLUMN_ASSET_CATEGORY_LABEL, cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_LABEL)))
-                put(COLUMN_ASSET_CATEGORY_ICON_NAME, cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ASSET_CATEGORY_ICON_NAME)))
-                put(COLUMN_ASSET_IS_ARCHIVED, 0)
-                put(COLUMN_ASSET_IS_PINNED, 0)
-                put(COLUMN_ASSET_INCLUDE_IN_TOTAL, cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ASSET_INCLUDE_IN_TOTAL)))
-            }
-        }
-        return db.insertOrThrow(TABLE_ASSETS, null, values)
-    }
+    fun addLedger(name: String, subtitle: String = "", sharedAssetIds: List<Long>, copiedAssetIds: List<Long>): Long =
+        ledgerWriteRepository.addLedgerWithAssetLinks(name, subtitle, sharedAssetIds, copiedAssetIds)
 
     fun copyAssetToLedger(assetId: Long, targetLedgerId: Long): Long =
-        copyAssetToLedgerInternal(writableDatabase, assetId, targetLedgerId)
+        ledgerWriteRepository.copyAssetToLedger(assetId, targetLedgerId)
 
-    fun updateLedger(ledgerId: Long, name: String, sharedAssetIds: List<Long>): Boolean {
-        if (ledgerId != currentLedgerId()) return false
-        val db = writableDatabase
-        db.beginTransaction()
-        return try {
-            val updated = db.update(
-                TABLE_LEDGERS,
-                ContentValues().apply {
-                    put(COLUMN_LEDGER_NAME, name)
-                    put(COLUMN_LEDGER_SUBTITLE, "${name}账本")
-                },
-                "$COLUMN_ID = ?",
-                arrayOf(ledgerId.toString())
-            )
-            db.delete(
-                TABLE_LEDGER_SHARED_ASSETS,
-                "$COLUMN_SHARED_LEDGER_ID = ?",
-                arrayOf(ledgerId.toString())
-            )
-            sharedAssetIds.distinct().forEach { assetId ->
-                db.insertWithOnConflict(TABLE_LEDGER_SHARED_ASSETS, null, ContentValues().apply {
-                    put(COLUMN_SHARED_LEDGER_ID, ledgerId)
-                    put(COLUMN_SHARED_ASSET_ID, assetId)
-                }, SQLiteDatabase.CONFLICT_IGNORE)
-            }
-            db.setTransactionSuccessful()
-            updated > 0
-        } finally {
-            db.endTransaction()
-        }
-    }
+    fun updateLedger(ledgerId: Long, name: String, sharedAssetIds: List<Long>): Boolean =
+        ledgerWriteRepository.updateLegacyLedger(ledgerId, name, sharedAssetIds)
 
     fun getSharedAssetIds(ledgerId: Long): Set<Long> = ledgerReadRepository.getSharedAssetIds(ledgerId)
 
@@ -798,377 +858,14 @@ class DatabaseHelper(
     fun getLedgerRecordCount(ledgerId: Long): Int = ledgerReadRepository.getLedgerRecordCount(ledgerId)
 
     /** Deletes ledgers and their records while retaining a shared pool for surviving ledgers. */
-    fun deleteLedgers(ledgerIds: Set<Long>): Boolean {
-        val allLedgers = getLedgers()
-        if (ledgerIds.isEmpty() || getMasterLedgerId() in ledgerIds || ledgerIds.size >= allLedgers.size || !ledgerIds.all { id -> allLedgers.any { it.id == id } }) return false
-        fun poolRoot(ledgerId: Long): Long {
-            val visited = mutableSetOf<Long>()
-            var root = ledgerId
-            while (visited.add(root)) root = getSharedSourceLedgerId(root) ?: break
-            return root
-        }
-        val roots = allLedgers.associate { it.id to poolRoot(it.id) }
-        val db = writableDatabase
-        db.beginTransaction()
-        return try {
-            ledgerIds.forEach { id ->
-                db.delete(TABLE_RECORDS, "$COLUMN_LEDGER_ID = ?", arrayOf(id.toString()))
-            }
-            roots.values.distinct().filter { root -> roots.any { it.value == root && it.key in ledgerIds } }.forEach { root ->
-                val members = roots.filterValues { it == root }.keys
-                val survivors = members - ledgerIds
-                val keeper = survivors.minOrNull()
-                if (keeper == null) {
-                    db.delete(TABLE_ASSETS, "$COLUMN_LEDGER_ID = ?", arrayOf(root.toString()))
-                } else {
-                    members.filter { it in ledgerIds }.forEach { deletedId ->
-                        db.update(TABLE_ASSETS, ContentValues().apply { put(COLUMN_LEDGER_ID, keeper) }, "$COLUMN_LEDGER_ID = ?", arrayOf(deletedId.toString()))
-                    }
-                    db.delete(TABLE_LEDGER_SHARED_LEDGERS, "$COLUMN_SHARED_LEDGER_ID IN (${survivors.joinToString { "?" }})", survivors.map { it.toString() }.toTypedArray())
-                    survivors.filter { it != keeper }.forEach { survivor ->
-                        db.insertWithOnConflict(TABLE_LEDGER_SHARED_LEDGERS, null, ContentValues().apply {
-                            put(COLUMN_SHARED_LEDGER_ID, survivor)
-                            put(COLUMN_SHARED_SOURCE_LEDGER_ID, keeper)
-                        }, SQLiteDatabase.CONFLICT_IGNORE)
-                    }
-                }
-            }
-            db.delete(TABLE_LEDGER_SHARED_LEDGERS, "$COLUMN_SHARED_LEDGER_ID IN (${ledgerIds.joinToString { "?" }})", ledgerIds.map { it.toString() }.toTypedArray())
-            db.delete(TABLE_LEDGER_SHARED_LEDGERS, "$COLUMN_SHARED_SOURCE_LEDGER_ID IN (${ledgerIds.joinToString { "?" }})", ledgerIds.map { it.toString() }.toTypedArray())
-            ledgerIds.forEach { id -> db.delete(TABLE_ASSETS, "$COLUMN_LEDGER_ID = ?", arrayOf(id.toString())) }
-            db.delete(TABLE_LEDGERS, "$COLUMN_ID IN (${ledgerIds.joinToString { "?" }})", ledgerIds.map { it.toString() }.toTypedArray())
-            db.setTransactionSuccessful()
-            true
-        } finally {
-            db.endTransaction()
-        }
-    }
+    fun deleteLedgers(ledgerIds: Set<Long>): Boolean = ledgerWriteRepository.deleteLedgers(ledgerIds)
 
     fun getCurrentLedger(): com.example.cardtally.model.Ledger? = getLedgers().firstOrNull { it.id == currentLedgerId() }
 
-    override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(CREATE_TABLE_LEDGERS)
-        db.execSQL(CREATE_TABLE_LEDGER_SHARED_ASSETS)
-        db.execSQL(CREATE_TABLE_LEDGER_SHARED_LEDGERS)
-        db.insertOrThrow(TABLE_LEDGERS, null, ContentValues().apply {
-            put(COLUMN_LEDGER_NAME, "日常")
-            put(COLUMN_LEDGER_SUBTITLE, "日常账本")
-            put(COLUMN_LEDGER_SORT_ORDER, 0)
-        })
-        db.execSQL(CREATE_TABLE_RECORDS)
-        db.execSQL(CREATE_TABLE_CATEGORIES)
-        db.execSQL(CREATE_TABLE_ASSETS)
-        db.execSQL(CREATE_TABLE_RECORD_DELETION_UNDO)
-        db.execSQL(CREATE_TABLE_AI_CHAT_SESSIONS)
-        db.execSQL(CREATE_TABLE_AI_CHAT_MESSAGES)
-        db.execSQL(CREATE_TABLE_RECURRING_RECORDS)
-        db.execSQL(CREATE_INDEX_RECORDS_LEDGER_DATE)
-        db.execSQL(CREATE_INDEX_RECORDS_LEDGER_TYPE_DATE)
-        db.execSQL(CREATE_INDEX_RECORDS_SOURCE_ASSET)
-        db.execSQL(CREATE_INDEX_RECORDS_DESTINATION_ASSET)
-        db.execSQL(CREATE_INDEX_CATEGORIES_TYPE_PARENT)
-        db.execSQL(CREATE_INDEX_ASSETS_LEDGER_ARCHIVED)
-        db.execSQL(CREATE_INDEX_ASSETS_LEDGER_ARCHIVED_ORDER)
-        db.execSQL(CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT)
-        db.execSQL(CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT)
-        db.execSQL(CREATE_INDEX_RECURRING_DUE)
-        insertDefaultCategories(db, 1L)
-    }
+    override fun onCreate(db: SQLiteDatabase) = schemaCreator.create(db)
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Verification deliberately starts from one coherent schema. Earlier builds
-        // do not carry forward local data, so no partial legacy migration can survive.
-        if (BuildConfig.APPLICATION_ID.endsWith(".verification")) {
-            resetAllDataForVerification(db)
-        } else {
-            // Daily sandboxes retain their data. Their existing schema already has
-            // the columns used by the app; add safe performance-only indices.
-            if (oldVersion < 33) {
-                ensureColumn(
-                    db,
-                    TABLE_ASSETS,
-                    COLUMN_ASSET_SORT_ORDER,
-                    "ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_SORT_ORDER INTEGER NOT NULL DEFAULT 0"
-                )
-                initializeAssetSortOrders(db)
-            }
-            if (oldVersion < 34) {
-                db.execSQL(CREATE_TABLE_RECURRING_RECORDS)
-                db.execSQL(CREATE_INDEX_RECURRING_DUE)
-            }
-            if (oldVersion < 35) {
-                db.execSQL(
-                    "UPDATE $TABLE_ASSETS SET $COLUMN_ASSET_CATEGORY_LABEL = ?, " +
-                        "$COLUMN_ASSET_CATEGORY_ICON_NAME = ? WHERE $COLUMN_ASSET_CATEGORY_LABEL = ?",
-                    arrayOf("其他信用", "tabler_credit_card", "借呗 / 其他信用")
-                )
-            }
-            if (oldVersion < 36) {
-                ensureColumn(db, TABLE_RECURRING_RECORDS, COLUMN_RECURRING_WEEKLY_DAY,
-                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_WEEKLY_DAY INTEGER")
-                ensureColumn(db, TABLE_RECURRING_RECORDS, COLUMN_RECURRING_MONTHLY_DAY,
-                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_MONTHLY_DAY INTEGER")
-                ensureColumn(db, TABLE_RECURRING_RECORDS, COLUMN_RECURRING_YEARLY_MONTH,
-                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_YEARLY_MONTH INTEGER")
-                ensureColumn(db, TABLE_RECURRING_RECORDS, COLUMN_RECURRING_YEARLY_DAY,
-                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_YEARLY_DAY INTEGER")
-                ensureColumn(db, TABLE_RECURRING_RECORDS, COLUMN_RECURRING_INTERVAL_DAYS,
-                    "ALTER TABLE $TABLE_RECURRING_RECORDS ADD COLUMN $COLUMN_RECURRING_INTERVAL_DAYS INTEGER")
-            }
-            if (oldVersion < 37) {
-                val legacyTable = "${TABLE_RECURRING_RECORDS}_legacy"
-                db.execSQL("ALTER TABLE $TABLE_RECURRING_RECORDS RENAME TO $legacyTable")
-                db.execSQL(CREATE_TABLE_RECURRING_RECORDS)
-                db.execSQL(
-                    "INSERT INTO $TABLE_RECURRING_RECORDS (" +
-                        "$COLUMN_RECURRING_ID, $COLUMN_LEDGER_ID, $COLUMN_RECURRING_TYPE, $COLUMN_RECURRING_NAME, " +
-                        "$COLUMN_RECURRING_AMOUNT, $COLUMN_RECURRING_CATEGORY_ID, $COLUMN_RECURRING_CATEGORY_NAME, " +
-                        "$COLUMN_RECURRING_CATEGORY_PATH, $COLUMN_RECURRING_ASSET_ID, $COLUMN_RECURRING_ASSET_SOURCE, " +
-                        "$COLUMN_RECURRING_NOTE, $COLUMN_RECURRING_FREQUENCY, $COLUMN_RECURRING_START_DATE, " +
-                        "$COLUMN_RECURRING_END_DATE, $COLUMN_RECURRING_ENABLED, $COLUMN_RECURRING_NEXT_DUE_DATE) " +
-                        "SELECT $COLUMN_RECURRING_ID, $COLUMN_LEDGER_ID, $COLUMN_RECURRING_TYPE, $COLUMN_RECURRING_NAME, " +
-                        "$COLUMN_RECURRING_AMOUNT, $COLUMN_RECURRING_CATEGORY_ID, $COLUMN_RECURRING_CATEGORY_NAME, " +
-                        "$COLUMN_RECURRING_CATEGORY_PATH, $COLUMN_RECURRING_ASSET_ID, $COLUMN_RECURRING_ASSET_SOURCE, " +
-                        "$COLUMN_RECURRING_NOTE, $COLUMN_RECURRING_FREQUENCY, $COLUMN_RECURRING_START_DATE, " +
-                        "$COLUMN_RECURRING_END_DATE, $COLUMN_RECURRING_ENABLED, $COLUMN_RECURRING_NEXT_DUE_DATE " +
-                        "FROM $legacyTable"
-                )
-                db.execSQL("DROP TABLE $legacyTable")
-                db.execSQL(CREATE_INDEX_RECURRING_DUE)
-            }
-            createPerformanceIndices(db)
-        }
-        return
-
-        // v22 starts the clean multi-ledger model. Financial data is intentionally reset;
-        // AI conversations remain shared and are kept in their own tables.
-        if (oldVersion < 22) {
-            resetFinancialData(db)
-            return
-        }
-        if (oldVersion < 23) {
-            ensureColumn(db, TABLE_LEDGERS, COLUMN_LEDGER_SHARED_ASSET_IDS,
-                "ALTER TABLE $TABLE_LEDGERS ADD COLUMN $COLUMN_LEDGER_SHARED_ASSET_IDS TEXT NOT NULL DEFAULT ''")
-            db.execSQL(CREATE_TABLE_LEDGER_SHARED_ASSETS)
-        }
-        if (oldVersion < 24) {
-            resetFinancialData(db)
-            return
-        }
-        if (oldVersion < 25) {
-            db.execSQL(CREATE_TABLE_LEDGER_SHARED_LEDGERS)
-            // Preserve the best ledger-level interpretation of the old per-asset links.
-            db.execSQL(
-                "INSERT OR IGNORE INTO $TABLE_LEDGER_SHARED_LEDGERS " +
-                    "($COLUMN_SHARED_LEDGER_ID, $COLUMN_SHARED_SOURCE_LEDGER_ID) " +
-                    "SELECT old.$COLUMN_SHARED_LEDGER_ID, assets.$COLUMN_LEDGER_ID " +
-                    "FROM $TABLE_LEDGER_SHARED_ASSETS old " +
-                    "JOIN $TABLE_ASSETS assets ON assets.$COLUMN_ASSET_ID = old.$COLUMN_SHARED_ASSET_ID " +
-                    "WHERE old.$COLUMN_SHARED_LEDGER_ID != assets.$COLUMN_LEDGER_ID " +
-                    "GROUP BY old.$COLUMN_SHARED_LEDGER_ID, assets.$COLUMN_LEDGER_ID"
-            )
-        }
-        if (oldVersion < 26) {
-            ensureColumn(
-                db,
-                TABLE_LEDGERS,
-                COLUMN_LEDGER_ICON_NAME,
-                "ALTER TABLE $TABLE_LEDGERS ADD COLUMN $COLUMN_LEDGER_ICON_NAME TEXT NOT NULL DEFAULT 'tabler_book'"
-            )
-        }
-        if (oldVersion < 28) {
-            normalizeCategoriesAsGlobal(db)
-        }
-        if (oldVersion < 29) {
-            ensureColumn(db, TABLE_CATEGORIES, COLUMN_CATEGORY_COLOR,
-                "ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_CATEGORY_COLOR TEXT NOT NULL DEFAULT '#F5F5F5'")
-        }
-        if (oldVersion < 30) {
-            ensureColumn(db, TABLE_RECORDS, COLUMN_RECORD_FEE,
-                "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_RECORD_FEE REAL NOT NULL DEFAULT 0")
-            ensureColumn(db, TABLE_RECORD_DELETION_UNDO, COLUMN_RECORD_FEE,
-                "ALTER TABLE $TABLE_RECORD_DELETION_UNDO ADD COLUMN $COLUMN_RECORD_FEE REAL NOT NULL DEFAULT 0")
-        }
-        if (oldVersion < 31) {
-            ensureColumn(db, TABLE_AI_CHAT_MESSAGES, COLUMN_AI_CHAT_MESSAGE_REASONING,
-                "ALTER TABLE $TABLE_AI_CHAT_MESSAGES ADD COLUMN $COLUMN_AI_CHAT_MESSAGE_REASONING TEXT")
-        }
-        if (oldVersion >= 2 && oldVersion < 21) migrateLedgerSchema(db)
-        if (oldVersion < 2) {
-            db.execSQL(CREATE_TABLE_CATEGORIES)
-            insertDefaultCategories(db)
-        }
-        if (oldVersion < 3) {
-            db.execSQL("ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_DESCRIPTION TEXT")
-        }
-        if (oldVersion < 4) {
-            db.execSQL(CREATE_TABLE_ASSETS)
-        }
-        if (oldVersion < 5) {
-            db.execSQL("ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_ASSET_SOURCE TEXT")
-        }
-        if (oldVersion < 6) {
-            db.execSQL("ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_CATEGORY_ICON TEXT")
-            updateCategoriesWithIcons(db)
-        }
-        if (oldVersion < 7) {
-            db.execSQL("ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_SORT_ORDER INTEGER DEFAULT 0")
-        }
-        if (oldVersion < 8) {
-            db.execSQL("ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_IS_ARCHIVED INTEGER DEFAULT 0")
-        }
-        if (oldVersion < 9) {
-            db.execSQL(CREATE_TABLE_AI_CHAT_SESSIONS)
-            db.execSQL(CREATE_TABLE_AI_CHAT_MESSAGES)
-            db.execSQL(CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT)
-            db.execSQL(CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT)
-        }
-        if (oldVersion < 10) {
-            ensureColumn(
-                db = db,
-                tableName = TABLE_CATEGORIES,
-                columnName = COLUMN_CATEGORY_PARENT_ID,
-                alterStatement = "ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_CATEGORY_PARENT_ID INTEGER"
-            )
-            ensureColumn(
-                db = db,
-                tableName = TABLE_RECORDS,
-                columnName = COLUMN_RECORD_CATEGORY_ID,
-                alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_RECORD_CATEGORY_ID INTEGER"
-            )
-            ensureColumn(
-                db = db,
-                tableName = TABLE_RECORDS,
-                columnName = COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT,
-                alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT TEXT"
-            )
-            ensureColumn(
-                db = db,
-                tableName = TABLE_RECORDS,
-                columnName = COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT,
-                alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT TEXT"
-            )
-            backfillLegacyRecordCategorySnapshots(db)
-        }
-        if (oldVersion < 11) {
-            db.execSQL(CREATE_TABLE_RECORD_DELETION_UNDO)
-        }
-        if (oldVersion < 12) {
-            replaceUnusedDefaultExpenseCategories(db)
-        }
-        if (oldVersion < 13) {
-            ensureColumn(
-                db = db,
-                tableName = TABLE_CATEGORIES,
-                columnName = COLUMN_CATEGORY_SORT_ORDER,
-                alterStatement = "ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_CATEGORY_SORT_ORDER INTEGER NOT NULL DEFAULT 0"
-            )
-            initializeCategorySortOrders(db)
-        }
-        if (oldVersion < 14) {
-            replaceDefaultIncomeCategories(db)
-        }
-        if (oldVersion < 15) {
-            ensureColumn(
-                db = db,
-                tableName = TABLE_ASSETS,
-                columnName = COLUMN_ASSET_IS_PINNED,
-                alterStatement = "ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_IS_PINNED INTEGER DEFAULT 0"
-            )
-        }
-        if (oldVersion < 20) {
-            ensureColumn(
-                db = db,
-                tableName = TABLE_RECORDS,
-                columnName = COLUMN_DESTINATION_ASSET_SOURCE,
-                alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_DESTINATION_ASSET_SOURCE TEXT"
-            )
-            ensureColumn(
-                db = db,
-                tableName = TABLE_RECORD_DELETION_UNDO,
-                columnName = COLUMN_DESTINATION_ASSET_SOURCE,
-                alterStatement = "ALTER TABLE $TABLE_RECORD_DELETION_UNDO ADD COLUMN $COLUMN_DESTINATION_ASSET_SOURCE TEXT"
-            )
-        }
-        if (oldVersion < 16) {
-            ensureColumn(
-                db = db,
-                tableName = TABLE_RECORDS,
-                columnName = COLUMN_PHOTO_URI,
-                alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_PHOTO_URI TEXT"
-            )
-            ensureColumn(
-                db = db,
-                tableName = TABLE_RECORD_DELETION_UNDO,
-                columnName = COLUMN_PHOTO_URI,
-                alterStatement = "ALTER TABLE $TABLE_RECORD_DELETION_UNDO ADD COLUMN $COLUMN_PHOTO_URI TEXT"
-            )
-        }
-        if (oldVersion < 17) {
-            ensureColumn(
-                db = db,
-                tableName = TABLE_RECORDS,
-                columnName = COLUMN_PHOTO_URIS,
-                alterStatement = "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_PHOTO_URIS TEXT"
-            )
-            ensureColumn(
-                db = db,
-                tableName = TABLE_RECORD_DELETION_UNDO,
-                columnName = COLUMN_PHOTO_URIS,
-                alterStatement = "ALTER TABLE $TABLE_RECORD_DELETION_UNDO ADD COLUMN $COLUMN_PHOTO_URIS TEXT"
-            )
-            db.execSQL(
-                "UPDATE $TABLE_RECORDS SET $COLUMN_PHOTO_URIS = $COLUMN_PHOTO_URI " +
-                    "WHERE $COLUMN_PHOTO_URI IS NOT NULL AND ($COLUMN_PHOTO_URIS IS NULL OR $COLUMN_PHOTO_URIS = '')"
-            )
-            db.execSQL(
-                "UPDATE $TABLE_RECORD_DELETION_UNDO SET $COLUMN_PHOTO_URIS = $COLUMN_PHOTO_URI " +
-                    "WHERE $COLUMN_PHOTO_URI IS NOT NULL AND ($COLUMN_PHOTO_URIS IS NULL OR $COLUMN_PHOTO_URIS = '')"
-            )
-        }
-        if (oldVersion < 18) {
-            ensureColumn(
-                db = db,
-                tableName = TABLE_ASSETS,
-                columnName = COLUMN_ASSET_INCLUDE_IN_TOTAL,
-                alterStatement = "ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_INCLUDE_IN_TOTAL INTEGER DEFAULT 1"
-            )
-        }
-        if (oldVersion < 19) {
-            ensureColumn(
-                db = db,
-                tableName = TABLE_ASSETS,
-                columnName = COLUMN_ASSET_CATEGORY_LABEL,
-                alterStatement = "ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_CATEGORY_LABEL TEXT NOT NULL DEFAULT ''"
-            )
-            ensureColumn(
-                db = db,
-                tableName = TABLE_ASSETS,
-                columnName = COLUMN_ASSET_CATEGORY_ICON_NAME,
-                alterStatement = "ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_ASSET_CATEGORY_ICON_NAME TEXT NOT NULL DEFAULT ''"
-            )
-        }
-        /* ledger schema is migrated before the legacy category migrations above */
-        if (oldVersion < 2) {
-            db.execSQL(CREATE_TABLE_LEDGERS)
-            val defaultLedgerId = db.insertOrThrow(TABLE_LEDGERS, null, ContentValues().apply {
-                put(COLUMN_LEDGER_NAME, "日常")
-                put(COLUMN_LEDGER_SUBTITLE, "日常账本")
-                put(COLUMN_LEDGER_SORT_ORDER, 0)
-            })
-            ensureColumn(db, TABLE_RECORDS, COLUMN_LEDGER_ID,
-                "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1")
-            ensureColumn(db, TABLE_CATEGORIES, COLUMN_LEDGER_ID,
-                "ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1")
-            ensureColumn(db, TABLE_ASSETS, COLUMN_LEDGER_ID,
-                "ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1")
-            ensureColumn(db, TABLE_RECORD_DELETION_UNDO, COLUMN_LEDGER_ID,
-                "ALTER TABLE $TABLE_RECORD_DELETION_UNDO ADD COLUMN $COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1")
-            db.execSQL("UPDATE $TABLE_RECORDS SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
-            db.execSQL("UPDATE $TABLE_CATEGORIES SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
-            db.execSQL("UPDATE $TABLE_ASSETS SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
-            db.execSQL("UPDATE $TABLE_RECORD_DELETION_UNDO SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
-        }
+        schemaUpgradeManager.upgrade(db, oldVersion)
     }
 
     private fun resetAllDataForVerification(db: SQLiteDatabase) {
@@ -1199,192 +896,6 @@ class DatabaseHelper(
         db.execSQL(CREATE_INDEX_RECURRING_DUE)
     }
 
-    private fun resetFinancialData(db: SQLiteDatabase) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_RECORD_DELETION_UNDO")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_RECORDS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_CATEGORIES")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_ASSETS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_LEDGERS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_LEDGER_SHARED_ASSETS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_RECURRING_RECORDS")
-        db.execSQL(CREATE_TABLE_LEDGERS)
-        db.execSQL(CREATE_TABLE_LEDGER_SHARED_ASSETS)
-        db.insertOrThrow(TABLE_LEDGERS, null, ContentValues().apply {
-            put(COLUMN_LEDGER_NAME, "日常")
-            put(COLUMN_LEDGER_SUBTITLE, "日常账本")
-            put(COLUMN_LEDGER_SORT_ORDER, 0)
-        })
-        db.execSQL(CREATE_TABLE_RECORDS)
-        db.execSQL(CREATE_TABLE_CATEGORIES)
-        db.execSQL(CREATE_TABLE_ASSETS)
-        db.execSQL(CREATE_TABLE_RECORD_DELETION_UNDO)
-        db.execSQL(CREATE_TABLE_RECURRING_RECORDS)
-        insertDefaultCategories(db, 1L)
-        LedgerSession.setCurrentId(appContext, 1L)
-    }
-
-    /** Collapses legacy per-ledger category copies into one global category tree. */
-    private fun normalizeCategoriesAsGlobal(db: SQLiteDatabase) {
-        data class LegacyCategory(val id: Long, val name: String, val type: Int, val parentId: Long?)
-        val rows = mutableListOf<LegacyCategory>()
-        db.rawQuery(
-            "SELECT $COLUMN_CATEGORY_ID, $COLUMN_CATEGORY_NAME, $COLUMN_CATEGORY_TYPE, $COLUMN_CATEGORY_PARENT_ID " +
-                "FROM $TABLE_CATEGORIES ORDER BY $COLUMN_CATEGORY_ID",
-            null
-        ).use { cursor ->
-            while (cursor.moveToNext()) {
-                rows += LegacyCategory(
-                    cursor.getLong(0), cursor.getString(1), cursor.getInt(2), getNullableLong(cursor, COLUMN_CATEGORY_PARENT_ID)
-                )
-            }
-        }
-        val byId = rows.associateBy { it.id }
-        val canonicalById = mutableMapOf<Long, Long>()
-        val canonicalByKey = mutableMapOf<String, Long>()
-        val resolving = mutableSetOf<Long>()
-
-        fun resolve(id: Long): Long {
-            canonicalById[id]?.let { return it }
-            val row = byId[id] ?: return id
-            if (!resolving.add(id)) return id
-            val parent = row.parentId?.let { resolve(it) }
-            resolving.remove(id)
-            if (row.parentId != parent) {
-                db.update(
-                    TABLE_CATEGORIES,
-                    ContentValues().apply {
-                        if (parent == null) putNull(COLUMN_CATEGORY_PARENT_ID)
-                        else put(COLUMN_CATEGORY_PARENT_ID, parent)
-                    },
-                    "$COLUMN_CATEGORY_ID = ?",
-                    arrayOf(id.toString())
-                )
-            }
-            val key = "${row.type}|${parent ?: 0L}|${row.name}"
-            val canonicalId = canonicalByKey[key]
-            if (canonicalId == null) {
-                canonicalByKey[key] = id
-                canonicalById[id] = id
-            } else {
-                canonicalById[id] = canonicalId
-                db.update(
-                    TABLE_RECORDS,
-                    ContentValues().apply { put(COLUMN_RECORD_CATEGORY_ID, canonicalId) },
-                    "$COLUMN_RECORD_CATEGORY_ID = ?",
-                    arrayOf(id.toString())
-                )
-                db.update(
-                    TABLE_RECORD_DELETION_UNDO,
-                    ContentValues().apply { put(COLUMN_RECORD_CATEGORY_ID, canonicalId) },
-                    "$COLUMN_RECORD_CATEGORY_ID = ?",
-                    arrayOf(id.toString())
-                )
-                db.update(
-                    TABLE_CATEGORIES,
-                    ContentValues().apply { put(COLUMN_CATEGORY_PARENT_ID, canonicalId) },
-                    "$COLUMN_CATEGORY_PARENT_ID = ?",
-                    arrayOf(id.toString())
-                )
-                db.delete(TABLE_CATEGORIES, "$COLUMN_CATEGORY_ID = ?", arrayOf(id.toString()))
-            }
-            return canonicalId ?: id
-        }
-
-        rows.forEach { resolve(it.id) }
-        db.update(
-            TABLE_CATEGORIES,
-            ContentValues().apply { put(COLUMN_LEDGER_ID, 1L) },
-            null,
-            null
-        )
-    }
-
-    private fun migrateLedgerSchema(db: SQLiteDatabase) {
-        db.execSQL(CREATE_TABLE_LEDGERS)
-        val defaultLedgerId = db.insertOrThrow(TABLE_LEDGERS, null, ContentValues().apply {
-            put(COLUMN_LEDGER_NAME, "日常")
-            put(COLUMN_LEDGER_SUBTITLE, "日常账本")
-            put(COLUMN_LEDGER_SORT_ORDER, 0)
-        })
-        ensureColumn(db, TABLE_RECORDS, COLUMN_LEDGER_ID,
-            "ALTER TABLE $TABLE_RECORDS ADD COLUMN $COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1")
-        ensureColumn(db, TABLE_CATEGORIES, COLUMN_LEDGER_ID,
-            "ALTER TABLE $TABLE_CATEGORIES ADD COLUMN $COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1")
-        ensureColumn(db, TABLE_ASSETS, COLUMN_LEDGER_ID,
-            "ALTER TABLE $TABLE_ASSETS ADD COLUMN $COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1")
-        ensureColumn(db, TABLE_RECORD_DELETION_UNDO, COLUMN_LEDGER_ID,
-            "ALTER TABLE $TABLE_RECORD_DELETION_UNDO ADD COLUMN $COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1")
-        db.execSQL("UPDATE $TABLE_RECORDS SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
-        db.execSQL("UPDATE $TABLE_CATEGORIES SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
-        db.execSQL("UPDATE $TABLE_ASSETS SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
-        db.execSQL("UPDATE $TABLE_RECORD_DELETION_UNDO SET $COLUMN_LEDGER_ID = ?", arrayOf(defaultLedgerId))
-    }
-
-    private fun insertDefaultCategories(db: SQLiteDatabase, ledgerId: Long = 1L) {
-        val expenseParents = listOf(
-            "购物" to "ic_category_shopping",
-            "餐饮" to "ic_category_food",
-            "居住" to "ic_category_housing",
-            "交通" to "ic_category_transport"
-        )
-        val parentIds = mutableMapOf<String, Long>()
-        for ((index, categoryAndIcon) in expenseParents.withIndex()) {
-            val (category, icon) = categoryAndIcon
-            val values = ContentValues().apply {
-                put(COLUMN_CATEGORY_NAME, category)
-                put(COLUMN_CATEGORY_TYPE, 0)
-                put(COLUMN_CATEGORY_ICON, icon)
-                put(COLUMN_CATEGORY_SORT_ORDER, index)
-                put(COLUMN_LEDGER_ID, 1L)
-            }
-            parentIds[category] = db.insertOrThrow(TABLE_CATEGORIES, null, values)
-        }
-
-        val expenseChildren = mapOf(
-            "购物" to listOf("服饰" to "tabler_shirt", "家电" to "tabler_devices", "数码" to "tabler_device_laptop"),
-            "餐饮" to listOf("早午晚餐" to "tabler_tools_kitchen"),
-            "居住" to listOf("房租" to "tabler_home", "酒店" to "tabler_hotel_service"),
-            "交通" to listOf("短途" to "tabler_car", "飞机高铁" to "tabler_plane")
-        )
-        for ((parentName, children) in expenseChildren) {
-            val parentId = parentIds[parentName] ?: continue
-            for ((category, icon) in children) {
-                val values = ContentValues().apply {
-                    put(COLUMN_CATEGORY_NAME, category)
-                    put(COLUMN_CATEGORY_TYPE, 0)
-                    put(COLUMN_CATEGORY_ICON, icon)
-                    put(COLUMN_CATEGORY_PARENT_ID, parentId)
-                }
-                values.put(COLUMN_LEDGER_ID, 1L)
-                db.insertOrThrow(TABLE_CATEGORIES, null, values)
-            }
-        }
-
-        insertDefaultIncomeCategories(db, ledgerId)
-    }
-
-    private fun updateCategoriesWithIcons(db: SQLiteDatabase) {
-        val categoryIcons = mapOf(
-            "餐饮" to "ic_category_food",
-            "交通" to "ic_category_transport",
-            "购物" to "ic_category_shopping",
-            "娱乐" to "ic_category_entertainment",
-            "医疗" to "ic_category_medical",
-            "教育" to "ic_category_education",
-            "住房" to "ic_category_housing",
-            "工资" to "ic_category_salary",
-            "奖金" to "ic_category_bonus",
-            "其他" to "ic_category_other"
-        )
-        
-        for ((category, icon) in categoryIcons) {
-            val values = ContentValues().apply {
-                put(COLUMN_CATEGORY_ICON, icon)
-            }
-            db.update(TABLE_CATEGORIES, values, "$COLUMN_CATEGORY_NAME = ?", arrayOf(category))
-        }
-    }
-
     private fun ensureColumn(
         db: SQLiteDatabase,
         tableName: String,
@@ -1406,32 +917,6 @@ class DatabaseHelper(
             }
         }
         return false
-    }
-
-    private fun backfillLegacyRecordCategorySnapshots(db: SQLiteDatabase) {
-        db.execSQL(
-            "UPDATE $TABLE_RECORDS " +
-                "SET $COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT = $COLUMN_CATEGORY " +
-                "WHERE $COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT IS NULL OR TRIM($COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT) = ''"
-        )
-        db.execSQL(
-            "UPDATE $TABLE_RECORDS " +
-                "SET $COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT = $COLUMN_CATEGORY " +
-                "WHERE $COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT IS NULL OR TRIM($COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT) = ''"
-        )
-        db.execSQL(
-            "UPDATE $TABLE_RECORDS " +
-                "SET $COLUMN_RECORD_CATEGORY_ID = (" +
-                "SELECT c.$COLUMN_CATEGORY_ID FROM $TABLE_CATEGORIES c " +
-                "WHERE c.$COLUMN_CATEGORY_TYPE = $TABLE_RECORDS.$COLUMN_TYPE " +
-                "AND c.$COLUMN_CATEGORY_NAME = $TABLE_RECORDS.$COLUMN_CATEGORY" +
-                ") " +
-                "WHERE (" +
-                "SELECT COUNT(*) FROM $TABLE_CATEGORIES c " +
-                "WHERE c.$COLUMN_CATEGORY_TYPE = $TABLE_RECORDS.$COLUMN_TYPE " +
-                "AND c.$COLUMN_CATEGORY_NAME = $TABLE_RECORDS.$COLUMN_CATEGORY" +
-                ") = 1"
-        )
     }
 
     private fun createRecordValues(record: Record): ContentValues =
@@ -1500,53 +985,11 @@ class DatabaseHelper(
         }
     }
 
-    fun addRecord(record: Record): Long {
-        val db = writableDatabase
-        db.beginTransaction()
-        return try {
-            validateRecordForWrite(db, record)
-            val maxSortOrder = db.rawQuery(
-                "SELECT COALESCE(MAX($COLUMN_SORT_ORDER), 0) FROM $TABLE_RECORDS WHERE $COLUMN_LEDGER_ID = ? AND $COLUMN_DATE = ?",
-                arrayOf(currentLedgerId().toString(), record.date)
-            ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
-            val id = db.insertOrThrow(TABLE_RECORDS, null, createRecordValues(record).apply {
-                put(COLUMN_SORT_ORDER, maxSortOrder + 1)
-            })
-            applyRecordAssetEffect(db, record, reverse = false)
-            db.setTransactionSuccessful()
-            id
-        } catch (_: IllegalArgumentException) {
-            -1L
-        } finally {
-            db.endTransaction()
-        }
-    }
+    fun addRecord(record: Record): Long = recordWriteRepository.add(record)
 
     fun getAllRecords(): List<Record> = recordReadRepository.getAll()
 
-    fun updateRecord(record: Record): Int {
-        val db = writableDatabase
-        db.beginTransaction()
-        return try {
-            validateRecordForWrite(db, record)
-            val oldRecord = getRecordByIdInternal(db, record.id) ?: return 0
-            applyRecordAssetEffect(db, oldRecord, reverse = true)
-            val rowsAffected = db.update(
-                TABLE_RECORDS,
-                createRecordValues(record),
-                "$COLUMN_ID = ? AND $COLUMN_LEDGER_ID = ?",
-                arrayOf(record.id.toString(), currentLedgerId().toString())
-            )
-            check(rowsAffected == 1)
-            applyRecordAssetEffect(db, record, reverse = false)
-            db.setTransactionSuccessful()
-            rowsAffected
-        } catch (_: IllegalArgumentException) {
-            0
-        } finally {
-            db.endTransaction()
-        }
-    }
+    fun updateRecord(record: Record): Int = recordWriteRepository.update(record)
 
     fun getRecurringRecords(): List<RecurringRecord> = recurringRepository.getForCurrentLedger()
 
@@ -1638,27 +1081,7 @@ class DatabaseHelper(
     }
 
     private fun validateRecordForWrite(db: SQLiteDatabase, record: Record) {
-        require(record.type in 0..2) { "Unsupported record type" }
-        require(record.amount > 0.0 && Money.toMinor(record.amount) != null) { "Amount must be positive and finite" }
-        require(record.fee >= 0.0 && Money.toMinor(record.fee) != null) { "Fee cannot be negative" }
-        if (record.type == 2) {
-            require(record.assetId != null && record.destinationAssetId != null) { "Transfer assets are required" }
-            require(record.assetId != record.destinationAssetId) { "Transfer assets must differ" }
-        } else {
-            require(record.category.isNotBlank()) { "Category is required" }
-            record.categoryId?.let { categoryId ->
-                val category = getCategoryByIdInternal(db, categoryId)
-                    ?: throw IllegalArgumentException("Category missing")
-                require(category.type == record.type && !categoryHasChildren(db, categoryId)) { "Category must be a matching leaf" }
-            }
-        }
-        listOfNotNull(record.assetId, record.destinationAssetId).forEach { assetId ->
-            val exists = db.rawQuery(
-                "SELECT 1 FROM $TABLE_ASSETS WHERE ${assetScope()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0 LIMIT 1",
-                arrayOf(assetId.toString())
-            ).use { it.moveToFirst() }
-            require(exists) { "Asset unavailable" }
-        }
+        recordWriteValidator.validate(db, record)
     }
 
     fun getRecordById(id: Long): Record? {
@@ -1673,184 +1096,7 @@ class DatabaseHelper(
     fun deleteRecord(
         id: Long,
         deletedAtEpochMs: Long = System.currentTimeMillis()
-    ): RecordDeletionToken? {
-        val db = writableDatabase
-        db.beginTransaction()
-        try {
-            db.delete(
-                TABLE_RECORD_DELETION_UNDO,
-                "$COLUMN_UNDO_EXPIRES_AT <= ?",
-                arrayOf(deletedAtEpochMs.toString())
-            )
-            val record = getRecordByIdInternal(db, id)
-            if (record == null) {
-                db.setTransactionSuccessful()
-                return null
-            }
-
-            if (record.type == 2) {
-                applyRecordAssetEffect(db, record, reverse = true)
-                check(db.delete(TABLE_RECORDS, "$COLUMN_ID = ?", arrayOf(id.toString())) == 1)
-                db.setTransactionSuccessful()
-                return null
-            }
-
-            val requestedBalanceDelta = if (record.type == 1) -record.amount else record.amount
-            val appliedBalanceDelta = if (
-                record.assetId == null ||
-                !db.adjustAssetBalance(record.assetId!!, record.assetSource, requestedBalanceDelta, activeOnly = true)
-            ) {
-                0.0
-            } else {
-                requestedBalanceDelta
-            }
-            val token = RecordDeletionToken(
-                value = UUID.randomUUID().toString(),
-                expiresAtEpochMs = deletedAtEpochMs + RECORD_UNDO_WINDOW_MS
-            )
-            val undoValues = createRecordDeletionUndoValues(record, token, appliedBalanceDelta)
-            check(db.insertOrThrow(TABLE_RECORD_DELETION_UNDO, null, undoValues) != -1L)
-            check(db.delete(TABLE_RECORDS, "$COLUMN_ID = ?", arrayOf(id.toString())) == 1)
-            (record.photoUris.ifEmpty { record.photoUri?.let(::listOf) ?: emptyList() }).forEach { photoUri ->
-                runCatching {
-                    appContext.contentResolver.delete(android.net.Uri.parse(photoUri), null, null)
-                }
-            }
-
-            db.setTransactionSuccessful()
-            return token
-        } finally {
-            db.endTransaction()
-        }
-    }
-
-    private fun replaceUnusedDefaultExpenseCategories(db: SQLiteDatabase) {
-        val hasRecords = db.rawQuery("SELECT 1 FROM $TABLE_RECORDS LIMIT 1", null).use { it.moveToFirst() }
-        if (hasRecords) return
-
-        db.delete(TABLE_CATEGORIES, "$COLUMN_CATEGORY_TYPE = ?", arrayOf("0"))
-        insertDefaultExpenseCategories(db)
-    }
-
-    private fun insertDefaultExpenseCategories(db: SQLiteDatabase, ledgerId: Long = 1L) {
-        val values = ContentValues()
-        val parents = listOf(
-            "购物" to "ic_category_shopping",
-            "餐饮" to "ic_category_food",
-            "居住" to "ic_category_housing",
-            "交通" to "ic_category_transport"
-        )
-        val parentIds = mutableMapOf<String, Long>()
-        parents.forEachIndexed { index, (name, icon) ->
-            values.clear()
-            values.put(COLUMN_CATEGORY_NAME, name)
-            values.put(COLUMN_CATEGORY_TYPE, 0)
-            values.put(COLUMN_CATEGORY_ICON, icon)
-            values.put(COLUMN_CATEGORY_SORT_ORDER, index)
-            values.put(COLUMN_LEDGER_ID, 1L)
-            parentIds[name] = db.insertOrThrow(TABLE_CATEGORIES, null, values)
-        }
-        val children = mapOf(
-            "购物" to listOf("服饰" to "tabler_shirt", "家电" to "tabler_devices", "数码" to "tabler_device_laptop"),
-            "餐饮" to listOf("早午晚餐" to "tabler_tools_kitchen"),
-            "居住" to listOf("房租" to "tabler_home", "酒店" to "tabler_hotel_service"),
-            "交通" to listOf("短途" to "tabler_car", "飞机高铁" to "tabler_plane")
-        )
-        children.forEach { (parent, items) ->
-            items.forEach { (name, icon) ->
-                values.clear()
-                values.put(COLUMN_CATEGORY_NAME, name)
-                values.put(COLUMN_CATEGORY_TYPE, 0)
-                values.put(COLUMN_CATEGORY_ICON, icon)
-                values.put(COLUMN_CATEGORY_PARENT_ID, parentIds[parent])
-                values.put(COLUMN_LEDGER_ID, 1L)
-                db.insertOrThrow(TABLE_CATEGORIES, null, values)
-            }
-        }
-    }
-
-    private fun insertDefaultIncomeCategories(db: SQLiteDatabase, ledgerId: Long = 1L) {
-        val parents = listOf(
-            "工作" to "tabler_briefcase",
-            "理财" to "tabler_building_bank"
-        )
-        val parentIds = mutableMapOf<String, Long>()
-        parents.forEachIndexed { index, (name, icon) ->
-            val parentId = findCategoryId(db, name, 1, null, ledgerId) ?: db.insertOrThrow(
-                TABLE_CATEGORIES,
-                null,
-                ContentValues().apply {
-                    put(COLUMN_CATEGORY_NAME, name)
-                    put(COLUMN_CATEGORY_TYPE, 1)
-                    put(COLUMN_CATEGORY_ICON, icon)
-                    put(COLUMN_CATEGORY_SORT_ORDER, index)
-                    put(COLUMN_LEDGER_ID, 1L)
-                }
-            )
-            parentIds[name] = parentId
-        }
-
-        val children = mapOf(
-            "工作" to listOf("工资" to "ic_category_salary", "报销" to "tabler_receipt"),
-            "理财" to listOf(
-                "股票" to "tabler_chart_line",
-                "基金" to "tabler_chart_donut",
-                "黄金" to "tabler_pig_money"
-            )
-        )
-        children.forEach { (parentName, items) ->
-            items.forEachIndexed { index, (name, icon) ->
-                val parentId = parentIds[parentName] ?: return@forEachIndexed
-                if (findCategoryId(db, name, 1, parentId, ledgerId) == null) {
-                    db.insertOrThrow(
-                        TABLE_CATEGORIES,
-                        null,
-                        ContentValues().apply {
-                            put(COLUMN_CATEGORY_NAME, name)
-                            put(COLUMN_CATEGORY_TYPE, 1)
-                            put(COLUMN_CATEGORY_ICON, icon)
-                            put(COLUMN_CATEGORY_PARENT_ID, parentId)
-                            put(COLUMN_CATEGORY_SORT_ORDER, index)
-                            put(COLUMN_LEDGER_ID, 1L)
-                        }
-                    )
-                }
-            }
-        }
-    }
-
-    private fun replaceDefaultIncomeCategories(db: SQLiteDatabase) {
-        val hasIncomeRecords = db.rawQuery(
-            "SELECT 1 FROM $TABLE_RECORDS WHERE $COLUMN_TYPE = 1 LIMIT 1",
-            null
-        ).use { it.moveToFirst() }
-
-        if (!hasIncomeRecords) {
-            db.delete(TABLE_CATEGORIES, "$COLUMN_CATEGORY_TYPE = ?", arrayOf("1"))
-            insertDefaultIncomeCategories(db)
-            return
-        }
-
-        val oldDefaultNames = listOf("工资", "奖金", "投资", "兼职", "其他")
-        oldDefaultNames.forEach { name ->
-            val cursor = db.rawQuery(
-                "SELECT $COLUMN_CATEGORY_ID FROM $TABLE_CATEGORIES " +
-                    "WHERE $COLUMN_CATEGORY_TYPE = 1 AND $COLUMN_CATEGORY_NAME = ?",
-                arrayOf(name)
-            )
-            cursor.use {
-                if (it.moveToFirst()) {
-                    do {
-                        val id = it.getLong(0)
-                        if (!categoryHasChildren(db, id) && !categoryIsReferencedByRecordId(db, id)) {
-                            db.delete(TABLE_CATEGORIES, "$COLUMN_CATEGORY_ID = ?", arrayOf(id.toString()))
-                        }
-                    } while (it.moveToNext())
-                }
-            }
-        }
-        insertDefaultIncomeCategories(db)
-    }
+    ): RecordDeletionToken? = recordWriteRepository.delete(id, deletedAtEpochMs, RECORD_UNDO_WINDOW_MS)
 
     private fun findCategoryId(
         db: SQLiteDatabase,
@@ -1886,65 +1132,7 @@ class DatabaseHelper(
     fun undoRecordDeletion(
         token: RecordDeletionToken,
         nowEpochMs: Long = System.currentTimeMillis()
-    ): Boolean {
-        val db = writableDatabase
-        db.beginTransaction()
-        try {
-            val cursor = db.rawQuery(
-                "SELECT * FROM $TABLE_RECORD_DELETION_UNDO WHERE $COLUMN_UNDO_TOKEN = ?",
-                arrayOf(token.value)
-            )
-            val undoEntry = cursor.use {
-                if (!it.moveToFirst()) {
-                    null
-                } else {
-                    RecordDeletionUndoEntry(
-                        record = createRecordFromCursor(it),
-                        expiresAtEpochMs = it.getLong(it.getColumnIndexOrThrow(COLUMN_UNDO_EXPIRES_AT)),
-                        balanceDelta = Money.toMajorDouble(it.getLong(it.getColumnIndexOrThrow(COLUMN_UNDO_BALANCE_DELTA)))
-                    )
-                }
-            }
-            if (undoEntry == null) {
-                db.setTransactionSuccessful()
-                return false
-            }
-            if (nowEpochMs >= undoEntry.expiresAtEpochMs) {
-                db.delete(TABLE_RECORD_DELETION_UNDO, "$COLUMN_UNDO_TOKEN = ?", arrayOf(token.value))
-                db.setTransactionSuccessful()
-                return false
-            }
-
-            val recordValues = createRecordValues(undoEntry.record).apply {
-                put(COLUMN_ID, undoEntry.record.id)
-                put(COLUMN_SORT_ORDER, undoEntry.record.sortOrder)
-                putNullable(COLUMN_RECORD_CATEGORY_NAME_SNAPSHOT, undoEntry.record.categoryNameSnapshot)
-                putNullable(COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT, undoEntry.record.categoryPathSnapshot)
-            }
-            db.insertOrThrow(TABLE_RECORDS, null, recordValues)
-            if (undoEntry.record.assetId != null && undoEntry.balanceDelta != 0.0) {
-                check(db.adjustAssetBalance(undoEntry.record.assetId!!, undoEntry.record.assetSource, -undoEntry.balanceDelta, activeOnly = false))
-            }
-            check(
-                db.delete(
-                    TABLE_RECORD_DELETION_UNDO,
-                    "$COLUMN_UNDO_TOKEN = ?",
-                    arrayOf(token.value)
-                ) == 1
-            )
-
-            db.setTransactionSuccessful()
-            return true
-        } finally {
-            db.endTransaction()
-        }
-    }
-
-    private data class RecordDeletionUndoEntry(
-        val record: Record,
-        val expiresAtEpochMs: Long,
-        val balanceDelta: Double
-    )
+    ): Boolean = recordWriteRepository.undoDeletion(token, nowEpochMs)
 
     private fun createRecordDeletionUndoValues(
         record: Record,
@@ -1975,69 +1163,20 @@ class DatabaseHelper(
         }
     }
 
+    private fun deleteRecordPhotoUris(record: Record) {
+        (record.photoUris.ifEmpty { record.photoUri?.let(::listOf) ?: emptyList() }).forEach { photoUri ->
+            runCatching {
+                appContext.contentResolver.delete(android.net.Uri.parse(photoUri), null, null)
+            }
+        }
+    }
+
     private fun ContentValues.putNullable(columnName: String, value: String?) {
         if (value == null) putNull(columnName) else put(columnName, value)
     }
 
     private fun ContentValues.putNullable(columnName: String, value: Long?) {
         if (value == null) putNull(columnName) else put(columnName, value)
-    }
-
-    private fun SQLiteDatabase.adjustAssetBalance(
-        assetId: Long,
-        assetName: String?,
-        delta: Double,
-        activeOnly: Boolean
-    ): Boolean {
-        val archiveClause = if (activeOnly) " AND $COLUMN_ASSET_IS_ARCHIVED = 0" else ""
-        val identityClause = if (assetId > 0) "$COLUMN_ASSET_ID = ?" else "$COLUMN_ASSET_NAME = ?"
-        val identityValue = if (assetId > 0) assetId.toString() else assetName.orEmpty()
-        val cursor = rawQuery(
-            "SELECT 1 FROM $TABLE_ASSETS WHERE ${assetScope()} AND $identityClause$archiveClause LIMIT 1",
-            arrayOf(identityValue)
-        )
-        val assetExists = cursor.use { it.moveToFirst() }
-        if (!assetExists) {
-            return false
-        }
-        execSQL(
-            "UPDATE $TABLE_ASSETS SET $COLUMN_ASSET_AMOUNT = $COLUMN_ASSET_AMOUNT + ? " +
-                "WHERE ${assetScope()} AND $identityClause$archiveClause",
-            arrayOf(requireNotNull(Money.toMinor(delta)).toString(), identityValue)
-        )
-        return true
-    }
-
-    private fun applyRecordAssetEffect(db: SQLiteDatabase, record: Record, reverse: Boolean) {
-        val direction = if (reverse) -1 else 1
-        when (record.type) {
-            0 -> record.assetId?.let { check(updateAssetAmount(db, it, record.amount * direction, false)) }
-            1 -> record.assetId?.let { check(updateAssetAmount(db, it, record.amount * direction, true)) }
-            2 -> {
-                val transferOut = record.amount + record.fee
-                record.assetId?.let { check(updateAssetAmount(db, it, transferOut * direction, false)) }
-                record.destinationAssetId?.let { check(updateAssetAmount(db, it, record.amount * direction, true)) }
-            }
-        }
-    }
-
-    private fun updateAssetAmount(db: SQLiteDatabase, assetId: Long, amount: Double, isAdd: Boolean): Boolean {
-        val selectQuery = "SELECT $COLUMN_ASSET_AMOUNT FROM $TABLE_ASSETS WHERE ${assetScope()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0 LIMIT 1"
-        val cursor = db.rawQuery(selectQuery, arrayOf(assetId.toString()))
-        
-        val updated = if (cursor.moveToFirst()) {
-            val currentAmount = cursor.getLong(0)
-            val amountMinor = requireNotNull(Money.toMinor(amount))
-            val newAmount = if (isAdd) currentAmount + amountMinor else currentAmount - amountMinor
-            
-            val values = ContentValues().apply {
-                put(COLUMN_ASSET_AMOUNT, newAmount)
-            }
-            db.update(TABLE_ASSETS, values, "${assetScope()} AND $COLUMN_ASSET_ID = ? AND $COLUMN_ASSET_IS_ARCHIVED = 0", arrayOf(assetId.toString())) == 1
-        } else false
-        
-        cursor.close()
-        return updated
     }
 
     fun updateRecordSortOrder(recordId: Long, newSortOrder: Int) {
@@ -2108,7 +1247,7 @@ class DatabaseHelper(
     private fun ensureDefaultCategoriesForCurrentLedger(db: SQLiteDatabase) {
         val hasCategories = db.rawQuery("SELECT 1 FROM $TABLE_CATEGORIES LIMIT 1", null).use { it.moveToFirst() }
         if (!hasCategories) {
-            insertDefaultCategories(db)
+            categoryDefaultsSeeder.seed(db, 1L)
         }
     }
 
@@ -2247,36 +1386,7 @@ class DatabaseHelper(
         name: String,
         sharedSourceLedgerId: Long?,
         iconName: String = "tabler_book"
-    ): Long? {
-        val trimmedName = name.trim()
-        if (trimmedName.isEmpty()) return null
-        val resolvedRoot = sharedSourceLedgerId?.let { sourceId ->
-            if (getLedgers().none { it.id == sourceId }) return null
-            assetPoolRootId(sourceId)
-        }
-        val db = writableDatabase
-        db.beginTransaction()
-        return try {
-            val id = db.insertOrThrow(TABLE_LEDGERS, null, ContentValues().apply {
-                put(COLUMN_LEDGER_NAME, trimmedName)
-                put(COLUMN_LEDGER_SUBTITLE, "${trimmedName}账本")
-                put(COLUMN_LEDGER_SORT_ORDER, getLedgers().size)
-                put(COLUMN_LEDGER_ICON_NAME, iconName)
-            })
-            if (resolvedRoot != null && resolvedRoot != id) {
-                db.insertOrThrow(TABLE_LEDGER_SHARED_LEDGERS, null, ContentValues().apply {
-                    put(COLUMN_SHARED_LEDGER_ID, id)
-                    put(COLUMN_SHARED_SOURCE_LEDGER_ID, resolvedRoot)
-                })
-            }
-            db.setTransactionSuccessful()
-            id
-        } catch (exception: Exception) {
-            null
-        } finally {
-            db.endTransaction()
-        }
-    }
+    ): Long? = ledgerWriteRepository.createLedgerInAssetGroup(name, sharedSourceLedgerId, iconName)
 
     enum class LedgerMergeFailure {
         NONE,
@@ -2287,126 +1397,11 @@ class DatabaseHelper(
     }
 
     /** Validates an explicit source → target merge without writing anything. */
-    fun validateLedgerMerge(sourceLedgerId: Long, targetLedgerId: Long): LedgerMergeFailure {
-        if (sourceLedgerId == targetLedgerId) return LedgerMergeFailure.SAME_LEDGER
-        val ledgerIds = getLedgers().map { it.id }.toSet()
-        if (sourceLedgerId !in ledgerIds || targetLedgerId !in ledgerIds) {
-            return LedgerMergeFailure.MISSING_LEDGER
-        }
-        if (sourceLedgerId == getMasterLedgerId()) return LedgerMergeFailure.MASTER_AS_SOURCE
-        if (assetPoolRootId(sourceLedgerId) != assetPoolRootId(targetLedgerId)) {
-            return LedgerMergeFailure.CROSS_GROUP
-        }
-        return LedgerMergeFailure.NONE
-    }
+    fun validateLedgerMerge(sourceLedgerId: Long, targetLedgerId: Long): LedgerMergeFailure =
+        ledgerWriteRepository.validateMerge(sourceLedgerId, targetLedgerId)
 
-    /**
-     * Merges [sourceLedgerId] into [targetLedgerId] in a single transaction.
-     *
-     * Record ids, dates, amounts, category ids/snapshots, notes, photos and both
-     * transfer asset ids are preserved: only the owning ledger changes. Asset ids
-     * and balances are untouched because both ledgers already share one asset
-     * pool, and global categories are never copied. Survivors of the same pool are
-     * re-pointed to the kept root so no shared reference dangles or loops, and a
-     * failure rolls the whole merge back.
-     */
-    fun mergeLedgerInto(sourceLedgerId: Long, targetLedgerId: Long): Boolean {
-        if (validateLedgerMerge(sourceLedgerId, targetLedgerId) != LedgerMergeFailure.NONE) {
-            return false
-        }
-        val originalRoot = assetPoolRootId(sourceLedgerId)
-        val groupMemberIds = getAssetGroupMemberIds(sourceLedgerId)
-        val db = writableDatabase
-        db.beginTransaction()
-        return try {
-            // Re-check inside the transaction: the pre-check is not the guarantee.
-            if (validateLedgerMerge(sourceLedgerId, targetLedgerId) != LedgerMergeFailure.NONE) {
-                db.endTransaction()
-                return false
-            }
-            db.update(
-                TABLE_RECORDS,
-                ContentValues().apply { put(COLUMN_LEDGER_ID, targetLedgerId) },
-                "$COLUMN_LEDGER_ID = ?",
-                arrayOf(sourceLedgerId.toString())
-            )
-            // Asset rows belong to whichever ledger is the pool root. If the source
-            // is the root, they move to the target; otherwise they stay where they
-            // are and the target simply keeps referencing the same root.
-            if (originalRoot == sourceLedgerId) {
-                db.update(
-                    TABLE_ASSETS,
-                    ContentValues().apply { put(COLUMN_LEDGER_ID, targetLedgerId) },
-                    "$COLUMN_LEDGER_ID = ?",
-                    arrayOf(sourceLedgerId.toString())
-                )
-            }
-            db.delete(
-                TABLE_LEDGER_SHARED_LEDGERS,
-                "$COLUMN_SHARED_LEDGER_ID = ?",
-                arrayOf(sourceLedgerId.toString())
-            )
-            db.delete(TABLE_LEDGERS, "$COLUMN_ID = ?", arrayOf(sourceLedgerId.toString()))
-            repointSharedReferences(db, groupMemberIds, sourceLedgerId, targetLedgerId)
-            db.setTransactionSuccessful()
-            true
-        } catch (exception: Exception) {
-            false
-        } finally {
-            db.endTransaction()
-        }
-    }
-
-    /**
-     * Guarantees every surviving *member of the merged group* references a ledger
-     * that still exists, and that the group resolves to exactly one root.
-     *
-     * Only [groupMemberIds] — captured before the source was removed — are
-     * touched. Unrelated groups are never re-pointed, so merging one group cannot
-     * change which assets another ledger sees.
-     */
-    private fun repointSharedReferences(
-        db: SQLiteDatabase,
-        groupMemberIds: List<Long>,
-        removedSourceId: Long,
-        keptLedgerId: Long
-    ) {
-        val survivingIds = getLedgers().map { it.id }.toSet()
-        val survivors = groupMemberIds.filter { it != removedSourceId && it in survivingIds }
-        if (survivors.isEmpty()) return
-
-        val keptOldRoot = db.rawQuery(
-            "SELECT $COLUMN_SHARED_SOURCE_LEDGER_ID FROM $TABLE_LEDGER_SHARED_LEDGERS WHERE $COLUMN_SHARED_LEDGER_ID = ?",
-            arrayOf(keptLedgerId.toString())
-        ).use { if (it.moveToFirst()) it.getLong(0) else null }
-
-        // The group root is the ledger that owns the asset rows. It only has to
-        // change when the removed source *was* the root that the target pointed to;
-        // in that case the target now owns the moved rows and is promoted.
-        val newRoot = if (keptOldRoot == removedSourceId || keptOldRoot == null) {
-            keptLedgerId
-        } else if (keptOldRoot in survivingIds) {
-            keptOldRoot
-        } else {
-            keptLedgerId
-        }
-
-        // Rewrite the whole group with direct links so no chain can dangle, loop,
-        // or resolve to a ledger that no longer exists.
-        groupMemberIds.forEach { ledgerId ->
-            db.delete(
-                TABLE_LEDGER_SHARED_LEDGERS,
-                "$COLUMN_SHARED_LEDGER_ID = ?",
-                arrayOf(ledgerId.toString())
-            )
-        }
-        survivors.filter { it != newRoot }.forEach { ledgerId ->
-            db.insertOrThrow(TABLE_LEDGER_SHARED_LEDGERS, null, ContentValues().apply {
-                put(COLUMN_SHARED_LEDGER_ID, ledgerId)
-                put(COLUMN_SHARED_SOURCE_LEDGER_ID, newRoot)
-            })
-        }
-    }
+    fun mergeLedgerInto(sourceLedgerId: Long, targetLedgerId: Long): Boolean =
+        ledgerWriteRepository.mergeLedgerInto(sourceLedgerId, targetLedgerId)
 
     fun getCategoryStatistics(type: Int): Map<String, Double> =
         recordStatisticsRepository.categoryStatistics(type)
