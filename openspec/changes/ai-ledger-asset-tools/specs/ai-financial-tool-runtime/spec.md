@@ -30,12 +30,17 @@ AI 聊天层 MUST 通过统一 Provider 接口支持多种大模型，且新安�
 
 ### Requirement: Opt-in financial tool access
 
-AI 财务工具 MUST 默认关闭，并与普通聊天能力分开授权。启用界面 MUST 明确告知用户：为完成请求，必要的账本名称、资产名称、余额及工具结果可能被发送给当前选定的模型 Provider；关闭后 MUST 立即阻止新的财务工具调用，但不得破坏普通聊天和本地财务数据。
+AI 财务工具 MUST 默认关闭，并与普通聊天能力分开授权。启用界面 MUST 告知用户必要财务字段可能被发送给当前 Provider。每一轮会外发财务字段的请求 MUST 在读取、序列化或发送之前显示本次字段类别及目标 Provider，并取得用户逐请求授权；只开启总开关不构成该轮授权。关闭后 MUST 立即阻止新的财务工具调用，但不得破坏普通聊天和本地财务数据。
 
 #### Scenario: User chats without enabling finance access
 
 - **WHEN** 用户未开启财务工具而提出读取或修改账本、资产的请求
 - **THEN** 助手可以解释如何启用，但 MUST 不读取本地财务实体、不把财务数据发送给模型且不创建待执行操作
+
+#### Scenario: User has enabled finance tools but declines this request
+
+- **WHEN** 用户已开启财务工具，但拒绝某一轮将发送财务字段的逐请求授权
+- **THEN** 本轮不得读取/序列化额外财务字段、调用工具或创建待执行操作；普通文本聊天仍可继续且不得附带财务数据
 
 ### Requirement: Structured allowlisted tool protocol
 
@@ -95,12 +100,17 @@ AI 财务工具 MUST 默认关闭，并与普通聊天能力分开授权。启�
 
 ### Requirement: Durable local audit without secrets
 
-每个写工具的建议、确认、拒绝、成功和失败终态 MUST 在本地持久化，并关联操作 ID、会话、工具调用、规范化参数、影响摘要、快照指纹及时间。API Key、Authorization 头和模型隐藏推理 MUST NOT 写入审计或可见聊天。
+每个写工具的建议、确认、拒绝、取消、过期、成功和失败终态 MUST 在本地持久化，并关联操作 ID、会话、工具调用、规范化参数、影响摘要、快照指纹及时间。API Key、Authorization 头和模型隐藏推理 MUST NOT 写入审计或可见聊天。用户 MUST 能在本地查看操作结果并明确清除 AI 财务审计；清除审计 MUST NOT 改变任何业务数据。
 
 #### Scenario: App restarts after a confirmed write
 
 - **WHEN** 写入成功后应用进程重启并重新打开相关会话
 - **THEN** 用户仍能看到该操作的结果卡片，系统能证明相同操作 ID 已执行且不会再次执行
+
+#### Scenario: User clears AI financial audit
+
+- **WHEN** 用户在应用内明确清除 AI 财务审计
+- **THEN** 仅删除审计数据；账本、资产、记录、会话和聊天消息不受影响，应用不得把审计上传到 Provider
 
 ### Requirement: Bounded tool loop and cancellation
 

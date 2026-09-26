@@ -79,12 +79,17 @@ AI 对资产金额的直接修改 MUST 被标记为“余额校准”，预览�
 
 ### Requirement: Archive, restore and permanently delete assets
 
-AI MUST 区分可逆归档、恢复和永久删除。归档/恢复遵守现有资产组权限；永久删除仅允许已归档且无任何记录引用的资产，并使用聊天操作卡片的高风险再次确认。模型不得把归档描述为永久删除，也不得承诺永久删除可恢复。
+AI MUST 区分可逆归档、恢复和永久删除。归档/恢复遵守现有资产组权限；永久删除仅允许已归档且无任何记录引用的资产，并使用聊天操作卡片的高风险再次确认。引用核查 MUST 同时包含来源和转入稳定资产 ID、仍有效删除撤销记录，以及仍被兼容代码解释为引用的历史来源/转入名称字段；历史引用范围不能确定时 MUST 拒绝永久删除。模型不得把归档描述为永久删除，也不得承诺永久删除可恢复。
 
 #### Scenario: Delete an asset used by records
 
 - **WHEN** 用户要求永久删除仍被任意账本记录引用的资产
 - **THEN** 服务拒绝永久删除并可建议归档，不改变记录、余额或资产引用
+
+#### Scenario: Asset has a legacy name reference or transfer destination reference
+
+- **WHEN** 目标资产被历史名称字段、转账转入字段或仍有效删除撤销项引用
+- **THEN** 服务将其视为仍在使用并拒绝永久删除，直到兼容引用被安全迁移或撤销项过期
 
 #### Scenario: Permanently delete an unused archived asset
 

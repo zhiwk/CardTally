@@ -1,9 +1,11 @@
 ## 1. 决策与范围闭环
 
-- [ ] 1.1 记录已确认的“多 Provider、DeepSeek 默认、聊天页按钮确认”决策，并确认剩余的 CRUD 范围、余额校准和财务数据发送披露。
-- [ ] 1.2 新增或更新有约束力的业务决策文档，明确取代 2026-08-12 决策中的“AI 不执行财务操作”。
-- [ ] 1.3 同步更新 `AGENTS.md`、README 对 AI 能力的事实边界；在代码完成前不得把计划描述为已实现。
-- [ ] 1.4 逐项核对当前 `DatabaseHelper` 的账本删除、资产归档/删除、主账本和资产组根规则，并把不一致反馈为规范修订，不静默绕过。
+2026-09-26：案头机会验证记录在 `opportunity-validation.md`；产品范围现由 `docs/requirements/decisions/2026-09-26-ai-financial-tools.md` 确认。公开材料不代表外部用户研究。当前源码与决策差异记录于机会验证文件，实施仍需领域层和迁移验证。
+
+- [x] 1.1 记录多 Provider / DeepSeek 默认 / 聊天确认卡及完整账本资产 CRUD、余额双重确认、级联预览、逐请求数据授权和本地可清除审计的产品决策。
+- [x] 1.2 新增 `2026-09-26-ai-financial-tools.md`，明确更新 2026-08-12 AI 边界的适用范围。
+- [x] 1.3 更新 `AGENTS.md` 与 README：区分未来确认方向和当前仅 MiniMax 文本聊天的实现事实。
+- [x] 1.4 核对 `AssetWriteRepository`、`LedgerWriteRepository` 与 `DatabaseHelper`；将当前账本写入限制、资产名称引用检查不完整、级联删除/资产池所有者处理反馈到决策与 spec，代码补齐仍属后续任务。
 
 ## 2. 协议与数据模型
 

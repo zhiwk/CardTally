@@ -82,6 +82,7 @@ fun testCategoryStatsFlat() {
 ## 3. Agent权限规则（Q3-B3，已废弃）
 
 > 本节为历史规则，已被 `docs/requirements/decisions/2026-08-12-light-ux-redesign.md` 第 4 节取代。当前 Agent 只能进行用户主动触发的 BYOK 文本对话，不得直接创建、修改、删除或转账。
+> 2026-09-26 更新：账本/资产工具的未来范围现由 `2026-09-26-ai-financial-tools.md` 独立授权；当前源码仍只有 MiniMax 文本聊天。该决策不授权记录、分类、转账或预算工具。
 
 以下内容仅保留作历史记录，不得作为当前实现依据。
 
