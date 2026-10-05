@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brand mark redrawn as vectors from the user-provided asset reference. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="36dp" android:height="36dp" android:viewportWidth="36" android:viewportHeight="36">
+    <path android:fillColor="#F15E62" android:pathData="M18,0a18,18 0,1 0,0 36a18,18 0,1 0,0 -36" />
+    <group android:scaleX="0.88" android:scaleY="0.88" android:translateX="2.16" android:translateY="0.5">
+        <path android:fillColor="@android:color/transparent" android:strokeColor="#FFFFFF" android:strokeWidth="1.5" android:strokeLineJoin="round" android:strokeLineCap="square" android:pathData="M8,7v1 M3,9h12 M5,11h8v4H5z M9,15v6 M5,17l-3,3 M12,17l3,3 M6,20l3,1 M20,8h12 M24,6l-4,9h12 M27,10v11 M23,17l-4,3 M29,17l4,3 M5,24h9v10H5z M7,24l2,-3 M5,29h9 M21,23l-3,3 M21,24h8l-8,5 M19,27l11,3 M18,31h15 M25,29v6 M22,32l-4,3 M28,32l5,3" />
+    </group>
+</vector>

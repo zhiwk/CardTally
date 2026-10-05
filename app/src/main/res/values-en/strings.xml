@@ -240,7 +240,7 @@
     <string name="asset_dialog_delete_title">Delete asset</string>
     <string name="asset_dialog_delete_message">Delete “%1$s”?</string>
     <string name="asset_dialog_delete_confirm">Delete</string>
-    <string name="toast_transfer_not_configured">Transfer is not configured yet</string>
+    <string name="error_transfer_source_unavailable">This account is unavailable for transfers. Return to Assets and select an account again.</string>
     <string name="ledger_setup_updated">Ledger updated</string>
     <string name="ledger_setup_title">New ledger</string>
     <string name="ledger_setup_name_label">Ledger name</string>
@@ -352,10 +352,10 @@
     <string name="agent_session_rename_confirm">Save</string>
     <string name="agent_session_name_empty">Enter a session name</string>
     <string name="agent_session_empty_state">No messages yet</string>
-    <string name="agent_status_ready">MiniMax ready · model %1$s</string>
-    <string name="agent_status_sending">Waiting for MiniMax to reply…</string>
+    <string name="agent_status_ready">API ready · Model %1$s</string>
+    <string name="agent_status_sending">Waiting for the model to reply…</string>
     <string name="agent_status_receiving">Receiving response…</string>
-    <string name="agent_status_configuration_required">One more step: save your API key to start chatting.</string>
+    <string name="agent_status_configuration_required">Enter a service URL and API key, fetch and select a model, then save.</string>
     <string name="agent_config_missing_title">Complete API configuration first</string>
     <string name="agent_config_missing_body">The Agent page needs API configuration before chat can begin. Add your API key in settings; the model and request URL can keep their defaults.</string>
     <string name="agent_config_missing_cta">Open API configuration</string>
@@ -413,11 +413,28 @@
     <string name="settings_ai_api_key_status_saved">Ready</string>
     <string name="settings_management">Management</string>
     <string name="settings_ledger_management">Ledger / Asset Management</string>
-    <string name="settings_export_data">Export data</string>
-    <string name="settings_import_data">Import data</string>
-    <string name="settings_export_success">Data exported</string>
-    <string name="settings_import_success">Import complete: %1$d ledgers, %2$d categories, %3$d assets, %4$d records, %5$d sessions, %6$d skipped</string>
-    <string name="settings_transfer_failed">Data transfer failed. Check the JSON file.</string>
+    <string name="settings_export_data">Export full backup</string>
+    <string name="settings_import_data">Merge backup</string>
+    <string name="settings_export_success">Full backup exported</string>
+    <string name="settings_backup_import_success">Merge complete: %1$d ledgers, %2$d categories, %3$d assets, %4$d records, %5$d recurring entries, %6$d sessions, %7$d messages</string>
+    <string name="settings_legacy_import_success">Legacy JSON imported. It does not contain photo files, so photos cannot be restored from it.</string>
+    <string name="settings_transfer_failed">Backup failed. Check the file and available space.</string>
+    <string name="settings_import_failed">Merge did not finish. Existing data remains; check the file and free space, then retry.</string>
+    <string name="settings_backup_password_title">Set a backup password</string>
+    <string name="settings_backup_password_import_title">Enter backup password</string>
+    <string name="settings_backup_password">Password (at least 8 characters)</string>
+    <string name="settings_backup_password_confirm">Confirm password</string>
+    <string name="settings_backup_password_warning">Keep this password safe. The backup cannot be restored without it.</string>
+    <string name="settings_backup_password_invalid">Use at least 8 characters and enter the same password twice</string>
+    <string name="settings_backup_asset_conflict">The asset balance changed both locally and in the backup. Merge was cancelled; review the balance first.</string>
+    <string name="settings_backup_asset_conflict_choice">An asset balance changed both locally and in the backup. Cancel the merge or continue the preview using the backup balance. Continuing will overwrite local balances for conflicting assets.</string>
+    <string name="settings_backup_use_backup_balance">Use backup balances</string>
+    <string name="settings_backup_balance_overwrite_count">Backup balances will replace local balances for %1$d conflicting assets.</string>
+    <string name="settings_backup_integrity_failed">Incorrect password or damaged backup. No items were imported.</string>
+    <string name="settings_backup_differences">%1$d existing items differ from the backup. Local versions were kept; deletions are not synchronized.</string>
+    <string name="settings_backup_preview_title">Confirm backup merge</string>
+    <string name="settings_backup_preview">Estimated additions: %1$d ledgers, %2$d categories, %3$d assets, %4$d records, %5$d recurring entries, %6$d sessions, %7$d messages\nExisting items skipped: %8$d\nDifferent local items: %9$d (local versions kept)\nOn a device with data, existing settings are kept; deletions in the backup are not synchronized.</string>
+    <string name="settings_backup_merge_confirm">Merge backup</string>
     <string name="settings_category_organization">Category Organization</string>
     <string name="settings_category_max_depth">Category Max Depth</string>
     <string name="settings_category_max_depth_value">Current limit: %1$d levels</string>
@@ -479,17 +496,26 @@
 
     <string name="ai_settings_title">API Configuration</string>
     <string name="ai_settings_api_key_group">API Configuration</string>
-    <string name="ai_settings_api_key_description">Save the API chat configuration used on this device. The API key stays on-device, while the model and full request URL remain editable.</string>
+    <string name="ai_settings_api_key_description">Enter the service URL and API key, then fetch and select a model. The key is stored only on this device and used to authenticate requests to your service.</string>
     <string name="ai_settings_api_key_label">API Key</string>
     <string name="ai_settings_api_key_hint">Enter API Key</string>
     <string name="ai_settings_model_label">Model</string>
-    <string name="ai_settings_model_hint">Example: M2-her</string>
-    <string name="ai_settings_base_url_label">Request URL</string>
-    <string name="ai_settings_base_url_hint">Example: https://api.minimax.io/v1/text/chatcompletion_v2</string>
-    <string name="ai_settings_defaults_status">Default model: %1$s
-Default request URL: %2$s</string>
-    <string name="ai_settings_defaults_status_fallback">Default model: M2-her
-Default request URL: https://api.minimax.io/v1/text/chatcompletion_v2</string>
+    <string name="ai_settings_model_hint">Fetch models, then select one</string>
+    <string name="ai_settings_base_url_label">Service URL</string>
+    <string name="ai_settings_base_url_hint">Enter a base URL or full chat URL</string>
+    <string name="ai_settings_fetch_models">Test and fetch models</string>
+    <string name="ai_settings_models_prompt">Requires an OpenAI-compatible model list endpoint. Enter the URL and API key, then tap the button above.</string>
+    <string name="ai_settings_saved_status">Saved configuration loaded. You can fetch models again.</string>
+    <string name="ai_settings_models_loading">Fetching models…</string>
+    <string name="ai_settings_models_success">Fetched %1$d models. Select one below. This checks the model list only and sends no conversation.</string>
+    <string name="ai_settings_invalid_url">Enter a valid HTTP or HTTPS URL without a username, password, or # fragment</string>
+    <string name="ai_settings_invalid_key">Enter a valid API key without spaces or line breaks</string>
+    <string name="ai_settings_models_auth_error">Authentication failed. Check the API key and permissions, then retry.</string>
+    <string name="ai_settings_models_unsupported">This URL does not support the model list endpoint. Check the service URL and retry.</string>
+    <string name="ai_settings_models_http_error">Could not fetch models (HTTP %1$d). Check the service and retry.</string>
+    <string name="ai_settings_models_network_error">Connection failed or timed out. Check the network and URL, then retry.</string>
+    <string name="ai_settings_models_response_error">Unsupported model list format. Check the service URL.</string>
+    <string name="ai_settings_models_empty">The service returned no selectable models. Check API key permissions or contact the provider.</string>
     <string name="ai_settings_save">Save</string>
     <string name="toast_ai_api_key_saved">API settings saved</string>
 
@@ -661,4 +687,128 @@ Default request URL: https://api.minimax.io/v1/text/chatcompletion_v2</string>
     <string name="statistics_ranking_mode_title">Ranking display mode</string>
     <string name="toast_ranking_mode_primary">Switched to primary category view</string>
     <string name="toast_ranking_mode_secondary">Switched to secondary category view</string>
+    <string name="record_detail_title">Record details</string>
+    <string name="record_detail_amount">Amount</string>
+    <string name="record_detail_type">Type</string>
+    <string name="record_detail_date">Date</string>
+    <string name="record_detail_ledger">Ledger</string>
+    <string name="record_detail_note">Note</string>
+    <string name="record_detail_empty">None</string>
+    <string name="record_detail_attachments">Attachments</string>
+    <string name="record_detail_missing">This record no longer exists</string>
+    <string name="record_detail_photo_unavailable">Image unavailable</string>
+    <string name="record_detail_delete_failed">Could not delete the record. Please try again.</string>
+
+    <string name="bank_select_savings">Choose savings card</string>
+    <string name="bank_select_credit">Choose credit card</string>
+    <string name="bank_group_common">Common banks</string>
+    <string name="bank_other">Other bank</string>
+    <string name="bank_card_savings">Savings card</string>
+    <string name="bank_card_credit">Credit card</string>
+    <string name="bank_asset_type_format">%1$s · %2$s</string>
+    <string name="bank_change_description">Choose bank, currently %1$s</string>
+
+    <string name="settings_theme">Appearance</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">Follow system</string>
+    <string name="theme_wallpaper">Picture background</string>
+    <string name="theme_solid_background">Solid background</string>
+    <string name="theme_wallpaper_system">Picture background · Follow system</string>
+    <string name="theme_wallpaper_palette">Picture background colors</string>
+    <string name="theme_wallpaper_light">Picture background · Light</string>
+    <string name="theme_wallpaper_dark">Picture background · Dark</string>
+    <string name="theme_card_opacity">Card opacity</string>
+    <string name="theme_card_opacity_value">Card opacity: %1$d%%</string>
+    <string name="theme_card_opacity_hint">Applies to picture backgrounds. Lower values reveal more of the image. Changing the palette keeps the current value.</string>
+    <string name="theme_wallpaper_description">Added pictures stay in the local library. Tap a thumbnail to switch. Backgrounds are cropped to fit the screen.</string>
+    <string name="theme_wallpaper_library">Background pictures · Swipe to choose</string>
+    <string name="theme_wallpaper_default">Default picture %1$d</string>
+    <string name="theme_wallpaper_image_number">Picture %1$d</string>
+    <string name="theme_wallpaper_selected">Selected</string>
+    <string name="theme_wallpaper_selected_image">%1$s, selected</string>
+    <string name="theme_wallpaper_applying">Applying…</string>
+    <string name="theme_wallpaper_select_failed">Cannot switch the background picture. Please try again.</string>
+    <string name="theme_wallpaper_delete">Delete picture</string>
+    <string name="theme_wallpaper_delete_image">Delete %1$s</string>
+    <string name="theme_wallpaper_deleting">Deleting…</string>
+    <string name="theme_wallpaper_delete_failed">Cannot delete this picture. Please try again.</string>
+    <string name="theme_wallpaper_choose">Add picture</string>
+    <string name="theme_wallpaper_reset">Restore default picture</string>
+    <string name="theme_wallpaper_importing">Saving picture…</string>
+    <string name="theme_wallpaper_import_failed">Cannot read or save this picture. Choose a valid image no larger than 32MB.</string>
+    <string name="theme_wallpaper_reset_failed">Cannot restore the default picture. Please try again.</string>
+
+    <string name="ai_record_enable">Allow AI record proposals</string>
+    <string name="ai_record_enable_hint">When enabled, AI can automatically query this ledger’s records, accounts and categories and send results and this page’s conversation context to your configured service and model. Clarify details in chat; confirm once for the final create, update or delete. Account balances and attachments are not sent.</string>
+    <string name="ai_record_ready">Record tools enabled · Model %1$s</string>
+    <string name="ai_record_create">Create record</string>
+    <string name="ai_record_update">Update record</string>
+    <string name="ai_record_delete">Delete record</string>
+    <string name="ai_record_query">Query records</string>
+    <string name="ai_record_options">Read account and category options</string>
+    <string name="ai_record_scope">Ledger: %1$s (ID %2$d)</string>
+    <string name="ai_record_id">Record ID: %1$d</string>
+    <string name="ai_record_start_date">Start date: %1$s</string>
+    <string name="ai_record_end_date">End date: %1$s</string>
+    <string name="ai_record_keyword">Keyword: %1$s</string>
+    <string name="ai_record_category_id">Category ID: %1$s</string>
+    <string name="ai_record_next_page">Read the next page</string>
+    <string name="ai_record_read_fields">Automatically query this ledger: up to 20 records per page, including IDs, dates, types, amounts, categories, accounts, fees and notes. Up to 100 account and leaf category options each; no balances or attachments.</string>
+    <string name="ai_record_before">Before / Current values</string>
+    <string name="ai_record_after">Proposed values</string>
+    <string name="ai_record_balances">Balance effects</string>
+    <string name="ai_record_balance_change">%1$s (account %2$d): ¥%3$s → ¥%4$s</string>
+    <string name="ai_record_shared_effect">Shared balances affect these ledgers: %1$s</string>
+    <string name="ai_record_delete_effect">This record will be deleted and its balance effects reversed under existing rules. Its %1$d attachments will also be deleted.</string>
+    <string name="ai_record_expiry">This preview is valid for 5 minutes. Record, account or category changes require a new proposal.</string>
+    <string name="ai_record_description">Date: %1$s
+Type: %2$s
+Amount: ¥%3$s
+Category: %4$s
+Account: %5$s
+Destination: %6$s
+Fee: ¥%7$s
+Note: %8$s</string>
+    <string name="ai_record_invalid">The proposed record parameters are incomplete or invalid. Nothing was executed. Provide the date, amount and leaf category, or query the target record again. Transfers also require two different accounts.</string>
+    <string name="ai_record_changed_or_failed">The record, account or category changed, or the operation could not complete. Unsuccessful operations are not sent back to the model. Query again and review a new proposal.</string>
+    <string name="ai_record_disclosure">This operation’s result will be sent to %1$s, model %2$s. Query results and this page’s conversation context are automatically shared under your record tool setting; confirm only the final record operation above. Account balances, attachments, API keys and operation logs are not sent in chat content. The API key is used only for request authentication.</string>
+    <string name="ai_record_confirm">Confirm operation</string>
+    <string name="ai_record_review">Review and confirm</string>
+    <string name="ai_record_reject">Cancel operation</string>
+    <string name="ai_record_rejected">Operation cancelled. It was not executed and no tool result was sent.</string>
+    <string name="ai_record_expired">This proposal expired or the current configuration changed. Nothing was executed. Submit a new request.</string>
+    <string name="ai_record_pending">%1$s · Awaiting your confirmation</string>
+    <string name="ai_record_waiting">Review and confirm the proposal, or cancel</string>
+    <string name="ai_record_step_limit">This turn reached its tool request limit. Start a new request to continue.</string>
+    <string name="ai_record_done">Completed: %1$s</string>
+    <string name="ai_record_result_row">Record %1$d · %2$s · ¥%3$s
+%4$s · %5$s
+%6$s
+Type: %7$s · Destination: %8$s · Fee: ¥%9$s</string>
+    <string name="ai_record_no_results">No matching records.</string>
+    <string name="ai_record_more_results">More results are available. Ask the AI to query the next page.</string>
+    <string name="ai_record_options_result">Read %1$d account and %2$d leaf category options.</string>
+    <string name="ai_record_followup_failed">The local operations above completed. The model follow-up failed or was stopped. You can check the results on the ledger page.</string>
+    <string name="ai_record_audit">View AI record operation log</string>
+    <string name="ai_record_audit_empty">No operations logged. Logs stay on this device and are never sent to the model.</string>
+    <string name="ai_record_audit_clear">Clear operation log</string>
+    <string name="ai_record_audit_clear_message">Clear AI record operation logs only. Records, balances and chat history are unaffected.</string>
+    <string name="ai_record_audit_proposed">Awaiting confirmation</string>
+    <string name="ai_record_audit_confirmed">Confirmed</string>
+    <string name="ai_record_audit_success">Completed</string>
+    <string name="ai_record_audit_rejected">Declined</string>
+    <string name="ai_record_audit_cancelled">Stopped</string>
+    <string name="ai_record_audit_expired">Expired</string>
+    <string name="ai_record_audit_failed">Failed</string>
+    <string name="ai_record_tool_failed">The service response could not be parsed. Check OpenAI tool calling compatibility; this response alone does not establish whether the model supports it. Nothing from this response was executed.</string>
+    <string name="ai_record_tool_request_rejected">The service rejected the record tool request (HTTP %1$d). Check the service URL, selected model and tool parameter compatibility. This does not necessarily mean the model lacks tool calling support.</string>
+    <string name="ai_record_tool_empty">The service returned neither reply text nor a tool call. Nothing from this response was executed. Retry or check the selected model.</string>
+    <string name="ai_record_tool_multiple">The model requested too many tools at once. Every call in this response was rejected. Narrow the query and retry.</string>
+    <string name="ai_record_tool_unregistered">The model requested a tool the app does not provide. Nothing from this response was executed. Ask the AI to use the provided record tools.</string>
+    <string name="ai_record_tool_arguments">The model returned incorrectly formatted tool arguments. Nothing from this response was executed. Ask the AI to propose the record operation again.</string>
+    <string name="ai_record_no_writes">No records were created, changed or deleted in this turn.</string>
+    <string name="ai_record_write_finished">This record operation is complete. Send a new request to work on another record.</string>
+    <string name="record_asset_no_selection">No selection</string>
+    <string name="ai_record_no_asset_effect">No asset is linked. This operation will not change any asset balance.</string>
 </resources>

@@ -88,6 +88,49 @@ class DatabaseHelperTodayRecordsPagingTest {
     }
 
     @Test
+    fun fullHistorySearchPagesKeepCompleteTotals() {
+        (0 until TOTAL_TODAY_RECORDS).forEach { index ->
+            databaseHelper.addRecord(record(TODAY, "match-$index"))
+        }
+        databaseHelper.addRecord(record(YESTERDAY, "match-old"))
+        databaseHelper.addRecord(record(TODAY, "unrelated"))
+
+        val totals = databaseHelper.getSearchTotals(null, null, "match", null)
+        val ids = mutableListOf<Long>()
+        var cursor: DatabaseHelper.RecordListCursor? = null
+        do {
+            val page = databaseHelper.getRecordsPage(keyword = "match", after = cursor)
+            assertTrue(page.records.size <= DatabaseHelper.MAX_RECORD_QUERY_LIMIT)
+            ids += page.records.map { it.id }
+            cursor = page.nextCursor
+        } while (cursor != null)
+
+        assertEquals(TOTAL_TODAY_RECORDS + 1, ids.size)
+        assertEquals(ids.size, ids.distinct().size)
+        assertEquals((TOTAL_TODAY_RECORDS + 1) * 100L, totals.expenseMinor)
+        assertEquals(0L, totals.incomeMinor)
+    }
+
+    @Test
+    fun descendingDayPagesReachEveryRecordWithoutReordering() {
+        val ids = (0 until TOTAL_TODAY_RECORDS).map { index ->
+            databaseHelper.addRecord(record(TODAY, "day-$index"))
+        }
+        ids.forEachIndexed { index, id -> databaseHelper.updateRecordSortOrder(id, index) }
+        var cursor: DatabaseHelper.RecordListCursor? = null
+        val seen = mutableListOf<Long>()
+        do {
+            val page = databaseHelper.getRecordsPage(
+                TODAY, TODAY, after = cursor, descendingWithinDate = true
+            )
+            seen += page.records.map { it.id }
+            cursor = page.nextCursor
+        } while (cursor != null)
+
+        assertEquals(ids.reversed(), seen)
+    }
+
+    @Test
     fun getCurrentDate_usesDeterministicStoredIsoDateFormat() {
         val originalTimeZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))

@@ -25,7 +25,7 @@ class ThemeHelperTest {
     @Test
     fun getTheme_normalizesStoredModesAndPreservesUnrelatedPreference() {
         // Given: each known, stale, and malformed theme value plus unrelated state
-        val storedModes = listOf(0, 1, 2, 999)
+        val storedModes = listOf(0, 1, 2, 3, 999)
 
         storedModes.forEach { storedMode ->
             themePreferences.edit()
@@ -36,9 +36,9 @@ class ThemeHelperTest {
             // When: the stored preference crosses the ThemeHelper boundary
             val effectiveTheme = ThemeHelper.getTheme(context)
 
-            // Then: Light is returned and persisted without clearing unrelated state
-            assertEquals(ThemeHelper.THEME_LIGHT, effectiveTheme)
-            assertEquals(ThemeHelper.THEME_LIGHT, themePreferences.getInt("theme_mode", -1))
+            // Then: supported modes survive; unknown values fall back without clearing unrelated state
+            assertEquals(ThemeHelper.normalizeTheme(storedMode), effectiveTheme)
+            assertEquals(ThemeHelper.normalizeTheme(storedMode), themePreferences.getInt("theme_mode", -1))
             assertEquals("preserve-me", themePreferences.getString("unrelated_sentinel", null))
         }
     }

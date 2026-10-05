@@ -26,7 +26,8 @@ internal class AiChatRepository(
         val messageContent: String,
         val messageReasoning: String,
         val messageIsError: String,
-        val messageCreatedAt: String
+        val messageCreatedAt: String,
+        val messageLocalOnly: String = "local_only"
     )
 
     fun addSession(title: String, createdAt: Long, updatedAt: Long): Long {
@@ -81,6 +82,7 @@ internal class AiChatRepository(
                 put(columns.messageContent, message.content)
                 put(columns.messageReasoning, message.reasoning)
                 put(columns.messageIsError, if (message.isError) 1 else 0)
+                put(columns.messageLocalOnly, if (message.isLocalOnly) 1 else 0)
                 put(columns.messageCreatedAt, createdAt)
             }
         )
@@ -118,7 +120,8 @@ internal class AiChatRepository(
         content = getString(column(columns.messageContent)),
         reasoning = getString(column(columns.messageReasoning)),
         isError = getInt(column(columns.messageIsError)) == 1,
-        createdAt = getLong(column(columns.messageCreatedAt))
+        createdAt = getLong(column(columns.messageCreatedAt)),
+        isLocalOnly = getInt(column(columns.messageLocalOnly)) == 1
     )
 
     private fun Cursor.column(name: String) = getColumnIndexOrThrow(name)

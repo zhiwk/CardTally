@@ -137,6 +137,12 @@ class DatabaseHelperTransferFeeTest {
         )
         val monthly = databaseHelper.getMonthlyStatistics(EXPENSE_TYPE, 2026)
         assertEquals(15.0, monthly["2026-08"] ?: 0.0, 0.0)
+        val daily = databaseHelper.getDailyTotals("2026-08-15", "2026-08-15")["2026-08-15"]
+        assertEquals(1500L, daily?.expenseMinor)
+        assertEquals(1500L, databaseHelper.getTrendByDate(
+            EXPENSE_TYPE, "2026-08-15", "2026-08-15", byMonth = false
+        )["2026-08-15"])
+        assertEquals(500L, databaseHelper.getSearchTotals(null, null, "Source", null).expenseMinor)
     }
 
     private fun activeAssetAmount(assetId: Long): Double {

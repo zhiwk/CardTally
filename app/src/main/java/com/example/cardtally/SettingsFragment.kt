@@ -9,6 +9,10 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.NumberPicker
 import android.widget.Toast
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.text.InputType
+import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
@@ -21,9 +25,10 @@ import com.example.cardtally.util.RecordEntryModePreferences
 import com.example.cardtally.util.RecordPhotoSettingsHelper
 import com.example.cardtally.util.ScrollTopFabHelper
 import com.example.cardtally.util.IncomeExpenseColorScheme
-import com.example.cardtally.util.DataTransferManager
+import com.example.cardtally.util.BackupArchiveManager
 import com.example.cardtally.util.DefaultRecordAssetPreferences
 import com.example.cardtally.util.ThemeColorHelper
+import com.example.cardtally.util.ThemeHelper
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.util.concurrent.Executors
 
@@ -37,6 +42,8 @@ class SettingsFragment : Fragment() {
     private lateinit var switchScrollTopFab: Switch
     private lateinit var cardCategory: View
     private lateinit var cardLedgerManagement: View
+    private lateinit var cardTheme: View
+    private lateinit var textCurrentTheme: TextView
     private lateinit var cardLanguage: View
     private lateinit var cardIncomeExpenseColor: View
     private lateinit var textIncomeExpenseColor: TextView
@@ -53,21 +60,29 @@ class SettingsFragment : Fragment() {
     private lateinit var textDefaultIncomeAsset: TextView
     private lateinit var databaseHelper: DatabaseHelper
     private val transferExecutor = Executors.newSingleThreadExecutor()
+    private var pendingExportPassword: CharArray? = null
 
     private val exportLauncher = registerForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
+        ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
-        if (uri == null) return@registerForActivityResult
+        val password = pendingExportPassword ?: return@registerForActivityResult
+        pendingExportPassword = null
+        if (uri == null) {
+            password.fill('\u0000')
+            return@registerForActivityResult
+        }
         val context = requireContext().applicationContext
+        val hostActivity = activity
         transferExecutor.execute {
             val error = runCatching {
-                val json = DataTransferManager(context).use { it.exportJson() }
                 context.contentResolver.openOutputStream(uri)?.use { output ->
-                    output.write(json.toByteArray(Charsets.UTF_8))
+                    BackupArchiveManager(context).exportTo(output, password)
                 } ?: error("Unable to open export destination")
             }.exceptionOrNull()
-            requireActivity().runOnUiThread {
-                Toast.makeText(requireContext(), if (error == null) R.string.settings_export_success else R.string.settings_transfer_failed, Toast.LENGTH_SHORT).show()
+            password.fill('\u0000')
+            hostActivity?.runOnUiThread {
+                if (!isAdded) return@runOnUiThread
+                Toast.makeText(context, if (error == null) R.string.settings_export_success else R.string.settings_transfer_failed, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -76,21 +91,154 @@ class SettingsFragment : Fragment() {
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@registerForActivityResult
+        val encrypted = requireContext().contentResolver.openInputStream(uri)?.use { input ->
+            val header = ByteArray(4)
+            input.read(header) == 4 && header.contentEquals(byteArrayOf(67, 84, 66, 51))
+        } ?: false
+        if (encrypted) {
+            passwordDialog(confirm = false) { password -> previewImport(uri, password) }
+        } else {
+            val zip = requireContext().contentResolver.openInputStream(uri)?.use { input ->
+                input.read() == 'P'.code && input.read() == 'K'.code
+            } ?: false
+            if (zip) previewImport(uri, null) else runImport(uri, null)
+        }
+    }
+
+    private fun previewImport(uri: Uri, password: CharArray?, useBackupBalances: Boolean = false) {
         val context = requireContext().applicationContext
+        val hostActivity = activity
         transferExecutor.execute {
-            val result = runCatching {
-                val json = context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
-                    ?: error("Unable to open import file")
-                DataTransferManager(context).use { it.importJson(json) }
+            val preview = runCatching {
+                context.contentResolver.openInputStream(uri)?.use {
+                    BackupArchiveManager(context).importFrom(it, password, dryRun = true,
+                        useBackupBalances = useBackupBalances)
+                } ?: error("Unable to open import file")
             }
-            requireActivity().runOnUiThread {
-                val message = result.fold(
-                    onSuccess = { getString(R.string.settings_import_success, it.ledgers, it.categories, it.assets, it.records, it.recurring, it.sessions, it.skipped) },
-                    onFailure = { getString(R.string.settings_transfer_failed) }
+            hostActivity?.runOnUiThread {
+                if (!isAdded) {
+                    password?.fill('\u0000')
+                    return@runOnUiThread
+                }
+                preview.fold(
+                    onSuccess = { result ->
+                        val details = getString(R.string.settings_backup_preview,
+                            result.ledgers, result.categories, result.assets, result.records,
+                            result.recurring, result.sessions, result.messages,
+                            result.skipped, result.different) +
+                            if (result.balanceConflicts > 0) "\n" +
+                                getString(R.string.settings_backup_balance_overwrite_count, result.balanceConflicts)
+                            else ""
+                        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                            .setTitle(R.string.settings_backup_preview_title)
+                            .setMessage(details)
+                            .setNegativeButton(android.R.string.cancel) { _, _ -> password?.fill('\u0000') }
+                            .setPositiveButton(R.string.settings_backup_merge_confirm) { _, _ ->
+                                runImport(uri, password, useBackupBalances)
+                            }
+                            .setOnCancelListener { password?.fill('\u0000') }
+                            .show()
+                    },
+                    onFailure = { error ->
+                        if (error is BackupArchiveManager.AssetBalanceConflictException &&
+                            !useBackupBalances) {
+                            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                                .setMessage(R.string.settings_backup_asset_conflict_choice)
+                                .setNegativeButton(android.R.string.cancel) { _, _ ->
+                                    password?.fill('\u0000')
+                                }
+                                .setPositiveButton(R.string.settings_backup_use_backup_balance) { _, _ ->
+                                    previewImport(uri, password, useBackupBalances = true)
+                                }
+                                .setOnCancelListener { password?.fill('\u0000') }
+                                .show()
+                        } else {
+                            password?.fill('\u0000')
+                            val message = when (error) {
+                                is BackupArchiveManager.AssetBalanceConflictException -> R.string.settings_backup_asset_conflict
+                                is BackupArchiveManager.BackupIntegrityException -> R.string.settings_backup_integrity_failed
+                                else -> R.string.settings_import_failed
+                            }
+                            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                                .setMessage(message).setPositiveButton(android.R.string.ok, null).show()
+                        }
+                    }
                 )
-                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    private fun runImport(uri: Uri, password: CharArray?, useBackupBalances: Boolean = false) {
+        val context = requireContext().applicationContext
+        val hostActivity = activity
+        transferExecutor.execute {
+            val result = runCatching {
+                context.contentResolver.openInputStream(uri)?.use {
+                    BackupArchiveManager(context).importFrom(it, password,
+                        useBackupBalances = useBackupBalances)
+                }
+                    ?: error("Unable to open import file")
+            }
+            password?.fill('\u0000')
+            hostActivity?.runOnUiThread {
+                if (!isAdded) return@runOnUiThread
+                if (result.isSuccess && view != null) refreshSettingsFromStorage()
+                val message = result.fold(
+                    onSuccess = {
+                        if (it.legacy) getString(R.string.settings_legacy_import_success)
+                        else getString(R.string.settings_backup_import_success, it.ledgers, it.categories, it.assets, it.records, it.recurring, it.sessions, it.messages)
+                    },
+                    onFailure = { error ->
+                        when (error) {
+                            is BackupArchiveManager.AssetBalanceConflictException ->
+                                getString(R.string.settings_backup_asset_conflict)
+                            is BackupArchiveManager.BackupIntegrityException ->
+                                getString(R.string.settings_backup_integrity_failed)
+                            else -> getString(R.string.settings_import_failed)
+                        }
+                    }
+                )
+                val summary = result.getOrNull()?.takeIf { !it.legacy && it.different > 0 }
+                    ?.let { "\n" + getString(R.string.settings_backup_differences, it.different) }.orEmpty()
+                androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                    .setMessage(message + summary)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+            }
+        }
+    }
+
+    private fun passwordDialog(confirm: Boolean, onReady: (CharArray) -> Unit) {
+        val container = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24.dp(), 8.dp(), 24.dp(), 0)
+        }
+        fun field(hint: Int) = EditText(requireContext()).apply {
+            setHint(hint)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            container.addView(this)
+        }
+        val first = field(R.string.settings_backup_password)
+        val second = if (confirm) field(R.string.settings_backup_password_confirm) else null
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(if (confirm) R.string.settings_backup_password_title else R.string.settings_backup_password_import_title)
+            .apply { if (confirm) setMessage(R.string.settings_backup_password_warning) }
+            .setView(container)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok, null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val value = first.text.toString()
+                if (value.length < 8 || (second != null && value != second.text.toString())) {
+                    Toast.makeText(requireContext(), R.string.settings_backup_password_invalid, Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                dialog.dismiss()
+                onReady(value.toCharArray())
+            }
+        }
+        dialog.show()
     }
 
     override fun onCreateView(
@@ -118,6 +266,8 @@ class SettingsFragment : Fragment() {
         switchScrollTopFab = view.findViewById(R.id.switch_scroll_top_fab)
         cardCategory = view.findViewById(R.id.card_category)
         cardLedgerManagement = view.findViewById(R.id.card_ledger_management)
+        cardTheme = view.findViewById(R.id.card_theme)
+        textCurrentTheme = view.findViewById(R.id.text_current_theme)
         cardLanguage = view.findViewById(R.id.card_language)
         cardIncomeExpenseColor = view.findViewById(R.id.card_income_expense_color)
         textIncomeExpenseColor = view.findViewById(R.id.text_income_expense_color)
@@ -139,6 +289,7 @@ class SettingsFragment : Fragment() {
         switchShowAsset.isChecked = AssetDisplayHelper.getShowAsset(requireContext())
         switchScrollTopFab.isChecked = ScrollTopFabHelper.isEnabled(requireContext())
 
+        updateThemeText()
         updateCurrentLanguageText()
         updateAiApiKeyStatus()
         updateRecordPhotoLimitText()
@@ -200,6 +351,12 @@ class SettingsFragment : Fragment() {
                 .commit()
         }
 
+        cardTheme.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, AppearanceSettingsFragment())
+                .addToBackStack(null)
+                .commit()
+        }
         cardLanguage.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, LanguageSettingsFragment())
@@ -207,10 +364,14 @@ class SettingsFragment : Fragment() {
                 .commit()
         }
         view.findViewById<View>(R.id.card_export_data).setOnClickListener {
-            exportLauncher.launch("cardtally-${System.currentTimeMillis()}.json")
+            passwordDialog(confirm = true) { password ->
+                pendingExportPassword?.fill('\u0000')
+                pendingExportPassword = password
+                exportLauncher.launch("cardtally-${System.currentTimeMillis()}.ctb")
+            }
         }
         view.findViewById<View>(R.id.card_import_data).setOnClickListener {
-            importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+            importLauncher.launch(arrayOf("application/zip", "application/json", "*/*"))
         }
 
         return view
@@ -221,6 +382,11 @@ class SettingsFragment : Fragment() {
         if (view == null || !::switchQuickAdd.isInitialized || !::switchScrollTopFab.isInitialized) {
             return
         }
+        refreshSettingsFromStorage()
+    }
+
+    private fun refreshSettingsFromStorage() {
+        updateThemeText()
         updateCurrentLanguageText()
         updateAiApiKeyStatus()
         updateRecordPhotoLimitText()
@@ -241,7 +407,9 @@ class SettingsFragment : Fragment() {
     }
 
     override fun onDestroy() {
-        transferExecutor.shutdownNow()
+        pendingExportPassword?.fill('\u0000')
+        pendingExportPassword = null
+        transferExecutor.shutdown()
         super.onDestroy()
     }
 
@@ -331,6 +499,19 @@ class SettingsFragment : Fragment() {
             IncomeExpenseColorScheme.BOTH_BLACK -> getString(R.string.settings_income_expense_color_both_black)
             else -> getString(R.string.settings_income_expense_color_income_red_expense_green)
         }
+    }
+
+    private fun updateThemeText() {
+        textCurrentTheme.setText(when (ThemeHelper.getTheme(requireContext())) {
+            ThemeHelper.THEME_DARK -> R.string.theme_dark
+            ThemeHelper.THEME_SYSTEM -> R.string.theme_system
+            ThemeHelper.THEME_WALLPAPER -> when (ThemeHelper.getWallpaperPalette(requireContext())) {
+                ThemeHelper.THEME_LIGHT -> R.string.theme_wallpaper_light
+                ThemeHelper.THEME_SYSTEM -> R.string.theme_wallpaper_system
+                else -> R.string.theme_wallpaper_dark
+            }
+            else -> R.string.theme_light
+        })
     }
 
     private fun showIncomeExpenseColorDialog() {

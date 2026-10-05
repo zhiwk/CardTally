@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <attr name="colorPlaceholder" format="color" />
+    <attr name="pageBackgroundColor" format="color" />
+    <attr name="cardSurfaceColor" format="color" />
 </resources>

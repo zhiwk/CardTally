@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -29,6 +31,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.concurrent.Executors
 
 class SearchFragment : Fragment() {
     private lateinit var recyclerRecords: RecyclerView
@@ -44,22 +47,33 @@ class SearchFragment : Fragment() {
     private var rangeStart: String? = null
     private var rangeEnd: String? = null
     private var rangeLabel = ""
+    private var categoryFilterId: Long? = null
+    private var queryExecutor = Executors.newSingleThreadExecutor()
+    private val searchHandler = Handler(Looper.getMainLooper())
+    private var pendingSearch: Runnable? = null
+    @Volatile private var queryVersion = 0
+    private var nextCursor: DatabaseHelper.RecordListCursor? = null
+    private var loadingPage = false
+    private val loadedRecords = mutableListOf<Record>()
 
     companion object {
         private const val STATE_KEYWORD = "search_keyword"
         private const val STATE_START = "search_start"
         private const val STATE_END = "search_end"
         private const val STATE_LABEL = "search_label"
+        private const val STATE_CATEGORY_ID = "search_category_id"
         fun newInstance(
             keyword: String,
             rangeStart: String? = null,
-            rangeEnd: String? = null
+            rangeEnd: String? = null,
+            categoryId: Long? = null
         ): SearchFragment {
             val fragment = SearchFragment()
             val args = Bundle()
             args.putString("keyword", keyword)
             rangeStart?.let { args.putString("range_start", it) }
             rangeEnd?.let { args.putString("range_end", it) }
+            categoryId?.let { args.putLong("category_id", it) }
             fragment.arguments = args
             return fragment
         }
@@ -71,6 +85,7 @@ class SearchFragment : Fragment() {
             searchKeyword = it.getString("keyword", "")
             rangeStart = it.getString("range_start")
             rangeEnd = it.getString("range_end")
+            if (it.containsKey("category_id")) categoryFilterId = it.getLong("category_id")
             rangeLabel = if (rangeStart != null && rangeEnd != null) {
                 formatRangeLabel("$rangeStart - $rangeEnd")
             } else {
@@ -82,6 +97,7 @@ class SearchFragment : Fragment() {
             rangeStart = it.getString(STATE_START, rangeStart)
             rangeEnd = it.getString(STATE_END, rangeEnd)
             rangeLabel = it.getString(STATE_LABEL, rangeLabel)
+            categoryFilterId = if (it.containsKey(STATE_CATEGORY_ID)) it.getLong(STATE_CATEGORY_ID) else null
         }
     }
 
@@ -90,6 +106,7 @@ class SearchFragment : Fragment() {
         outState.putString(STATE_START, rangeStart)
         outState.putString(STATE_END, rangeEnd)
         outState.putString(STATE_LABEL, rangeLabel)
+        categoryFilterId?.let { outState.putLong(STATE_CATEGORY_ID, it) }
         super.onSaveInstanceState(outState)
     }
 
@@ -99,6 +116,7 @@ class SearchFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_search, container, false)
+        if (queryExecutor.isShutdown) queryExecutor = Executors.newSingleThreadExecutor()
 
         recyclerRecords = view.findViewById(R.id.recycler_records)
         textEmpty = view.findViewById(R.id.text_empty)
@@ -118,6 +136,14 @@ class SearchFragment : Fragment() {
         }
 
         recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
+        recyclerRecords.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                val manager = recyclerView.layoutManager as LinearLayoutManager
+                if (dy > 0 && manager.findLastVisibleItemPosition() >= (adapter?.itemCount ?: 0) - 5) {
+                    loadNextPage()
+                }
+            }
+        })
 
         editSearch.setText(searchKeyword)
         editSearch.setSelection(editSearch.text.length)
@@ -125,6 +151,7 @@ class SearchFragment : Fragment() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 searchKeyword = s?.toString().orEmpty().trim()
+                categoryFilterId = null
                 searchRecords()
             }
             override fun afterTextChanged(s: Editable?) = Unit
@@ -169,41 +196,88 @@ class SearchFragment : Fragment() {
         showBottomNav()
     }
 
+    override fun onDestroyView() {
+        queryVersion++
+        pendingSearch?.let { searchHandler.removeCallbacks(it) }
+        pendingSearch = null
+        queryExecutor.shutdownNow()
+        super.onDestroyView()
+    }
+
     private fun searchRecords() {
+        pendingSearch?.let { searchHandler.removeCallbacks(it) }
+        pendingSearch = null
+        queryVersion++
+        nextCursor = null
+        loadingPage = false
+        loadedRecords.clear()
         if (searchKeyword.isBlank()) {
             layoutSummary.visibility = View.GONE
             textEmpty.visibility = View.GONE
             recyclerRecords.visibility = View.GONE
             return
         }
-
-        val allRecords = databaseHelper.getAllRecords()
-
-        val filteredRecords = allRecords.filter { record ->
-            val inRange = (rangeStart == null || record.date >= rangeStart!!) &&
-                (rangeEnd == null || record.date <= rangeEnd!!)
-            val matchesKeyword =
-                (record.categoryPathSnapshot ?: record.category).contains(searchKeyword, ignoreCase = true) ||
-                    record.description?.contains(searchKeyword, ignoreCase = true) == true ||
-                    Money.formatYuan(record.amount).contains(searchKeyword) ||
-                    record.assetSource?.contains(searchKeyword, ignoreCase = true) == true ||
-                    record.date.contains(searchKeyword)
-            inRange && matchesKeyword
-        }
-
+        adapter?.updateDateGroups(emptyList())
         layoutSummary.visibility = View.VISIBLE
-        val expense = filteredRecords.filter { it.type == 0 }.sumOf { it.amount }
-        val income = filteredRecords.filter { it.type == 1 }.sumOf { it.amount }
-        textTotals.text = getString(R.string.search_totals, expense, income)
+        textTotals.text = ""
+        textEmpty.visibility = View.GONE
+        recyclerRecords.visibility = View.GONE
+        val version = queryVersion
+        val keyword = searchKeyword
+        val start = rangeStart
+        val end = rangeEnd
+        val categoryId = categoryFilterId
+        loadingPage = true
+        val task = Runnable {
+            pendingSearch = null
+            queryExecutor.execute {
+                val totals = databaseHelper.getSearchTotals(start, end, keyword, categoryId)
+                val page = databaseHelper.getRecordsPage(start, end, keyword, categoryId)
+                activity?.runOnUiThread {
+                    if (view == null || version != queryVersion) return@runOnUiThread
+                    textTotals.text = getString(
+                        R.string.search_totals,
+                        Money.toMajorDouble(totals.expenseMinor),
+                        Money.toMajorDouble(totals.incomeMinor)
+                    )
+                    loadingPage = false
+                    appendPage(page)
+                }
+            }
+        }
+        pendingSearch = task
+        searchHandler.postDelayed(task, 200L)
+    }
 
-        if (filteredRecords.isEmpty()) {
+    private fun loadNextPage() {
+        val cursor = nextCursor ?: return
+        if (loadingPage) return
+        loadingPage = true
+        val version = queryVersion
+        val keyword = searchKeyword
+        val start = rangeStart
+        val end = rangeEnd
+        val categoryId = categoryFilterId
+        queryExecutor.execute {
+            val page = databaseHelper.getRecordsPage(start, end, keyword, categoryId, cursor)
+            activity?.runOnUiThread {
+                if (view == null || version != queryVersion) return@runOnUiThread
+                loadingPage = false
+                appendPage(page)
+            }
+        }
+    }
+
+    private fun appendPage(page: DatabaseHelper.RecordListPage) {
+        nextCursor = page.nextCursor
+        loadedRecords.addAll(page.records)
+        if (loadedRecords.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
             recyclerRecords.visibility = View.GONE
         } else {
             textEmpty.visibility = View.GONE
             recyclerRecords.visibility = View.VISIBLE
-
-            val dateGroups = groupRecordsByDate(filteredRecords)
+            val dateGroups = groupRecordsByDate(loadedRecords)
             val categories = databaseHelper.getAllCategories()
                 .filter { !it.icon.isNullOrEmpty() }
             val categoryIconsById = categories.associate { it.id to it.icon.orEmpty() }
@@ -211,6 +285,13 @@ class SearchFragment : Fragment() {
 
             if (adapter == null) {
                 adapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
+                    override fun onOpenDetails(record: Record) {
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, RecordDetailFragment.newInstance(record.id))
+                            .addToBackStack(null)
+                            .commit()
+                    }
+
                     override fun onEdit(record: Record) {
                         val editFragment = EditRecordFragment.newInstance(record.id)
                         parentFragmentManager.beginTransaction()

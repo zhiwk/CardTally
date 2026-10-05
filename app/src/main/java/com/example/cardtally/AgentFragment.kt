@@ -17,6 +17,8 @@ import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.cardtally.ai.AiRecordAssistant
+import com.example.cardtally.ai.AiRecordEngine
 import com.example.cardtally.adapter.AgentChatAdapter
 import com.example.cardtally.adapter.AgentSessionAdapter
 import com.example.cardtally.adapter.AgentSessionListItem
@@ -67,6 +69,10 @@ class AgentFragment : Fragment() {
         private set
     internal var hasActiveStream = false
         private set
+    private var recordTurn = false
+    private var recordAssistant: AiRecordAssistant? = null
+    private lateinit var recordActionPanel: View
+    private lateinit var recordActionText: TextView
     private var currentSessionId = 0L
     private var isSessionDrawerOpen = false
     // Monotonically increasing request identity. A callback is only applied when
@@ -99,6 +105,11 @@ class AgentFragment : Fragment() {
         imageStop = view.findViewById(R.id.image_agent_stop)
         layoutComposerContainer = view.findViewById(R.id.layout_agent_composer_container)
         layoutComposerShell = view.findViewById(R.id.layout_agent_composer_shell)
+
+        recordActionPanel = view.findViewById(R.id.layout_ai_record_action)
+        recordActionText = view.findViewById(R.id.text_ai_record_action)
+        view.findViewById<View>(R.id.button_ai_record_review).setOnClickListener { recordAssistant?.review() }
+        view.findViewById<View>(R.id.button_ai_record_reject).setOnClickListener { recordAssistant?.reject() }
 
         chatAdapter = AgentChatAdapter()
         recyclerMessages.layoutManager = LinearLayoutManager(requireContext())
@@ -196,6 +207,13 @@ class AgentFragment : Fragment() {
         refreshChatUi()
     }
 
+    override fun onPause() {
+        // Leaving the page invalidates every pending approval, including theme/config/session changes.
+        if (recordTurn && isSending) stopActiveStreamByUser()
+        recordAssistant = null // Provider-private tool context never survives leaving the page.
+        super.onPause()
+    }
+
     override fun onDestroyView() {
         (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(false)
         if (isSending) {
@@ -211,7 +229,7 @@ class AgentFragment : Fragment() {
 
         textStatus.text = if (configComplete) {
             getString(
-                R.string.agent_status_ready,
+                if (AiAssistantSettingsHelper.getRecordToolsEnabled(requireContext())) R.string.ai_record_ready else R.string.agent_status_ready,
                 AiAssistantSettingsHelper.getModel(requireContext())
             )
         } else {
@@ -281,12 +299,14 @@ class AgentFragment : Fragment() {
         editMessage.error = null
         editMessage.setText("")
 
+        recordTurn = AiAssistantSettingsHelper.getRecordToolsEnabled(requireContext())
         val createdAt = System.currentTimeMillis()
         val userMessage = AiChatMessage(
             sessionId = currentSessionId,
             role = AiChatRole.USER,
             content = content,
-            createdAt = createdAt
+            createdAt = createdAt,
+            isLocalOnly = recordTurn
         )
         databaseHelper.addAiChatMessage(userMessage)
         chatMessages.add(userMessage)
@@ -311,13 +331,36 @@ class AgentFragment : Fragment() {
         // clear the busy state instead of being overwritten by a late markStarted.
         requestLifecycle.registerPending()
 
-        val handle = miniMaxClient.sendChat(
-            config = AiAssistantSettingsHelper.getMiniMaxConfig(requireContext()),
-            messages = chatMessages.filter { !it.isError && it.content.isNotBlank() }.toList()
-        ) { result ->
-            deliverAiResult(requestId, requestSessionId, result)
+        val handle = if (recordTurn) {
+            val ledgerId = requireNotNull(databaseHelper.getCurrentLedger()).id
+            val config = AiAssistantSettingsHelper.getMiniMaxConfig(requireContext())
+            val previousContext = recordAssistant?.contextForNextTurn(config, ledgerId, requestSessionId)
+            recordAssistant = AiRecordAssistant(
+                requireContext(), AiAssistantSettingsHelper.getMiniMaxConfig(requireContext()),
+                ledgerId, requestSessionId,
+                onPending = { plan -> showRecordAction(plan) },
+                onLocalResult = { receipt -> deliverAiResult(requestId, requestSessionId,
+                    MiniMaxChatResult.StreamingChunk(receipt)) },
+                onComplete = { result -> deliverAiResult(requestId, requestSessionId, result) }
+            )
+            recordAssistant!!.start(content, previousContext)
+        } else {
+            miniMaxClient.sendChat(
+                config = AiAssistantSettingsHelper.getMiniMaxConfig(requireContext()),
+                messages = chatMessages.filter { !it.isError && !it.isLocalOnly && it.content.isNotBlank() }.toList()
+            ) { result -> deliverAiResult(requestId, requestSessionId, result) }
         }
         requestLifecycle.markStarted(handle)
+    }
+
+    private fun showRecordAction(plan: AiRecordEngine.Plan?) {
+        recordActionPanel.visibility = if (plan == null) View.GONE else View.VISIBLE
+        if (plan != null && isSending) {
+            recordActionText.text = getString(R.string.ai_record_pending, plan.title)
+            hasActiveStream = true // Keep the existing stop action available while awaiting approval.
+            updateSendingState(true, true)
+            textStatus.setText(R.string.ai_record_waiting)
+        }
     }
 
     /**
@@ -356,7 +399,8 @@ class AgentFragment : Fragment() {
                         chatMessages[lastIndex] = AiChatMessage(
                             role = AiChatRole.ASSISTANT,
                             content = partialContent,
-                            reasoning = result.reasoning?.takeIf { it.isNotBlank() }
+                            reasoning = result.reasoning?.takeIf { it.isNotBlank() },
+                            isLocalOnly = recordTurn
                         )
                     }
                     scrollToBottom()
@@ -369,7 +413,8 @@ class AgentFragment : Fragment() {
                         role = AiChatRole.ASSISTANT,
                         content = result.finalContent,
                         reasoning = result.reasoning?.takeIf { it.isNotBlank() },
-                        createdAt = System.currentTimeMillis()
+                        createdAt = System.currentTimeMillis(),
+                        isLocalOnly = recordTurn
                     )
                     chatMessages[chatMessages.size - 1] = finalMessage
                     chatAdapter.finalizeStreamingMessage(result.finalContent, result.reasoning.orEmpty(), isError = false)
@@ -385,7 +430,8 @@ class AgentFragment : Fragment() {
                         role = AiChatRole.ASSISTANT,
                         content = result.reply,
                         reasoning = result.reasoning?.takeIf { it.isNotBlank() },
-                        createdAt = System.currentTimeMillis()
+                        createdAt = System.currentTimeMillis(),
+                        isLocalOnly = recordTurn
                     )
                     chatMessages[chatMessages.size - 1] = finalMessage
                     chatAdapter.finalizeStreamingMessage(result.reply, result.reasoning.orEmpty(), isError = false)
@@ -452,7 +498,8 @@ class AgentFragment : Fragment() {
                 role = AiChatRole.ASSISTANT,
                 content = contentWithContext,
                 isError = true,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                isLocalOnly = recordTurn
             )
             chatMessages[chatMessages.size - 1] = finalMessage
             chatAdapter.finalizeStreamingMessage(contentWithContext, isError = true)
@@ -465,7 +512,8 @@ class AgentFragment : Fragment() {
                 role = AiChatRole.ASSISTANT,
                 content = errorContent,
                 isError = true,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                isLocalOnly = recordTurn
             )
             chatMessages[chatMessages.size - 1] = errorMessage
             chatAdapter.finalizeStreamingMessage(errorContent, isError = true)
@@ -505,7 +553,7 @@ class AgentFragment : Fragment() {
             streaming -> getString(R.string.agent_status_receiving)
             sending -> getString(R.string.agent_status_sending)
             else -> getString(
-                R.string.agent_status_ready,
+                if (AiAssistantSettingsHelper.getRecordToolsEnabled(requireContext())) R.string.ai_record_ready else R.string.agent_status_ready,
                 AiAssistantSettingsHelper.getModel(requireContext())
             )
         }
@@ -732,7 +780,8 @@ class AgentFragment : Fragment() {
             sessionId = currentSessionId,
             content = persistedContent,
             isError = true,
-            createdAt = System.currentTimeMillis()
+            createdAt = System.currentTimeMillis(),
+            isLocalOnly = recordTurn
         )
         chatMessages[chatMessages.size - 1] = finalMessage
         // Keep the adapter bubble and the persisted message in sync so the stop

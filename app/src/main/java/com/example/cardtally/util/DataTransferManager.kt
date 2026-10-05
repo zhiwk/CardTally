@@ -22,16 +22,26 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
     private val databaseHelper = DatabaseHelper(context)
 
     fun exportJson(): String {
-        val db = databaseHelper.readableDatabase
         val root = JSONObject()
             .put("format", "cardtally-json")
             .put("version", 1)
             .put("exportedAt", System.currentTimeMillis())
-        val tables = JSONObject()
-        TABLES.forEach { table -> tables.put(table, readRows(db, table)) }
-        root.put("tables", tables)
+        root.put("tables", exportTables())
         root.put("preferences", readPreferences())
         return root.toString(2)
+    }
+
+    internal fun exportTables(): JSONObject {
+        val db = databaseHelper.readableDatabase
+        val tables = JSONObject()
+        db.beginTransaction()
+        try {
+            TABLES.forEach { table -> tables.put(table, readRows(db, table)) }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        return tables
     }
 
     fun importJson(json: String): ImportResult {
@@ -252,7 +262,7 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
         val directory = File(context.applicationInfo.dataDir, "shared_prefs")
         directory.listFiles()?.filter { it.extension == "xml" }?.forEach { file ->
             val name = file.nameWithoutExtension
-            if (name != "beta_reset_control") {
+            if (name != "beta_reset_control" && name != "backup_internal") {
                 val prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE)
                 result.put(name, JSONObject().apply { prefs.all.forEach { (key, value) -> put(key, value) } })
             }
@@ -263,6 +273,7 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
     private fun writePreferences(all: JSONObject?) {
         all ?: return
         all.keys().forEach { name ->
+            if (name == "beta_reset_control" || name == "backup_internal") return@forEach
             val prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE)
             val editor = prefs.edit()
             val values = all.optJSONObject(name) ?: return@forEach
@@ -270,7 +281,16 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
                 val value = values.get(key)
                 when (value) {
                     is Boolean -> editor.putBoolean(key, value)
-                    is Number -> editor.putLong(key, value.toLong())
+                    is Number -> {
+                        if (prefs.all[key] is Int || (name to key) in LEGACY_INT_PREFERENCES) {
+                            editor.putInt(key, value.toInt())
+                        } else {
+                            editor.putLong(key, value.toLong())
+                        }
+                    }
+                    is JSONArray -> editor.putStringSet(
+                        key, (0 until value.length()).map { value.getString(it) }.toSet()
+                    )
                     JSONObject.NULL -> editor.remove(key)
                     else -> editor.putString(key, value.toString())
                 }
@@ -280,6 +300,15 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
     }
 
     companion object {
+        private val LEGACY_INT_PREFERENCES = setOf(
+            "category_hierarchy_settings_prefs" to "category_hierarchy_max_depth",
+            "cardtally_preferences" to "income_expense_color_mode",
+            "record_photo_settings" to "max_photos_per_record",
+            "theme_prefs" to "theme_mode",
+            "theme_prefs" to "card_opacity",
+            "theme_prefs" to "wallpaper_palette",
+            "ledger_ux_prefs" to "ledger_ux_schema_version"
+        )
         private val TABLES = listOf(
             "ledgers", "ledger_shared_assets", "ledger_shared_ledgers", "categories", "assets",
             "records", "record_deletion_undo", "recurring_records", "ai_chat_sessions", "ai_chat_messages"

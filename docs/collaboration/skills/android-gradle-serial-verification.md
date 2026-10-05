@@ -61,7 +61,7 @@
 .\scripts\run-android-verification.ps1
 ```
 
-不带参数时该命令会运行完整的 Debug 构建、JVM 单测和 13 组隔离设备测试，仅在用户明确要求全套验证时调用。需要定向验证时，可跳过无关阶段：
+不带参数时该命令会运行完整的 Debug 构建、JVM 单测和 14 组隔离设备测试，仅在用户明确要求全套验证时调用。需要定向验证时，可跳过无关阶段：
 
 ```powershell
 # 仅 JVM 单测
@@ -76,7 +76,7 @@
 
 按指定组运行时仍会检查完整分组清单，但只预编译 verification 测试 APK 并运行所选组；不会执行日常 Debug APK 构建或 JVM 单测。
 
-该入口串行执行日常 Debug 编译、JVM 单测、隔离设备测试 APK 预编译，再按 `scripts/verification-device-groups.ps1` 串行运行 13 个设备组。构建不计入组时限；**每组从 Gradle 启动至退出最多 60 秒**，设备阶段总时限默认 15 分钟。脚本先检查分组恰好覆盖全部 `*Test.kt` 类，再核对每组新生成的 XML 测试数、失败/跳过数和测试类，最终合计必须为 130 项。每组独立保存 stdout/stderr 至 `app/build/reports/verification/<run-id>/`；超时额外记录最后完成用例与设备进程/唤醒状态，并停止该组。只有明确“0 项启动且设备连接或 instrumentation 启动失败”时才自动重试一次（两次仍失败即 FAIL），运行中的测试超时不重试。成功判定同时要求 Gradle 进程返回 0 且日志包含 `BUILD SUCCESSFUL`。设备阶段会唤醒手机并临时将熄屏时间设为 30 分钟，结束后恢复原值；只清理 `.verification` 包进程，不触碰日常或 release 数据。
+该入口串行执行日常 Debug 编译、JVM 单测、隔离设备测试 APK 预编译，再按 `scripts/verification-device-groups.ps1` 串行运行 14 个设备组。构建不计入组时限；普通设备组默认最多 60 秒，特别耗时的组可在清单中设置独立上限（当前加密备份组为 360 秒），设备阶段总时限默认 15 分钟。脚本先检查分组恰好覆盖全部 `*Test.kt` 类，再核对每组新生成的 XML 测试数、失败/跳过数和测试类，最终合计必须为 147 项。每组独立保存 stdout/stderr 至 `app/build/reports/verification/<run-id>/`；超时额外记录最后完成用例与设备进程/唤醒状态，并停止该组。只有明确“0 项启动且设备连接或 instrumentation 启动失败”时才自动重试一次（两次仍失败即 FAIL），运行中的测试超时不重试。成功判定同时要求 Gradle 进程返回 0 且日志包含 `BUILD SUCCESSFUL`。设备阶段会唤醒手机并临时将熄屏时间设为 30 分钟，结束后恢复原值；只清理 `.verification` 包进程，不触碰日常或 release 数据。
 
 用户明确要求运行日常 Debug 构建和 JVM 单测、跳过设备测试时使用：
 

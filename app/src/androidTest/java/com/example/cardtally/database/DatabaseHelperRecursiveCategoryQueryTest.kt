@@ -109,6 +109,25 @@ class DatabaseHelperRecursiveCategoryQueryTest {
         assertTrue(statistics.values.none { it == 140.0 })
     }
 
+    @Test
+    fun categoryTotalsById_keepSameNamedLeavesSeparateAndFilterTheirDetails() {
+        val database = databaseHelper.writableDatabase
+        ensureRecursiveSchemaForTestData(database)
+        database.delete("records", null, null)
+        database.delete("categories", null, null)
+        insertCategory(database, 1L, "餐饮", EXPENSE_TYPE, null)
+        insertCategory(database, 2L, "娱乐", EXPENSE_TYPE, null)
+        insertCategory(database, 3L, "其他", EXPENSE_TYPE, 1L)
+        insertCategory(database, 4L, "其他", EXPENSE_TYPE, 2L)
+        insertRecord(database, 1L, "2026-04-13", 20.0, "其他", 3L, "其他", "餐饮 / 其他")
+        insertRecord(database, 2L, "2026-04-13", 30.0, "其他", 4L, "其他", "娱乐 / 其他")
+
+        val totals = databaseHelper.getCategoryTotalsById(EXPENSE_TYPE, null, null)
+        assertEquals(mapOf(3L to 2000L, 4L to 3000L), totals.associate { it.categoryId to it.amountMinor })
+        assertEquals(listOf(1L), databaseHelper.getRecordsPage(categoryId = 3L).records.map { it.id })
+        assertEquals(listOf(2L), databaseHelper.getRecordsPage(categoryId = 4L).records.map { it.id })
+    }
+
     private fun ensureRecursiveSchemaForTestData(database: SQLiteDatabase) {
         ensureColumn(
             database = database,

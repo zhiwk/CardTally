@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
+    android:background="?attr/pageBackgroundColor"
     android:orientation="vertical"
     tools:context=".AiAssistantSettingsFragment">
 
@@ -46,62 +46,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
                     android:layout_marginBottom="8dp"
-                    android:text="@string/ai_settings_api_key_label"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="16sp" />
-
-                <EditText
-                    android:id="@+id/edit_ai_api_key"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_input_surface"
-                    android:hint="@string/ai_settings_api_key_hint"
-                    android:inputType="textPassword|textNoSuggestions"
-                    android:minHeight="56dp"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="12dp"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textColorHint="?attr/colorOnSurfaceVariant"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/text_ai_settings_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="@string/ai_settings_defaults_status_fallback"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textSize="12sp"
-                    android:lineSpacingExtra="4dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="@string/ai_settings_model_label"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="16sp" />
-
-                <EditText
-                    android:id="@+id/edit_ai_model"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_input_surface"
-                    android:hint="@string/ai_settings_model_hint"
-                    android:inputType="textNoSuggestions"
-                    android:minHeight="56dp"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="12dp"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textColorHint="?attr/colorOnSurfaceVariant"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:layout_marginBottom="8dp"
+                    android:labelFor="@id/edit_ai_base_url"
                     android:text="@string/ai_settings_base_url_label"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="16sp" />
@@ -113,12 +58,124 @@
                     android:background="@drawable/bg_input_surface"
                     android:hint="@string/ai_settings_base_url_hint"
                     android:inputType="textUri|textNoSuggestions"
+                    android:saveEnabled="false"
                     android:minHeight="56dp"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="12dp"
                     android:textColor="?attr/colorOnSurface"
                     android:textColorHint="?attr/colorOnSurfaceVariant"
                     android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="8dp"
+                    android:labelFor="@id/edit_ai_api_key"
+                    android:text="@string/ai_settings_api_key_label"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/edit_ai_api_key"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input_surface"
+                    android:hint="@string/ai_settings_api_key_hint"
+                    android:inputType="textPassword|textNoSuggestions"
+                    android:saveEnabled="false"
+                    android:importantForAutofill="no"
+                    android:minHeight="56dp"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?attr/colorOnSurfaceVariant"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_fetch_ai_models"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:minHeight="52dp"
+                    android:text="@string/ai_settings_fetch_models"
+                    android:textAllCaps="false"
+                    android:textColor="?attr/colorOnSurface"
+                    app:strokeColor="?attr/colorOutline"
+                    app:cornerRadius="12dp" />
+
+                <TextView
+                    android:id="@+id/text_ai_settings_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/ai_settings_models_prompt"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp"
+                    android:lineSpacingExtra="4dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="8dp"
+                    android:labelFor="@id/edit_ai_model"
+                    android:text="@string/ai_settings_model_label"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layout_ai_model"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:hintEnabled="false"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
+
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/edit_ai_model"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/ai_settings_model_hint"
+                        android:inputType="none"
+                        android:saveEnabled="false"
+                        android:minHeight="56dp"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="12dp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="?attr/colorOnSurfaceVariant"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_ai_record_tools"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:minHeight="48dp"
+                    android:text="@string/ai_record_enable"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ai_record_enable_hint"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_ai_record_audit"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="@string/ai_record_audit"
+                    android:textAllCaps="false" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_save_ai_api_key"

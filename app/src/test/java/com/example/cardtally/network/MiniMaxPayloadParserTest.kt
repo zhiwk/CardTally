@@ -320,14 +320,25 @@ class MiniMaxPayloadParserTest {
     }
 
     @Test
-    fun buildRequestBody_usesDefaultModelWhenBlank() {
+    fun buildRequestBody_doesNotInventAModelWhenBlank() {
         val requestBody = MiniMaxPayloadParser.buildRequestBody(
             model = "   ",
             messages = listOf(AiChatMessage(role = AiChatRole.USER, content = "Hello"))
         )
 
         val json = JSONObject(requestBody)
-        assertEquals(MiniMaxConfig.DEFAULT_MODEL, json.getString("model"))
+        assertEquals("", json.getString("model"))
+    }
+
+    @Test
+    fun buildRequestBody_excludesLocalFinancialToolHistory() {
+        val body = MiniMaxPayloadParser.buildRequestBody("chosen-model", listOf(
+            AiChatMessage(role = AiChatRole.USER, content = "ordinary question"),
+            AiChatMessage(role = AiChatRole.ASSISTANT, content = "private queried records", isLocalOnly = true)
+        ))
+        val messages = JSONObject(body).getJSONArray("messages")
+        assertEquals(1, messages.length())
+        assertEquals("ordinary question", messages.getJSONObject(0).getString("content"))
     }
 
     // --- JSON null handling and reasoning_content (regression: "nullnull..." replies) ---

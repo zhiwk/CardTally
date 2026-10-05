@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="104dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="8dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_horizontal"
+    android:minHeight="48dp"
+    android:orientation="vertical">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_wallpaper_thumbnail"
+        android:layout_width="match_parent"
+        android:layout_height="104dp"
+        app:cardBackgroundColor="?attr/colorSurfaceVariant"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="0dp"
+        app:cardForegroundColor="@android:color/transparent"
+        app:strokeWidth="0dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/image_wallpaper_thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop" />
+
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/button_delete_wallpaper"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="top|end"
+                android:background="@drawable/bg_wallpaper_delete"
+                android:contentDescription="@string/theme_wallpaper_delete"
+                android:importantForAccessibility="yes"
+                android:paddingStart="24dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="24dp"
+                android:src="@drawable/ic_close"
+                android:visibility="gone"
+                app:tint="?attr/colorOnSurface" />
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/text_wallpaper_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:paddingTop="4dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/text_wallpaper_selected"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:text="@string/theme_wallpaper_selected"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="12sp" />
+</LinearLayout>

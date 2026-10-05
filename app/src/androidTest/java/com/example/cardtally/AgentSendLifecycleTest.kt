@@ -71,7 +71,12 @@ class AgentSendLifecycleTest {
 
     @Before
     fun setUp() {
-        AiAssistantSettingsHelper.saveApiKey(context, "test-key-no-network")
+        AiAssistantSettingsHelper.saveRecordToolsEnabled(context, false)
+        AiAssistantSettingsHelper.saveConfiguration(context, MiniMaxConfig(
+            apiKey = "test-key-no-network",
+            model = "test-model",
+            requestUrl = "https://service.example/v1/chat/completions"
+        ))
         AiAssistantSettingsHelper.saveAiAssistantEnabled(context, true)
     }
 

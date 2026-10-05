@@ -1,7 +1,8 @@
 # CardTally Design System
 
-> Status: canonical implementation contract for the light UX redesign
-> Authority: `docs/requirements/decisions/2026-08-12-light-ux-redesign.md`
+> Status: canonical implementation contract for the neutral card UX and light/dark appearance
+> Authority: `docs/requirements/decisions/2026-08-12-light-ux-redesign.md`, with appearance superseded by `docs/requirements/decisions/2026-10-03-dark-appearance.md`
+> Picture appearance extension: `docs/requirements/decisions/2026-10-05-wallpaper-appearance.md`
 > Scope: Android Views, XML, Material Components, and Stitch generation
 > Supersedes for current design work: historical Stitch exports, warm purple editorial styling, and the former three-theme visual direction
 
@@ -9,9 +10,13 @@
 
 ### Current visual baseline (2026-09-06)
 
-The owner's latest Ledger / Record-entry references supersede the older outlined-card and shadow defaults below. For current pages use `background_light` (`#EEEEEE`) as the canvas and opaque `surface_light` (`#FFFFFF`) for neutral working cards. Standard group radius is 12dp; the established prominent record-entry form may retain 20dp. Neutral cards and bottom action/navigation bars have no stroke and no elevation. `bg_card_surface` is the shared drawable for plain rounded cards; do not use alpha fills or background tints to simulate white.
+The owner's latest Ledger / Record-entry references supersede the older outlined-card and shadow defaults below. For light pages use `background_light` (`#EEEEEE`) as the canvas and opaque `surface_light` (`#FFFFFF`) for neutral working cards. Dark pages resolve the same resource names through `values-night`. Standard group radius is 12dp; the established prominent record-entry form may retain 20dp. Neutral cards and bottom action/navigation bars have no stroke and no elevation. `bg_card_surface` is the shared drawable for plain rounded cards; do not use alpha fills or background tints to simulate white.
 
 Use system sans-serif, compact bold 22sp page/sheet titles, 16dp mobile gutters, and consistent grouped rows. Preserve input boundaries, internal separators, pressed/focus feedback, selected markers, and semantic income/expense/transfer colors. These are functional cues, not decorative card edges. Floating actions and modal scrims remain distinct from neutral cards. Existing navigation and data behavior are unchanged by this visual pass.
+
+The user-selected Picture background appearance places the supplied image behind page canvases, centered and cropped to the available screen. Appearance is organized into two 12dp neutral cards, Solid background and Picture background, separated by 16dp. Each card offers Light, Dark and Follow system as 48dp minimum radio rows. Only one of the six rows is selected across both cards; choosing any picture row activates that background. Picture background defaults to Dark for existing users and Follow system resolves Android night mode. Light uses a `#C0FFFFFF` scrim and white `#FFFFFF` neutral cards; Dark uses a `#C0121416` scrim and `#1D2024` cards. Following the owner's transparency request, neutral page cards resolve `?attr/cardSurfaceColor` with user-selected opacity. The default is 80% (`#CCFFFFFF` / `#CC1D2024`); Settings → Appearance provides a 0–100% slider in 5% steps, applying and saving on release while retaining the appearance page scroll position through recreation. Text, amounts and icons retain full opacity. Card children remain transparent where the parent already supplies a fill, avoiding stacked surfaces. Ledger date groups paint the neutral fill once in the outer card; their record rows use transparent backgrounds, while standalone records paint their own fill and selected rows retain the opaque highlight. Inputs, modal surfaces, navigation, selection highlights and archived swipe rows retain their opaque backgrounds. Category management keeps translucent cards, but its edit/delete actions remain invisible when closed and are clipped to the uncovered area as the card moves; covered actions must never show through the card. Drag and settle animation share this clipping, and recycled rows reset to the closed state. No blur is introduced. Other appearances resolve the card token to the original opaque `surface_light`. Page canvases resolve `?attr/pageBackgroundColor`: the usual `background_light` token in other modes, transparent in Picture background. Window, modal, input and navigation backgrounds retain the opaque colors of the selected palette. Picture palette changes carry the currently displayed slider value, using one shared opacity across Light, Dark and Follow system. Plain surfaces remain opaque; switching back to pictures keeps the latest value. Import temporarily disables all six choices.
+
+Appearance provides a local picture library below the rounded 180dp centerCrop preview. Three packaged defaults labelled Default picture 1, 2 and 3, existing custom and newly imported pictures appear in a horizontal RecyclerView with a fixed 16dp inset on both sides of its viewport, 104dp square rounded thumbnails, readable labels and a 2dp primary outline plus Selected text for the active image. Thumbnail decoding runs off the UI thread with bounded sampling and a small cache; recycled views cancel stale loads, and leaving the page closes workers. Recreation restores the gallery scroll offset after its asynchronous data load instead of scrolling back to the selected picture. Add picture and Restore default picture share a row below the library, each at least 48dp tall, and can grow vertically for large text. Each successful import adds a separately stored app-private image and activates Picture background; cancelling or failing preserves earlier images and selection. Choosing a thumbnail switches the background; restoring default keeps all imported pictures available. Only imported pictures, including the legacy custom picture, have a 16dp top-end × icon centered on a 24dp opaque neutral circle, inset 4dp from the top and end edges, within a 48dp touch target; all three packaged defaults never show this action and are also protected by the storage layer. Defaults are always listed directly from package resources, keeping their existing IDs and fixed order. Former suggestion copies and seed markers are ignored, so previously deleted packaged suggestions return as defaults without changing the active selection. Each delete button has an accessible name identifying the picture. Deletion responds independently from picture selection; deleting the active custom image selects Default picture 1. Restore default picture also selects Default picture 1. Deletion preserves the active background mode, palette and opacity, using the existing view state restoration after refresh. These actions preserve the current palette and opacity. Import or selection shows a stable busy label and temporarily disables appearance controls while processing off the UI thread. No broad photo-library permission is requested.
 
 CardTally is simple, neutral, structured, calm, and card-led. It should feel like a clear personal ledger arranged on a bright desk: white working surfaces, black financial figures, quiet gray structure, and pale color only when meaning requires it. The signature is the **outlined financial card**: a white or whisper-gray surface with a fine cool-gray edge, a very light downward shadow, medium outer corners, and disciplined information grouping. Cards mark a meaningful summary, entity, or control group; rows inside a group remain rows rather than becoming nested cards. This is not the former “静奢理财日记” identity, not a dashboard template, and not a decorative lifestyle surface.
 
@@ -21,7 +26,7 @@ CardTally is simple, neutral, structured, calm, and card-led. It should feel lik
 2. **Numbers are stable.** Financial values align, scan, and update without width jitter through tabular figures and consistent sign placement.
 3. **Calm does not mean sparse everywhere.** Overview surfaces breathe; workflow surfaces compress responsibly while retaining 48dp actions and readable text.
 4. **One system, two densities.** The same tokens and primitives serve overview and dense workflow profiles; density never creates a second visual language.
-5. **Local-first trust is visible.** Copy stays direct and factual. AI is optional text assistance, never visualized as magic, automation, or a financial authority.
+5. **Local-first trust is visible.** Copy stays direct and factual. AI offers optional conversation and native, user-confirmed record proposals under `2026-10-04-ai-record-tools.md`; never visualize it as magic, unconfirmed automation, or a financial authority.
 
 ### Anti-patterns
 
@@ -35,9 +40,9 @@ CardTally is simple, neutral, structured, calm, and card-led. It should feel lik
 
 ## 2. Color
 
-The runtime appearance is light only. System night mode must resolve to the same tokens. The neutral ramp is cool and nearly achromatic. Pale cyan is the interaction and informational accent; pale red is destructive and expense-related. Other status colors are pale containers with dark readable foregrounds, never brand colors.
+The runtime offers Light, Dark, Follow system, and Picture background in Settings → Appearance, with Light as the default. Follow system resolves the palette from Android night mode; Picture background uses a separately saved Light, Dark or Follow system palette with the selected image as its canvas; its default remains Dark. Both palettes use the same semantic resource names; the historical `_light` suffix remains for compatibility. The neutral ramp is cool and nearly achromatic. Pale cyan is the interaction and informational accent; pale red is destructive and expense-related. Other status colors are pale containers with dark readable foregrounds, never brand colors.
 
-### Neutral palette and Android mappings
+### Light neutral palette and Android mappings
 
 | Role | Design token | Value | Android resource mapping | Usage |
 | --- | --- | --- | --- | --- |
@@ -68,6 +73,20 @@ The runtime appearance is light only. System night mode must resolve to the same
 | Error | `color.semantic.error` | `#F9E4E3` / `#7A2926` | `@color/error_container`, `@color/error_primary`, `@color/error_light` | Validation, request failure, destructive action |
 | Information | `color.semantic.info` | `#DDF3F4` / `#164E52` | `@color/info_container`, `@color/info_primary` | Privacy and neutral system information |
 | Focus halo | `color.focus` | `#B8E4E6` | `@color/focus_ring_light` (new) | 2dp exterior focus ring plus 1dp surface gap |
+
+### Dark palette (2026-10-03)
+
+| Role | Android resource | Night value |
+| --- | --- | --- |
+| Canvas | `background_light` | `#121416` |
+| Cards | `surface_light` | `#1D2024` |
+| Primary text | `onSurface_light` | `#F1F3F5` |
+| Supporting text | `onSurfaceVariant_light` | `#BEC3CA` |
+| Primary action / foreground | `buttonPrimary_light` / `onPrimary_light` | `#E8EDF2` / `#17181A` |
+| Selection / foreground | `primaryContainer_light` / `onPrimaryContainer_light` | `#183E43` / `#A8EEF5` |
+| Expense / income | `expense_primary` / `income_primary` | `#FF8C83` / `#76D99A` |
+
+Keep existing spacing, corner radii, typography, and account/category behavior across appearances. Bank and application brand artwork keeps its original colors and proportions. Use semantic resources for ordinary icons and surfaces; literal white/black is reserved for artwork, masks, and photo viewers.
 
 ### Color state rules
 
@@ -191,7 +210,9 @@ Every primitive uses design tokens above and Material Components or Android View
 ### Top-level page standard and Ledger reference
 - **Top-level page standard:** every primary destination is composed of two parts only: page content and the shared bottom navigation bar. Each destination Fragment owns its own page header and content structure; `MainActivity` owns only the page container and navigation shell.
 - **Ledger reference status:** the Ledger page is the reference implementation for the top-level page shell, spacing tokens, header placement, scrolling behavior, summary surface, grouped records, and floating action placement. It is a standard-page example, not a template that requires Statistics, Assets, Agent, or Me to copy its content hierarchy.
-- **Header behavior:** the Ledger reference header belongs to the page content and scrolls with that content. Other primary pages may use a different header arrangement when their information architecture requires it, while preserving the same header tokens and touch-target rules.
+- **Header behavior:** the Ledger account title, search, and calendar stay fixed above the month pager. Each month’s summary and grouped records scroll vertically together and move horizontally as one ViewPager2 page. Rightward swipes select the previous month; leftward swipes select the next month. Floating actions remain fixed. Other primary pages may use a different header arrangement when their information architecture requires it, while preserving the same header tokens and touch-target rules.
+
+Statistics uses a two-page ViewPager2 for expense and income charts plus rankings. Period controls and the combined summary remain shared. The tab indicator follows continuous page progress, including drag cancellation; tab clicks use the same smooth paging path.
 
 ### Headers
 - **Structure:** primary title, optional supporting line, leading Back/Menu action, and no more than two trailing actions.
@@ -249,6 +270,9 @@ Every primitive uses design tokens above and Material Components or Android View
 - **Accessibility:** tree/item role, level, expanded/collapsed, selected state, parent versus selectable leaf, and available action are announced. Parent tap expands; only leaf confirms record binding.
 
 ### Segmented control and filters
+
+Category management expense/income tabs use the Statistics type-selector visual language: a single 12dp neutral `cardSurfaceColor` fill, transparent tab children, centered 16sp labels, bold `colorOnSurface` for the selected tab, `editorial_text_muted` for the other, and a centered 28dp × 2dp underline moving with native 180ms tab selection. Category tabs retain their 48dp touch height and native tab accessibility.
+
 - **Structure:** one outlined 8–10dp container with two to five choices; compact filter buttons sit in one scroll-free wrapping cluster or open a deeper filter sheet.
 - **Variants:** two-way record type, Ledger Statistics/Details, chart mode, period presets, filter trigger.
 - **States:** default, pressed, focused, selected, disabled, error for invalid range.

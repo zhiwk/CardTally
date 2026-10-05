@@ -27,7 +27,14 @@ class MainActivity : AppCompatActivity() {
         LanguageHelper.applySavedLanguage(this)
         applyTheme()
         super.onCreate(savedInstanceState)
+        // AppCompat may reapply the base theme when resolving night mode during super.onCreate.
+        // Apply the current opacity afterwards, before any views (including restored fragments) inflate.
+        applyCardOpacity()
         setContentView(R.layout.activity_main)
+        if (ThemeHelper.getTheme(this) == ThemeHelper.THEME_WALLPAPER) {
+            com.example.cardtally.util.WallpaperHelper.bindImage(findViewById(R.id.image_wallpaper))
+            findViewById<View>(R.id.wallpaper_background).visibility = View.VISIBLE
+        }
 
         bottomNavigationView = findViewById(R.id.bottom_navigation)
         navShell = findViewById(R.id.nav_shell)
@@ -81,7 +88,14 @@ class MainActivity : AppCompatActivity() {
 
         bottomNavigationView.setOnItemReselectedListener { }
 
-        bottomNavigationView.menu.findItem(R.id.nav_ledger).isChecked = true
+        val restoredDestination = when (supportFragmentManager.findFragmentById(R.id.fragment_container)) {
+            is AssetFragment -> R.id.nav_asset
+            is StatisticsFragment -> R.id.nav_statistics
+            is AgentFragment -> R.id.nav_agent
+            is SettingsFragment, is AppearanceSettingsFragment -> R.id.nav_settings
+            else -> R.id.nav_ledger
+        }
+        bottomNavigationView.menu.findItem(restoredDestination).isChecked = true
 
         if (savedInstanceState == null) {
             val initialFragment = if (QuickAddHelper.getQuickAdd(this)) {
@@ -100,8 +114,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyTheme() {
-        ThemeHelper.getTheme(this)
-        setTheme(R.style.Theme_CardTally_Light)
+        val mode = ThemeHelper.getTheme(this)
+        ThemeHelper.applyThemeMode(mode, ThemeHelper.getWallpaperPalette(this))
+        setTheme(ThemeHelper.getThemeResId(mode))
+    }
+
+    private fun applyCardOpacity() {
+        if (ThemeHelper.getTheme(this) == ThemeHelper.THEME_WALLPAPER) {
+            theme.applyStyle(ThemeHelper.getCardOpacityOverlayResId(ThemeHelper.getCardOpacity(this)), true)
+        }
     }
 
     override fun onStart() {

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
+    android:background="?attr/pageBackgroundColor"
     tools:context=".AgentFragment">
 
     <LinearLayout
@@ -164,6 +164,8 @@
                 tools:listitem="@layout/item_agent_message" />
 
         </LinearLayout>
+
+        <include layout="@layout/view_ai_record_action" />
 
         <LinearLayout
             android:id="@+id/layout_agent_composer_container"

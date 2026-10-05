@@ -21,6 +21,7 @@ import com.example.cardtally.util.AmountKeypadController
 import com.example.cardtally.util.AmountKeypadCompletionMode
 import com.example.cardtally.util.Money
 import com.example.cardtally.util.AssetTypeIconCatalog
+import com.example.cardtally.util.BankIconCatalog
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.chip.ChipGroup
 
@@ -59,6 +60,8 @@ class AddAssetFragment : Fragment() {
     private lateinit var switchIncludeTotal: SwitchCompat
     private lateinit var databaseHelper: DatabaseHelper
     private var editingAsset: Asset? = null
+    private var selectedTypeLabel: String? = null
+    private var selectedIconName: String? = null
     private val isEditMode: Boolean
         get() = arguments?.getLong(KEY_EDIT_ASSET_ID, 0L) != 0L
 
@@ -110,9 +113,9 @@ class AddAssetFragment : Fragment() {
             ?: arguments?.getString(KEY_ASSET_TYPE)
             ?.let { token -> AssetType.values().firstOrNull { it.token == token } }
             ?: AssetType.CASH
-        val initialLabel = loadedAsset?.categoryLabel
+        val initialLabel = selectedTypeLabel ?: loadedAsset?.categoryLabel
             ?: arguments?.getString(KEY_ASSET_TYPE_LABEL).orEmpty()
-        val initialIconName = loadedAsset?.categoryIconName
+        val initialIconName = selectedIconName ?: loadedAsset?.categoryIconName
             ?: arguments?.getString(KEY_ASSET_TYPE_ICON_NAME).orEmpty()
         val defaultState = AssetFormState(
             loadedAsset?.name.orEmpty(),
@@ -138,6 +141,16 @@ class AddAssetFragment : Fragment() {
         }
 
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        parentFragmentManager.setFragmentResultListener(BankSelectFragment.RESULT_KEY, viewLifecycleOwner) { _, result ->
+            if (BankIconCatalog.isCard(selectedTypeLabel.orEmpty(), currentState().assetType.databaseValue)) {
+                selectedIconName = result.getString(BankSelectFragment.RESULT_ICON_NAME) ?: BankIconCatalog.OTHER_ICON_NAME
+                updateTypePresentation(view, currentState())
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -230,8 +243,8 @@ class AddAssetFragment : Fragment() {
             editName.text.toString(),
             editAmount.text.toString(),
             type,
-            editingAsset?.categoryLabel ?: arguments?.getString(KEY_ASSET_TYPE_LABEL).orEmpty(),
-            editingAsset?.categoryIconName ?: arguments?.getString(KEY_ASSET_TYPE_ICON_NAME).orEmpty(),
+            selectedTypeLabel.orEmpty(),
+            selectedIconName.orEmpty(),
             switchIncludeTotal.isChecked
         )
     }
@@ -240,6 +253,8 @@ class AddAssetFragment : Fragment() {
         Money.evaluateYuanExpression(expression, allowNegative = true)?.let(Money::toMajorDouble)
 
     private fun applyState(state: AssetFormState) {
+        selectedTypeLabel = state.assetTypeLabel
+        selectedIconName = state.assetTypeIconName
         editName.setText(state.assetName)
         editAmount.setText(state.assetAmountBuffer)
         chipGroupType.check(
@@ -261,11 +276,30 @@ class AddAssetFragment : Fragment() {
             AssetType.WECHAT -> "微信钱包" to R.drawable.tabler_brand_wechat
         }
         val label = state.assetTypeLabel.ifBlank { fallbackLabel }
-        val icon = AssetTypeIconCatalog.resourceForLabel(label) ?: state.assetTypeIconName.takeIf { it.isNotBlank() }?.let {
+        val bank = BankIconCatalog.forCard(label, state.assetTypeIconName, state.assetType.databaseValue)
+        val icon = bank?.iconRes ?: AssetTypeIconCatalog.resourceForLabel(label) ?: state.assetTypeIconName.takeIf { it.isNotBlank() }?.let {
             resources.getIdentifier(it, "drawable", requireContext().packageName)
         }?.takeIf { it != 0 } ?: fallbackIcon
-        view.findViewById<TextView>(R.id.text_selected_asset_type).text = label
-        view.findViewById<ImageView>(R.id.image_asset_type).setImageResource(icon)
+        val typeLabel = view.findViewById<TextView>(R.id.text_selected_asset_type)
+        typeLabel.text = bank?.let { BankIconCatalog.displayLabel(requireContext(), label, it) } ?: label
+        val typeRow = typeLabel.parent as View
+        typeRow.isClickable = bank != null
+        typeRow.isFocusable = bank != null
+        typeRow.contentDescription = bank?.let {
+            getString(R.string.bank_change_description, getString(it.nameRes))
+        }
+        typeRow.setOnClickListener(if (bank == null) null else View.OnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, BankSelectFragment.newInstance(label, returnSelection = true))
+                .addToBackStack("bank_change")
+                .commit()
+        })
+        AssetTypeIconCatalog.bindIcon(
+            view.findViewById(R.id.image_asset_type), icon, 28,
+            com.example.cardtally.util.ThemeColorHelper.resolveThemeAwareResource(
+                requireContext(), R.color.warning_primary
+            )
+        )
     }
 
     private fun hideBottomNav() {

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="wallpaper_card_default">@color/wallpaper_card_p80</color>
+    <color name="wallpaper_scrim">#C0FFFFFF</color>
+    <color name="wallpaper_card_p0">#00FFFFFF</color>
+    <color name="wallpaper_card_p5">#0DFFFFFF</color>
+    <color name="wallpaper_card_p10">#1AFFFFFF</color>
+    <color name="wallpaper_card_p15">#26FFFFFF</color>
+    <color name="wallpaper_card_p20">#33FFFFFF</color>
+    <color name="wallpaper_card_p25">#40FFFFFF</color>
+    <color name="wallpaper_card_p30">#4DFFFFFF</color>
+    <color name="wallpaper_card_p35">#59FFFFFF</color>
+    <color name="wallpaper_card_p40">#66FFFFFF</color>
+    <color name="wallpaper_card_p45">#73FFFFFF</color>
+    <color name="wallpaper_card_p50">#80FFFFFF</color>
+    <color name="wallpaper_card_p55">#8CFFFFFF</color>
+    <color name="wallpaper_card_p60">#99FFFFFF</color>
+    <color name="wallpaper_card_p65">#A6FFFFFF</color>
+    <color name="wallpaper_card_p70">#B3FFFFFF</color>
+    <color name="wallpaper_card_p75">#BFFFFFFF</color>
+    <color name="wallpaper_card_p80">#CCFFFFFF</color>
+    <color name="wallpaper_card_p85">#D9FFFFFF</color>
+    <color name="wallpaper_card_p90">#E6FFFFFF</color>
+    <color name="wallpaper_card_p95">#F2FFFFFF</color>
+    <color name="wallpaper_card_p100">#FFFFFFFF</color>
+</resources>

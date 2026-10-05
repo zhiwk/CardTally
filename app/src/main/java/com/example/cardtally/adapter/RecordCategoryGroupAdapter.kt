@@ -113,7 +113,7 @@ class RecordCategoryGroupAdapter(
         ) {
             val context = itemView.context
             (itemView as? MaterialCardView)?.apply {
-                setCardBackgroundColor(Color.WHITE)
+                setCardBackgroundColor(com.example.cardtally.util.ThemeColorHelper.resolveCardSurface(context))
                 setCardForegroundColor(ColorStateList.valueOf(Color.TRANSPARENT))
                 foreground = null
             }

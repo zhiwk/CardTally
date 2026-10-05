@@ -1,6 +1,5 @@
 package com.example.cardtally
 
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
@@ -18,6 +17,7 @@ import androidx.fragment.app.Fragment
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Ledger
 import com.example.cardtally.util.LedgerSession
+import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.TablerIconCatalog
 
 class LedgerManagementFragment : Fragment() {
@@ -105,7 +105,7 @@ class LedgerManagementFragment : Fragment() {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(12.dp, 10.dp, 12.dp, 10.dp)
-                background = GradientDrawable().apply { setColor(Color.WHITE); cornerRadius = 12.dp.toFloat() }
+                background = GradientDrawable().apply { setColor(ThemeColorHelper.resolveCardSurface(requireContext())); cornerRadius = 12.dp.toFloat() }
                 isClickable = true
                 setOnClickListener {
                     LedgerSession.setCurrentId(requireContext(), ledger.id)
@@ -114,21 +114,21 @@ class LedgerManagementFragment : Fragment() {
             }
             val icon = ImageView(requireContext()).apply {
                 setImageResource(resolveLedgerIcon(ledger))
-                setColorFilter(Color.DKGRAY)
+                setColorFilter(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurfaceVariant_light))
                 layoutParams = LinearLayout.LayoutParams(32.dp, 32.dp)
             }
             row.addView(icon)
             val textColumn = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; setPadding(12.dp, 0, 0, 0) }
-            textColumn.addView(TextView(requireContext()).apply { text = ledger.name; textSize = 16f; setTextColor(Color.rgb(23,24,26)) })
-            textColumn.addView(TextView(requireContext()).apply { text = ledger.subtitle; textSize = 12f; setTextColor(Color.GRAY) })
+            textColumn.addView(TextView(requireContext()).apply { text = ledger.name; textSize = 16f; setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurface_light)) })
+            textColumn.addView(TextView(requireContext()).apply { text = ledger.subtitle; textSize = 12f; setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurfaceVariant_light)) })
             row.addView(textColumn, LinearLayout.LayoutParams(0, -2, 1f))
             row.addView(TextView(requireContext()).apply {
                 text = getString(R.string.ledger_management_count, databaseHelper.getLedgerRecordCount(ledger.id))
-                textSize = 12f; setTextColor(Color.GRAY); gravity = Gravity.CENTER_VERTICAL
+                textSize = 12f; setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurfaceVariant_light)); gravity = Gravity.CENTER_VERTICAL
             })
             row.addView(ImageView(requireContext()).apply {
                 setImageResource(R.drawable.ic_edit)
-                setColorFilter(Color.DKGRAY)
+                setColorFilter(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurfaceVariant_light))
                 contentDescription = getString(R.string.ledger_management_edit)
                 setPadding(8.dp, 8.dp, 8.dp, 8.dp)
                 layoutParams = LinearLayout.LayoutParams(40.dp, 40.dp)
@@ -179,18 +179,18 @@ class LedgerManagementFragment : Fragment() {
                     addView(TextView(requireContext()).apply {
                         text = poolTitle
                         textSize = 14f
-                        setTextColor(Color.rgb(70, 72, 76))
+                        setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurfaceVariant_light))
                         layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
                     })
                     addView(TextView(requireContext()).apply {
                         text = getString(R.string.ledger_management_asset_pool_meta, summary.first, summary.second)
                         textSize = 12f
-                        setTextColor(Color.GRAY)
+                        setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurfaceVariant_light))
                     })
                 }, LinearLayout.LayoutParams(-1, -2))
                 val card = LinearLayout(requireContext()).apply {
                     orientation = LinearLayout.VERTICAL
-                    background = GradientDrawable().apply { setColor(Color.WHITE); cornerRadius = 12.dp.toFloat() }
+                    background = GradientDrawable().apply { setColor(ThemeColorHelper.resolveCardSurface(requireContext())); cornerRadius = 12.dp.toFloat() }
                     setPadding(12.dp, 8.dp, 12.dp, 8.dp)
                 }
                 poolLedgers.forEachIndexed { index, ledger ->
@@ -199,7 +199,7 @@ class LedgerManagementFragment : Fragment() {
                         gravity = Gravity.CENTER_VERTICAL
                         minimumHeight = 48.dp
                         setPadding(0, 4.dp, 0, 4.dp)
-                        setBackgroundColor(Color.WHITE)
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
                     isClickable = true
                     setOnClickListener {
                         if (selectionMode) {
@@ -227,7 +227,7 @@ class LedgerManagementFragment : Fragment() {
                     })
                     row.addView(ImageView(requireContext()).apply {
                         setImageResource(resolveLedgerIcon(ledger))
-                        setColorFilter(Color.DKGRAY)
+                        setColorFilter(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurfaceVariant_light))
                         layoutParams = LinearLayout.LayoutParams(32.dp, 32.dp)
                     })
                     row.addView(LinearLayout(requireContext()).apply {
@@ -236,19 +236,19 @@ class LedgerManagementFragment : Fragment() {
                         addView(TextView(requireContext()).apply {
                             text = ledger.name
                             textSize = 14f
-                            setTextColor(Color.rgb(23, 24, 26))
+                            setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurface_light))
                         })
                         addView(TextView(requireContext()).apply {
                             text = ledger.subtitle
                             textSize = 12f
-                            setTextColor(Color.GRAY)
+                            setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurfaceVariant_light))
                         })
                         layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
                     })
                     if (ledger.id == currentId) row.addView(TextView(requireContext()).apply {
                         text = getString(R.string.ledger_management_asset_pool_current)
                         textSize = 12f
-                        setTextColor(Color.GRAY)
+                        setTextColor(ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.onSurfaceVariant_light))
                     })
                     val rowParams = LinearLayout.LayoutParams(-1, -2).apply {
                         if (index < poolLedgers.lastIndex) bottomMargin = 2.dp

@@ -15,6 +15,8 @@ internal class RecordStatisticsRepository(
         val date: String,
         val amount: String,
         val category: String,
+        val categoryId: String,
+        val categoryPathSnapshot: String,
         val type: String,
         val fee: String
     )
@@ -53,6 +55,71 @@ internal class RecordStatisticsRepository(
             "${columns.ledgerId} = ? AND ${columns.type} = ? AND ${columns.date} BETWEEN ? AND ?",
             arrayOf(currentLedgerId().toString(), type.toString(), startDate, endDate)
         )
+
+    fun categoryTotalsById(type: Int, startDate: String?, endDate: String?): List<DatabaseHelper.CategoryTotal> {
+        val range = if (startDate != null && endDate != null) " AND ${columns.date} BETWEEN ? AND ?" else ""
+        val args = mutableListOf(currentLedgerId().toString(), type.toString())
+        if (range.isNotEmpty()) args.addAll(listOf(startDate!!, endDate!!))
+        return readableDatabase().rawQuery(
+            "SELECT ${columns.categoryId}, SUM(${columns.amount}), COUNT(*), " +
+                "MAX(COALESCE(${columns.categoryPathSnapshot}, ${columns.category})) FROM ${columns.table} " +
+                "WHERE ${columns.ledgerId} = ? AND ${columns.type} = ?$range " +
+                "GROUP BY ${columns.categoryId}",
+            args.toTypedArray()
+        ).use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    if (!cursor.isNull(0)) add(DatabaseHelper.CategoryTotal(
+                        cursor.getLong(0), cursor.getLong(1), cursor.getInt(2), cursor.getString(3).orEmpty()
+                    ))
+                }
+            }
+        }
+    }
+
+    fun trendByDate(type: Int, startDate: String, endDate: String, byMonth: Boolean): Map<String, Long> {
+        val key = if (byMonth) "SUBSTR(${columns.date}, 1, 7)" else columns.date
+        val db = readableDatabase()
+        val result = db.rawQuery(
+            "SELECT $key, SUM(${columns.amount}) FROM ${columns.table} " +
+                "WHERE ${columns.ledgerId} = ? AND ${columns.type} = ? AND ${columns.date} BETWEEN ? AND ? " +
+                "GROUP BY $key ORDER BY $key",
+            arrayOf(currentLedgerId().toString(), type.toString(), startDate, endDate)
+        ).use { cursor ->
+            buildMap { while (cursor.moveToNext()) put(cursor.getString(0), cursor.getLong(1)) }
+        }
+        if (type != 0) return result
+        val withFees = result.toMutableMap()
+        db.rawQuery(
+            "SELECT $key, SUM(${columns.fee}) FROM ${columns.table} " +
+                "WHERE ${columns.ledgerId} = ? AND ${columns.type} = 2 AND ${columns.date} BETWEEN ? AND ? " +
+                "GROUP BY $key",
+            arrayOf(currentLedgerId().toString(), startDate, endDate)
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val date = cursor.getString(0)
+                withFees[date] = Math.addExact(withFees[date] ?: 0L, cursor.getLong(1))
+            }
+        }
+        return withFees
+    }
+
+    fun dailyTotals(startDate: String, endDate: String): Map<String, DatabaseHelper.DailyTotals> =
+        readableDatabase().rawQuery(
+            "SELECT ${columns.date}, " +
+                "SUM(CASE WHEN ${columns.type} = 1 THEN ${columns.amount} ELSE 0 END), " +
+                "SUM(CASE WHEN ${columns.type} = 0 THEN ${columns.amount} " +
+                "WHEN ${columns.type} = 2 THEN ${columns.fee} ELSE 0 END) " +
+                "FROM ${columns.table} WHERE ${columns.ledgerId} = ? AND ${columns.date} BETWEEN ? AND ? " +
+                "GROUP BY ${columns.date}",
+            arrayOf(currentLedgerId().toString(), startDate, endDate)
+        ).use { cursor ->
+            buildMap {
+                while (cursor.moveToNext()) {
+                    put(cursor.getString(0), DatabaseHelper.DailyTotals(cursor.getLong(1), cursor.getLong(2)))
+                }
+            }
+        }
 
     fun monthlyStatistics(type: Int, year: Int): Map<String, Double> {
         val db = readableDatabase()

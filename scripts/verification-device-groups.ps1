@@ -12,9 +12,10 @@ $deviceTestGroups = @(
         'com.example.cardtally.AssetExclusionBadgeTest'
     ) },
     @{ Name = 'ledger-form'; Expected = 8; Classes = @('com.example.cardtally.LedgerSetupFormTest') },
-    @{ Name = 'main-layout'; Expected = 6; Classes = @(
+    @{ Name = 'main-layout'; Expected = 12; Classes = @(
         'com.example.cardtally.MainActivityFabLayoutTest',
         'com.example.cardtally.MainActivityThemeApplicationTest',
+        'com.example.cardtally.LedgerMonthPagerTest',
         'com.example.cardtally.RecordPresentationTest'
     ) },
     @{ Name = 'record-layout'; Expected = 12; Classes = @('com.example.cardtally.QuickRecordLayoutTest') },
@@ -31,24 +32,28 @@ $deviceTestGroups = @(
         'com.example.cardtally.database.DatabaseHelperAssetGroupTest',
         'com.example.cardtally.database.DatabaseHelperNegativeAssetTest'
     ) },
-    @{ Name = 'category-db'; Expected = 11; Classes = @(
+    @{ Name = 'category-db'; Expected = 12; Classes = @(
         'com.example.cardtally.database.DatabaseHelperCategoryTreeTest',
         'com.example.cardtally.database.DatabaseHelperRecursiveCategoryQueryTest',
         'com.example.cardtally.database.DatabaseHelperRecursiveCategoryMigrationTest',
         'com.example.cardtally.database.DatabaseHelperBetaSchemaTest'
     ) },
-    @{ Name = 'record-db'; Expected = 11; Classes = @(
+    @{ Name = 'record-db'; Expected = 16; Classes = @(
         'com.example.cardtally.database.DatabaseHelperRecordDeletionTest',
-        'com.example.cardtally.database.DatabaseHelperTransferFeeTest'
+        'com.example.cardtally.database.DatabaseHelperTransferFeeTest',
+        'com.example.cardtally.ai.AiRecordEngineTest'
     ) },
     @{ Name = 'session-recurring-db'; Expected = 9; Classes = @(
         'com.example.cardtally.database.DatabaseHelperAgentChatSessionTest',
         'com.example.cardtally.database.DataTransferManagerTest',
         'com.example.cardtally.database.DatabaseHelperRecurringRecordTest'
     ) },
-    @{ Name = 'ledger-db'; Expected = 8; Classes = @(
+    @{ Name = 'ledger-db'; Expected = 10; Classes = @(
         'com.example.cardtally.database.DatabaseHelperLedgerAggregationContractTest',
         'com.example.cardtally.database.DatabaseHelperTodayRecordsPagingTest'
+    ) },
+    @{ Name = 'backup-db'; Expected = 3; TimeoutSeconds = 360; Classes = @(
+        'com.example.cardtally.util.BackupArchiveManagerTest'
     ) },
     @{ Name = 'preferences'; Expected = 15; Classes = @(
         'com.example.cardtally.util.AiAssistantSettingsHelperTest',

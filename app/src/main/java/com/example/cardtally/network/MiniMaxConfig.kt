@@ -4,15 +4,15 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 data class MiniMaxConfig(
     val apiKey: String,
-    val model: String = DEFAULT_MODEL,
-    val requestUrl: String = DEFAULT_REQUEST_URL
+    val model: String = "",
+    val requestUrl: String = ""
 ) {
 
     fun normalized(): MiniMaxConfig {
         val normalizedRequestUrl = normalizeRequestUrl(requestUrl)
         return MiniMaxConfig(
             apiKey = apiKey.trim(),
-            model = model.trim().ifBlank { DEFAULT_MODEL },
+            model = model.trim(),
             requestUrl = normalizedRequestUrl
         )
     }
@@ -43,10 +43,6 @@ data class MiniMaxConfig(
 
         private fun normalizeRequestUrl(rawValue: String): String {
             val trimmedValue = rawValue.trim()
-            if (trimmedValue.isBlank()) {
-                return DEFAULT_REQUEST_URL
-            }
-
             return when (trimmedValue.removeSuffix("/")) {
                 LEGACY_DEFAULT_BASE_URL -> DEFAULT_REQUEST_URL
                 else -> trimmedValue

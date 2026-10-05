@@ -1,617 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/background_light"
-    tools:context=".StatisticsFragment">
-
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/scroll_content"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:fillViewport="true"
-        android:paddingBottom="@dimen/content_bottom_padding_with_floating_nav">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="16dp">
-
-            <LinearLayout
-                android:id="@+id/layout_statistics_legacy_header"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <ImageButton
-                    android:id="@+id/btn_ledger_menu"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/nav_statistics"
-                    android:src="@drawable/ic_menu"
-                    app:tint="?attr/colorPrimary" />
-
-                <TextView
-                    android:id="@+id/text_title"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="@string/nav_statistics"
-                    android:textColor="?attr/colorPrimary"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:visibility="gone" />
-
-                <LinearLayout
-                    android:id="@+id/layout_mode_selector"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/text_view_mode_hint"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/editorial_text_muted"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:letterSpacing="0.12"
-                        tools:text="统计" />
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_marginStart="2dp"
-                        android:src="@drawable/ic_expand_more"
-                        app:tint="@color/editorial_text_muted" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:gravity="center">
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center_horizontal"
-                    app:cardBackgroundColor="@color/surface_light"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@android:color/transparent"
-                    app:strokeWidth="0dp">
-                    <LinearLayout
-                        android:id="@+id/layout_type_tabs"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1">
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/text_type_expense"
-                                style="@style/Widget.Material3.Button.TextButton"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:gravity="center"
-                                android:minHeight="0dp"
-                                android:padding="0dp"
-                                android:text="支出"
-                                android:textColor="@color/onSurface_light"
-                                android:textSize="16sp"
-                                android:textStyle="bold"
-                                app:backgroundTint="@color/surface_light"
-                                app:cornerRadius="0dp"
-                                app:elevation="0dp" />
-                            <View
-                                android:id="@+id/indicator_type_expense"
-                                android:layout_width="28dp"
-                                android:layout_height="2dp"
-                                android:layout_gravity="bottom|center_horizontal"
-                                android:background="@color/primary_light"
-                                android:visibility="visible" />
-                        </FrameLayout>
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1">
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/text_type_income"
-                                style="@style/Widget.Material3.Button.TextButton"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:gravity="center"
-                                android:minHeight="0dp"
-                                android:padding="0dp"
-                                android:text="收入"
-                                android:textColor="@color/editorial_text_muted"
-                                android:textSize="16sp"
-                                app:backgroundTint="@color/surface_light"
-                                app:cornerRadius="0dp"
-                                app:elevation="0dp" />
-                            <View
-                                android:id="@+id/indicator_type_income"
-                                android:layout_width="28dp"
-                                android:layout_height="2dp"
-                                android:layout_gravity="bottom|center_horizontal"
-                                android:background="@color/primary_light"
-                                android:visibility="gone" />
-                        </FrameLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardBackgroundColor="@color/surface_light"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:strokeColor="@android:color/transparent"
-                app:strokeWidth="0dp">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="4dp">
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:fillViewport="true"
-                        android:scrollbars="none"
-                        android:gravity="center_horizontal">
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/toggle_period_preset"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        app:selectionRequired="false"
-                        app:singleSelection="true">
-
-                        <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_period_week"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:minWidth="0dp"
-                        android:paddingHorizontal="14dp"
-                        android:paddingVertical="0dp"
-                        android:text="@string/ledger_period_week"
-                        android:foreground="@drawable/fg_statistics_period_indicator"
-                        app:backgroundTint="@color/surface_light"
-                        app:cornerRadius="0dp"
-                        app:elevation="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_period_month"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:minWidth="0dp"
-                        android:paddingHorizontal="14dp"
-                        android:paddingVertical="0dp"
-                        android:text="@string/ledger_period_month"
-                        android:foreground="@drawable/fg_statistics_period_indicator"
-                        app:backgroundTint="@color/surface_light"
-                        app:cornerRadius="0dp"
-                        app:elevation="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_period_year"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:minWidth="0dp"
-                        android:paddingHorizontal="14dp"
-                        android:paddingVertical="0dp"
-                        android:text="@string/ledger_period_year"
-                        android:foreground="@drawable/fg_statistics_period_indicator"
-                        app:backgroundTint="@color/surface_light"
-                        app:cornerRadius="0dp"
-                        app:elevation="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_period_all"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:minWidth="0dp"
-                        android:paddingHorizontal="14dp"
-                        android:paddingVertical="0dp"
-                        android:text="@string/ledger_period_custom_short"
-                        android:foreground="@drawable/fg_statistics_period_indicator"
-                        app:backgroundTint="@color/surface_light"
-                        app:cornerRadius="0dp"
-                        app:elevation="0dp" />
-
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
-                    </HorizontalScrollView>
-                    <LinearLayout
-                android:id="@+id/layout_range_selector"
-                android:layout_width="match_parent"
-                android:layout_height="36dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingHorizontal="0dp">
-
-                <ImageButton
-                    android:id="@+id/btn_range_previous"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/ledger_period_previous_month"
-                    android:src="@drawable/ic_chevron_left"
-                    app:tint="@color/onSurface_light" />
-
-                <TextView
-                    android:id="@+id/text_range_value"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:textColor="@color/onSurface_light"
-                    android:textSize="14sp"
-                    android:textStyle="normal"
-                    tools:text="2026年8月17日-23日" />
-
-                <ImageButton
-                    android:id="@+id/btn_range_next"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/ledger_period_next_month"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="@color/onSurface_light" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <LinearLayout
-                android:id="@+id/layout_statistics_content"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="vertical">
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_statistics_summary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardBackgroundColor="@color/surface_light"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@android:color/transparent"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="8dp">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center_horizontal"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:text="@string/record_type_expense"
-                                android:textColor="?attr/colorOnSurfaceVariant"
-                                android:textSize="10sp" />
-                            <TextView
-                                android:id="@+id/text_summary_expense"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:ellipsize="marquee"
-                                android:fontFamily="sans-serif-medium"
-                                android:gravity="center"
-                                android:singleLine="true"
-                                android:textColor="@color/expense_primary"
-                                android:textSize="12sp"
-                                tools:text="¥0.00" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center_horizontal"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:text="@string/record_type_income"
-                                android:textColor="?attr/colorOnSurfaceVariant"
-                                android:textSize="10sp" />
-                            <TextView
-                                android:id="@+id/text_summary_income"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:ellipsize="marquee"
-                                android:fontFamily="sans-serif-medium"
-                                android:gravity="center"
-                                android:singleLine="true"
-                                android:textColor="@color/income_primary"
-                                android:textSize="12sp"
-                                tools:text="¥0.00" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center_horizontal"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:text="@string/ledger_balance"
-                                android:textColor="?attr/colorOnSurfaceVariant"
-                                android:textSize="10sp" />
-                            <TextView
-                                android:id="@+id/text_summary_balance"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:ellipsize="marquee"
-                                android:fontFamily="sans-serif-medium"
-                                android:gravity="center"
-                                android:singleLine="true"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textSize="12sp"
-                                tools:text="¥0.00" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_statistics_chart"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:cardBackgroundColor="@color/surface_light"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@android:color/transparent"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:id="@+id/text_chart_title"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/ledger_chart_title"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-
-                            <ImageButton
-                                android:id="@+id/toggle_chart_mode"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/ledger_chart_title"
-                                android:padding="4dp"
-                                android:src="@drawable/tabler_chart_donut"
-                                app:tint="@color/onSurface_light" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/text_chart_subtitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:textColor="@color/editorial_text_muted"
-                            android:textSize="11sp"
-                            android:visibility="gone"
-                            tools:text="按当前周期阅读流向与波动" />
-
-                        <FrameLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="120dp"
-                            android:layout_marginTop="12dp">
-
-                            <com.example.cardtally.view.LedgerLineChartView
-                                android:id="@+id/view_statistics_line_chart"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:visibility="gone" />
-
-                            <com.example.cardtally.view.LedgerDonutChartView
-                                android:id="@+id/view_statistics_chart"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:id="@+id/layout_line_axis"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:visibility="gone">
-
-                            <TextView
-                                android:id="@+id/text_axis_start"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textColor="@color/editorial_text_muted"
-                                android:textSize="9sp"
-                                tools:text="Apr 1" />
-
-                            <TextView
-                                android:id="@+id/text_axis_mid"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="center"
-                                android:textColor="@color/editorial_text_muted"
-                                android:textSize="9sp"
-                                tools:text="Apr 8" />
-
-                            <TextView
-                                android:id="@+id/text_axis_end"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="end"
-                                android:textColor="@color/editorial_text_muted"
-                                android:textSize="9sp"
-                                tools:text="Apr 15" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/layout_chart_legend"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:orientation="vertical" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/card_statistics_ranking"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:cardBackgroundColor="@color/surface_light"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@android:color/transparent"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingTop="12dp"
-                        android:paddingBottom="8dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingHorizontal="16dp">
-
-                            <TextView
-                                android:id="@+id/text_statistics_section_title"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/ledger_statistics_section_title"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-
-                            <ImageButton
-                                android:id="@+id/btn_toggle_ranking_mode"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/statistics_ranking_mode_title"
-                                android:padding="4dp"
-                                android:src="@drawable/tabler_list_tree"
-                                app:tint="@color/onSurface_light" />
-                        </LinearLayout>
-
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/recycler_statistics"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:nestedScrollingEnabled="false"
-                            tools:listitem="@layout/item_statistics" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_records_content"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recycler_records"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"
-                    tools:listitem="@layout/item_record" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/text_empty"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="40dp"
-                android:textColor="@color/editorial_text_muted"
-                android:textSize="15sp"
-                android:visibility="gone"
-                tools:text="暂无统计内容" />
-
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?attr/pageBackgroundColor" tools:context=".StatisticsFragment">
+  <androidx.core.widget.NestedScrollView android:id="@+id/scroll_content" android:layout_width="match_parent" android:layout_height="match_parent" android:clipToPadding="false" android:fillViewport="true" android:paddingBottom="@dimen/content_bottom_padding_with_floating_nav">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="16dp" android:paddingTop="8dp" android:paddingBottom="16dp">
+      <LinearLayout android:id="@+id/layout_statistics_legacy_header" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+        <ImageButton android:id="@+id/btn_ledger_menu" android:layout_width="40dp" android:layout_height="40dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/nav_statistics" android:src="@drawable/ic_menu" app:tint="?attr/colorPrimary" />
+        <TextView android:id="@+id/text_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="@string/nav_statistics" android:textColor="?attr/colorPrimary" android:textSize="20sp" android:textStyle="bold" android:visibility="gone" />
+        <LinearLayout android:id="@+id/layout_mode_selector" android:layout_width="wrap_content" android:layout_height="40dp" android:gravity="center_vertical" android:orientation="horizontal">
+          <TextView android:id="@+id/text_view_mode_hint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/editorial_text_muted" android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.12" tools:text="统计" />
+          <ImageView android:layout_width="18dp" android:layout_height="18dp" android:layout_marginStart="2dp" android:src="@drawable/ic_expand_more" app:tint="@color/editorial_text_muted" />
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="@dimen/floating_primary_fab_end_margin"
-         android:layout_marginBottom="@dimen/floating_primary_fab_gap_above_nav"
-        android:contentDescription="@string/add_record"
-        android:src="@drawable/ic_add"
-        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.CardTally.FabCircle"
-        app:backgroundTint="?attr/colorPrimary"
-        app:elevation="@dimen/card_elevation_none"
-        app:hoveredFocusedTranslationZ="@dimen/card_elevation_none"
-        app:pressedTranslationZ="@dimen/card_elevation_none"
-        app:tint="?attr/colorOnPrimary" />
-
+      </LinearLayout>
+      <LinearLayout android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center">
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="40dp" android:layout_gravity="center_horizontal" app:cardBackgroundColor="?attr/cardSurfaceColor" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
+          <FrameLayout android:layout_width="match_parent" android:layout_height="40dp">
+            <LinearLayout android:id="@+id/layout_type_tabs" android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false">
+              <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clipChildren="false" android:clipToPadding="false">
+                <com.google.android.material.button.MaterialButton android:id="@+id/text_type_expense" style="@style/Widget.Material3.Button.TextButton" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:minHeight="0dp" android:padding="0dp" android:text="支出" android:textColor="@color/onSurface_light" android:textSize="16sp" android:textStyle="bold" app:backgroundTint="@android:color/transparent" app:cornerRadius="0dp" app:elevation="0dp" />
+              </FrameLayout>
+              <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:clipChildren="false" android:clipToPadding="false">
+                <com.google.android.material.button.MaterialButton android:id="@+id/text_type_income" style="@style/Widget.Material3.Button.TextButton" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:minHeight="0dp" android:padding="0dp" android:text="收入" android:textColor="@color/editorial_text_muted" android:textSize="16sp" app:backgroundTint="@android:color/transparent" app:cornerRadius="0dp" app:elevation="0dp" />
+                <View android:id="@+id/indicator_type_income" android:layout_width="28dp" android:layout_height="2dp" android:layout_gravity="bottom|center_horizontal" android:background="@color/primary_light" android:visibility="gone" />
+              </FrameLayout>
+            </LinearLayout>
+            <View android:id="@+id/indicator_type_expense" android:layout_width="28dp" android:layout_height="2dp" android:layout_gravity="bottom|start" android:background="@color/primary_light" android:visibility="visible" />
+          </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+      </LinearLayout>
+      <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" app:cardBackgroundColor="?attr/cardSurfaceColor" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="4dp">
+          <HorizontalScrollView android:layout_width="match_parent" android:layout_height="40dp" android:fillViewport="true" android:scrollbars="none" android:gravity="center_horizontal">
+            <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/toggle_period_preset" android:layout_width="match_parent" android:layout_height="40dp" app:selectionRequired="false" app:singleSelection="true">
+              <com.google.android.material.button.MaterialButton android:id="@+id/btn_period_week" style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:minWidth="0dp" android:paddingHorizontal="14dp" android:paddingVertical="0dp" android:text="@string/ledger_period_week" android:foreground="@drawable/fg_statistics_period_indicator" app:backgroundTint="@android:color/transparent" app:cornerRadius="0dp" app:elevation="0dp" />
+              <com.google.android.material.button.MaterialButton android:id="@+id/btn_period_month" style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:minWidth="0dp" android:paddingHorizontal="14dp" android:paddingVertical="0dp" android:text="@string/ledger_period_month" android:foreground="@drawable/fg_statistics_period_indicator" app:backgroundTint="@android:color/transparent" app:cornerRadius="0dp" app:elevation="0dp" />
+              <com.google.android.material.button.MaterialButton android:id="@+id/btn_period_year" style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:minWidth="0dp" android:paddingHorizontal="14dp" android:paddingVertical="0dp" android:text="@string/ledger_period_year" android:foreground="@drawable/fg_statistics_period_indicator" app:backgroundTint="@android:color/transparent" app:cornerRadius="0dp" app:elevation="0dp" />
+              <com.google.android.material.button.MaterialButton android:id="@+id/btn_period_all" style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp" android:layout_height="40dp" android:layout_weight="1" android:minWidth="0dp" android:paddingHorizontal="14dp" android:paddingVertical="0dp" android:text="@string/ledger_period_custom_short" android:foreground="@drawable/fg_statistics_period_indicator" app:backgroundTint="@android:color/transparent" app:cornerRadius="0dp" app:elevation="0dp" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+          </HorizontalScrollView>
+          <LinearLayout android:id="@+id/layout_range_selector" android:layout_width="match_parent" android:layout_height="36dp" android:layout_gravity="center_horizontal" android:layout_marginTop="8dp" android:background="?attr/selectableItemBackgroundBorderless" android:gravity="center" android:orientation="horizontal" android:paddingHorizontal="0dp">
+            <ImageButton android:id="@+id/btn_range_previous" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/ledger_period_previous_month" android:src="@drawable/ic_chevron_left" app:tint="@color/onSurface_light" />
+            <TextView android:id="@+id/text_range_value" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="@color/onSurface_light" android:textSize="14sp" android:textStyle="normal" tools:text="2026年8月17日-23日" />
+            <ImageButton android:id="@+id/btn_range_next" android:layout_width="32dp" android:layout_height="32dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/ledger_period_next_month" android:src="@drawable/ic_chevron_right" app:tint="@color/onSurface_light" />
+          </LinearLayout>
+        </LinearLayout>
+      </com.google.android.material.card.MaterialCardView>
+      <com.google.android.material.card.MaterialCardView android:id="@+id/card_statistics_summary" android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="?attr/cardSurfaceColor" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp" android:layout_marginTop="8dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingHorizontal="8dp" android:paddingVertical="8dp">
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="@string/record_type_expense" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="10sp" />
+            <TextView android:id="@+id/text_summary_expense" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:ellipsize="marquee" android:fontFamily="sans-serif-medium" android:gravity="center" android:singleLine="true" android:textColor="@color/expense_primary" android:textSize="12sp" tools:text="¥0.00" />
+          </LinearLayout>
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="@string/record_type_income" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="10sp" />
+            <TextView android:id="@+id/text_summary_income" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:ellipsize="marquee" android:fontFamily="sans-serif-medium" android:gravity="center" android:singleLine="true" android:textColor="@color/income_primary" android:textSize="12sp" tools:text="¥0.00" />
+          </LinearLayout>
+          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="@string/ledger_balance" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="10sp" />
+            <TextView android:id="@+id/text_summary_balance" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:ellipsize="marquee" android:fontFamily="sans-serif-medium" android:gravity="center" android:singleLine="true" android:textColor="?attr/colorOnSurface" android:textSize="12sp" tools:text="¥0.00" />
+          </LinearLayout>
+        </LinearLayout>
+      </com.google.android.material.card.MaterialCardView>
+      <androidx.viewpager2.widget.ViewPager2 android:id="@+id/layout_statistics_content" android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="8dp" android:layoutDirection="ltr" android:orientation="horizontal" />
+      <LinearLayout android:id="@+id/layout_records_content" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:orientation="vertical" android:visibility="gone">
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler_records" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" tools:listitem="@layout/item_record" />
+      </LinearLayout>
+      <TextView android:id="@+id/text_empty" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:layout_marginTop="40dp" android:textColor="@color/editorial_text_muted" android:textSize="15sp" android:visibility="gone" tools:text="暂无统计内容" />
+    </LinearLayout>
+  </androidx.core.widget.NestedScrollView>
+  <com.google.android.material.floatingactionbutton.FloatingActionButton android:id="@+id/fab_add" android:layout_width="56dp" android:layout_height="56dp" android:layout_gravity="bottom|end" android:layout_marginEnd="@dimen/floating_primary_fab_end_margin" android:layout_marginBottom="@dimen/floating_primary_fab_gap_above_nav" android:contentDescription="@string/add_record" android:src="@drawable/ic_add" app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.CardTally.FabCircle" app:backgroundTint="?attr/colorPrimary" app:elevation="@dimen/card_elevation_none" app:hoveredFocusedTranslationZ="@dimen/card_elevation_none" app:pressedTranslationZ="@dimen/card_elevation_none" app:tint="?attr/colorOnPrimary" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

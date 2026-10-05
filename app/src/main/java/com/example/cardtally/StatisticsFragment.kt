@@ -11,9 +11,11 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.MarginPageTransformer
 import com.example.cardtally.adapter.DateGroupAdapter
 import com.example.cardtally.adapter.LedgerCalendarAdapter
 import com.example.cardtally.adapter.StatisticsAdapter
@@ -48,6 +50,82 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import java.util.Calendar
 
 class StatisticsFragment : Fragment() {
+    private var statisticsPager: androidx.viewpager2.widget.ViewPager2? = null
+    private var statisticsPages = emptyList<View>()
+    private var statisticsPageAdapters = emptyList<StatisticsAdapter>()
+    private class StatisticsPageHolder(view: View) : RecyclerView.ViewHolder(view)
+    private val heightObserver = object : RecyclerView.AdapterDataObserver() {
+        override fun onChanged() = resizeStatisticsPager()
+        override fun onItemRangeChanged(positionStart: Int, itemCount: Int) = resizeStatisticsPager()
+        override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = resizeStatisticsPager()
+        override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = resizeStatisticsPager()
+    }
+    private val statisticsPageCallback = object : androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+        override fun onPageSelected(position: Int) {
+            currentStatsType = position
+            bindStatisticsPage(position)
+            updateChrome()
+        }
+        override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+            val progress = (position + positionOffset).coerceIn(0f, 1f)
+            moveTypeIndicator(progress)
+            val active = ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface)
+            val inactive = ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted)
+            val evaluator = android.animation.ArgbEvaluator()
+            textTypeExpense.setTextColor(evaluator.evaluate(progress, active, inactive) as Int)
+            textTypeIncome.setTextColor(evaluator.evaluate(progress, inactive, active) as Int)
+        }
+    }
+    private fun moveTypeIndicator(progress: Float) {
+        indicatorTypeExpense.translationX = (textTypeExpense.width - indicatorTypeExpense.width) / 2f +
+            textTypeExpense.width * progress
+    }
+    private fun resizeStatisticsPager() {
+        statisticsPager?.post {
+            val pager = statisticsPager ?: return@post
+            if (pager.width == 0) return@post
+            val widthSpec = View.MeasureSpec.makeMeasureSpec(pager.width, View.MeasureSpec.EXACTLY)
+            val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            val height = statisticsPages.maxOfOrNull { page ->
+                val content = page.findViewById<View>(R.id.statistics_page_content)
+                content.measure(widthSpec, heightSpec)
+                content.measuredHeight
+            } ?: 0
+            if (height > 0 && pager.layoutParams.height != height) {
+                pager.layoutParams = pager.layoutParams.apply { this.height = height }
+            }
+        }
+    }
+    private fun bindStatisticsPage(type: Int) {
+        val page = statisticsPages[type]
+        textEmpty = page.findViewById(R.id.text_empty)
+        textStatisticsSectionTitle = page.findViewById(R.id.text_statistics_section_title)
+        btnToggleRankingMode = page.findViewById(R.id.btn_toggle_ranking_mode)
+        textChartTitle = page.findViewById(R.id.text_chart_title)
+        textChartSubtitle = page.findViewById(R.id.text_chart_subtitle)
+        recyclerStatistics = page.findViewById(R.id.recycler_statistics)
+        viewStatisticsChart = page.findViewById(R.id.view_statistics_chart)
+        viewStatisticsLineChart = page.findViewById(R.id.view_statistics_line_chart)
+        toggleChartMode = page.findViewById(R.id.toggle_chart_mode)
+        layoutChartLegend = page.findViewById(R.id.layout_chart_legend)
+        layoutLineAxis = page.findViewById(R.id.layout_line_axis)
+        textAxisStart = page.findViewById(R.id.text_axis_start)
+        textAxisMid = page.findViewById(R.id.text_axis_mid)
+        textAxisEnd = page.findViewById(R.id.text_axis_end)
+        cardStatisticsRanking = page.findViewById(R.id.card_statistics_ranking)
+        if (statisticsPageAdapters.isNotEmpty()) statisticsAdapter = statisticsPageAdapters[type]
+    }
+    override fun onDestroyView() {
+        statisticsPager?.unregisterOnPageChangeCallback(statisticsPageCallback)
+        statisticsPager?.adapter = null
+        statisticsPager = null
+        statisticsPageAdapters.forEach { it.unregisterAdapterDataObserver(heightObserver) }
+        statisticsPageAdapters = emptyList()
+        statisticsPages = emptyList()
+        super.onDestroyView()
+    }
+
+
     private lateinit var togglePeriodPreset: MaterialButtonToggleGroup
     private lateinit var textEmpty: TextView
     private lateinit var textRangeValue: TextView
@@ -82,6 +160,9 @@ class StatisticsFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
     private lateinit var statisticsAdapter: StatisticsAdapter
     private var recordsAdapter: DateGroupAdapter? = null
+    private val detailRecords = mutableListOf<Record>()
+    private var detailCursor: DatabaseHelper.RecordListCursor? = null
+    private var detailLoading = false
 
     private var currentViewMode = VIEW_MODE_STATISTICS
     private var currentStatsType = TYPE_EXPENSE
@@ -110,9 +191,12 @@ class StatisticsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_statistics, container, false)
+        statisticsPages = List(2) { inflater.inflate(R.layout.item_statistics_type_page, null, false) }
+        val expensePage = statisticsPages[TYPE_EXPENSE]
+        statisticsPager = view.findViewById(R.id.layout_statistics_content)
 
         togglePeriodPreset = view.findViewById(R.id.toggle_period_preset)
-        textEmpty = view.findViewById(R.id.text_empty)
+        textEmpty = expensePage.findViewById(R.id.text_empty)
         textRangeValue = view.findViewById(R.id.text_range_value)
         textTypeExpense = view.findViewById(R.id.text_type_expense)
         textTypeIncome = view.findViewById(R.id.text_type_income)
@@ -122,24 +206,24 @@ class StatisticsFragment : Fragment() {
         textSummaryExpense = view.findViewById(R.id.text_summary_expense)
         textSummaryIncome = view.findViewById(R.id.text_summary_income)
         textSummaryBalance = view.findViewById(R.id.text_summary_balance)
-        textStatisticsSectionTitle = view.findViewById(R.id.text_statistics_section_title)
-        btnToggleRankingMode = view.findViewById(R.id.btn_toggle_ranking_mode)
-        textChartTitle = view.findViewById(R.id.text_chart_title)
-        textChartSubtitle = view.findViewById(R.id.text_chart_subtitle)
-        recyclerStatistics = view.findViewById(R.id.recycler_statistics)
+        textStatisticsSectionTitle = expensePage.findViewById(R.id.text_statistics_section_title)
+        btnToggleRankingMode = expensePage.findViewById(R.id.btn_toggle_ranking_mode)
+        textChartTitle = expensePage.findViewById(R.id.text_chart_title)
+        textChartSubtitle = expensePage.findViewById(R.id.text_chart_subtitle)
+        recyclerStatistics = expensePage.findViewById(R.id.recycler_statistics)
         recyclerRecords = view.findViewById(R.id.recycler_records)
-        viewStatisticsChart = view.findViewById(R.id.view_statistics_chart)
-        viewStatisticsLineChart = view.findViewById(R.id.view_statistics_line_chart)
-        toggleChartMode = view.findViewById(R.id.toggle_chart_mode)
-        layoutChartLegend = view.findViewById(R.id.layout_chart_legend)
-        layoutLineAxis = view.findViewById(R.id.layout_line_axis)
-        textAxisStart = view.findViewById(R.id.text_axis_start)
-        textAxisMid = view.findViewById(R.id.text_axis_mid)
-        textAxisEnd = view.findViewById(R.id.text_axis_end)
+        viewStatisticsChart = expensePage.findViewById(R.id.view_statistics_chart)
+        viewStatisticsLineChart = expensePage.findViewById(R.id.view_statistics_line_chart)
+        toggleChartMode = expensePage.findViewById(R.id.toggle_chart_mode)
+        layoutChartLegend = expensePage.findViewById(R.id.layout_chart_legend)
+        layoutLineAxis = expensePage.findViewById(R.id.layout_line_axis)
+        textAxisStart = expensePage.findViewById(R.id.text_axis_start)
+        textAxisMid = expensePage.findViewById(R.id.text_axis_mid)
+        textAxisEnd = expensePage.findViewById(R.id.text_axis_end)
         fabAdd = view.findViewById(R.id.fab_add)
         layoutModeSelector = view.findViewById(R.id.layout_mode_selector)
         layoutStatisticsContent = view.findViewById(R.id.layout_statistics_content)
-        cardStatisticsRanking = view.findViewById(R.id.card_statistics_ranking)
+        cardStatisticsRanking = expensePage.findViewById(R.id.card_statistics_ranking)
         layoutRecordsContent = view.findViewById(R.id.layout_records_content)
         layoutRangeSelector = view.findViewById(R.id.layout_range_selector)
         val btnRangePrevious = view.findViewById<ImageButton>(R.id.btn_range_previous)
@@ -155,57 +239,78 @@ class StatisticsFragment : Fragment() {
         layoutModeSelector.visibility = View.GONE
         view.findViewById<View>(R.id.layout_statistics_legacy_header).visibility = View.GONE
         view.findViewById<ImageButton>(R.id.btn_ledger_menu).visibility = View.GONE
-        textTypeExpense.setOnClickListener {
-            if (currentStatsType != TYPE_EXPENSE) {
-                currentStatsType = TYPE_EXPENSE
-                renderCurrentView()
-            }
-        }
-        textTypeIncome.setOnClickListener {
-            if (currentStatsType != TYPE_INCOME) {
-                currentStatsType = TYPE_INCOME
-                renderCurrentView()
-            }
-        }
+        textTypeExpense.setOnClickListener { selectStatisticsType(TYPE_EXPENSE) }
+        textTypeIncome.setOnClickListener { selectStatisticsType(TYPE_INCOME) }
         btnRangePrevious.setOnClickListener { shiftCurrentRange(-1) }
         btnRangeNext.setOnClickListener { shiftCurrentRange(1) }
         recyclerStatistics.layoutManager = LinearLayoutManager(requireContext())
         recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
-        statisticsAdapter = StatisticsAdapter { category ->
-            val searchFragment = SearchFragment.newInstance(
-                keyword = category,
-                rangeStart = currentQueryRange()?.startDate,
-                rangeEnd = currentQueryRange()?.endDate
-            )
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, searchFragment)
-                .addToBackStack(null)
-                .commit()
+        val statisticsScroll = view.findViewById<NestedScrollView>(R.id.scroll_content)
+        statisticsScroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            if (currentViewMode == VIEW_MODE_RECORDS) {
+                val remaining = statisticsScroll.getChildAt(0).height - scrollY - statisticsScroll.height
+                val preloadDistance = (300 * resources.displayMetrics.density).toInt()
+                if (remaining < preloadDistance) loadMoreRecordDetails()
+            }
         }
-        recyclerStatistics.adapter = statisticsAdapter
+        statisticsPageAdapters = statisticsPages.map { page ->
+            val adapter = StatisticsAdapter { category, categoryId ->
+                val searchFragment = SearchFragment.newInstance(
+                    keyword = category,
+                    rangeStart = currentQueryRange()?.startDate,
+                    rangeEnd = currentQueryRange()?.endDate,
+                    categoryId = categoryId
+                )
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, searchFragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+            page.findViewById<RecyclerView>(R.id.recycler_statistics).apply {
+                layoutManager = LinearLayoutManager(requireContext())
+                this.adapter = adapter
+            }
+            adapter.registerAdapterDataObserver(heightObserver)
+            adapter
+
+        }
+        bindStatisticsPage(currentStatsType)
+        statisticsPager?.apply {
+            offscreenPageLimit = 1
+            setPageTransformer(MarginPageTransformer(resources.getDimensionPixelSize(R.dimen.spacing_l)))
+            adapter = object : RecyclerView.Adapter<StatisticsPageHolder>() {
+                override fun getItemCount() = 2
+                override fun getItemViewType(position: Int) = position
+                override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StatisticsPageHolder {
+                    val page = statisticsPages[viewType]
+                    // Pre-inflated pages have no parent-generated LayoutParams.
+                    // ViewPager2 validates both dimensions before attaching each page.
+                    page.layoutParams = RecyclerView.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    return StatisticsPageHolder(page)
+                }
+                override fun onBindViewHolder(holder: StatisticsPageHolder, position: Int) = Unit
+            }
+            setCurrentItem(currentStatsType, false)
+            registerOnPageChangeCallback(statisticsPageCallback)
+        }
 
         view.findViewById<ImageButton>(R.id.btn_ledger_menu).isEnabled = false
-        toggleChartMode.setOnClickListener {
-            currentChartMode = if (currentChartMode == CHART_MODE_LINE) CHART_MODE_PIE else CHART_MODE_LINE
-            updateChartModeUi()
+        statisticsPages.forEachIndexed { type, page ->
+            page.findViewById<ImageButton>(R.id.toggle_chart_mode).setOnClickListener {
+                bindStatisticsPage(type)
+                currentChartMode = if (currentChartMode == CHART_MODE_LINE) CHART_MODE_PIE else CHART_MODE_LINE
+                renderCurrentView()
+            }
+            page.findViewById<ImageButton>(R.id.btn_toggle_ranking_mode).setOnClickListener {
+                currentRankingMode = if (currentRankingMode == StatisticsRankingMode.PRIMARY) StatisticsRankingMode.SECONDARY else StatisticsRankingMode.PRIMARY
+                StatisticsRankingModePreferences.saveMode(requireContext(), currentRankingMode)
+                renderCurrentView()
+            }
         }
 
-        btnToggleRankingMode.setOnClickListener {
-            currentRankingMode = if (currentRankingMode == StatisticsRankingMode.PRIMARY) {
-                StatisticsRankingMode.SECONDARY
-            } else {
-                StatisticsRankingMode.PRIMARY
-            }
-            StatisticsRankingModePreferences.saveMode(requireContext(), currentRankingMode)
-            updateRankingModeUi()
-            loadCategoryStatistics()
-            val toastMsg = if (currentRankingMode == StatisticsRankingMode.PRIMARY) {
-                R.string.toast_ranking_mode_primary
-            } else {
-                R.string.toast_ranking_mode_secondary
-            }
-            Toast.makeText(requireContext(), toastMsg, Toast.LENGTH_SHORT).show()
-        }
 
         togglePeriodPreset.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
@@ -276,13 +381,29 @@ class StatisticsFragment : Fragment() {
         )
     }
 
+    private fun selectStatisticsType(type: Int) {
+        statisticsPager?.setCurrentItem(type, true)
+    }
+
     private fun renderCurrentView() {
         updateAllRangeIfNeeded()
-        updateChrome()
         if (currentViewMode == VIEW_MODE_RECORDS) {
+            updateChrome()
             loadRecordDetails()
         } else {
-            loadCategoryStatistics()
+            val selectedType = currentStatsType
+            for (type in 0..1) {
+                currentStatsType = type
+                bindStatisticsPage(type)
+                textChartTitle.setText(if (type == TYPE_EXPENSE) R.string.ledger_chart_title_expense else R.string.ledger_chart_title_income)
+                updateRankingModeUi()
+                updateChartModeUi()
+                loadCategoryStatistics()
+            }
+            currentStatsType = selectedType
+            bindStatisticsPage(selectedType)
+            updateChrome()
+            resizeStatisticsPager()
         }
     }
 
@@ -312,10 +433,7 @@ class StatisticsFragment : Fragment() {
     private fun updateTypeTabs() {
         val active = ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface)
         val inactive = ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted)
-        val background = ThemeColorHelper.resolveThemeAwareResource(
-            requireContext(),
-            R.color.surface_light
-        )
+        val background = android.graphics.Color.TRANSPARENT
         textTypeExpense.setTextColor(if (currentStatsType == TYPE_EXPENSE) active else inactive)
         textTypeIncome.setTextColor(if (currentStatsType == TYPE_INCOME) active else inactive)
         textTypeExpense.backgroundTintList = android.content.res.ColorStateList.valueOf(
@@ -324,8 +442,11 @@ class StatisticsFragment : Fragment() {
         textTypeIncome.backgroundTintList = android.content.res.ColorStateList.valueOf(
             background
         )
-        indicatorTypeExpense.visibility = if (currentStatsType == TYPE_EXPENSE) View.VISIBLE else View.GONE
-        indicatorTypeIncome.visibility = if (currentStatsType == TYPE_INCOME) View.VISIBLE else View.GONE
+        indicatorTypeExpense.visibility = View.VISIBLE
+        indicatorTypeIncome.visibility = View.GONE
+        if (statisticsPager?.scrollState == androidx.viewpager2.widget.ViewPager2.SCROLL_STATE_IDLE) {
+            moveTypeIndicator(currentStatsType.toFloat())
+        }
         textTypeExpense.paint.isFakeBoldText = currentStatsType == TYPE_EXPENSE
         textTypeIncome.paint.isFakeBoldText = currentStatsType == TYPE_INCOME
     }
@@ -351,15 +472,6 @@ class StatisticsFragment : Fragment() {
         renderCurrentView()
     }
 
-    private fun buildPrimaryAdapterItems(
-        normalizedStats: Map<String, Double>,
-        entryCounts: Map<String, Int>,
-        categoryIcons: Map<String, String>,
-        categoriesById: Map<Long, com.example.cardtally.model.Category>,
-        categoriesByName: Map<String, com.example.cardtally.model.Category>
-    ): Pair<List<StatisticsAdapter.StatisticsAdapterItem>, Double> =
-        StatisticsRankingBuilder.build(normalizedStats, entryCounts, categoryIcons, categoriesById, categoriesByName)
-
     private fun loadCategoryStatistics() {
         val range = currentQueryRange()
         val expenseTotalMinor = if (range == null) {
@@ -372,48 +484,42 @@ class StatisticsFragment : Fragment() {
         } else {
             databaseHelper.getTotalByTypeAndDateRangeMinor(TYPE_INCOME, range.startDate!!, range.endDate!!)
         }
-        val stats = if (range == null) {
-            databaseHelper.getCategoryStatistics(currentStatsType)
-        } else {
-            databaseHelper.getCategoryStatisticsByDateRange(currentStatsType, range.startDate!!, range.endDate!!)
-        }
-        val categoryRecords = filteredRecordsForType(range, currentStatsType)
-        val entryCounts = mutableMapOf<String, Int>()
-        categoryRecords.forEach { record ->
-            setOfNotNull(
-                record.category.takeIf { it.isNotBlank() },
-                record.categoryNameSnapshot?.takeIf { it.isNotBlank() }
-            ).forEach { categoryName ->
-                entryCounts[categoryName] = (entryCounts[categoryName] ?: 0) + 1
-            }
-        }
+        val totals = databaseHelper.getCategoryTotalsById(
+            currentStatsType, range?.startDate, range?.endDate
+        )
         val categories = databaseHelper.getAllCategories()
         val categoriesById = categories.associateBy { it.id }
-        val categoriesByName = categories.associateBy { it.name }
-        val categoryIcons = mutableMapOf<String, String>()
-        categories.forEach { category ->
-            category.icon?.takeIf { it.isNotBlank() }?.let { categoryIcons[category.name] = it }
-        }
-        categoryRecords.forEach { record ->
-            val category = record.categoryId?.let(categoriesById::get)
-                ?: record.categoryNameSnapshot?.let(categoriesByName::get)
-                ?: categoriesByName[record.category]
-            val icon = category?.icon?.takeIf {
-                it.isNotBlank() && it != "tabler_category" && it != "ic_category_other"
+        fun pathFor(id: Long, snapshot: String): String {
+            val names = mutableListOf<String>()
+            val visited = mutableSetOf<Long>()
+            var category = categoriesById[id]
+            while (category != null && visited.add(category.id)) {
+                names.add(category.name)
+                category = category.parentId?.let(categoriesById::get)
             }
-            if (icon != null && record.category.isNotBlank()) {
-                categoryIcons[record.category] = icon
-            }
+            return if (names.isEmpty()) snapshot else names.asReversed().joinToString(" / ")
         }
-
-        val normalizedStats = stats.mapKeys { (label, _) ->
-            if (currentStatsType == TYPE_EXPENSE) {
+        val labels = mutableSetOf<String>()
+        val rows = totals.map { total ->
+            val path = pathFor(total.categoryId, total.categoryPathSnapshot)
+            val label = if (labels.add(path)) path else "$path (#${total.categoryId})"
+            StatisticsRankingBuilder.CategoryRow(
+                categoryId = total.categoryId,
+                label = label,
+                amount = Money.toMajorDouble(total.amountMinor) * if (currentStatsType == TYPE_EXPENSE) -1 else 1,
+                entryCount = total.entryCount,
+                iconName = categoriesById[total.categoryId]?.icon
+            )
+        }
+        val entryCounts = rows.associate { it.label to it.entryCount }
+        val normalizedStats = rows.associate { row ->
+            val label = row.label
+            val prefixed = if (currentStatsType == TYPE_EXPENSE) {
                 getString(R.string.statistics_expense_prefix, label)
             } else {
                 getString(R.string.statistics_income_prefix, label)
             }
-        }.mapValues { (_, amount) ->
-            if (currentStatsType == TYPE_EXPENSE) -amount else amount
+            prefixed to row.amount
         }
 
         textSummaryExpense.text = "¥${Money.formatYuan(expenseTotalMinor)}"
@@ -433,55 +539,68 @@ class StatisticsFragment : Fragment() {
             cardStatisticsRanking.visibility = View.GONE
             recyclerStatistics.visibility = View.GONE
             textEmpty.text = getString(R.string.ledger_empty_statistics)
-            layoutChartLegend.removeAllViews()
-            viewStatisticsChart.submitData(
-                emptyList(),
-                getString(R.string.ledger_chart_total_label),
-                "¥${Money.formatYuan(0L)}"
-            )
-            val emptyChartDates = buildChartAxisDates()
-            viewStatisticsLineChart.submitData(
-                emptyChartDates.map { LedgerLineChartView.Point(0f, it) }
-            )
-            bindLineAxis(emptyChartDates)
+            bindChart(emptyMap(), emptyMap())
         } else {
             textEmpty.visibility = View.GONE
             cardStatisticsRanking.visibility = View.VISIBLE
             recyclerStatistics.visibility = View.VISIBLE
             if (currentRankingMode == StatisticsRankingMode.PRIMARY) {
-                val (parentItems, overallTotal) = buildPrimaryAdapterItems(
-                    normalizedStats,
-                    entryCounts,
-                    categoryIcons,
-                    categoriesById,
-                    categoriesByName
-                )
+                val (parentItems, overallTotal) = StatisticsRankingBuilder.buildById(rows, categoriesById)
                 statisticsAdapter.updateTreeData(parentItems, overallTotal)
             } else {
-                statisticsAdapter.updateFlatData(normalizedStats, entryCounts, categoryIcons)
+                statisticsAdapter.updateFlatItems(rows.map { row ->
+                    StatisticsAdapter.StatisticsAdapterItem(
+                        type = StatisticsAdapter.ItemType.SECONDARY,
+                        label = row.label,
+                        amount = row.amount,
+                        categoryId = row.categoryId,
+                        entryCount = row.entryCount,
+                        iconName = row.iconName
+                    )
+                })
             }
-            bindChart(normalizedStats, entryCounts, categoryRecords)
+            bindChart(normalizedStats, entryCounts)
         }
     }
 
     private fun loadRecordDetails() {
         val range = currentQueryRange()
-        val records = if (range == null) {
-            databaseHelper.getAllRecords()
-        } else {
-            databaseHelper.getRecordsByDateRange(range.startDate!!, range.endDate!!)
-        }
+        detailRecords.clear()
+        detailLoading = false
+        appendRecordDetailPage(databaseHelper.getRecordsPage(range?.startDate, range?.endDate))
+    }
 
-        if (records.isEmpty()) {
+    private fun loadMoreRecordDetails() {
+        val cursor = detailCursor ?: return
+        if (detailLoading) return
+        detailLoading = true
+        val range = currentQueryRange()
+        val page = databaseHelper.getRecordsPage(range?.startDate, range?.endDate, after = cursor)
+        detailLoading = false
+        appendRecordDetailPage(page)
+    }
+
+    private fun appendRecordDetailPage(page: DatabaseHelper.RecordListPage) {
+        detailCursor = page.nextCursor
+        detailRecords.addAll(page.records)
+
+        if (detailRecords.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
             recyclerRecords.visibility = View.GONE
             textEmpty.text = getString(R.string.ledger_empty_records)
         } else {
             textEmpty.visibility = View.GONE
             recyclerRecords.visibility = View.VISIBLE
-            val dateGroups = groupRecordsByDate(records)
+            val dateGroups = groupRecordsByDate(detailRecords)
             if (recordsAdapter == null) {
                 recordsAdapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
+                    override fun onOpenDetails(record: Record) {
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.fragment_container, RecordDetailFragment.newInstance(record.id))
+                            .addToBackStack(null)
+                            .commit()
+                    }
+
                     override fun onEdit(record: Record) {
                         val editFragment = EditRecordFragment.newInstance(record.id)
                         parentFragmentManager.beginTransaction()
@@ -502,7 +621,7 @@ class StatisticsFragment : Fragment() {
             } else {
                 recordsAdapter?.updateDateGroups(dateGroups)
             }
-            recyclerRecords.adapter = recordsAdapter
+            if (recyclerRecords.adapter !== recordsAdapter) recyclerRecords.adapter = recordsAdapter
         }
     }
 
@@ -518,24 +637,15 @@ class StatisticsFragment : Fragment() {
         if (currentPeriodPreset != LedgerPeriodPreset.ALL) {
             return
         }
-        val records = databaseHelper.getAllRecords()
-        currentRange = if (records.isEmpty()) {
+        val bounds = databaseHelper.getRecordDateBounds()
+        currentRange = if (bounds == null) {
             LedgerDateRange(null, null)
         } else {
-            LedgerDateRange(records.last().date, records.first().date)
+            LedgerDateRange(bounds.first, bounds.second)
         }
     }
 
-    private fun filteredRecordsForType(range: LedgerDateRange?, type: Int): List<Record> {
-        val records = if (range == null) {
-            databaseHelper.getAllRecords()
-        } else {
-            databaseHelper.getRecordsByDateRange(range.startDate!!, range.endDate!!)
-        }
-        return records.filter { it.type == type }
-    }
-
-    private fun bindChart(stats: Map<String, Double>, entryCounts: Map<String, Int>, records: List<Record>) {
+    private fun bindChart(stats: Map<String, Double>, entryCounts: Map<String, Int>) {
         val context = requireContext()
         val palette = listOf(
             ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary),
@@ -568,29 +678,20 @@ class StatisticsFragment : Fragment() {
 
         if (showLineChart) {
             val range = currentRange
-            val filteredRecords = records.filter { record ->
-                !range.startDate.isNullOrBlank() && !range.endDate.isNullOrBlank() &&
-                        record.date >= range.startDate && record.date <= range.endDate
-            }
+            val grouped = databaseHelper.getTrendByDate(
+                currentStatsType, range.startDate!!, range.endDate!!,
+                currentPeriodPreset == LedgerPeriodPreset.YEAR
+            )
 
             val dateLabelToAmount: Map<String, Float>
             if (currentPeriodPreset == LedgerPeriodPreset.YEAR) {
-                val grouped = filteredRecords
-                    .groupBy { it.date.substring(0, 7) }
-                    .mapValues { (_, recs) -> recs.sumOf { kotlin.math.abs(it.amount) }.toFloat() }
-
                 val startYear = range.startDate?.substring(0, 4)?.toIntOrNull() ?: return
-                val endYear = range.endDate?.substring(0, 4)?.toIntOrNull() ?: startYear
 
                 dateLabelToAmount = (1..12).associate { month ->
-                    val monthKey = String.format("%04d-%02d", startYear, month)
-                    monthKey to (grouped[monthKey] ?: 0f)
+                    val monthKey = String.format(java.util.Locale.US, "%04d-%02d", startYear, month)
+                    monthKey to Money.toMajorDouble(grouped[monthKey] ?: 0L).toFloat()
                 }
             } else {
-                val grouped = filteredRecords
-                    .groupBy { it.date }
-                    .mapValues { (_, recs) -> recs.sumOf { kotlin.math.abs(it.amount) }.toFloat() }
-
                 val startCal = LedgerPeriodHelper.parseIsoDate(range.startDate!!)
                 val endCal = LedgerPeriodHelper.parseIsoDate(range.endDate!!)
                 val calendar = java.util.Calendar.getInstance().apply { time = startCal }
@@ -598,7 +699,7 @@ class StatisticsFragment : Fragment() {
                 val dateLabelToAmountBuilder = mutableMapOf<String, Float>()
                 while (!calendar.time.after(endCal)) {
                     val isoDate = LedgerPeriodHelper.formatIsoDateForExternal(calendar.time)
-                    dateLabelToAmountBuilder[isoDate] = grouped[isoDate] ?: 0f
+                    dateLabelToAmountBuilder[isoDate] = Money.toMajorDouble(grouped[isoDate] ?: 0L).toFloat()
                     calendar.add(java.util.Calendar.DAY_OF_YEAR, 1)
                 }
                 dateLabelToAmount = dateLabelToAmountBuilder
@@ -709,25 +810,6 @@ class StatisticsFragment : Fragment() {
             }
             layoutLineAxis.addView(label)
         }
-    }
-
-    private fun buildChartAxisDates(): List<String> {
-        val start = currentRange.startDate ?: return emptyList()
-        val end = currentRange.endDate ?: return emptyList()
-        if (currentPeriodPreset == LedgerPeriodPreset.YEAR) {
-            val year = start.substring(0, 4)
-            return (1..12).map { month -> String.format(java.util.Locale.US, "%s-%02d", year, month) }
-        }
-
-        val startCalendar = LedgerPeriodHelper.parseIsoDate(start)
-        val endCalendar = LedgerPeriodHelper.parseIsoDate(end)
-        val dates = mutableListOf<String>()
-        val calendar = Calendar.getInstance().apply { time = startCalendar }
-        while (!calendar.time.after(endCalendar)) {
-            dates += LedgerPeriodHelper.formatIsoDateForExternal(calendar.time)
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-        }
-        return dates
     }
 
     private fun formatWeekAxisLabel(date: String): String {
@@ -1044,7 +1126,7 @@ class StatisticsFragment : Fragment() {
 
     private fun updateToggleButtonState(button: MaterialButton, selected: Boolean) {
         val context = button.context
-        val background = ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_light)
+        val background = android.graphics.Color.TRANSPARENT
         val textColor = if (selected) {
             ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSecondaryContainer)
         } else {
@@ -1062,11 +1144,11 @@ class StatisticsFragment : Fragment() {
     }
 
     private fun resolveAllRange(): LedgerDateRange {
-        val records = databaseHelper.getAllRecords()
-        return if (records.isEmpty()) {
+        val bounds = databaseHelper.getRecordDateBounds()
+        return if (bounds == null) {
             LedgerDateRange(null, null)
         } else {
-            LedgerDateRange(records.last().date, records.first().date)
+            LedgerDateRange(bounds.first, bounds.second)
         }
     }
 

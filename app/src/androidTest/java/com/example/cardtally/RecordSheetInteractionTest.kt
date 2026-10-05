@@ -49,7 +49,7 @@ class RecordSheetInteractionTest {
     fun portrait_amountKeypadSwitchesCleanlyToDateAndAssetSheets() {
         withRecordForm { scenario ->
             verifySheetSwitch(scenario, R.id.row_date, R.id.recycler_date_calendar, R.id.btn_confirm_date)
-            verifySheetSwitch(scenario, R.id.row_asset, R.id.recycler_assets)
+            verifySheetSwitch(scenario, R.id.row_asset, R.id.recycler_assets, R.id.button_record_asset_none)
         }
     }
 

@@ -23,6 +23,7 @@ import com.example.cardtally.util.Money
 import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.AssetTypeIconCatalog
+import com.example.cardtally.util.BankIconCatalog
 import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.example.cardtally.util.SwipeToEditDeleteHelper
 
@@ -73,15 +74,15 @@ class AssetAdapter(
             }
         )
         holder.textAssetAmount.visibility = if (showAmount) View.VISIBLE else View.GONE
+        // Active groups own the surface. Archived swipe rows need an opaque cover over their actions.
         holder.cardContent.setCardBackgroundColor(
-            ThemeColorHelper.resolveThemeAwareResource(
-                context,
-                if (pickerMode && asset.id == selectedAssetId) {
-                    R.color.primaryContainer_light
-                } else {
-                    R.color.surface_light
-                }
-            )
+            if (pickerMode && asset.id == selectedAssetId) {
+                ThemeColorHelper.resolveThemeAwareResource(context, R.color.primaryContainer_light)
+            } else if (archivedMode) {
+                ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_light)
+            } else {
+                android.graphics.Color.TRANSPARENT
+            }
         )
         (holder.itemView.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
             params.leftMargin = 0
@@ -95,8 +96,8 @@ class AssetAdapter(
         val fallbackPresentation = when (asset.type) {
             0 -> AssetPresentation("现金", R.drawable.ic_asset, R.color.warning_primary, R.color.warning_container)
             1 -> AssetPresentation("银行卡", R.drawable.ic_asset, null, R.color.surface_container_lowest)
-            2 -> AssetPresentation("支付宝", R.drawable.ic_asset, null, R.color.surface_container_lowest)
-            3 -> AssetPresentation("微信", R.drawable.ic_asset, null, R.color.surface_container_lowest)
+            2 -> AssetPresentation("支付宝", R.drawable.ic_asset_brand_alipay, null, R.color.surface_container_lowest)
+            3 -> AssetPresentation("微信", R.drawable.ic_asset_brand_wechat, null, R.color.surface_container_lowest)
             else -> AssetPresentation("其他", R.drawable.ic_asset, null, R.color.surface_container_lowest)
         }
         val selectedIcon = asset.categoryIconName
@@ -106,14 +107,16 @@ class AssetAdapter(
             }
             ?.let(TablerIconCatalog::resourceId)
             ?.takeIf { it != 0 }
+        val bank = BankIconCatalog.forCard(asset.categoryLabel, asset.categoryIconName, asset.type)
         val standardIcon = AssetTypeIconCatalog.resourceForLabel(asset.categoryLabel)
         val presentation = fallbackPresentation.copy(
-            label = asset.categoryLabel.takeIf { it.isNotBlank() } ?: fallbackPresentation.label,
-            iconRes = standardIcon ?: selectedIcon ?: fallbackPresentation.iconRes
+            label = bank?.let { BankIconCatalog.displayLabel(context, asset.categoryLabel, it) }
+                ?: asset.categoryLabel.takeIf { it.isNotBlank() } ?: fallbackPresentation.label,
+            iconRes = bank?.iconRes ?: standardIcon ?: selectedIcon ?: fallbackPresentation.iconRes
         )
         holder.textAssetType.text = presentation.label
-        holder.imageAssetIcon.setImageResource(presentation.iconRes)
-        holder.imageAssetIcon.setColorFilter(
+        AssetTypeIconCatalog.bindIcon(
+            holder.imageAssetIcon, presentation.iconRes, 18,
             presentation.iconTint?.let { ThemeColorHelper.resolveThemeAwareResource(context, it) }
                 ?: ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary)
         )

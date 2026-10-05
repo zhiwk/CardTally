@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -16,7 +15,6 @@ import com.example.cardtally.model.Record
 import com.example.cardtally.util.Money
 import com.example.cardtally.util.LedgerDisplayHelper
 import com.example.cardtally.util.TablerIconCatalog
-import com.example.cardtally.util.SwipeToEditDeleteHelper
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.IncomeExpenseColorScheme
 
@@ -40,6 +38,7 @@ class DateGroupAdapter(
     }
 
     interface OnRecordActionListener {
+        fun onOpenDetails(record: Record)
         fun onEdit(record: Record)
         fun onDelete(record: Record)
         fun onMultiSelectChanged(selectedCount: Int)
@@ -262,10 +261,7 @@ class DateGroupAdapter(
         private val textLedger: TextView = itemView.findViewById(R.id.text_ledger)
         private val textAmount: TextView = itemView.findViewById(R.id.text_amount)
         private val recordDivider: View = itemView.findViewById(R.id.view_record_divider)
-        private val btnEdit: ImageButton = itemView.findViewById(R.id.btn_edit)
-        private val btnDelete: ImageButton = itemView.findViewById(R.id.btn_delete)
 
-        private var swipeHelper: SwipeToEditDeleteHelper? = null
         private val rowLayoutController = RecordRowLayoutController(itemView)
         private var currentRecord: Record? = null
         private val categoryIcons = mapOf(
@@ -292,7 +288,8 @@ class DateGroupAdapter(
             showAssetRoute: Boolean = true,
             showDivider: Boolean = false,
             roundTopCorners: Boolean = false,
-            roundBottomCorners: Boolean = false
+            roundBottomCorners: Boolean = false,
+            parentProvidesBackground: Boolean = false
         ) {
             currentRecord = record
             recordDivider.visibility = if (showDivider) View.VISIBLE else View.GONE
@@ -385,9 +382,20 @@ class DateGroupAdapter(
             rowLayoutController.attach()
             rowLayoutController.applyLayout()
 
+            layoutActions.visibility = View.GONE
+            cardContent.setOnTouchListener(null)
+            cardContent.translationX = 0f
+            cardContent.setOnClickListener(null)
+            cardContent.setOnLongClickListener(null)
+            itemView.setOnClickListener(null)
+            itemView.setOnLongClickListener(null)
+
+            // Date-group cards already paint the neutral fill; adding it again compounds opacity.
+            // Recompute on every bind so reuse by a standalone list restores its own background.
+            val neutralCardColor = if (parentProvidesBackground) android.graphics.Color.TRANSPARENT
+                else ThemeColorHelper.resolveCardSurface(context)
             if (isMultiSelect) {
                 layoutActions.visibility = View.GONE
-                swipeHelper = null
 
                 if (isSelected) {
                     setCardBackground(
@@ -397,31 +405,25 @@ class DateGroupAdapter(
                     )
                 } else {
                     setCardBackground(
-                        ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_lowest),
+                        neutralCardColor,
                         roundTopCorners,
                         roundBottomCorners
                     )
                 }
 
-                itemView.setOnClickListener {
+                cardContent.setOnClickListener {
                     currentRecord?.let { listener.onToggleMultiSelect(it) }
                 }
             } else {
                 setCardBackground(
-                    ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_surface_lowest),
+                    neutralCardColor,
                     roundTopCorners,
                     roundBottomCorners
                 )
 
-                swipeHelper = SwipeToEditDeleteHelper(
-                    cardContent,
-                    layoutActions,
-                    onEdit = { listener.onEdit(record) },
-                    onDelete = { listener.onDelete(record) },
-                    onClick = { listener.onEdit(record) }
-                )
+                cardContent.setOnClickListener { listener.onOpenDetails(record) }
 
-                itemView.setOnLongClickListener {
+                cardContent.setOnLongClickListener {
                     currentRecord?.let { listener.onEnterMultiSelectMode(it) }
                     true
                 }

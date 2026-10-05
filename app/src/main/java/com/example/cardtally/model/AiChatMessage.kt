@@ -13,5 +13,7 @@ data class AiChatMessage(
     /** Model reasoning/thinking text for assistant replies; null when none was returned. */
     val reasoning: String? = null,
     val isError: Boolean = false,
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    /** Financial-tool turns stay local and are never replayed into ordinary chat. */
+    val isLocalOnly: Boolean = false
 )

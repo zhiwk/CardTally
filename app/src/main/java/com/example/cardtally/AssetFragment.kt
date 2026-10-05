@@ -21,12 +21,14 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.util.Money
 import com.example.cardtally.util.IncomeExpenseColorScheme
+import com.example.cardtally.util.ThemeColorHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class AssetFragment : Fragment() {
     interface AssetSelectionHost {
         fun onAssetSelected(asset: Asset)
         fun onAssetSelectionClosed()
+        fun onNoAssetSelected() = Unit
     }
 
     private lateinit var recyclerAssets: RecyclerView
@@ -313,11 +315,14 @@ class AssetFragment : Fragment() {
         private const val ARG_EXCLUDED_ASSET_ID = "excluded_asset_id"
         private const val ARG_SELECTED_ASSET_ID = "selected_asset_id"
         private const val ARG_PICKER_LEDGER_ID = "picker_ledger_id"
+        private const val ARG_ALLOW_NO_ASSET = "allow_no_asset"
 
-        fun newPickerInstance(excludedAssetId: Long?, selectedAssetId: Long?, ledgerId: Long? = null): AssetFragment =
+        fun newPickerInstance(excludedAssetId: Long?, selectedAssetId: Long?, ledgerId: Long? = null,
+                              allowNoAsset: Boolean = false): AssetFragment =
             AssetFragment().apply {
                 arguments = Bundle().apply {
                     putBoolean(ARG_PICKER_MODE, true)
+                    putBoolean(ARG_ALLOW_NO_ASSET, allowNoAsset)
                     excludedAssetId?.let { putLong(ARG_EXCLUDED_ASSET_ID, it) }
                     selectedAssetId?.let { putLong(ARG_SELECTED_ASSET_ID, it) }
                     ledgerId?.let { putLong(ARG_PICKER_LEDGER_ID, it) }
@@ -420,6 +425,7 @@ class AssetFragment : Fragment() {
         btnArchive.setOnClickListener {
             (parentFragment as? AssetSelectionHost)?.onAssetSelectionClosed()
         }
+        configureNoAssetRow(view)
         view.findViewById<androidx.core.widget.NestedScrollView>(R.id.asset_content_scroll).apply {
             isNestedScrollingEnabled = true
             setPadding(0, 0, 0, (16 * resources.displayMetrics.density).toInt())
@@ -430,6 +436,41 @@ class AssetFragment : Fragment() {
             (16 * resources.displayMetrics.density).toInt(),
             0
         )
+    }
+
+    private fun configureNoAssetRow(view: View) {
+        if (arguments?.getBoolean(ARG_ALLOW_NO_ASSET, false) != true) return
+        view.findViewById<View>(R.id.card_record_asset_none).visibility = View.VISIBLE
+        // Use the actual asset-row layout without creating a placeholder asset or category.
+        val row = view.findViewById<View>(R.id.button_record_asset_none)
+        val holder = AssetAdapter.AssetViewHolder(row)
+        val selected = selectedAssetId == null
+        holder.textAssetName.setText(R.string.record_asset_no_selection)
+        holder.textAssetType.visibility = View.GONE
+        holder.textAssetAmount.visibility = View.GONE
+        holder.archivedActions.visibility = View.GONE
+        holder.imageAssetIcon.setImageResource(R.drawable.tabler_wallet_off)
+        holder.imageAssetIcon.setColorFilter(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorPrimary))
+        holder.iconContainer.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.surface_container_low)
+        )
+        holder.iconAssetPinned.apply {
+            visibility = if (selected) View.VISIBLE else View.GONE
+            setImageResource(R.drawable.tabler_check)
+            contentDescription = null
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        holder.cardContent.apply {
+            setCardBackgroundColor(if (selected) {
+                ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.primaryContainer_light)
+            } else {
+                android.graphics.Color.TRANSPARENT
+            })
+            isSelected = selected
+        }
+        row.isSelected = selected
+        row.isFocusable = true
+        row.setOnClickListener { (parentFragment as? AssetSelectionHost)?.onNoAssetSelected() }
     }
 
     private fun showAddDialog() {

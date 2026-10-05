@@ -75,6 +75,24 @@ import kotlin.math.roundToInt
 open class AddRecordFragment : Fragment() {
     companion object {
         private const val KEY_RECORD_ID = "record_id"
+        private const val KEY_INITIAL_FORM_STATE = "initial_form_state"
+        private const val KEY_ENTRY_LEDGER_ID = "entry_ledger_id"
+
+        fun newTransferInstance(sourceAssetId: Long, ledgerId: Long, date: String): AddRecordFragment {
+            val initialState = RecordFormState.DEFAULT.copy(
+                recordType = RecordType.TRANSFER,
+                selectedDate = date,
+                selectedAssetId = sourceAssetId,
+                transferSourceAssetId = sourceAssetId,
+                hasEnteredTransfer = true
+            )
+            return AddRecordFragment().apply {
+                arguments = Bundle().apply {
+                    putBundle(KEY_INITIAL_FORM_STATE, Bundle().also(initialState::writeTo))
+                    putLong(KEY_ENTRY_LEDGER_ID, ledgerId)
+                }
+            }
+        }
     }
 
     private lateinit var textDate: TextView
@@ -154,7 +172,12 @@ open class AddRecordFragment : Fragment() {
     }
 
     internal fun onAssetPickerSelected(assetId: Long, selectDestination: Boolean) {
-        val asset = currentAssets.firstOrNull { it.id == assetId } ?: return
+        val asset = if (assetId == RecordAssetPickerBottomSheetFragment.NO_ASSET_ID) {
+            if (currentType == 2 || selectDestination) return
+            null
+        } else {
+            currentAssets.firstOrNull { it.id == assetId } ?: return
+        }
         if (selectDestination) selectedDestinationAsset = asset else selectedAsset = asset
         rememberCurrentAssetSelection()
         updateAssetSummary()
@@ -288,7 +311,11 @@ open class AddRecordFragment : Fragment() {
             updateTransferRows()
         }
 
-        databaseHelper = DatabaseHelper(requireContext())
+        val entryLedgerId = DatabaseHelper(requireContext()).use { helper ->
+            editingRecordId?.let(helper::getLedgerIdForRecord)
+                ?: arguments?.takeIf { it.containsKey(KEY_ENTRY_LEDGER_ID) }?.getLong(KEY_ENTRY_LEDGER_ID)
+        }
+        databaseHelper = DatabaseHelper(requireContext(), entryLedgerId)
 
         view.findViewById<RecyclerView>(R.id.recycler_quick_categories)?.let { quickGrid ->
             val columns = (resources.displayMetrics.widthPixels / resources.displayMetrics.density / 72f)
@@ -423,7 +450,10 @@ open class AddRecordFragment : Fragment() {
                 openSheet = RecordSheet.NONE,
                 pendingCategoryId = null
             )
-        } ?: RecordFormState.DEFAULT.copy(selectedDate = databaseHelper.getCurrentDate())
+        } ?: RecordFormState.readFrom(
+            arguments?.getBundle(KEY_INITIAL_FORM_STATE),
+            RecordFormState.DEFAULT.copy(selectedDate = databaseHelper.getCurrentDate())
+        )
         val restoredState = RecordFormState.readFrom(savedInstanceState, defaultState)
         currentType = when (restoredState.recordType) {
             RecordType.INCOME -> 1
@@ -690,7 +720,7 @@ open class AddRecordFragment : Fragment() {
         standardCategoryAdapter?.updateCategories(standardModeCategories)
         standardCategoryAdapter?.setSelectedCategoryId(
             selectedCategory?.id,
-            expandParent = !isQuickCategoryMode && isEditing()
+            expandParent = !isQuickCategoryMode && (isEditing() || selectedCategoryId != null)
         )
         updateQuickCategoryEmpty()
         updateCategorySummary()
@@ -956,7 +986,9 @@ open class AddRecordFragment : Fragment() {
         RecordAssetPickerBottomSheetFragment.newInstance(
             selectDestination = selectDestination,
             excludedAssetId = if (selectDestination) selectedAsset?.id else selectedDestinationAsset?.id,
-            selectedAssetId = selectedId
+            selectedAssetId = selectedId,
+            ledgerId = databaseHelper.getCurrentLedger()?.id,
+            allowNoAsset = currentType != 2
         ).show(parentFragmentManager, RecordAssetPickerBottomSheetFragment.TAG)
     }
 
@@ -1090,7 +1122,7 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun updateAssetSummary() {
-        val noneLabel = if (isQuickMode) R.string.record_asset_none_short else R.string.record_asset_none
+        val noneLabel = R.string.record_asset_no_selection
         textAssetSingleValue?.text = selectedAsset?.name ?: getString(noneLabel)
         val sourceSelected = selectedAsset != null
         textAssetValue.text = selectedAsset?.name
@@ -1389,8 +1421,34 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun openFreshRecord() {
+        rememberCurrentAssetSelection()
+        val initialState = RecordFormState.DEFAULT.copy(
+            recordType = when (currentType) {
+                1 -> RecordType.INCOME
+                2 -> RecordType.TRANSFER
+                else -> RecordType.EXPENSE
+            },
+            selectedDate = selectedDate,
+            selectedCategoryId = selectedCategory?.id,
+            selectedAssetId = selectedAsset?.id,
+            selectedDestinationAssetId = selectedDestinationAsset?.id,
+            expenseAssetId = expenseAssetId,
+            incomeAssetId = incomeAssetId,
+            transferSourceAssetId = transferSourceAssetId,
+            transferDestinationAssetId = transferDestinationAssetId,
+            hasEnteredExpense = hasEnteredExpense,
+            hasEnteredIncome = hasEnteredIncome,
+            hasEnteredTransfer = hasEnteredTransfer
+        )
+        val nextLedgerId = databaseHelper.getCurrentLedger()?.id
+        val nextRecord = AddRecordFragment().apply {
+            arguments = Bundle().apply {
+                putBundle(KEY_INITIAL_FORM_STATE, Bundle().also(initialState::writeTo))
+                nextLedgerId?.let { putLong(KEY_ENTRY_LEDGER_ID, it) }
+            }
+        }
         parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, AddRecordFragment())
+            .replace(R.id.fragment_container, nextRecord)
             .commit()
     }
 

@@ -21,10 +21,14 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 class AssetRecordsFragment : Fragment() {
     private lateinit var textTitle: TextView
     private lateinit var textAssetInfo: TextView
+    private lateinit var textAssetBalance: TextView
     private lateinit var textEmpty: TextView
     private lateinit var recyclerRecords: RecyclerView
     private lateinit var databaseHelper: DatabaseHelper
     private var adapter: DateGroupAdapter? = null
+    private val loadedRecords = mutableListOf<Record>()
+    private var nextCursor: DatabaseHelper.RecordListCursor? = null
+    private var loadingPage = false
 
     private var assetName: String = ""
     private var assetAmount: Double = 0.0
@@ -66,6 +70,7 @@ class AssetRecordsFragment : Fragment() {
 
         textTitle = view.findViewById(R.id.text_title)
         textAssetInfo = view.findViewById(R.id.text_asset_info)
+        textAssetBalance = view.findViewById(R.id.text_asset_balance)
         textEmpty = view.findViewById(R.id.text_empty)
         recyclerRecords = view.findViewById(R.id.recycler_records)
 
@@ -84,7 +89,7 @@ class AssetRecordsFragment : Fragment() {
             showAssetMoreMenu(anchor)
         }
         view.findViewById<View>(R.id.action_transfer).setOnClickListener {
-            Toast.makeText(requireContext(), R.string.toast_transfer_not_configured, Toast.LENGTH_SHORT).show()
+            openTransfer()
         }
         view.findViewById<View>(R.id.action_record).setOnClickListener {
             parentFragmentManager.beginTransaction()
@@ -92,15 +97,58 @@ class AssetRecordsFragment : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
-        view.findViewById<TextView>(R.id.text_asset_balance).text = "¥${Money.formatYuan(assetAmount)}"
-
         databaseHelper = DatabaseHelper(requireContext())
         val canManage = assetId == 0L || databaseHelper.canManageAsset(assetId)
         view.findViewById<ImageButton>(R.id.btn_edit_asset).visibility = if (canManage) View.VISIBLE else View.GONE
         view.findViewById<ImageButton>(R.id.btn_more_asset).visibility = if (canManage) View.VISIBLE else View.GONE
 
         textTitle.text = getString(R.string.asset_records_title)
-        
+        renderAssetSummary()
+
+        recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
+        recyclerRecords.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                val manager = recyclerView.layoutManager as LinearLayoutManager
+                if (dy > 0 && manager.findLastVisibleItemPosition() >= (adapter?.itemCount ?: 0) - 5) {
+                    loadNextPage()
+                }
+            }
+        })
+
+        loadRecords()
+
+        return view
+    }
+
+    private fun openTransfer() {
+        val ledgerId = databaseHelper.getCurrentLedger()?.id
+        // Availability follows the current ledger's shared asset pool, not ownership.
+        val source = databaseHelper.getAllAssets().firstOrNull { it.id == assetId && assetId > 0L }
+        if (ledgerId == null || source == null) {
+            Toast.makeText(requireContext(), R.string.error_transfer_source_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
+        parentFragmentManager.beginTransaction()
+            .replace(
+                R.id.fragment_container,
+                AddRecordFragment.newTransferInstance(source.id, ledgerId, databaseHelper.getCurrentDate())
+            )
+            .addToBackStack(null)
+            .commit()
+    }
+
+    private fun refreshAssetSummary() {
+        databaseHelper.getAllAssets().firstOrNull { it.id == assetId }?.let { asset ->
+            assetName = asset.name
+            assetAmount = asset.amount
+            assetType = asset.type
+            assetCategoryLabel = asset.categoryLabel
+        }
+        renderAssetSummary()
+    }
+
+    private fun renderAssetSummary() {
+        textAssetBalance.text = "¥${Money.formatYuan(assetAmount)}"
         val fallbackTypeText = when (assetType) {
             0 -> getString(R.string.asset_type_cash)
             1 -> getString(R.string.asset_type_bank)
@@ -110,12 +158,6 @@ class AssetRecordsFragment : Fragment() {
         }
         val typeText = assetCategoryLabel.ifBlank { fallbackTypeText }
         textAssetInfo.text = String.format("%s · %s", typeText, assetName)
-
-        recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
-
-        loadRecords()
-
-        return view
     }
 
     private fun showAssetMoreMenu(anchor: View) {
@@ -189,6 +231,7 @@ class AssetRecordsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         hideBottomNav()
+        refreshAssetSummary()
         loadRecords()
     }
 
@@ -198,15 +241,33 @@ class AssetRecordsFragment : Fragment() {
     }
 
     private fun loadRecords() {
-        val records = if (assetId != 0L) {
-            // Asset history is a property of the asset id: every ledger that
-            // references it, including transfers in and out, each record once.
-            databaseHelper.getAllRecordsByAssetId(assetId)
-        } else {
-            databaseHelper.getRecordsByAssetSource(assetName)
-        }
+        loadedRecords.clear()
+        nextCursor = null
+        loadingPage = false
+        appendPage(databaseHelper.getAssetRecordsPage(assetId.takeIf { it != 0L }, assetName))
+    }
 
-        if (records.isEmpty()) {
+    private fun loadNextPage() {
+        val cursor = nextCursor ?: return
+        if (loadingPage) return
+        loadingPage = true
+        val page = databaseHelper.getAssetRecordsPage(assetId.takeIf { it != 0L }, assetName, cursor)
+        loadingPage = false
+        appendPage(page)
+    }
+
+    private fun appendPage(page: DatabaseHelper.RecordListPage) {
+        nextCursor = page.nextCursor
+        val ledgerNames = databaseHelper.getLedgerNamesByIds(
+            page.records.mapNotNull { it.ledgerId }.toSet()
+        )
+        page.records.forEach { record ->
+            record.ledgerName = record.ledgerId?.let { ledgerNames[it] }
+                ?: getString(R.string.asset_records_unknown_ledger)
+        }
+        loadedRecords.addAll(page.records)
+
+        if (loadedRecords.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
             recyclerRecords.visibility = View.GONE
             adapter = null
@@ -215,14 +276,7 @@ class AssetRecordsFragment : Fragment() {
             textEmpty.visibility = View.GONE
             recyclerRecords.visibility = View.VISIBLE
 
-            val ledgerNames = databaseHelper.getLedgerNamesByIds(
-                records.mapNotNull { it.ledgerId }.toSet()
-            )
-            records.forEach { record ->
-                record.ledgerName = record.ledgerId?.let { ledgerNames[it] }
-                    ?: getString(R.string.asset_records_unknown_ledger)
-            }
-            val dateGroups = groupRecordsByDate(records)
+            val dateGroups = groupRecordsByDate(loadedRecords)
             val categoryIconsById = databaseHelper.getAllCategories()
                 .filter { !it.icon.isNullOrEmpty() }
                 .associate { it.id to it.icon.orEmpty() }
@@ -231,6 +285,13 @@ class AssetRecordsFragment : Fragment() {
                 adapter = DateGroupAdapter(
                     dateGroups,
                     object : DateGroupAdapter.OnRecordActionListener {
+                        override fun onOpenDetails(record: Record) {
+                            parentFragmentManager.beginTransaction()
+                                .replace(R.id.fragment_container, RecordDetailFragment.newInstance(record.id))
+                                .addToBackStack(null)
+                                .commit()
+                        }
+
                         override fun onEdit(record: Record) {
                             val editFragment = EditRecordFragment.newInstance(record.id)
                             parentFragmentManager.beginTransaction()

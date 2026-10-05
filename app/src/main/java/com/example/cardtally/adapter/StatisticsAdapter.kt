@@ -16,7 +16,7 @@ import com.example.cardtally.util.normalizeStatisticsCategoryLabel
 import com.example.cardtally.util.Money
 
 class StatisticsAdapter(
-    private val onCategoryClick: (String) -> Unit = {}
+    private val onCategoryClick: (String, Long?) -> Unit = { _, _ -> }
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -35,6 +35,7 @@ class StatisticsAdapter(
         val type: ItemType,
         val label: String,
         val amount: Double,
+        val categoryId: Long? = null,
         val entryCount: Int = 0,
         val iconName: String? = null,
         val parentLabel: String? = null,
@@ -45,7 +46,7 @@ class StatisticsAdapter(
     private val displayItems = mutableListOf<StatisticsAdapterItem>()
     private val rawParentItems = mutableListOf<StatisticsAdapterItem>()
     private val rawFlatItems = mutableListOf<StatisticsAdapterItem>()
-    private val expandedParentLabels = mutableSetOf<String>()
+    private val expandedParentKeys = mutableSetOf<String>()
     private var isTreeMode = false
     private var overallTotalAmount = 0.0
 
@@ -85,11 +86,19 @@ class StatisticsAdapter(
         rebuildDisplayList()
     }
 
+    fun updateFlatItems(items: List<StatisticsAdapterItem>) {
+        isTreeMode = false
+        rawFlatItems.clear()
+        rawFlatItems.addAll(items.sortedByDescending { kotlin.math.abs(it.amount) })
+        overallTotalAmount = items.sumOf { kotlin.math.abs(it.amount) }
+        rebuildDisplayList()
+    }
+
     private fun rebuildDisplayList() {
         displayItems.clear()
         if (isTreeMode) {
             rawParentItems.forEach { parent ->
-                val isExpanded = expandedParentLabels.contains(parent.label)
+                val isExpanded = expandedParentKeys.contains(parent.categoryId?.toString() ?: parent.label)
                 displayItems.add(parent.copy(isExpanded = isExpanded))
                 if (isExpanded) {
                     displayItems.addAll(parent.children)
@@ -176,19 +185,20 @@ class StatisticsAdapter(
                 )
                 holder.itemView.setOnClickListener {
                     if (item.children.isNotEmpty()) {
-                        if (expandedParentLabels.contains(item.label)) {
-                            expandedParentLabels.remove(item.label)
+                        val key = item.categoryId?.toString() ?: item.label
+                        if (expandedParentKeys.contains(key)) {
+                            expandedParentKeys.remove(key)
                         } else {
-                            expandedParentLabels.add(item.label)
+                            expandedParentKeys.add(key)
                         }
                         rebuildDisplayList()
                     } else {
-                        onCategoryClick(normalizedLabel)
+                        onCategoryClick(normalizedLabel, item.categoryId)
                     }
                 }
             } else {
                 holder.imageExpandArrow.visibility = View.GONE
-                holder.itemView.setOnClickListener { onCategoryClick(normalizedLabel) }
+                holder.itemView.setOnClickListener { onCategoryClick(normalizedLabel, item.categoryId) }
             }
         } else if (holder is ChildViewHolder) {
             holder.textLabel.text = normalizedLabel
@@ -202,7 +212,7 @@ class StatisticsAdapter(
             holder.progressBar.progressTintList = ColorStateList.valueOf(amountColor)
             holder.textAmount.setTextColor(amountColor)
 
-            holder.itemView.setOnClickListener { onCategoryClick(normalizedLabel) }
+            holder.itemView.setOnClickListener { onCategoryClick(normalizedLabel, item.categoryId) }
         }
     }
 

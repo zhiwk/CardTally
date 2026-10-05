@@ -10,6 +10,7 @@ import android.widget.NumberPicker
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -20,10 +21,10 @@ import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.LedgerDateRange
 import com.example.cardtally.util.LedgerPeriodHelper
+import com.example.cardtally.util.Money
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import kotlin.math.abs
 
 class CalendarFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
@@ -34,7 +35,9 @@ class CalendarFragment : Fragment() {
     private lateinit var calendarAdapter: LedgerCalendarAdapter
     private lateinit var recordsRecycler: RecyclerView
     private lateinit var recordsCard: View
-    private var monthRecords: List<Record> = emptyList()
+    private val dayRecords = mutableListOf<Record>()
+    private var dayCursor: DatabaseHelper.RecordListCursor? = null
+    private var dayLoading = false
     private var year = Calendar.getInstance().get(Calendar.YEAR)
     private var month = Calendar.getInstance().get(Calendar.MONTH)
     private var selectedDate = ""
@@ -98,8 +101,19 @@ class CalendarFragment : Fragment() {
             adapter = calendarAdapter
         }
         recordsRecycler.layoutManager = LinearLayoutManager(requireContext())
+        val calendarScroll = view.findViewById<NestedScrollView>(R.id.scroll_calendar_content)
+        calendarScroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            val remaining = calendarScroll.getChildAt(0).height - scrollY - calendarScroll.height
+            val preloadDistance = (300 * resources.displayMetrics.density).toInt()
+            if (remaining < preloadDistance) loadNextDayPage()
+        }
         renderMonth()
         return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::calendarAdapter.isInitialized) renderMonth()
     }
 
     private fun renderMonth() {
@@ -113,40 +127,40 @@ class CalendarFragment : Fragment() {
             set(Calendar.DAY_OF_MONTH, 1)
         }.getActualMaximum(Calendar.DAY_OF_MONTH)
         val monthEnd = String.format(Locale.US, "%04d-%02d-%02d", year, month + 1, lastDay)
-        monthRecords = databaseHelper.getRecordsByDateRange(monthStart, monthEnd)
-        val totals = monthRecords.groupBy { it.date }
-            .mapValues { (_, records) ->
-                records.fold(0.0 to 0.0) { totals, record ->
-                    if (record.type == 1) totals.first + abs(record.amount) to totals.second
-                    else totals.first to totals.second + abs(record.amount)
-                }
-            }
+        val totals = databaseHelper.getDailyTotals(monthStart, monthEnd)
         val cells = LedgerPeriodHelper.buildMonthCells(
             year,
             month,
             LedgerDateRange(selectedDate, selectedDate)
         ).map { day ->
             val total = day.isoDate?.let { totals[it] }
-            day.copy(income = total?.first ?: 0.0, expense = total?.second ?: 0.0)
+            day.copy(
+                income = Money.toMajorDouble(total?.incomeMinor ?: 0L),
+                expense = Money.toMajorDouble(total?.expenseMinor ?: 0L)
+            )
         }
         calendarAdapter.submitList(cells)
         renderSelectedDay()
     }
 
     private fun renderSelectedDay() {
-        val records = databaseHelper.getRecordsByDateRange(selectedDate, selectedDate)
-            .sortedByDescending { it.sortOrder }
-        val income = records.filter { it.type == 1 }.sumOf { it.amount }
-        val expense = records.filter { it.type == 0 }.sumOf { it.amount }
+        val totals = databaseHelper.getDailyTotals(selectedDate, selectedDate)[selectedDate]
+        val income = Money.toMajorDouble(totals?.incomeMinor ?: 0L)
+        val expense = Money.toMajorDouble(totals?.expenseMinor ?: 0L)
         textSelectedDate.text = selectedDate
         textSelectedSummary.text = getString(R.string.calendar_day_summary, expense, income)
-        textEmpty.visibility = if (records.isEmpty()) View.VISIBLE else View.GONE
-        recordsCard.visibility = if (records.isEmpty()) View.GONE else View.VISIBLE
-        if (records.isEmpty()) return
-
-        recordsRecycler.adapter = CalendarRecordAdapter(
-            records,
+        dayRecords.clear()
+        dayCursor = null
+        dayLoading = false
+        val listener =
             object : DateGroupAdapter.OnRecordActionListener {
+                override fun onOpenDetails(record: Record) {
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, RecordDetailFragment.newInstance(record.id))
+                        .addToBackStack(null)
+                        .commit()
+                }
+
                 override fun onEdit(record: Record) {
                     parentFragmentManager.beginTransaction()
                         .replace(R.id.fragment_container, EditRecordFragment.newInstance(record.id))
@@ -157,7 +171,7 @@ class CalendarFragment : Fragment() {
                 override fun onDelete(record: Record) {
                     databaseHelper.deleteRecord(record.id)
                     Toast.makeText(requireContext(), R.string.toast_delete_success, Toast.LENGTH_SHORT).show()
-                    renderSelectedDay()
+                    renderMonth()
                 }
 
                 override fun onMultiSelectChanged(selectedCount: Int) = Unit
@@ -165,7 +179,27 @@ class CalendarFragment : Fragment() {
                 override fun onEnterMultiSelectMode(record: Record) = Unit
                 override fun onToggleMultiSelect(record: Record) = Unit
             }
+        recordsRecycler.adapter = CalendarRecordAdapter(dayRecords, listener)
+        appendDayPage(databaseHelper.getRecordsPage(selectedDate, selectedDate))
+    }
+
+    private fun loadNextDayPage() {
+        val cursor = dayCursor ?: return
+        if (dayLoading) return
+        dayLoading = true
+        val page = databaseHelper.getRecordsPage(
+            selectedDate, selectedDate, after = cursor
         )
+        dayLoading = false
+        appendDayPage(page)
+    }
+
+    private fun appendDayPage(page: DatabaseHelper.RecordListPage) {
+        dayCursor = page.nextCursor
+        dayRecords.addAll(page.records)
+        (recordsRecycler.adapter as CalendarRecordAdapter).notifyDataSetChanged()
+        textEmpty.visibility = if (dayRecords.isEmpty()) View.VISIBLE else View.GONE
+        recordsCard.visibility = if (dayRecords.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private class CalendarRecordAdapter(

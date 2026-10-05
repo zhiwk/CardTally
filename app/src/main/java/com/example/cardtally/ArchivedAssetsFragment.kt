@@ -116,7 +116,7 @@ class ArchivedAssetsFragment : Fragment() {
                 cardElevation = 0f
                 strokeWidth = 0
                 setStrokeColor(Color.TRANSPARENT)
-                setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.surface_light))
+                setCardBackgroundColor(com.example.cardtally.util.ThemeColorHelper.resolveCardSurface(requireContext()))
                 layoutParams = LinearLayout.LayoutParams(-1, -2)
             }
             val recycler = RecyclerView(requireContext()).apply {

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
+    android:background="?attr/pageBackgroundColor"
     tools:context=".AddRecordFragment">
 
     <LinearLayout
@@ -113,7 +113,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                 app:cardBackgroundColor="@color/surface_light"
+                 app:cardBackgroundColor="?attr/cardSurfaceColor"
                   app:cardCornerRadius="12dp"
                  app:cardElevation="0dp"
                  app:strokeColor="@android:color/transparent"

@@ -44,6 +44,10 @@ class RecordEntryValidatorTest {
 
     @Test
     fun nonTransferRequiresLeafCategory() {
+        listOf(0, 1).forEach { type ->
+            assertTrue(RecordEntryValidator.validate(input(type = type, source = null, destination = null), decimalParser)
+                is RecordEntryValidator.Result.Valid)
+        }
         assertEquals(
             RecordEntryValidator.Error.CATEGORY_MUST_BE_LEAF,
             (RecordEntryValidator.validate(input(leaf = false), decimalParser) as RecordEntryValidator.Result.Invalid).error

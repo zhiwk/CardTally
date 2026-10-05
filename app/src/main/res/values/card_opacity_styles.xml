@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Five-percent steps; only the neutral card fill changes. -->
+    <style name="ThemeOverlay.CardTally.CardOpacity.P0" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p0</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P5" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p5</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P10" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p10</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P15" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p15</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P20" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p20</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P25" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p25</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P30" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p30</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P35" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p35</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P40" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p40</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P45" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p45</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P50" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p50</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P55" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p55</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P60" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p60</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P65" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p65</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P70" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p70</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P75" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p75</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P80" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p80</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P85" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p85</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P90" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p90</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P95" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p95</item>
+    </style>
+    <style name="ThemeOverlay.CardTally.CardOpacity.P100" parent="">
+        <item name="cardSurfaceColor">@color/wallpaper_card_p100</item>
+    </style>
+</resources>

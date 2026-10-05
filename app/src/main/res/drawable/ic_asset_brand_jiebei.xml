@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brand mark redrawn as vectors from the user-provided asset reference. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="36dp" android:height="36dp" android:viewportWidth="36" android:viewportHeight="36">
+    <path android:fillColor="#FFFFFF" android:pathData="M18,0a18,18 0,1 0,0 36a18,18 0,1 0,0 -36" />
+    <path android:fillColor="#079DDD" android:pathData="M8,7h10a1.8,1.8 0,0 1,0 3.6H8a1.8,1.8 0,0 1,0 -3.6 M8,13h10a1.8,1.8 0,0 1,0 3.6H8a1.8,1.8 0,0 1,0 -3.6 M8,19h13l7,4l4,0l-2,8l-6,-2l-9,3l-10,-5C2,26 3,24 5,24l8,3l6,-2C21,24 20,22 18,22l-7,1Z" />
+</vector>

@@ -15,7 +15,7 @@ object MiniMaxPayloadParser {
     fun buildRequestBody(model: String, messages: List<AiChatMessage>): String {
         val jsonMessages = JSONArray()
         messages
-            .filter { !it.isError && it.content.isNotBlank() }
+            .filter { !it.isError && !it.isLocalOnly && it.content.isNotBlank() }
             .forEach { message ->
                 jsonMessages.put(
                     JSONObject()
@@ -25,7 +25,7 @@ object MiniMaxPayloadParser {
             }
 
         return JSONObject()
-            .put("model", model.trim().ifBlank { MiniMaxConfig.DEFAULT_MODEL })
+            .put("model", model.trim())
             .put("messages", jsonMessages)
             .put("stream", true)
             .toString()

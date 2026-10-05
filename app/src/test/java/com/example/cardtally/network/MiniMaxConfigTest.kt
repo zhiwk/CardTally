@@ -42,15 +42,16 @@ class MiniMaxConfigTest {
     }
 
     @Test
-    fun normalized_usesFullRequestUrlDefaultWhenBlank() {
+    fun normalized_keepsBlankConfigurationIncomplete() {
         val normalized = MiniMaxConfig(
             apiKey = "secret-key",
             model = "",
             requestUrl = "   "
         ).normalized()
 
-        assertEquals(MiniMaxConfig.DEFAULT_MODEL, normalized.model)
-        assertEquals(MiniMaxConfig.DEFAULT_REQUEST_URL, normalized.requestUrl)
+        assertEquals("", normalized.model)
+        assertEquals("", normalized.requestUrl)
+        assertFalse(normalized.isComplete())
     }
 
     @Test

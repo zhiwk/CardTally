@@ -21,6 +21,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.CategoryHierarchySettingsHelper
 import com.example.cardtally.util.TablerIconCatalog
+import com.example.cardtally.util.ThemeColorHelper
 import com.google.android.material.tabs.TabLayout
 
 class CategoryManageFragment : Fragment() {
@@ -85,15 +86,27 @@ class CategoryManageFragment : Fragment() {
         }
         ItemTouchHelper(reorderCallback).attachToRecyclerView(recyclerCategories)
 
+        for (position in 0 until tabLayout.tabCount) {
+            val tab = tabLayout.getTabAt(position) ?: continue
+            tab.setCustomView(R.layout.item_category_type_tab)
+            (tab.customView as? TextView)?.text = tab.text
+        }
+        tabLayout.getTabAt(currentType)?.select()
+        for (position in 0 until tabLayout.tabCount) {
+            styleTypeTab(tabLayout.getTabAt(position), position == currentType)
+        }
         loadCategories()
 
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 currentType = tab?.position ?: 0
+                styleTypeTab(tab, true)
                 loadCategories()
             }
 
-            override fun onTabUnselected(tab: TabLayout.Tab?) = Unit
+            override fun onTabUnselected(tab: TabLayout.Tab?) {
+                styleTypeTab(tab, false)
+            }
 
             override fun onTabReselected(tab: TabLayout.Tab?) = Unit
         })
@@ -103,6 +116,16 @@ class CategoryManageFragment : Fragment() {
         }
 
         return view
+    }
+
+    private fun styleTypeTab(tab: TabLayout.Tab?, selected: Boolean) {
+        val label = tab?.customView as? TextView ?: return
+        label.setTextColor(
+            if (selected) ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface)
+            else ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted)
+        )
+        label.paint.isFakeBoldText = selected
+        label.invalidate()
     }
 
     override fun onResume() {

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="wallpaper_card_default">@color/wallpaper_card_p80</color>
+    <color name="wallpaper_scrim">#C0121416</color>
+    <color name="wallpaper_card_p0">#001D2024</color>
+    <color name="wallpaper_card_p5">#0D1D2024</color>
+    <color name="wallpaper_card_p10">#1A1D2024</color>
+    <color name="wallpaper_card_p15">#261D2024</color>
+    <color name="wallpaper_card_p20">#331D2024</color>
+    <color name="wallpaper_card_p25">#401D2024</color>
+    <color name="wallpaper_card_p30">#4D1D2024</color>
+    <color name="wallpaper_card_p35">#591D2024</color>
+    <color name="wallpaper_card_p40">#661D2024</color>
+    <color name="wallpaper_card_p45">#731D2024</color>
+    <color name="wallpaper_card_p50">#801D2024</color>
+    <color name="wallpaper_card_p55">#8C1D2024</color>
+    <color name="wallpaper_card_p60">#991D2024</color>
+    <color name="wallpaper_card_p65">#A61D2024</color>
+    <color name="wallpaper_card_p70">#B31D2024</color>
+    <color name="wallpaper_card_p75">#BF1D2024</color>
+    <color name="wallpaper_card_p80">#CC1D2024</color>
+    <color name="wallpaper_card_p85">#D91D2024</color>
+    <color name="wallpaper_card_p90">#E61D2024</color>
+    <color name="wallpaper_card_p95">#F21D2024</color>
+    <color name="wallpaper_card_p100">#FF1D2024</color>
+</resources>

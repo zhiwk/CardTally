@@ -68,8 +68,8 @@ function Assert-DeviceGroupCoverage {
     if ($duplicate.Count -gt 0 -or $difference.Count -gt 0) {
         throw "Device test groups do not cover each androidTest class exactly once. Duplicates: $($duplicate.Name -join ', '); differences: $($difference.InputObject -join ', ')"
     }
-    if (($deviceTestGroups | ForEach-Object { $_.Expected } | Measure-Object -Sum).Sum -ne 130) {
-        throw 'Expected device test counts must total 130; review the group manifest.'
+    if (($deviceTestGroups | ForEach-Object { $_.Expected } | Measure-Object -Sum).Sum -ne 147) {
+        throw 'Expected device test counts must total 147; review the group manifest.'
     }
 }
 
@@ -234,7 +234,15 @@ try {
             for ($attempt = 1; $attempt -le 2; $attempt++) {
                 $remaining = [int][Math]::Ceiling(($deadline - (Get-Date)).TotalSeconds)
                 if ($remaining -le 0) { $exitCode = 124; break }
-                $timeout = [Math]::Min($DeviceGroupTimeoutSeconds, $remaining)
+                $groupTimeout = if ($group.ContainsKey('TimeoutSeconds')) {
+                    [int]$group.TimeoutSeconds
+                } else {
+                    $DeviceGroupTimeoutSeconds
+                }
+                if ($groupTimeout -lt 1 -or $groupTimeout -gt 600) {
+                    throw "Invalid timeout for device group $($group.Name): $groupTimeout seconds."
+                }
+                $timeout = [Math]::Min($groupTimeout, $remaining)
                 $name = "device-$($group.Name)" + $(if ($attempt -gt 1) { '-retry' } else { '' })
                 $started = Get-Date
                 $exitCode = Invoke-Stage $name @(

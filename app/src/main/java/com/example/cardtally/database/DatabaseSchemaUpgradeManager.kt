@@ -10,6 +10,7 @@ internal class DatabaseSchemaUpgradeManager(
     private val initializeAssetSortOrders: (SQLiteDatabase) -> Unit,
     private val createRecurringTableAndIndex: (SQLiteDatabase) -> Unit,
     private val normalizeLegacyAssetCategory: (SQLiteDatabase) -> Unit,
+    private val normalizeLegacyCardBank: (SQLiteDatabase) -> Unit,
     private val recurringScheduleColumns: List<ColumnMigration>,
     private val recurringTableRebuild: TableRebuildMigration,
     private val createPerformanceIndices: (SQLiteDatabase) -> Unit,
@@ -63,6 +64,29 @@ internal class DatabaseSchemaUpgradeManager(
             recurringTableRebuild.apply(db)
             db.execSQL(config.recurringDueIndexSql)
         }
+        if (oldVersion < 38) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS backup_import_map (" +
+                    "source_id TEXT NOT NULL, table_name TEXT NOT NULL, source_row_id TEXT NOT NULL, " +
+                    "local_row_id INTEGER NOT NULL, " +
+                    "PRIMARY KEY (source_id, table_name, source_row_id))"
+            )
+        }
+        if (oldVersion < 39) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS backup_asset_snapshot (" +
+                    "source_id TEXT NOT NULL, source_row_id TEXT NOT NULL, " +
+                    "local_row_id INTEGER NOT NULL, source_amount INTEGER NOT NULL, " +
+                    "PRIMARY KEY (source_id, source_row_id))"
+            )
+        }
+        if (oldVersion < 40) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS backup_pending_settings (" +
+                    "id INTEGER PRIMARY KEY CHECK(id = 1), payload TEXT NOT NULL)"
+            )
+        }
+        if (oldVersion < 41) normalizeLegacyCardBank(db)
         createPerformanceIndices(db)
     }
 }

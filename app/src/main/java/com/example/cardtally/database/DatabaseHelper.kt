@@ -21,7 +21,9 @@ import java.util.Date
 import java.util.Locale
 
 class DatabaseHelper(
-    private val appContext: Context
+    private val appContext: Context,
+    // Page-local scope for cross-ledger record details/editing; never changes LedgerSession.
+    private val ledgerIdOverride: Long? = null
 ) : SQLiteOpenHelper(appContext, DATABASE_NAME, null, DATABASE_VERSION) {
 
     private val recurringRepository by lazy {
@@ -176,6 +178,14 @@ class DatabaseHelper(
                     arrayOf("其他信用", "tabler_credit_card", "借呗 / 其他信用")
                 )
             },
+            normalizeLegacyCardBank = { db ->
+                db.execSQL(
+                    "UPDATE $TABLE_ASSETS SET $COLUMN_ASSET_CATEGORY_ICON_NAME = ? " +
+                        "WHERE $COLUMN_ASSET_CATEGORY_LABEL IN (?, ?, ?) " +
+                        "OR ($COLUMN_ASSET_TYPE = 1 AND TRIM($COLUMN_ASSET_CATEGORY_LABEL) = '')",
+                    arrayOf(com.example.cardtally.util.BankIconCatalog.OTHER_ICON_NAME, "储蓄卡", "银行卡", "信用卡")
+                )
+            },
             recurringScheduleColumns = listOf(
                 DatabaseSchemaUpgradeManager.ColumnMigration(
                     TABLE_RECURRING_RECORDS,
@@ -252,7 +262,10 @@ class DatabaseHelper(
                 CREATE_TABLE_RECORD_DELETION_UNDO,
                 CREATE_TABLE_AI_CHAT_SESSIONS,
                 CREATE_TABLE_AI_CHAT_MESSAGES,
-                CREATE_TABLE_RECURRING_RECORDS
+                CREATE_TABLE_RECURRING_RECORDS,
+                CREATE_TABLE_BACKUP_IMPORT_MAP,
+                CREATE_TABLE_BACKUP_ASSET_SNAPSHOT,
+                CREATE_TABLE_BACKUP_PENDING_SETTINGS
             ),
             createIndices = listOf(
                 CREATE_INDEX_RECORDS_LEDGER_DATE,
@@ -304,8 +317,8 @@ class DatabaseHelper(
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
         private val RECURRING_PROCESS_LOCK = Any()
-        /** v35 splits the combined credit asset label. */
-        private const val DATABASE_VERSION = 37
+        /** v42 adds local-only AI messages and the native-confirmed record operation audit. */
+        private const val DATABASE_VERSION = 42
         const val MAX_RECORD_QUERY_LIMIT = 200
         const val RECORD_UNDO_WINDOW_MS = 10_000L
 
@@ -356,6 +369,13 @@ class DatabaseHelper(
             ledgerId = COLUMN_LEDGER_ID,
             date = COLUMN_DATE,
             sortOrder = COLUMN_SORT_ORDER,
+            amount = COLUMN_AMOUNT,
+            categoryId = COLUMN_RECORD_CATEGORY_ID,
+            category = COLUMN_CATEGORY,
+            categoryPathSnapshot = COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT,
+            description = COLUMN_DESCRIPTION,
+            type = COLUMN_TYPE,
+            fee = COLUMN_RECORD_FEE,
             sourceAssetId = COLUMN_RECORD_ASSET_ID,
             destinationAssetId = COLUMN_RECORD_DESTINATION_ASSET_ID,
             assetSource = COLUMN_ASSET_SOURCE
@@ -611,6 +631,8 @@ class DatabaseHelper(
             date = COLUMN_DATE,
             amount = COLUMN_AMOUNT,
             category = COLUMN_CATEGORY,
+            categoryId = COLUMN_RECORD_CATEGORY_ID,
+            categoryPathSnapshot = COLUMN_RECORD_CATEGORY_PATH_SNAPSHOT,
             type = COLUMN_TYPE,
             fee = COLUMN_RECORD_FEE
         )
@@ -686,6 +708,20 @@ class DatabaseHelper(
             "$COLUMN_LEDGER_ID INTEGER NOT NULL DEFAULT 1, " +
             "$COLUMN_SORT_ORDER INTEGER NOT NULL)"
 
+        private const val CREATE_TABLE_BACKUP_IMPORT_MAP =
+            "CREATE TABLE IF NOT EXISTS backup_import_map (" +
+                "source_id TEXT NOT NULL, table_name TEXT NOT NULL, source_row_id TEXT NOT NULL, " +
+                "local_row_id INTEGER NOT NULL, " +
+                "PRIMARY KEY (source_id, table_name, source_row_id))"
+        private const val CREATE_TABLE_BACKUP_ASSET_SNAPSHOT =
+            "CREATE TABLE IF NOT EXISTS backup_asset_snapshot (" +
+                "source_id TEXT NOT NULL, source_row_id TEXT NOT NULL, " +
+                "local_row_id INTEGER NOT NULL, source_amount INTEGER NOT NULL, " +
+                "PRIMARY KEY (source_id, source_row_id))"
+        private const val CREATE_TABLE_BACKUP_PENDING_SETTINGS =
+            "CREATE TABLE IF NOT EXISTS backup_pending_settings (" +
+                "id INTEGER PRIMARY KEY CHECK(id = 1), payload TEXT NOT NULL)"
+
         private const val CREATE_TABLE_LEDGERS =
             "CREATE TABLE $TABLE_LEDGERS (" +
             "$COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -721,6 +757,7 @@ class DatabaseHelper(
             "$COLUMN_AI_CHAT_MESSAGE_CONTENT TEXT NOT NULL, " +
             "$COLUMN_AI_CHAT_MESSAGE_REASONING TEXT, " +
             "$COLUMN_AI_CHAT_MESSAGE_IS_ERROR INTEGER DEFAULT 0, " +
+            "local_only INTEGER NOT NULL DEFAULT 0, " +
             "$COLUMN_AI_CHAT_MESSAGE_CREATED_AT INTEGER NOT NULL)"
 
         private const val CREATE_TABLE_RECURRING_RECORDS =
@@ -784,12 +821,28 @@ class DatabaseHelper(
         val nextCursor: RecordPageCursor?
     )
 
+    data class RecordListCursor(val date: String, val sortOrder: Int, val recordId: Long)
+
+    data class RecordListPage(val records: List<Record>, val nextCursor: RecordListCursor?)
+
+    data class RecordSearchTotals(val expenseMinor: Long, val incomeMinor: Long)
+
+    data class CategoryTotal(
+        val categoryId: Long,
+        val amountMinor: Long,
+        val entryCount: Int,
+        val categoryPathSnapshot: String
+    )
+
+    data class DailyTotals(val incomeMinor: Long, val expenseMinor: Long)
+
     data class RecordDeletionToken(
         val value: String,
         val expiresAtEpochMs: Long
     )
 
     private fun currentLedgerId(): Long {
+        ledgerIdOverride?.let { return it }
         val saved = LedgerSession.getCurrentId(appContext)
         if (saved != null && ledgerReadRepository.containsLedger(saved)) return saved
         val id = ledgerReadRepository.getMasterLedgerId()
@@ -862,13 +915,25 @@ class DatabaseHelper(
 
     fun getCurrentLedger(): com.example.cardtally.model.Ledger? = getLedgers().firstOrNull { it.id == currentLedgerId() }
 
-    override fun onCreate(db: SQLiteDatabase) = schemaCreator.create(db)
+    override fun onCreate(db: SQLiteDatabase) {
+        schemaCreator.create(db)
+        db.execSQL(com.example.cardtally.ai.AiRecordAuditStore.CREATE_TABLE_SQL)
+    }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         schemaUpgradeManager.upgrade(db, oldVersion)
+        if (oldVersion < 42) {
+            ensureColumn(db, TABLE_AI_CHAT_MESSAGES, "local_only",
+                "ALTER TABLE $TABLE_AI_CHAT_MESSAGES ADD COLUMN local_only INTEGER NOT NULL DEFAULT 0")
+            db.execSQL(com.example.cardtally.ai.AiRecordAuditStore.CREATE_TABLE_SQL)
+        }
     }
 
     private fun resetAllDataForVerification(db: SQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS ai_record_audit")
+        db.execSQL("DROP TABLE IF EXISTS backup_pending_settings")
+        db.execSQL("DROP TABLE IF EXISTS backup_asset_snapshot")
+        db.execSQL("DROP TABLE IF EXISTS backup_import_map")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_RECORD_DELETION_UNDO")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_RECORDS")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_LEDGER_SHARED_ASSETS")
@@ -1286,6 +1351,29 @@ class DatabaseHelper(
     fun getRecordsByDateRange(startDate: String, endDate: String): List<Record> =
         recordReadRepository.byDateRange(startDate, endDate)
 
+    fun getRecordDateBounds(): Pair<String, String>? = recordReadRepository.dateBounds()
+
+    fun getRecordsPage(
+        startDate: String? = null,
+        endDate: String? = null,
+        keyword: String? = null,
+        categoryId: Long? = null,
+        after: RecordListCursor? = null,
+        descendingWithinDate: Boolean = false,
+        limit: Int = MAX_RECORD_QUERY_LIMIT
+    ): RecordListPage = recordReadRepository.listPage(
+        startDate, endDate, keyword, categoryId, after, descendingWithinDate, limit
+    )
+
+    fun getSearchTotals(
+        startDate: String?, endDate: String?, keyword: String?, categoryId: Long?
+    ): RecordSearchTotals = recordReadRepository.searchTotals(startDate, endDate, keyword, categoryId)
+
+    /** Asset ID queries span every ledger that references the asset; name fallback stays ledger-scoped. */
+    fun getAssetRecordsPage(
+        assetId: Long?, assetSource: String?, after: RecordListCursor? = null
+    ): RecordListPage = recordReadRepository.assetPage(assetId, assetSource, after)
+
     fun getTodayRecordsPage(
         todayDate: String = getCurrentDate(),
         after: RecordPageCursor? = null
@@ -1403,11 +1491,22 @@ class DatabaseHelper(
     fun mergeLedgerInto(sourceLedgerId: Long, targetLedgerId: Long): Boolean =
         ledgerWriteRepository.mergeLedgerInto(sourceLedgerId, targetLedgerId)
 
+    /** Legacy name-keyed query retained for callers that still need its old contract; ranking uses IDs. */
     fun getCategoryStatistics(type: Int): Map<String, Double> =
         recordStatisticsRepository.categoryStatistics(type)
 
     fun getCategoryStatisticsByDateRange(type: Int, startDate: String, endDate: String): Map<String, Double> =
         recordStatisticsRepository.categoryStatisticsByDateRange(type, startDate, endDate)
+
+    fun getCategoryTotalsById(type: Int, startDate: String?, endDate: String?):
+        List<CategoryTotal> =
+        recordStatisticsRepository.categoryTotalsById(type, startDate, endDate)
+
+    fun getTrendByDate(type: Int, startDate: String, endDate: String, byMonth: Boolean): Map<String, Long> =
+        recordStatisticsRepository.trendByDate(type, startDate, endDate, byMonth)
+
+    fun getDailyTotals(startDate: String, endDate: String): Map<String, DailyTotals> =
+        recordStatisticsRepository.dailyTotals(startDate, endDate)
 
     fun getMonthlyStatistics(type: Int, year: Int): Map<String, Double> =
         recordStatisticsRepository.monthlyStatistics(type, year)

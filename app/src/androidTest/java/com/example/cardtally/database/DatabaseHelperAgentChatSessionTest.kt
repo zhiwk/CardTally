@@ -120,6 +120,7 @@ class DatabaseHelperAgentChatSessionTest {
                 role = AiChatRole.ASSISTANT,
                 content = "回答",
                 reasoning = "思考内容",
+                isLocalOnly = true,
                 createdAt = 3_000L
             )
         )
@@ -136,5 +137,7 @@ class DatabaseHelperAgentChatSessionTest {
 
         assertEquals("思考内容", messages.first { it.role == AiChatRole.ASSISTANT }.reasoning)
         assertNull(messages.first { it.role == AiChatRole.USER }.reasoning)
+        assertTrue(messages.first { it.role == AiChatRole.ASSISTANT }.isLocalOnly)
+        org.junit.Assert.assertFalse(messages.first { it.role == AiChatRole.USER }.isLocalOnly)
     }
 }

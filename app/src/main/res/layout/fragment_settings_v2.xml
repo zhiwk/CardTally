@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
+    android:background="?attr/pageBackgroundColor"
     android:clipToPadding="false"
     android:paddingBottom="96dp">
 
@@ -28,11 +28,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            app:cardBackgroundColor="@color/surface_light"
+            app:cardBackgroundColor="?attr/cardSurfaceColor"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
             app:strokeWidth="0dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <LinearLayout android:id="@+id/card_theme" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:paddingHorizontal="16dp" android:paddingVertical="10dp" android:gravity="center_vertical" android:orientation="horizontal" android:background="?attr/selectableItemBackground" android:clickable="true" android:focusable="true">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/settings_theme" android:textColor="?attr/colorOnSurface" android:textSize="14sp" />
+                <TextView android:id="@+id/text_current_theme" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" />
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_marginStart="8dp" android:src="@drawable/ic_arrow_right" app:tint="?attr/colorOnSurfaceVariant" android:importantForAccessibility="no" />
+            </LinearLayout>
             <LinearLayout android:id="@+id/card_language" android:layout_width="match_parent" android:layout_height="48dp" android:paddingStart="16dp" android:paddingEnd="16dp" android:gravity="center_vertical" android:orientation="horizontal">
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/settings_language" android:textColor="?attr/colorOnSurface" android:textSize="14sp" />
                     <TextView android:id="@+id/text_current_language" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" />
@@ -73,7 +78,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            app:cardBackgroundColor="@color/surface_light"
+            app:cardBackgroundColor="?attr/cardSurfaceColor"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
             app:strokeWidth="0dp">
@@ -98,7 +103,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            app:cardBackgroundColor="@color/surface_light"
+            app:cardBackgroundColor="?attr/cardSurfaceColor"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
             app:strokeWidth="0dp">

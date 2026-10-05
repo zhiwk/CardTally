@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/pageBackgroundColor">
+
+    <include
+        android:id="@+id/appearance_header"
+        layout="@layout/view_secondary_header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_appearance"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="16dp"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/appearance_header">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="?attr/cardSurfaceColor"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingBottom="16dp">
+
+                    <TextView
+                        android:id="@+id/text_solid_background"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="8dp"
+                        android:text="@string/theme_solid_background"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                    <RadioGroup
+                        android:id="@+id/group_theme"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radio_theme_light"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:minHeight="48dp"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/theme_light"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="16sp" />
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radio_theme_dark"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:minHeight="48dp"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/theme_dark"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="16sp" />
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radio_theme_system"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:minHeight="48dp"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/theme_system"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="16sp" />
+                    </RadioGroup>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="?attr/cardSurfaceColor"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingBottom="16dp">
+
+                    <TextView
+                        android:id="@+id/text_picture_background"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="8dp"
+                        android:text="@string/theme_wallpaper"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+                    <RadioGroup
+                        android:id="@+id/group_wallpaper_palette"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radio_wallpaper_light"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:minHeight="48dp"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/theme_light"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="16sp" />
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radio_wallpaper_dark"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:minHeight="48dp"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/theme_dark"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="16sp" />
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radio_wallpaper_system"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:buttonTint="?attr/colorPrimary"
+                            android:minHeight="48dp"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="8dp"
+                            android:text="@string/theme_system"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="16sp" />
+                    </RadioGroup>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="180dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginTop="8dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="0dp">
+
+                        <ImageView
+                            android:id="@+id/image_wallpaper_preview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:importantForAccessibility="no"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/appearance_wallpaper" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="8dp"
+                        android:text="@string/theme_wallpaper_library"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="14sp" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recycler_wallpaper_images"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="16dp"
+                        android:minHeight="148dp"
+                        android:nestedScrollingEnabled="false" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/button_choose_wallpaper"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="48dp"
+                            android:text="@string/theme_wallpaper_choose"
+                            app:cornerRadius="12dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/button_reset_wallpaper"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:minHeight="48dp"
+                            android:text="@string/theme_wallpaper_reset"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="12dp"
+                        android:text="@string/theme_wallpaper_description"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/text_card_opacity"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        android:text="@string/theme_card_opacity"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="16sp" />
+
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_card_opacity"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="16dp"
+                        android:contentDescription="@string/theme_card_opacity"
+                        android:minHeight="48dp"
+                        android:stepSize="5"
+                        android:valueFrom="0"
+                        android:valueTo="100"
+                        app:tickVisible="false" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="16dp"
+                        android:text="@string/theme_card_opacity_hint"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

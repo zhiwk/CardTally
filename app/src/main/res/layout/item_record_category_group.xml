@@ -8,7 +8,7 @@
     android:focusable="true"
     android:foreground="@android:color/transparent"
     android:layout_marginBottom="8dp"
-    app:cardBackgroundColor="@color/surface_light"
+    app:cardBackgroundColor="?attr/cardSurfaceColor"
     app:cardCornerRadius="@dimen/card_corner_radius_medium"
     app:cardElevation="0dp"
     app:cardForegroundColor="@android:color/transparent"
@@ -24,7 +24,7 @@
             android:id="@+id/record_category_group_header"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:background="@color/surface_light"
+            android:background="@android:color/transparent"
             android:gravity="center_vertical"
             android:paddingHorizontal="12dp">
 
@@ -80,7 +80,7 @@
             android:id="@+id/children_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/surface_light"
+            android:background="@android:color/transparent"
             android:orientation="vertical"
             android:paddingHorizontal="12dp"
             android:paddingBottom="12dp"

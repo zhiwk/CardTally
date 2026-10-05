@@ -53,7 +53,7 @@ CardTally 是一个原生 Android 记账应用，当前仓库中的工程事实�
 - 当前数据层是 `SQLite + DatabaseHelper`，不要默认已经迁移到 Room。
 - 当前语言切换基于应用级 locale，不要再额外引入第二套手写国际化状态。
 - 当前 AI 助手已经不是静态示例页，而是带 SQLite 持久化多会话的 MiniMax BYOK 聊天页；不要再按“单会话内存态”理解 `AgentFragment`。
-- 当前运行时只使用浅色外观；`ThemeHelper` 会把旧主题偏好归一为浅色，视觉约束以根目录 `DESIGN.md` 为准。
+- 当前支持浅色、深色和跟随系统外观；`ThemeHelper` 保留合法模式，缺省或非法值回退浅色，视觉约束以根目录 `DESIGN.md` 为准。
 - 当前底部导航由 `MainActivity` 统一控制一级 / 二级页显隐，不要在各个二级页里继续各自维护一套 hide/show 规则；`AgentFragment` 的会话抽屉显隐也应通过 `MainActivity` 的导航壳控制链路协同。
 - 当前新增与编辑记录共用 `fragment_add_record_quick.xml`；日期和资产使用底部选择器，分类在页内按标准或快速模式选择，金额键盘常驻。
 - README 和规划文档里出现的目标架构，不等于当前代码已经实现。

@@ -53,7 +53,7 @@ CardTally 是一款本地优先的原生 Android 记账与财务陪伴应用。�
 - 记账与财务数据以本地核算为核心，不能把本地优先改成依赖云端的基本流程。
 - 工程保持 Kotlin、Fragment、XML、Material Components 和手写 SQLite（`DatabaseHelper`）的现有路线。不要假定或顺手引入 Room、Navigation Component 或第二套架构。
 - 记录只能选择叶子分类。分类层级或展示调整不能破坏这条绑定规则。
-- 当前 AI 实现仍是可选的 MiniMax BYOK 持久化文本聊天。`docs/requirements/decisions/2026-09-26-ai-financial-tools.md` 已确认未来可选多 Provider 的账本/资产工具，但尚未实现；公开说明不得把计划写成现有能力。AI 不得直接操作记录、分类、转账、预算或执行自由文本指令；实现账本/资产工具必须满足该决策的逐请求外发授权、原生确认、业务规则复用及本地审计。
+- AI 财务能力必须按对应决策实施：账单工具见 `docs/requirements/decisions/2026-10-04-ai-record-tools.md`，账本/资产工具见 `docs/requirements/decisions/2026-09-26-ai-financial-tools.md`。模型只提出注册工具建议，写入须经用户原生确认；查询、上下文复用与外发授权按各自决策处理，继续遵守业务规则复用及可清除本地审计。不得把自由文本当执行授权，不得顺带开放分类、预算或资产/账本管理；公开说明以源码及当前快照核实能力，不能把计划写成现有能力。
 - 视觉方向以根目录 `DESIGN.md` 为准；旧的“静奢理财日记”方向已废弃。
 
 ## 5 工作流程与任务路由

@@ -25,7 +25,7 @@ class RecordAssetPickerBottomSheetFragment : BottomSheetDialogFragment(), AssetF
             childFragmentManager.beginTransaction()
                 .replace(
                     R.id.record_asset_picker_container,
-                    AssetFragment.newPickerInstance(excludedAssetId, selectedAssetId, pickerLedgerId)
+                    AssetFragment.newPickerInstance(excludedAssetId, selectedAssetId, pickerLedgerId, allowNoAsset)
                 )
                 .commitNow()
         }
@@ -43,10 +43,18 @@ class RecordAssetPickerBottomSheetFragment : BottomSheetDialogFragment(), AssetF
     }
 
     override fun onAssetSelected(asset: Asset) {
+        returnSelection(asset.id)
+    }
+
+    override fun onNoAssetSelected() {
+        if (allowNoAsset) returnSelection(NO_ASSET_ID)
+    }
+
+    private fun returnSelection(assetId: Long) {
         parentFragmentManager.setFragmentResult(
             RESULT_KEY,
             Bundle().apply {
-                putLong(RESULT_ASSET_ID, asset.id)
+                putLong(RESULT_ASSET_ID, assetId)
                 putBoolean(RESULT_SELECT_DESTINATION, selectDestination)
             }
         )
@@ -68,6 +76,9 @@ class RecordAssetPickerBottomSheetFragment : BottomSheetDialogFragment(), AssetF
     private val selectDestination: Boolean
         get() = requireArguments().getBoolean(ARG_SELECT_DESTINATION)
 
+    private val allowNoAsset: Boolean
+        get() = requireArguments().getBoolean(ARG_ALLOW_NO_ASSET) && !selectDestination
+
     private val excludedAssetId: Long?
         get() = requireArguments().getLong(ARG_EXCLUDED_ASSET_ID).takeIf { it > 0L }
 
@@ -82,19 +93,23 @@ class RecordAssetPickerBottomSheetFragment : BottomSheetDialogFragment(), AssetF
         const val RESULT_KEY = "record_asset_selected"
         const val RESULT_ASSET_ID = "selected_asset_id"
         const val RESULT_SELECT_DESTINATION = "select_destination"
+        const val NO_ASSET_ID = 0L
         private const val ARG_SELECT_DESTINATION = "select_destination"
         private const val ARG_EXCLUDED_ASSET_ID = "excluded_asset_id"
         private const val ARG_SELECTED_ASSET_ID = "selected_asset_id"
         private const val ARG_PICKER_LEDGER_ID = "picker_ledger_id"
+        private const val ARG_ALLOW_NO_ASSET = "allow_no_asset"
 
         fun newInstance(
             selectDestination: Boolean,
             excludedAssetId: Long?,
             selectedAssetId: Long?,
-            ledgerId: Long? = null
+            ledgerId: Long? = null,
+            allowNoAsset: Boolean = false
         ) = RecordAssetPickerBottomSheetFragment().apply {
             arguments = Bundle().apply {
                 putBoolean(ARG_SELECT_DESTINATION, selectDestination)
+                putBoolean(ARG_ALLOW_NO_ASSET, allowNoAsset)
                 excludedAssetId?.let { putLong(ARG_EXCLUDED_ASSET_ID, it) }
                 selectedAssetId?.let { putLong(ARG_SELECTED_ASSET_ID, it) }
                 ledgerId?.let { putLong(ARG_PICKER_LEDGER_ID, it) }

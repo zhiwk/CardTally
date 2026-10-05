@@ -1,6 +1,7 @@
 package com.example.cardtally.util
 
 import android.animation.ValueAnimator
+import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.view.MotionEvent
@@ -12,6 +13,7 @@ import android.view.animation.OvershootInterpolator
 import com.example.cardtally.R
 import java.lang.ref.WeakReference
 import kotlin.math.abs
+import kotlin.math.ceil
 
 class SwipeToEditDeleteHelper(
     private val cardContent: View,
@@ -20,7 +22,8 @@ class SwipeToEditDeleteHelper(
     private val onDelete: () -> Unit,
     private val onArchive: (() -> Unit)? = null,
     private val onFork: (() -> Unit)? = null,
-    private val onClick: (() -> Unit)? = null
+    private val onClick: (() -> Unit)? = null,
+    private val clipCoveredActions: Boolean = false
 ) {
     private var initialTouchX = 0f
     private var initialTouchY = 0f
@@ -34,6 +37,11 @@ class SwipeToEditDeleteHelper(
     private var isLongPressTriggered = false
     private val handler = Handler(Looper.getMainLooper())
     private var longPressRunnable: Runnable? = null
+    private var animator: ValueAnimator? = null
+    private var disposed = false
+    private val layoutListener = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+        updateActionReveal()
+    }
     
     private val touchSlop: Int
     private var maxSwipeDistance: Int
@@ -56,11 +64,17 @@ class SwipeToEditDeleteHelper(
         maxSwipeDistance = (fallbackButtonWidth * buttonCount).toInt()
         minVelocity = ViewConfiguration.get(cardContent.context).scaledMinimumFlingVelocity * 2f
 
-        cardContent.translationX = 0f
+        setTranslation(0f)
+        if (clipCoveredActions) {
+            cardContent.addOnLayoutChangeListener(layoutListener)
+            layoutActions.addOnLayoutChangeListener(layoutListener)
+        }
         layoutActions.post {
+            if (disposed) return@post
             if (layoutActions.width > 0) {
                 maxSwipeDistance = layoutActions.width
             }
+            updateActionReveal()
         }
         
         cardContent.setOnTouchListener { v, event ->
@@ -89,8 +103,10 @@ class SwipeToEditDeleteHelper(
     }
 
     private fun handleTouchEvent(v: View, event: MotionEvent): Boolean {
+        if (disposed) return false
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                animator?.cancel()
                 initialTouchX = event.rawX
                 initialTouchY = event.rawY
                 initialTranslationX = cardContent.translationX
@@ -160,11 +176,11 @@ class SwipeToEditDeleteHelper(
                     val newTranslationX = initialTranslationX + deltaX
                     
                     if (newTranslationX <= 0 && newTranslationX >= -maxSwipeDistance) {
-                        cardContent.translationX = newTranslationX
+                        setTranslation(newTranslationX)
                     } else if (newTranslationX > 0) {
-                        cardContent.translationX = newTranslationX * 0.3f
+                        setTranslation(newTranslationX * 0.3f)
                     } else {
-                        cardContent.translationX = -maxSwipeDistance + (newTranslationX + maxSwipeDistance) * 0.3f
+                        setTranslation(-maxSwipeDistance + (newTranslationX + maxSwipeDistance) * 0.3f)
                     }
                     return true
                 }
@@ -226,17 +242,19 @@ class SwipeToEditDeleteHelper(
     }
 
     private fun close(withOvershoot: Boolean) {
+        if (disposed) return
         animateTo(0f, withOvershoot)
         isOpen = false
         if (activeHelperRef?.get() === this) activeHelperRef = null
     }
 
     private fun animateTo(targetX: Float, withOvershoot: Boolean) {
+        animator?.cancel()
         val currentX = cardContent.translationX
         val distance = abs(targetX - currentX)
         val duration = (distance / maxSwipeDistance * 250).toLong().coerceIn(100, 300)
         
-        val animator = ValueAnimator.ofFloat(currentX, targetX).apply {
+        animator = ValueAnimator.ofFloat(currentX, targetX).apply {
             this.duration = duration
             interpolator = if (withOvershoot && targetX == 0f) {
                 overshootInterpolator
@@ -245,11 +263,42 @@ class SwipeToEditDeleteHelper(
             }
             
             addUpdateListener { animation ->
-                cardContent.translationX = animation.animatedValue as Float
+                setTranslation(animation.animatedValue as Float)
             }
         }
         
-        animator.start()
+        animator?.start()
+    }
+
+    private fun setTranslation(value: Float) {
+        cardContent.translationX = value
+        updateActionReveal()
+    }
+
+    /** Draw only the part beside the card, even when the card fill is translucent. */
+    private fun updateActionReveal() {
+        if (!clipCoveredActions) return
+        val width = layoutActions.width
+        val left = ceil((cardContent.x + cardContent.width - layoutActions.x).toDouble())
+            .toInt().coerceIn(0, width)
+        val revealed = cardContent.translationX < 0f && width > 0 && left < width
+        layoutActions.clipBounds = Rect(left, 0, width, layoutActions.height)
+        layoutActions.visibility = if (revealed) View.VISIBLE else View.INVISIBLE
+    }
+
+    /** Cancel an old row's animation before rebinding or recycling its views. */
+    fun dispose() {
+        disposed = true
+        isTracking = false
+        isOpen = false
+        cancelLongPress()
+        animator?.cancel()
+        animator = null
+        if (activeHelperRef?.get() === this) activeHelperRef = null
+        cardContent.removeOnLayoutChangeListener(layoutListener)
+        layoutActions.removeOnLayoutChangeListener(layoutListener)
+        cardContent.setOnTouchListener(null)
+        setTranslation(0f)
     }
 
     fun isOpen(): Boolean = isOpen

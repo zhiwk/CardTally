@@ -34,13 +34,13 @@ class RecordAdapter(
         } else record.category
 
         val amountText = if (record.type == 2) {
-            holder.textAmount.setTextColor(0xFF444444.toInt())
+            holder.textAmount.setTextColor(androidx.core.content.ContextCompat.getColor(holder.itemView.context, R.color.onSurfaceVariant_light))
             Money.formatYuan(record.amount)
         } else if (record.type == 0) {
-            holder.textAmount.setTextColor(0xFFF44336.toInt())
+            holder.textAmount.setTextColor(androidx.core.content.ContextCompat.getColor(holder.itemView.context, R.color.expense_primary))
             "-${Money.formatYuan(record.amount)}"
         } else {
-            holder.textAmount.setTextColor(0xFF4CAF50.toInt())
+            holder.textAmount.setTextColor(androidx.core.content.ContextCompat.getColor(holder.itemView.context, R.color.income_primary))
             "+${Money.formatYuan(record.amount)}"
         }
         holder.textAmount.text = amountText

@@ -92,6 +92,25 @@ class RecordAssetSelectionMemoryTest {
                 root.findViewById<TextView>(R.id.btn_transfer).performClick()
                 assertEquals("转出账户", root.findViewById<TextView>(R.id.text_asset_value).text)
                 assertEquals("转入账户", root.findViewById<TextView>(R.id.text_destination_asset_value).text)
+                select(RecordAssetPickerBottomSheetFragment.NO_ASSET_ID, false)
+                assertEquals("转出账户", root.findViewById<TextView>(R.id.text_asset_value).text)
+
+                root.findViewById<TextView>(R.id.btn_expense).performClick()
+                select(RecordAssetPickerBottomSheetFragment.NO_ASSET_ID, false)
+                assertEquals(activity.getString(R.string.record_asset_no_selection),
+                    root.findViewById<TextView>(R.id.text_asset_single_value).text)
+                root.findViewById<TextView>(R.id.btn_income).performClick()
+                assertEquals("默认收入", root.findViewById<TextView>(R.id.text_asset_single_value).text)
+                root.findViewById<TextView>(R.id.btn_expense).performClick()
+                assertEquals(activity.getString(R.string.record_asset_no_selection),
+                    root.findViewById<TextView>(R.id.text_asset_single_value).text)
+            }
+            scenario.recreate()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            scenario.onActivity { activity ->
+                val root = activity.supportFragmentManager.findFragmentById(R.id.fragment_container)!!.requireView()
+                assertEquals(activity.getString(R.string.record_asset_no_selection),
+                    root.findViewById<TextView>(R.id.text_asset_single_value).text)
             }
         }
     }

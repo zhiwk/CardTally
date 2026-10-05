@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
+    android:background="?attr/pageBackgroundColor"
     tools:context=".AddAssetFragment">
 
     <LinearLayout
@@ -56,7 +56,7 @@
                 android:id="@+id/card_form"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/surface_light"
+                app:cardBackgroundColor="?attr/cardSurfaceColor"
                 app:cardCornerRadius="@dimen/card_corner_radius_medium"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
@@ -66,11 +66,11 @@
                     android:orientation="vertical"
                     android:padding="20dp">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/asset_form_account_info" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:gravity="center_vertical" android:orientation="horizontal">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:gravity="center_vertical" android:orientation="horizontal">
                         <FrameLayout android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/bg_circle_primary_container" android:backgroundTint="@color/warning_container">
                             <ImageView android:id="@+id/image_asset_type" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:src="@drawable/tabler_cash" app:tint="@color/warning_primary" />
                         </FrameLayout>
-                        <TextView android:id="@+id/text_selected_asset_type" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="20dp" android:text="@string/asset_type_cash" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+                        <TextView android:id="@+id/text_selected_asset_type" android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="20dp" android:text="@string/asset_type_cash" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
                     </LinearLayout>
                     <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:gravity="center_vertical" android:orientation="horizontal">
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/asset_form_account_name" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
@@ -93,7 +93,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
-                app:cardBackgroundColor="@color/surface_light"
+                app:cardBackgroundColor="?attr/cardSurfaceColor"
                 app:cardCornerRadius="@dimen/card_corner_radius_medium"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">

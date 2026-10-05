@@ -48,7 +48,11 @@
 
 注意：两种模式共用 `fragment_add_record_quick.xml`，区别在页内分类列表；金额键盘常驻，日期和资产仍使用底部选择器。
 
+收支可不选择资产，见 `docs/requirements/decisions/2026-10-04-optional-record-assets.md`。`RecordAssetPickerBottomSheetFragment` 的 `allowNoAsset` 默认关闭，普通收支开启后以 `NO_ASSET_ID = 0` 回传清空，宿主保存 null；转账、重复记账及默认资产设置不启用此入口。修改该回调必须核对所有宿主，不能把清空标记当真实资产 ID。
+
 ### 改重复记账 / 转账资产选择
+
+账户详情的「转账」入口见 `AssetRecordsFragment.openTransfer` 与 `AddRecordFragment.newTransferInstance`：以当前账本和当前可用资产 ID 初始化转账草稿，预选转出方，转入方为空；保存沿用原记账事务，返回详情重新读取余额及流水。共享资产可转账，不以管理所有权限制记账。
 
 先读：
 
@@ -106,7 +110,10 @@
 7. `app/src/main/java/com/example/cardtally/util/AiAssistantSettingsHelper.kt`
 8. `app/src/main/java/com/example/cardtally/network/MiniMaxClient.kt`
 9. `app/src/main/res/layout/fragment_agent.xml`
+   - API 配置任务另读 `AiAssistantSettingsFragment`、`fragment_ai_assistant_settings.xml`、`network/ApiEndpoints.kt`、`ApiModelClient.kt`、`ApiModelCatalog.kt` 和 `docs/requirements/decisions/2026-10-04-api-model-discovery.md`；新增偏好字段同时核对 `BackupArchiveManager.expectedPreferenceType`。
 10. `docs/collaboration/skills/android-gradle-serial-verification.md`（如果需要跑构建 / 单测 / 真机验证）
+
+账单工具任务另读 `docs/requirements/decisions/2026-10-04-ai-record-tools.md`、`ai/RecordToolProtocol.kt`、`RecordToolClient.kt`、`AiRecordAssistant.kt`、`AiRecordEngine.kt`、`AiRecordAuditStore.kt`、`view_ai_record_action.xml`、`RecordWriteRepository.kt` 与 `RecordWriteValidator.kt`；同时核对 `AiChatMessage.isLocalOnly`、聊天持久化与普通聊天请求过滤，不能自动重发工具查询结果。
 
 ### 做真机截图 / 页面取证 / UI 回归留档
 
@@ -140,7 +147,19 @@
 5. 受影响页面布局 / Adapter / Fragment
 6. `DESIGN.md`
 
-注意：当前只支持浅色外观，视觉方向以 `DESIGN.md` 为准，不要继续沿用已删除的历史设计指南或 Stitch 导出。
+注意：当前支持浅色、深色、跟随系统和图片背景，默认浅色；主题入口为 `ThemeHelper`、`SettingsFragment` 与 `values-night`，视觉方向以 `DESIGN.md` 为准，不要继续沿用已删除的历史设计指南或 Stitch 导出。
+
+图片模式见 `2026-10-05-wallpaper-appearance.md`：模式 3 使用独立样式与单独保存的浅色/深色/跟随系统配色（默认深色，`theme_prefs/wallpaper_palette`），页面根背景为 `?attr/pageBackgroundColor`，Activity 持有固定图片和中性遮罩；页面卡片使用 `?attr/cardSurfaceColor` / `ThemeColorHelper.resolveCardSurface`，图片模式为 80% 不透明，其余模式实底。卡片内部普通行不要再铺同一底色：`LedgerDateGroupAdapter` 在 `DateGroupAdapter.RecordViewHolder.bind` 传 `parentProvidesBackground=true`，日期组父卡片绘制唯一底色，内部账单行透明；独立条目默认自行绘底，每次绑定重置，选中高亮及归档滑动行保留实底；弹层和导航实底。切换模式或图片配色保存后重建 Activity，不能仅靠 night mode 更新，因为普通与图片模式可能共享同一夜间模式。图片样式继承配色对应的系统栏；遮罩与卡片颜色通过 `wallpaper_colors.xml` 的浅色/夜间资源切换。新增页面时沿用画布属性，勿用不透明背景盖住图片。
+
+卡片不透明度滑杆见 `AppearanceSettingsFragment`、`ThemeHelper.getCardOpacity`、`values/card_opacity_styles.xml`：图片模式默认 80%，可按 5% 步长调至 0–100%，保存后松手应用；外观页 `scroll_appearance` 必须保留稳定 ID，使 NestedScrollView 随页面重建恢复当前位置；Activity 在 `super.onCreate` 处理夜间模式之后、布局加载之前叠加颜色属性覆盖，防止基础主题重应用覆盖当前不透明度。切换任何背景/图片配色前保存滑杆当前值，图片三种配色共用这一值，不分别记忆。偏好键为 `theme_prefs/card_opacity` 和图片配色 `theme_prefs/wallpaper_palette`，修改持久化时核对 `BackupArchiveManager` 白名单和 `DataTransferManager` 旧整数恢复，不能通过整卡 View alpha 降低文字可读性。
+
+图片库见 `WallpaperHelper`、`WallpaperGalleryAdapter` 与外观页的 `OpenDocument` 回调：32MB 输入上限、采样/方向归一，新增 UUID WebP 文件到私有 `appearance/wallpapers/`；原 WebP 与两张用户提供的 JPEG（`res/raw/appearance_wallpaper_option_*.jpg`）现统一为默认图片 1、2、3，按固定 ID 与顺序直接从打包资源列出/采样解码，不再复制 JPG 或读写 seed 标记；此前已删除备选图也重新可用，原选择 ID 保留，本地 `selected_wallpaper` 文件原子保存经过校验的图片 ID；旧 `appearance/wallpaper.webp` 保留为图库条目，缺少选择标记时继续使用旧图。添加不覆盖旧图，恢复默认仅切换选择，导入失败/取消清理本次临时文件，不先删原图。三张默认图均不提供删除入口且存储层拒绝删除，只有用户导入/旧自选图的缩略图右上角 × 使用独立回调和 48dp 触区；删除当前图前原子保存默认选择，删文件失败尝试恢复原选择。删除后台串行执行后重建但不启用图片模式，保留原配色/不透明度及滚动恢复，不能复用默认会启用图片的导入成功逻辑。横向 RecyclerView 展示默认图片 1、2、3 / 旧图 / 新增图，视口两侧固定 16dp margin，不能以允许绘制穿透的 padding 模拟边距；适配器采用 PREVENT_WHEN_EMPTY 延后恢复位置，重建时不再主动定位选中图。缩略图后台按需解码并缓存，复用取消旧任务且回调核对条目 ID，离开页面关闭线程与缓存；预览/全屏共用绑定及弱缓存。内置图作为恢复/缺图回退，无外部 URI 偏好或新增权限。图库和选择标记尚未进入备份，后续扩展备份需同时核对完整 ZIP 格式和合并事务，不要只导出不可移植的私有路径。
+
+外观选择在 `AppearanceSettingsFragment` / `fragment_appearance_settings.xml` 独立二级页，分为纯色、图片两张卡片，各直接提供浅色/深色/跟随系统；两组全页互斥，点选另一卡片即切换背景，状态恢复期间只同步不触发保存，`SettingsFragment` 仅保留入口与模式摘要。调整该页需同时核对 `MainActivity` 的重建后导航归属、返回栈及底部导航隐藏行为。
+
+分类管理半透明卡片后的编辑/删除见 `CategoryAdapter`、`item_category.xml` 与 `SwipeToEditDeleteHelper` 的 `clipCoveredActions=true`：操作层初始 INVISIBLE，拖动及吸附动画按前卡片右边界裁切，只绘制已露出部分，收起时隐藏；不能通过改成实底取消用户选定的不透明度。绑定/回收先 `dispose()` 取消旧动画、长按及布局监听，再恢复闭合状态。共享 helper 其他宿主默认不开启裁切，修改时也核对归档资产回调。
+
+分类支出/收入样式见 `fragment_category_manage.xml`、`item_category_type_tab.xml`、`bg_category_type_indicator.xml` 与 `CategoryManageFragment.styleTypeTab`：保持原生 TabLayout、48dp 点击区；标签透明，只有父卡片铺 `cardSurfaceColor`，16sp 字体及选中加粗/未选中 muted 色与统计页一致，28dp × 2dp 横线原生 180ms 过渡。不要重新给标签设置实底 `bg_category_tab_white`。
 
 ### 改文案 / 国际化 / 语言切换
 

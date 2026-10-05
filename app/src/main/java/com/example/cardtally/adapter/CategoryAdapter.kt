@@ -13,6 +13,9 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import android.content.res.ColorStateList
+import androidx.core.graphics.ColorUtils
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.R
@@ -49,6 +52,7 @@ class CategoryAdapter(
         val children = categories.filter { it.parentId == category.id }
         val expanded = expandedIds.contains(category.id)
 
+        holder.swipeHelper?.dispose()
         holder.cardContent.translationX = 0f
         holder.textCategoryName.text = category.name
         bindIcon(holder.itemView, holder.imageCategoryIcon, category.icon, category.name)
@@ -69,8 +73,15 @@ class CategoryAdapter(
             holder.layoutActions,
             onEdit = { listener.onEdit(category) },
             onDelete = { listener.onDelete(category) },
-            onClick = { toggle(category.id) }
+            onClick = { toggle(category.id) },
+            clipCoveredActions = true
         )
+    }
+
+    override fun onViewRecycled(holder: CategoryViewHolder) {
+        holder.swipeHelper?.dispose()
+        holder.swipeHelper = null
+        super.onViewRecycled(holder)
     }
 
     override fun getItemCount(): Int = parents.size
@@ -261,7 +272,19 @@ class CategoryAdapter(
                 }
             }
         }
-        bindIcon(view, view.findViewById(R.id.image_child_icon), child.icon, child.name)
+        val icon = view.findViewById<ImageView>(R.id.image_child_icon)
+        bindIcon(view, icon, child.icon, child.name)
+        // A user-selected category color is independent of the appearance palette.
+        child.color?.let { runCatching { Color.parseColor(it) }.getOrNull() }?.let { background ->
+            val lightInk = ContextCompat.getColor(view.context, R.color.white)
+            val darkInk = ContextCompat.getColor(view.context, R.color.black)
+            val opaqueBackground = ColorUtils.compositeColors(background,
+                ContextCompat.getColor(view.context, R.color.surface_container_high))
+            icon.imageTintList = ColorStateList.valueOf(
+                if (ColorUtils.calculateContrast(lightInk, opaqueBackground) >
+                    ColorUtils.calculateContrast(darkInk, opaqueBackground)) lightInk else darkInk
+            )
+        }
         // Reordering is gesture-based; an external handle would overlap the compact icon tile.
         view.findViewById<ImageView>(R.id.image_drag_handle).visibility = View.GONE
     }
@@ -269,7 +292,10 @@ class CategoryAdapter(
     private fun bindAddChild(view: View, parent: Category) {
         view.findViewById<TextView>(R.id.text_child_name).setText(R.string.category_add_child_cta)
         view.findViewById<ImageView>(R.id.image_child_icon)
-            .setImageResource(R.drawable.tabler_plus)
+            .apply {
+                setImageResource(R.drawable.tabler_plus)
+                imageTintList = ColorStateList.valueOf(ContextCompat.getColor(view.context, R.color.onSurface_light))
+            }
         view.findViewById<ImageView>(R.id.image_drag_handle).visibility = View.GONE
         view.setOnClickListener { listener.onAddChild(parent) }
     }
@@ -298,6 +324,7 @@ class CategoryAdapter(
                 resourceId.takeIf { it != 0 } ?: categoryFallback.takeIf { it != 0 } ?: R.drawable.tabler_category
             }
         )
+        imageView.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(root.context, R.color.onSurface_light))
         imageView.visibility = View.VISIBLE
     }
 

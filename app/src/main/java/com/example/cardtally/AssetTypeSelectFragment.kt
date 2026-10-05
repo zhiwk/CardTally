@@ -56,8 +56,20 @@ class AssetTypeSelectFragment : Fragment() {
         val row = view.findViewById<View>(rowId)
         row.findViewById<TextView>(R.id.option_label).text = label
         val resolvedIcon = AssetTypeIconCatalog.resourceForLabel(label) ?: iconRes
-        row.findViewById<ImageView>(R.id.option_icon).setImageResource(resolvedIcon)
+        AssetTypeIconCatalog.bindIcon(
+            row.findViewById(R.id.option_icon), resolvedIcon, 20,
+            com.example.cardtally.util.ThemeColorHelper.resolveColor(
+                requireContext(), com.google.android.material.R.attr.colorPrimary
+            )
+        )
         row.setOnClickListener {
+            if (label == "储蓄卡" || label == "信用卡") {
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, BankSelectFragment.newInstance(label))
+                    .addToBackStack("bank_select")
+                    .commit()
+                return@setOnClickListener
+            }
             parentFragmentManager.beginTransaction()
                 .replace(
                     R.id.fragment_container,

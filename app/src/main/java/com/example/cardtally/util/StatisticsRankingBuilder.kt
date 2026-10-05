@@ -5,6 +5,53 @@ import com.example.cardtally.model.Category
 
 /** Builds the parent/leaf ranking tree from category totals without touching views or SQLite. */
 object StatisticsRankingBuilder {
+    data class CategoryRow(
+        val categoryId: Long,
+        val label: String,
+        val amount: Double,
+        val entryCount: Int,
+        val iconName: String?
+    )
+
+    fun buildById(
+        rows: List<CategoryRow>,
+        categoriesById: Map<Long, Category>
+    ): Pair<List<StatisticsAdapter.StatisticsAdapterItem>, Double> {
+        fun rootId(id: Long): Long {
+            var current = categoriesById[id] ?: return id
+            val visited = mutableSetOf<Long>()
+            while (current.parentId != null && visited.add(current.id)) {
+                current = categoriesById[current.parentId] ?: break
+            }
+            return current.id
+        }
+        val parents = rows.groupBy { rootId(it.categoryId) }.map { (rootId, children) ->
+            val root = categoriesById[rootId]
+            val rootRow = children.singleOrNull()?.takeIf { it.categoryId == rootId }
+            val childItems = children.filter { it.categoryId != rootId }.map { row ->
+                StatisticsAdapter.StatisticsAdapterItem(
+                    type = StatisticsAdapter.ItemType.PRIMARY_CHILD,
+                    label = categoriesById[row.categoryId]?.name ?: row.label,
+                    amount = row.amount,
+                    categoryId = row.categoryId,
+                    entryCount = row.entryCount,
+                    iconName = row.iconName,
+                    parentLabel = root?.name
+                )
+            }.sortedByDescending { kotlin.math.abs(it.amount) }
+            StatisticsAdapter.StatisticsAdapterItem(
+                type = StatisticsAdapter.ItemType.PRIMARY_PARENT,
+                label = root?.name ?: rootRow?.label ?: children.first().label,
+                amount = children.sumOf { it.amount },
+                categoryId = rootId,
+                entryCount = children.sumOf { it.entryCount },
+                iconName = root?.icon ?: rootRow?.iconName,
+                children = childItems
+            )
+        }.sortedByDescending { kotlin.math.abs(it.amount) }
+        return parents to rows.sumOf { kotlin.math.abs(it.amount) }
+    }
+
     fun build(
         normalizedStats: Map<String, Double>,
         entryCounts: Map<String, Int>,

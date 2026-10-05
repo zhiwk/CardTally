@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light">
+    android:background="?attr/pageBackgroundColor">
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/asset_content_scroll"
@@ -52,7 +52,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="@color/surface_light"
+                app:cardBackgroundColor="?attr/cardSurfaceColor"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
                 app:strokeColor="@android:color/transparent"
@@ -144,6 +144,24 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_record_asset_none"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="?attr/cardSurfaceColor"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@android:color/transparent"
+                app:strokeWidth="0dp">
+                <include
+                    android:id="@+id/button_record_asset_none"
+                    layout="@layout/item_asset"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.card.MaterialCardView>
+
             <LinearLayout
                 android:id="@+id/card_pinned_assets"
                 android:layout_width="match_parent"
@@ -172,7 +190,7 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="?attr/cardSurfaceColor"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
                     app:strokeColor="@android:color/transparent"
@@ -220,7 +238,7 @@
                     android:id="@+id/card_all_assets"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="?attr/cardSurfaceColor"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
                     app:strokeColor="@android:color/transparent"
@@ -275,7 +293,7 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardBackgroundColor="@color/surface_light"
+                    app:cardBackgroundColor="?attr/cardSurfaceColor"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
                     app:strokeColor="@android:color/transparent"
@@ -293,7 +311,7 @@
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="充值账户" android:textColor="@color/onBackground_light" android:textSize="14sp" />
                     <TextView android:id="@+id/text_recharge_total" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/onSurfaceVariant_light" android:textSize="12sp" />
                 </LinearLayout>
-                <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
+                <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="?attr/cardSurfaceColor" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
                     <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler_recharge_assets" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
@@ -303,7 +321,7 @@
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="理财账户" android:textColor="@color/onBackground_light" android:textSize="14sp" />
                     <TextView android:id="@+id/text_investment_total" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/onSurfaceVariant_light" android:textSize="12sp" />
                 </LinearLayout>
-                <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
+                <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="?attr/cardSurfaceColor" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
                     <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler_investment_assets" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
@@ -313,7 +331,7 @@
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="应收账户" android:textColor="@color/onBackground_light" android:textSize="14sp" />
                     <TextView android:id="@+id/text_receivable_total" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/onSurfaceVariant_light" android:textSize="12sp" />
                 </LinearLayout>
-                <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
+                <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="?attr/cardSurfaceColor" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
                     <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler_receivable_assets" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
@@ -323,7 +341,7 @@
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="应付账户" android:textColor="@color/onBackground_light" android:textSize="14sp" />
                     <TextView android:id="@+id/text_payable_total" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/onSurfaceVariant_light" android:textSize="12sp" />
                 </LinearLayout>
-                <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/surface_light" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
+                <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="?attr/cardSurfaceColor" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeColor="@android:color/transparent" app:strokeWidth="0dp">
                     <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler_payable_assets" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
