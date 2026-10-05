@@ -1,0 +1,3 @@
+Tool: built-in image_gen
+
+Use case: logo-brand. Edit target: the attached CardTally app icon. Change only the palette and surface treatment: replace every teal region with pure black #000000 and keep the ledger silhouette pure white #FFFFFF. Preserve the existing notebook shape, spine, bookmark cutout, two rounded entry strokes, centered composition and proportions exactly. Make all areas perfectly flat solid fills, removing every texture, grain, gradient, glow and shadow. The result must be a single clean black-and-white square Android launcher icon, full-bleed black background, crisp edges with normal edge antialiasing. No text, letters, numbers, captions, watermark, extra objects, border, mockup or rounded outer mask. Output one image only.

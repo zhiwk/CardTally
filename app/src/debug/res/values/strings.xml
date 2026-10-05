@@ -3,5 +3,5 @@
     <!-- Debug build installs alongside the signed release under its own package
          (com.example.cardtally) and gets a distinct label so the two home-screen
          icons are easy to tell apart. -->
-    <string name="app_name">卡片记账 (Dev)</string>
+    <string name="app_name">小猫记帐 (Dev)</string>
 </resources>

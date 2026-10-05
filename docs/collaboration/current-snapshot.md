@@ -4,6 +4,16 @@
 
 以下按时间记录交接事实；较早条目中的页面、主题和验证状态可能已被上方新条目取代，接手时仍以当前源码为准。
 
+- 2026-10-05：README 改为 GitHub 首页结构，突出小猫记帐介绍、功能概览、导航和 dev 快速开始，使用指南、备份、签名发布及验证说明折叠展示；补充 macOS / Linux 首次执行 wrapper 的权限设置。按用户上传要求整理本轮 README、应用名称与图标、AI 欢迎语及相关文档，静态复核改动文件、7 个 XML、README 本地链接及图标原图一致性，差异空白检查通过；未纳入本机配置、签名材料、APK、日志或财务数据。本轮未重新构建、运行测试或安装，AI 欢迎语仍仅有静态复核证据。
+
+- 2026-10-05：修正 AI 助手固定欢迎语，移除“已接入 MiniMax”及固定 Provider 描述，中英文改为小猫记帐 AI 助手、财务交流、开启账单操作后可请求当前账本查增改删，以及写入前核对确认。空会话新增欢迎语沿用原持久化入口；已存旧欢迎语在读取当前会话和会话预览时，只对首条、非错误/非工具本地消息、无思考且全文匹配两种旧欢迎语的 assistant 消息替换内存内容，保留消息 ID、时间及数据库历史，其他用户/模型回复不变。无数据库迁移、真实 API 请求或工具权限调整；本轮仅修改及静态复核，未编译、运行测试或安装。
+
+- 2026-10-05：按用户要求串行编译并覆盖安装 dev、release，包含圆脸小猫应用图标及“小猫记帐”名称。首轮 dev 构建成功但包信息核对发现 debug 专用 app_name 覆盖主资源，已补改中英文 debug 名为“小猫记帐 (Dev)”以保留安装区分。最终 `:app:assembleEverydayDebug` 成功（19 秒），`app-debug.apk` 包名为 `com.example.cardtally`、可调试，中英文名称及自适应图标核对通过，ADB `install -r` 返回 `Success`。随后 `:app:assembleEverydayRelease` 成功（68 秒），发布 Lint 通过，`app-release.apk` 包名为 `com.example.cardtally.release`、不可调试，中英文名为“小猫记帐”；发布资源经过路径优化，已按 APK 实际路径核对 adaptive-icon 前/背景结构，签名与保存的发布密钥一致，ADB `install -r` 返回 `Success`。两套数据保留，临时 SDK 配置按本轮执行前字节恢复、wrapper 清理；仓库外日志为 `dev-cat-brand-build-2026-10-05.log` / `release-cat-brand-build-2026-10-05.log`。本轮未运行单元/设备测试或启动应用检查页面，桌面显示实际效果尚待用户查看。
+
+- 2026-10-05：按用户要求将选定的圆脸小猫抱账本图标（`cardtally-app-icon-v6-round-cat.png`）用于应用，并将中英文 `app_name` / `app_name_en` 统一为“小猫记帐”。原 PNG 按原始字节复制到 drawable-nodpi，移除五套旧密度图标；Android 7 使用同名 mipmap-anydpi 位图入口，Android 8+ 使用白底自适应图标与四边 13% 前景内缩，Manifest 普通/圆形图标均沿用该入口。包名、签名、数据库及偏好不变。同步 README、DESIGN 与图标来源说明。本轮仅修改与静态复核，未编译、运行测试或安装；手机尚未应用新名称和图标。
+
+- 2026-10-05：按用户要求编译并覆盖安装 master 当前提交 `190c515` 的最新 release，包含近期累计修改及分类操作区裁切、切换栏样式。串行执行 `:app:assembleEverydayRelease` 成功（78 秒），发布 Lint 通过；`app/build/outputs/apk/release/app-release.apk` 签名与保存的发布密钥一致，包名为 `com.example.cardtally.release`，不可调试。ADB `install -r` 返回 `Success`，保留 release 数据，dev 未操作。本轮临时 SDK 配置按执行前原始字节恢复，wrapper 副本清理，本机日志为 `release-master-build-2026-10-05.log`；未运行单元/设备测试或启动应用检查页面。此前已将六个提交快进合入并推送 master，main 也已创建但保留原 master 默认分支；本条为安装交接事实，尚未提交上传。
+
 - 2026-10-05：按用户要求进行 GitHub 上传前静态检查。移除 174 个仅换行格式变化的差异，其余文件按原行尾格式保留内容；变更前副本保存在仓库外。待提交范围包含近期累计代码、资源、决策和交接改动，190 个新增/修改 XML 可解析，差异空白检查通过；源码与设备分组清单均为 14 组 / 147 项，修正文档残留 142 项及数据库版本注释。未发现真实凭据、私有设备地址或数据文件，签名材料、local.properties、APK/日志及截图不纳入提交；默认背景图片为用户指定打包资源。已静态核对 AI 写入仅走最终原生确认、过期/重复执行防护和备份先验签再解密入口。沿用上一轮 dev 编译/覆盖安装成功证据，本轮未重跑构建或测试，静态检查不替代运行回归。GitHub HTTPS 登录已完成，上传目标为现有 `codex/consolidate-existing-work` 分支，保留已有 5 个本地提交，不自动合并主分支。
 
 - 2026-10-05：按用户要求编译并覆盖安装最新 dev，包含分类编辑/删除操作区遮挡裁切及支出/收入切换栏透明度、文字与短横线样式调整。串行执行 `:app:assembleEverydayDebug` 成功（38 秒），`app/build/outputs/apk/debug/app-debug.apk` 核对为可调试的 `com.example.cardtally`；ADB `install -r` 返回 `Success`，保留 dev 数据。临时 SDK 配置已恢复、wrapper 副本已清理，本机日志为 `dev-category-appearance-build-2026-10-05.log`。构建仅有既有 API/Gradle 弃用警告，无编译错误；本轮未运行单元/设备测试或启动应用验证页面，滑动遮挡、复用及切换栏实际效果仍待页面验证。

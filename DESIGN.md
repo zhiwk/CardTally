@@ -8,6 +8,8 @@
 
 ## 1. Atmosphere & Identity
 
+The launcher display name is **小猫记帐** in both supported locales; Debug retains the **(Dev)** suffix to distinguish the two installations. Its approved icon is the white-background black-and-white round-faced kitten holding a ledger (`docs/design/assets/app-icon/cardtally-app-icon-v6-round-cat.png`), with no lettering. The packaged artwork remains unchanged; adaptive icons use a white background and a 13% inset on every foreground edge for launcher masks. Legacy launchers use the same artwork scaled to their icon bounds. Internal CardTally identifiers and application IDs remain stable.
+
 ### Current visual baseline (2026-09-06)
 
 The owner's latest Ledger / Record-entry references supersede the older outlined-card and shadow defaults below. For light pages use `background_light` (`#EEEEEE`) as the canvas and opaque `surface_light` (`#FFFFFF`) for neutral working cards. Dark pages resolve the same resource names through `values-night`. Standard group radius is 12dp; the established prominent record-entry form may retain 20dp. Neutral cards and bottom action/navigation bars have no stroke and no elevation. `bg_card_surface` is the shared drawable for plain rounded cards; do not use alpha fills or background tints to simulate white.

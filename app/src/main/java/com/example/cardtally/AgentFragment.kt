@@ -590,8 +590,22 @@ class AgentFragment : Fragment() {
         }
 
         chatMessages.clear()
-        chatMessages.addAll(databaseHelper.getAiChatMessages(currentSessionId))
+        chatMessages.addAll(getSessionMessagesWithCurrentGreeting(currentSessionId))
         renderMessages()
+    }
+
+    private fun getSessionMessagesWithCurrentGreeting(sessionId: Long): List<AiChatMessage> {
+        val messages = databaseHelper.getAiChatMessages(sessionId)
+        val first = messages.firstOrNull() ?: return messages
+        // Older app-generated greetings were persisted as assistant messages.
+        // Refresh only the exact opening greeting, without rewriting chat history.
+        if (first.role != AiChatRole.ASSISTANT || first.isError || first.isLocalOnly ||
+            !first.reasoning.isNullOrBlank() || first.content !in legacyGreetings) {
+            return messages
+        }
+        return messages.toMutableList().apply {
+            this[0] = first.copy(content = getString(R.string.agent_greeting))
+        }
     }
 
     private fun ensureGreetingMessageIfNeeded(sessionId: Long) {
@@ -616,7 +630,7 @@ class AgentFragment : Fragment() {
 
     private fun refreshSessionList() {
         val items = databaseHelper.getAiChatSessions().map { session ->
-            val sessionMessages = databaseHelper.getAiChatMessages(session.id)
+            val sessionMessages = getSessionMessagesWithCurrentGreeting(session.id)
             AgentSessionListItem(
                 sessionId = session.id,
                 title = session.title,
@@ -939,6 +953,11 @@ class AgentFragment : Fragment() {
     }
 
     companion object {
+        private val legacyGreetings = setOf(
+            "你好，我已接入 MiniMax 文本对话。你可以先问我预算思路、消费复盘，或让我们一起梳理一段财务想法。",
+            "Hello. MiniMax text chat is ready here. Ask for budget thinking, spending reflections, or help structuring a financial thought."
+        )
+
         // Injectable seam so a fake AiChatSender can drive stop/restart/late-callback
         // orchestration deterministically in tests. Production uses MiniMaxClient.
         @Volatile
