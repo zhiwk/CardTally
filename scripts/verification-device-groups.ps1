@@ -12,7 +12,7 @@ $deviceTestGroups = @(
         'com.example.cardtally.AssetExclusionBadgeTest'
     ) },
     @{ Name = 'ledger-form'; Expected = 8; Classes = @('com.example.cardtally.LedgerSetupFormTest') },
-    @{ Name = 'main-layout'; Expected = 12; Classes = @(
+    @{ Name = 'main-layout'; Expected = 14; Classes = @(
         'com.example.cardtally.MainActivityFabLayoutTest',
         'com.example.cardtally.MainActivityThemeApplicationTest',
         'com.example.cardtally.LedgerMonthPagerTest',

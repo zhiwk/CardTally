@@ -1,6 +1,7 @@
 package com.example.cardtally
 
 import android.graphics.Typeface
+import android.os.Bundle
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +17,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
+import com.example.cardtally.state.RecordFormState
 import com.example.cardtally.testing.IsolatedTestGuard
 import com.example.cardtally.util.LedgerSession
 import org.junit.Assert.assertEquals
@@ -158,10 +160,15 @@ class RecordPresentationTest {
                     root.findViewById<View>(R.id.btn_save_and_add).performClick()
                 }
                 instrumentation.waitForIdleSync()
+                scenario.recreate()
+                instrumentation.waitForIdleSync()
                 scenario.onActivity { activity ->
                     val fragment = activity.supportFragmentManager.findFragmentById(R.id.fragment_container)
-                    assertTrue(fragment is AddRecordFragment && fragment !is EditRecordFragment)
+                    assertTrue(fragment is AddRecordFragment)
                     val root = fragment!!.requireView()
+                    assertEquals(activity.getString(R.string.record_title_new), root.findViewById<TextView>(R.id.text_title).text.toString())
+                    assertEquals("", root.findViewById<EditText>(R.id.edit_amount).text.toString())
+                    assertEquals("", root.findViewById<EditText>(R.id.edit_description).text.toString())
                     assertEquals("Detail fixture wallet", root.findViewById<TextView>(R.id.text_asset_single_value).text.toString())
                     assertEquals(activity.getString(R.string.record_date_display, 8, 3), root.findViewById<TextView>(R.id.text_date).text.toString())
                     root.findViewById<EditText>(R.id.edit_amount).setText("2")
@@ -172,8 +179,88 @@ class RecordPresentationTest {
                 assertEquals(2, scoped.getAllRecords().size)
                 assertTrue(scoped.getAllRecords().all { it.date == "2026-08-03" && it.assetId == assetId && it.type == 1 })
                 assertEquals(currentLedger, LedgerSession.getCurrentId(instrumentation.targetContext))
+                scenario.onActivity { activity ->
+                    assertSinglePage(activity, RecordDetailFragment::class.java)
+                    activity.onBackPressedDispatcher.onBackPressed()
+                }
+                instrumentation.waitForIdleSync()
+                scenario.onActivity { activity -> assertSinglePage(activity, LedgerFragment::class.java) }
             }
         }
+    }
+
+    @Test
+    fun saveAgain_repeatedSavesAndBack_leaveOnlyLedgerPage() = checkSaveAgainReturn(stacked = true)
+
+    @Test
+    fun saveAgain_rootEntryAndRecreation_returnToLedgerWithoutOverlay() = checkSaveAgainReturn(stacked = false)
+
+    private fun checkSaveAgainReturn(stacked: Boolean) = withIsolatedDatabase { helper ->
+        val originalCount = helper.getAllRecords().size
+        val categoryId = helper.addCategory(Category(name = "Save again category", type = 0))
+        val initialState = RecordFormState.DEFAULT.copy(
+            selectedDate = "2026-08-03",
+            selectedCategoryId = categoryId,
+            hasEnteredExpense = true
+        )
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                val fm = activity.supportFragmentManager
+                fm.beginTransaction().replace(R.id.fragment_container, LedgerFragment()).commitNow()
+                val entry = AddRecordFragment().apply {
+                    arguments = Bundle().apply {
+                        putBundle("initial_form_state", Bundle().also(initialState::writeTo))
+                    }
+                }
+                val transaction = fm.beginTransaction().replace(R.id.fragment_container, entry)
+                if (stacked) transaction.addToBackStack(null)
+                transaction.commit()
+            }
+            instrumentation.waitForIdleSync()
+            repeat(2) { index ->
+                scenario.onActivity { activity ->
+                    val fm = activity.supportFragmentManager
+                    val entry = fm.findFragmentById(R.id.fragment_container)!!
+                    val root = entry.requireView()
+                    root.findViewById<EditText>(R.id.edit_amount).setText((index + 5).toString())
+                    root.findViewById<EditText>(R.id.edit_description).setText("Save again fixture")
+                    root.findViewById<View>(R.id.btn_save_and_add).performClick()
+                    assertEquals(if (stacked) 1 else 0, fm.backStackEntryCount)
+                    assertEquals("", root.findViewById<EditText>(R.id.edit_amount).text.toString())
+                    assertEquals("", root.findViewById<EditText>(R.id.edit_description).text.toString())
+                }
+                instrumentation.waitForIdleSync()
+            }
+            assertEquals(originalCount + 2, helper.getAllRecords().size)
+            val saved = helper.getAllRecords().filter { it.categoryId == categoryId }
+            assertEquals(2, saved.size)
+            assertTrue(saved.all { it.date == initialState.selectedDate && it.assetId == null })
+            scenario.recreate()
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                if (stacked) {
+                    activity.supportFragmentManager.findFragmentById(R.id.fragment_container)!!
+                        .requireView().findViewById<View>(R.id.btn_close).performClick()
+                } else {
+                    activity.onBackPressedDispatcher.onBackPressed()
+                }
+            }
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                assertSinglePage(activity, LedgerFragment::class.java)
+                assertEquals(0, activity.supportFragmentManager.backStackEntryCount)
+                assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.nav_shell).visibility)
+            }
+            assertEquals(originalCount + 2, helper.getAllRecords().size)
+        }
+    }
+
+    private fun assertSinglePage(activity: MainActivity, page: Class<out androidx.fragment.app.Fragment>) {
+        val fm = activity.supportFragmentManager
+        assertTrue(page.isInstance(fm.findFragmentById(R.id.fragment_container)))
+        assertEquals(1, fm.fragments.count { it.isAdded && it.id == R.id.fragment_container })
+        assertEquals(1, activity.findViewById<ViewGroup>(R.id.fragment_container).childCount)
     }
 
     @Test

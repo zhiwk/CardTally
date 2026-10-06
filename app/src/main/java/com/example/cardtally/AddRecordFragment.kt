@@ -492,7 +492,6 @@ open class AddRecordFragment : Fragment() {
         amountKeypadController.refreshActions()
         updateTypeStyle()
         updateActiveNumericField()
-        setupBackNavigation()
 
         rowDate.setOnClickListener { showDateSheet() }
         rowAsset.setOnClickListener { showAssetSheet() }
@@ -525,6 +524,7 @@ open class AddRecordFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupBackNavigation()
         parentFragmentManager.setFragmentResultListener(
             RecordAssetPickerBottomSheetFragment.RESULT_KEY,
             viewLifecycleOwner
@@ -600,7 +600,9 @@ open class AddRecordFragment : Fragment() {
             hasEnteredIncome = hasEnteredIncome,
             hasEnteredTransfer = hasEnteredTransfer
         ).writeTo(outState)
-        editingRecordId?.let { outState.putLong(KEY_RECORD_ID, it) }
+        // An editor can become a new-entry form after “再记”. Persist that
+        // transition explicitly so restoration cannot fall back to its old id.
+        outState.putLong(KEY_RECORD_ID, editingRecordId ?: 0L)
     }
 
     override fun onResume() {
@@ -1417,7 +1419,7 @@ open class AddRecordFragment : Fragment() {
                 navigateBack()
             }
         }
-        requireActivity().onBackPressedDispatcher.addCallback(this, backPressedCallback)
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backPressedCallback)
     }
 
     private fun openFreshRecord() {
@@ -1440,16 +1442,27 @@ open class AddRecordFragment : Fragment() {
             hasEnteredIncome = hasEnteredIncome,
             hasEnteredTransfer = hasEnteredTransfer
         )
-        val nextLedgerId = databaseHelper.getCurrentLedger()?.id
-        val nextRecord = AddRecordFragment().apply {
-            arguments = Bundle().apply {
-                putBundle(KEY_INITIAL_FORM_STATE, Bundle().also(initialState::writeTo))
-                nextLedgerId?.let { putLong(KEY_ENTRY_LEDGER_ID, it) }
-            }
+        // Keep the fragment owned by the original back-stack transaction.
+        // Replacing it without a back-stack entry leaves the replacement on
+        // screen when that transaction later restores the calling page.
+        editingRecordId = null
+        editingRecord = null
+        arguments = Bundle(arguments ?: Bundle()).apply {
+            remove(KEY_RECORD_ID)
+            putBundle(KEY_INITIAL_FORM_STATE, Bundle().also(initialState::writeTo))
+            databaseHelper.getCurrentLedger()?.id?.let { putLong(KEY_ENTRY_LEDGER_ID, it) }
         }
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, nextRecord)
-            .commit()
+        clearAmountAndDescription()
+        editAmount.setText("")
+        editFee?.setText("")
+        openSheet = RecordSheet.NONE
+        pendingCategoryId = null
+        loadAssets()
+        rootView?.findViewById<TextView>(R.id.text_title)?.setText(R.string.record_title_new)
+        rootView?.findViewById<TextView>(R.id.text_save_label)?.setText(R.string.record_quick_complete)
+        amountKeypadController.refreshActions()
+        selectNumericTarget(editAmount)
+        updateActiveNumericField()
     }
 
     private fun navigateBack() {
@@ -1458,7 +1471,13 @@ open class AddRecordFragment : Fragment() {
             return
         }
 
-        requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId = R.id.nav_ledger
+        // Quick-add can be the root page while Ledger is already checked in
+        // the navigation bar. Reselecting it does not invoke its navigation listener.
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, LedgerFragment())
+            .commit()
+        requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
+            .menu.findItem(R.id.nav_ledger).isChecked = true
     }
 
     private fun hideBottomNav() {
