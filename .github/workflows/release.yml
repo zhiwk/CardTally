@@ -1,0 +1,146 @@
+name: Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: '版本名称，例如 1.0.1'
+        required: true
+        default: '1.0.1'
+        type: string
+      version_code:
+        description: '递增版本号，须大于已发布版本，例如 2'
+        required: true
+        default: '2'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      VERSION_NAME: ${{ inputs.version_name }}
+      VERSION_CODE: ${{ inputs.version_code }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout selected commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@07d1f8453baaff67fb503883367f8b13e6158a54 # v6
+        with:
+          gradle-version: '8.13'
+          cache-disabled: true
+
+      - name: Validate version and prepare cloud build
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          name = os.environ['VERSION_NAME']
+          code = os.environ['VERSION_CODE']
+          if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', name):
+              raise SystemExit('Version name must use X.Y.Z, for example 1.0.1')
+          if not re.fullmatch(r'[1-9][0-9]*', code) or not 1 < int(code) <= 2100000000:
+              raise SystemExit('Version code must be an integer between 2 and 2100000000')
+          path = Path('app/build.gradle')
+          text = path.read_text()
+          text, codes = re.subn(r'(?m)^(\s*versionCode\s*=\s*)[0-9]+\s*$', lambda m: m[1] + code, text)
+          text, names = re.subn(r'(?m)^(\s*versionName\s*=\s*)"[^"]*"\s*$', lambda m: m[1] + '"' + name + '"', text)
+          if codes != 1 or names != 1:
+              raise SystemExit('Gradle version configuration changed; update the workflow')
+          path.write_text(text)
+          Path('local.properties').write_text('sdk.dir=' + os.environ['ANDROID_HOME'] + '\n')
+          PY
+          tag="v$VERSION_NAME"
+          if git rev-parse --verify "refs/tags/$tag" >/dev/null 2>&1; then
+            test "$(git rev-parse "refs/tags/$tag^{commit}")" = "$GITHUB_SHA"
+          fi
+
+      - name: Install Android SDK 34
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-34' 'build-tools;34.0.0'
+
+      - name: Run Debug unit tests
+        run: gradle --no-daemon --no-parallel :app:testEverydayUnitTest
+
+      - name: Restore release signing configuration
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          required = ['ANDROID_KEYSTORE_BASE64', 'ANDROID_STORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD']
+          missing = [key for key in required if not os.environ.get(key)]
+          if missing:
+              raise SystemExit('Missing GitHub Secrets: ' + ', '.join(missing))
+          key = Path(os.environ['RUNNER_TEMP']) / 'cardtally-release.keystore'
+          key.write_bytes(base64.b64decode(''.join(os.environ[required[0]].split()), validate=True))
+          def escape(value):
+              encoded = value.encode('utf-16-be')
+              return ''.join('\\u' + encoded[i:i+2].hex() for i in range(0, len(encoded), 2))
+          values = {'storeFile': str(key), 'storePassword': os.environ[required[1]], 'keyAlias': os.environ[required[2]], 'keyPassword': os.environ[required[3]]}
+          Path('keystore.properties').write_text(''.join(k + '=' + escape(v) + '\n' for k, v in values.items()))
+          PY
+
+      - name: Build signed release
+        run: gradle --no-daemon --no-parallel :app:assembleEverydayRelease
+
+      - name: Verify and prepare release assets
+        run: |
+          set -euo pipefail
+          apk='app/build/outputs/apk/release/app-release.apk'
+          tools="$ANDROID_HOME/build-tools/34.0.0"
+          "$tools/apksigner" verify --verbose "$apk"
+          "$tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/apk-badging.txt"
+          grep -F "package: name='com.example.cardtally.release' versionCode='$VERSION_CODE' versionName='$VERSION_NAME'" "$RUNNER_TEMP/apk-badging.txt"
+          if grep -q '^application-debuggable' "$RUNNER_TEMP/apk-badging.txt"; then
+            echo 'Release APK must not be debuggable' >&2
+            exit 1
+          fi
+          mkdir -p dist
+          cp "$apk" "dist/XiaomaoJizhang-$VERSION_NAME.apk"
+          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
+
+      - name: Create GitHub Release draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "v$VERSION_NAME" dist/*.apk dist/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "小猫记帐 $VERSION_NAME" --draft --generate-notes
+
+      - name: Remove signing files
+        if: always()
+        run: |
+          rm -f -- keystore.properties "$RUNNER_TEMP/cardtally-release.keystore"
