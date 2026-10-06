@@ -3,11 +3,16 @@ package com.example.cardtally.util
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 object AgentSessionTitleHelper {
-    private val defaultTitleFormat = SimpleDateFormat("yyyy年MM月dd日", Locale.CHINA)
-
-    fun createDefaultTitle(timestamp: Long = System.currentTimeMillis()): String {
-        return "新会话-${defaultTitleFormat.format(Date(timestamp))}"
+    fun createDefaultTitle(
+        timestamp: Long = System.currentTimeMillis(),
+        timeZone: TimeZone = TimeZone.getDefault()
+    ): String {
+        val format = SimpleDateFormat("yyyy年MM月dd日", Locale.CHINA).apply {
+            this.timeZone = timeZone
+        }
+        return "新会话-${format.format(Date(timestamp))}"
     }
 }
