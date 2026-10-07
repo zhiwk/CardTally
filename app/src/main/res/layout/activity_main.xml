@@ -18,11 +18,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
+        <com.example.cardtally.view.StableWallpaperImageView
             android:id="@+id/image_wallpaper"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="centerCrop" />
+            android:scaleType="matrix" />
 
         <View
             android:layout_width="match_parent"
@@ -34,7 +34,7 @@
         android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/nav_shell"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -56,32 +56,43 @@
         android:id="@+id/nav_shell"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/surface_light"
-        android:elevation="0dp"
+        android:background="@android:color/transparent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:gravity="center_horizontal"
+        android:paddingStart="21dp"
+        android:paddingEnd="21dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="@dimen/floating_nav_shell_bottom_padding"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
+        <com.example.cardtally.view.ElasticBottomNavigationView
             android:id="@+id/bottom_navigation"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:elevation="0dp"
-            android:minHeight="56dp"
-            android:paddingStart="2dp"
-            android:paddingEnd="2dp"
-            android:paddingTop="0dp"
-            android:paddingBottom="5dp"
-            app:itemIconSize="20dp"
-            app:itemPaddingTop="0dp"
-            app:itemPaddingBottom="0dp"
-            app:itemIconTint="@color/bottom_nav_item_colors"
-            app:itemRippleColor="@color/bottom_nav_item_colors"
+            android:background="@drawable/bg_navigation_dock"
+            android:clipToOutline="true"
+            android:elevation="6dp"
+            android:minHeight="60dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            app:itemIconSize="22dp"
+            app:itemPaddingTop="4dp"
+            app:itemPaddingBottom="4dp"
+            app:itemIconTint="@color/bottom_nav_icon_colors"
+            app:itemHorizontalTranslationEnabled="false"
+            app:itemBackground="@android:color/transparent"
+            app:itemRippleColor="@android:color/transparent"
             app:itemTextColor="@color/bottom_nav_item_colors"
+            app:itemTextAppearanceActive="@style/TextAppearance.CardTally.NavSelected"
+            app:itemTextAppearanceInactive="@style/TextAppearance.CardTally.Nav"
             app:labelVisibilityMode="labeled"
-            app:itemActiveIndicatorStyle="@style/App.Custom.Indicator"
+            app:itemActiveIndicatorStyle="@style/Widget.CardTally.BottomNavigation.ActiveIndicator"
             app:menu="@menu/bottom_nav_menu" />
 
     </LinearLayout>

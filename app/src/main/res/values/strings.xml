@@ -1,6 +1,6 @@
 ﻿<resources>
-    <string name="app_name">小猫记帐</string>
-    <string name="app_name_en">小猫记帐</string>
+    <string name="app_name">卡片记账</string>
+    <string name="app_name_en">卡片记账</string>
     <string name="hello_world">你好</string>
 
     <string name="nav_ledger">账单</string>
@@ -306,7 +306,7 @@
     <string name="agent_reasoning_expand">展开思考过程</string>
     <string name="agent_reasoning_collapse">收起思考过程</string>
     <string name="agent_role_you">YOU</string>
-    <string name="agent_greeting">你好，我是小猫记帐的 AI 助手。可以和我聊聊消费、预算和财务安排。开启账单操作后，可请求查询、新增、修改或删除当前账本的账单；新增、修改和删除需你核对并确认后执行。</string>
+    <string name="agent_greeting">你好，我是卡片记账的 AI 助手。可以和我聊聊消费、预算和财务安排。开启账单操作后，可请求查询、新增、修改或删除当前账本的账单；新增、修改和删除需你核对并确认后执行。</string>
     <string name="agent_sample_user_message">帮我记录一笔晚餐，35元</string>
     <string name="agent_assistant_follow_up">好的，已为你识别到支出 <b>35元</b>。这笔费用是属于 <b>餐饮美食</b> 类别吗？</string>
     <string name="agent_chronicle">财务纪事</string>

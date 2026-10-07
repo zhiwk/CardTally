@@ -72,6 +72,43 @@ object WallpaperHelper {
         }
     }
 
+    internal fun backupFiles(context: Context): List<Pair<String, File>> =
+        listImages(context).mapNotNull { entry -> imageFile(context, entry.id)?.takeIf { it.isFile }?.let { entry.id to it } }
+
+    /** Merge validated private files; never replace an existing user picture. */
+    internal fun restoreBackupFiles(context: Context, files: List<Pair<String, File>>, selected: String, adoptSelection: Boolean) {
+        val mapping = mutableMapOf<String, String>()
+        fun fileDigest(file: File): ByteArray {
+            val hash = java.security.MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input -> val bytes = ByteArray(8192)
+                while (true) { val count = input.read(bytes); if (count < 0) break; hash.update(bytes, 0, count) }
+            }
+            return hash.digest()
+        }
+        fun hex(digest: ByteArray) = digest.joinToString("") { "%02x".format(it.toInt() and 255) }
+        val existing = backupFiles(context).associate { hex(fileDigest(it.second)) to it.first }.toMutableMap()
+        for ((id, source) in files) {
+            require(id == LEGACY_IMAGE_ID || (imageIdPattern.matches(id) && id !in defaultImages))
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(source.path, options)
+            require(options.outWidth > 0 && options.outHeight > 0)
+            val digest = fileDigest(source)
+            val targetId = existing[hex(digest)] ?: UUID.nameUUIDFromBytes(digest).toString()
+            val target = requireNotNull(imageFile(context, targetId))
+            if (target.exists()) require(fileDigest(target).contentEquals(digest))
+            if (!target.exists()) {
+                check(requireNotNull(target.parentFile).isDirectory || target.parentFile!!.mkdirs())
+                val stage = File.createTempFile("restore_", ".tmp", target.parentFile)
+                try { source.inputStream().use { input -> stage.outputStream().use { input.copyTo(it); it.fd.sync() } }
+                    check(stage.renameTo(target)) } finally { stage.delete() }
+            }
+            existing[hex(digest)] = targetId
+            mapping[id] = targetId
+        }
+        if (adoptSelection) selectImage(context, mapping[selected] ?: selected.takeIf { it in defaultImages } ?: DEFAULT_IMAGE_ID)
+        clearCache()
+    }
+
     fun hasCustomImage(context: Context): Boolean = currentImageId(context) != DEFAULT_IMAGE_ID
 
     fun bindImage(image: ImageView) {

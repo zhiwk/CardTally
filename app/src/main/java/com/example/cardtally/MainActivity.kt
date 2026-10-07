@@ -2,6 +2,8 @@ package com.example.cardtally
 
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import java.util.WeakHashMap
 import android.view.ViewTreeObserver
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -21,6 +23,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navShell: View
     private lateinit var fragmentContainer: View
     private lateinit var localeTransitionOverlay: View
+    private val floatingViewBaselines = WeakHashMap<View, Int>()
     private var isBottomNavigationTemporarilyHidden = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +43,9 @@ class MainActivity : AppCompatActivity() {
         navShell = findViewById(R.id.nav_shell)
         fragmentContainer = findViewById(R.id.fragment_container)
         localeTransitionOverlay = findViewById(R.id.locale_transition_overlay)
+        navShell.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            applyFloatingNavigationInsets()
+        }
 
         updateBottomNavigationVisibility()
         handlePendingLocaleTransition()
@@ -92,7 +98,7 @@ class MainActivity : AppCompatActivity() {
             is AssetFragment -> R.id.nav_asset
             is StatisticsFragment -> R.id.nav_statistics
             is AgentFragment -> R.id.nav_agent
-            is SettingsFragment, is AppearanceSettingsFragment -> R.id.nav_settings
+            is SettingsFragment, is AppearanceSettingsFragment, is AboutFragment, is com.example.cardtally.cloud.CloudBackupFragment -> R.id.nav_settings
             else -> R.id.nav_ledger
         }
         bottomNavigationView.menu.findItem(restoredDestination).isChecked = true
@@ -183,6 +189,50 @@ class MainActivity : AppCompatActivity() {
         val visibility = if (isTopLevel && !isBottomNavigationTemporarilyHidden) View.VISIBLE else View.GONE
         navShell.visibility = visibility
         bottomNavigationView.visibility = visibility
+        fragment.view?.post { applyFloatingNavigationInsets() }
+    }
+
+    private fun applyFloatingNavigationInsets() {
+        val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container) ?: return
+        val root = fragment.view ?: return
+        val inset = if (navShell.visibility == View.VISIBLE) navShell.height else 0
+        val gap = resources.getDimensionPixelSize(R.dimen.floating_primary_fab_gap_above_nav)
+        // Only scrolling tails and anchored controls reserve room. The page canvas stays full-screen.
+        for (id in intArrayOf(R.id.fab_add, R.id.fab_scroll_top)) {
+            val fab = root.findViewById<View>(id) ?: continue
+            val params = fab.layoutParams as? ViewGroup.MarginLayoutParams ?: continue
+            val baseline = floatingViewBaselines.getOrPut(fab) { params.bottomMargin }
+            val target = baseline + inset
+            if (params.bottomMargin != target) {
+                params.bottomMargin = target
+                fab.layoutParams = params
+            }
+        }
+        if (fragment is AgentFragment) {
+            root.findViewById<View>(R.id.layout_agent_main_surface)?.let { surface ->
+                val baseline = floatingViewBaselines.getOrPut(surface) { surface.paddingBottom }
+                val target = baseline + inset
+                if (surface.paddingBottom != target) surface.setPaddingRelative(
+                    surface.paddingStart, surface.paddingTop, surface.paddingEnd, target
+                )
+            }
+            return
+        }
+        if (fragment !is LedgerFragment && fragment !is StatisticsFragment &&
+            fragment !is AssetFragment && fragment !is SettingsFragment) return
+        fun updateScrollTail(view: View) {
+            if (view is androidx.core.widget.NestedScrollView ||
+                (view is androidx.recyclerview.widget.RecyclerView && view.id == R.id.recycler_records)) {
+                // Daily/asset child lists wrap their content; never add the page's dock inset to them.
+                val baseline = floatingViewBaselines.getOrPut(view) { view.paddingBottom }
+                val target = maxOf(baseline, inset + gap)
+                if (view.paddingBottom != target) view.setPaddingRelative(
+                    view.paddingStart, view.paddingTop, view.paddingEnd, target
+                )
+            }
+            if (view is ViewGroup) for (index in 0 until view.childCount) updateScrollTail(view.getChildAt(index))
+        }
+        updateScrollTail(root)
     }
 
     fun setBottomNavigationTemporarilyHidden(hidden: Boolean) {

@@ -351,6 +351,15 @@ class SettingsFragment : Fragment() {
                 .commit()
         }
 
+        view.findViewById<View>(R.id.card_cloud_backup).setOnClickListener {
+            parentFragmentManager.beginTransaction().replace(R.id.fragment_container, com.example.cardtally.cloud.CloudBackupFragment())
+                .addToBackStack(null).commit()
+        }
+        view.findViewById<View>(R.id.card_about).setOnClickListener {
+            parentFragmentManager.beginTransaction().replace(R.id.fragment_container, AboutFragment())
+                .addToBackStack(null).commit()
+        }
+
         cardTheme.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, AppearanceSettingsFragment())

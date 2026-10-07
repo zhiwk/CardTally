@@ -30,6 +30,14 @@
 
 ## 常见任务入口
 
+### 改账单页浮动操作显示
+
+先读 `LedgerFragment.kt`、`util/LedgerFloatingActionsController.kt` 与 DESIGN 的 Floating action button。只把当前月份外层列表的滚动事件传给控制器；其他月份、布局恢复不应触发方向隐藏。向下/向上累计 24dp 隐藏/恢复，惯性完全结束后 1.5 秒恢复；回顶启用门槛为两屏、退出门槛为 1.5 屏，继续遵守 `ScrollTopFabHelper` 设置。月份切换、回顶过程、手动打断及暂停/销毁统一处理，不能另行直接改 FAB visibility 与控制器竞争。分页加载、月份/列表滚动位置恢复、底栏避让和日卡片留白规则保持原样。
+
+### 改底部导航样式
+
+先读 `DESIGN.md` 的 Navigation shell、`activity_main.xml`、`MainActivity.kt`、`bottom_nav_menu.xml`、`bg_navigation_dock.xml`、`values/navigation_colors.xml`、导航颜色 selector、`view/ElasticBottomNavigationView.kt` 及导航文字样式。当前按用户 FlClash 截图使用悬浮胶囊：21dp 两侧、系统导航区之上 8dp 底部留白、60dp 最小高度、22dp 图标、12sp 标签、图标/标签容器 2dp 间距并整体垂直居中、选中底色包住图标和文字，无右侧开始/暂停按钮。不论三/四/五项，胶囊保持五项宽度，入口等距分布。页面容器覆盖整个可用窗口，滚动尾部、新增按钮及 AI 输入区单独避让悬浮底栏，见 `MainActivity.applyFloatingNavigationInsets`。只为整月 `recycler_records` / 整页 NestedScrollView 添加滚动尾部空间，不能给日内 `recycler_day_records` 或资产内层列表追加底部避让，否则每天卡片会产生大块空白。原生条目背景/波纹透明，避免双圈。弹性胶囊自绘，原生 active indicator 关闭；核对触摸取消、快速切换、布局恢复、系统动画关闭及离页清理，保留二级页隐藏契约。图片背景模式下胶囊为不透明中性灰、1dp 中性描边和 6dp 阴影，四周透明，不受卡片不透明度影响；选中层使用单独的较强中性色阶。
+
 ### 改账本 / 记录 / 设置等页面
 
 先读对应 Fragment，再读关联布局、Adapter、资源文件。
@@ -149,11 +157,11 @@
 
 注意：当前支持浅色、深色、跟随系统和图片背景，默认浅色；主题入口为 `ThemeHelper`、`SettingsFragment` 与 `values-night`，视觉方向以 `DESIGN.md` 为准，不要继续沿用已删除的历史设计指南或 Stitch 导出。
 
-图片模式见 `2026-10-05-wallpaper-appearance.md`：模式 3 使用独立样式与单独保存的浅色/深色/跟随系统配色（默认深色，`theme_prefs/wallpaper_palette`），页面根背景为 `?attr/pageBackgroundColor`，Activity 持有固定图片和中性遮罩；页面卡片使用 `?attr/cardSurfaceColor` / `ThemeColorHelper.resolveCardSurface`，图片模式为 80% 不透明，其余模式实底。卡片内部普通行不要再铺同一底色：`LedgerDateGroupAdapter` 在 `DateGroupAdapter.RecordViewHolder.bind` 传 `parentProvidesBackground=true`，日期组父卡片绘制唯一底色，内部账单行透明；独立条目默认自行绘底，每次绑定重置，选中高亮及归档滑动行保留实底；弹层和导航实底。切换模式或图片配色保存后重建 Activity，不能仅靠 night mode 更新，因为普通与图片模式可能共享同一夜间模式。图片样式继承配色对应的系统栏；遮罩与卡片颜色通过 `wallpaper_colors.xml` 的浅色/夜间资源切换。新增页面时沿用画布属性，勿用不透明背景盖住图片。
+图片模式见 `2026-10-05-wallpaper-appearance.md`：模式 3 使用独立样式与单独保存的浅色/深色/跟随系统配色（默认深色，`theme_prefs/wallpaper_palette`），页面根背景为 `?attr/pageBackgroundColor`，Activity 持有固定图片和中性遮罩；`view/StableWallpaperImageView` 按排除系统栏、不含键盘缩小的窗口高度居中裁切，Android 11+ 使用 currentWindowMetrics，旧版结合根 IME/navigation insets 与可见期间参考高度；页面继续 adjustResize。键盘开关不能改变背景缩放和位置，窗口大小/配置变化需重算，图库预览不使用该视图；页面卡片使用 `?attr/cardSurfaceColor` / `ThemeColorHelper.resolveCardSurface`，图片模式为 80% 不透明，其余模式实底。卡片内部普通行不要再铺同一底色：`LedgerDateGroupAdapter` 在 `DateGroupAdapter.RecordViewHolder.bind` 传 `parentProvidesBackground=true`，日期组父卡片绘制唯一底色，内部账单行透明；独立条目默认自行绘底，每次绑定重置，选中高亮及归档滑动行保留实底；弹层和导航实底。切换模式或图片配色保存后重建 Activity，不能仅靠 night mode 更新，因为普通与图片模式可能共享同一夜间模式。图片样式继承配色对应的系统栏；遮罩与卡片颜色通过 `wallpaper_colors.xml` 的浅色/夜间资源切换。新增页面时沿用画布属性，勿用不透明背景盖住图片。
 
 卡片不透明度滑杆见 `AppearanceSettingsFragment`、`ThemeHelper.getCardOpacity`、`values/card_opacity_styles.xml`：图片模式默认 80%，可按 5% 步长调至 0–100%，保存后松手应用；外观页 `scroll_appearance` 必须保留稳定 ID，使 NestedScrollView 随页面重建恢复当前位置；Activity 在 `super.onCreate` 处理夜间模式之后、布局加载之前叠加颜色属性覆盖，防止基础主题重应用覆盖当前不透明度。切换任何背景/图片配色前保存滑杆当前值，图片三种配色共用这一值，不分别记忆。偏好键为 `theme_prefs/card_opacity` 和图片配色 `theme_prefs/wallpaper_palette`，修改持久化时核对 `BackupArchiveManager` 白名单和 `DataTransferManager` 旧整数恢复，不能通过整卡 View alpha 降低文字可读性。
 
-图片库见 `WallpaperHelper`、`WallpaperGalleryAdapter` 与外观页的 `OpenDocument` 回调：32MB 输入上限、采样/方向归一，新增 UUID WebP 文件到私有 `appearance/wallpapers/`；原 WebP 与两张用户提供的 JPEG（`res/raw/appearance_wallpaper_option_*.jpg`）现统一为默认图片 1、2、3，按固定 ID 与顺序直接从打包资源列出/采样解码，不再复制 JPG 或读写 seed 标记；此前已删除备选图也重新可用，原选择 ID 保留，本地 `selected_wallpaper` 文件原子保存经过校验的图片 ID；旧 `appearance/wallpaper.webp` 保留为图库条目，缺少选择标记时继续使用旧图。添加不覆盖旧图，恢复默认仅切换选择，导入失败/取消清理本次临时文件，不先删原图。三张默认图均不提供删除入口且存储层拒绝删除，只有用户导入/旧自选图的缩略图右上角 × 使用独立回调和 48dp 触区；删除当前图前原子保存默认选择，删文件失败尝试恢复原选择。删除后台串行执行后重建但不启用图片模式，保留原配色/不透明度及滚动恢复，不能复用默认会启用图片的导入成功逻辑。横向 RecyclerView 展示默认图片 1、2、3 / 旧图 / 新增图，视口两侧固定 16dp margin，不能以允许绘制穿透的 padding 模拟边距；适配器采用 PREVENT_WHEN_EMPTY 延后恢复位置，重建时不再主动定位选中图。缩略图后台按需解码并缓存，复用取消旧任务且回调核对条目 ID，离开页面关闭线程与缓存；预览/全屏共用绑定及弱缓存。内置图作为恢复/缺图回退，无外部 URI 偏好或新增权限。图库和选择标记尚未进入备份，后续扩展备份需同时核对完整 ZIP 格式和合并事务，不要只导出不可移植的私有路径。
+图片库见 `WallpaperHelper`、`WallpaperGalleryAdapter` 与外观页的 `OpenDocument` 回调：32MB 输入上限、采样/方向归一，新增 UUID WebP 文件到私有 `appearance/wallpapers/`；三张用户指定 PNG（`res/drawable-nodpi/appearance_wallpaper.png` 与 `res/raw/appearance_wallpaper_option_*.png`）为默认图片 1、2、3，按固定 ID 与顺序直接从打包资源列出/采样解码，不再复制 JPG 或读写 seed 标记；此前已删除备选图也重新可用，原选择 ID 保留，本地 `selected_wallpaper` 文件原子保存经过校验的图片 ID；旧 `appearance/wallpaper.webp` 保留为图库条目，缺少选择标记时继续使用旧图。添加不覆盖旧图，恢复默认仅切换选择，导入失败/取消清理本次临时文件，不先删原图。三张默认图均不提供删除入口且存储层拒绝删除，只有用户导入/旧自选图的缩略图右上角 × 使用独立回调和 48dp 触区；删除当前图前原子保存默认选择，删文件失败尝试恢复原选择。删除后台串行执行后重建但不启用图片模式，保留原配色/不透明度及滚动恢复，不能复用默认会启用图片的导入成功逻辑。横向 RecyclerView 展示默认图片 1、2、3 / 旧图 / 新增图，视口两侧固定 16dp margin，不能以允许绘制穿透的 padding 模拟边距；适配器采用 PREVENT_WHEN_EMPTY 延后恢复位置，重建时不再主动定位选中图。缩略图后台按需解码并缓存，复用取消旧任务且回调核对条目 ID，离开页面关闭线程与缓存；预览/全屏共用绑定及弱缓存。内置图作为恢复/缺图回退，无外部 URI 偏好或新增权限。图库与选择在 v3 完整备份中导出，旧 v2 仍可导入；恢复使用内容去重与选择映射，须核对 BackupArchiveManager 和 WallpaperHelper，不导出不可移植的本机路径。
 
 外观选择在 `AppearanceSettingsFragment` / `fragment_appearance_settings.xml` 独立二级页，分为纯色、图片两张卡片，各直接提供浅色/深色/跟随系统；两组全页互斥，点选另一卡片即切换背景，状态恢复期间只同步不触发保存，`SettingsFragment` 仅保留入口与模式摘要。调整该页需同时核对 `MainActivity` 的重建后导航归属、返回栈及底部导航隐藏行为。
 
@@ -187,3 +195,11 @@
 3. 当前旧页面实现
 
 不要直接按旧页面一比一延续；这个仓库仍处于“旧结构”向“新骨架”过渡阶段。
+
+## 关于页 / GitHub 更新
+
+先读 `docs/requirements/decisions/2026-10-07-about-github-updates.md`，再核对 `AboutFragment.kt`、`update/GitHubRelease.kt`、`update/AppUpdateViewModel.kt`、`fragment_about.xml`、`fragment_settings_v2.xml`、Manifest 与 FileProvider 路径。版本以 `app/build.gradle` 为准；云端发布输入须递增 versionCode，包名、签名及渠道资产命名须与已安装包一致。
+
+## 云备份 / 自动备份
+
+先读 `docs/requirements/decisions/2026-10-07-cloud-backup.md` 与完整备份决策，再核对 `cloud/CloudBackupFragment`、`CloudSettings`、`CloudBackupManager`、`CloudStore`、`S3Signer`、`CloudCrypto`、`CloudBackupWorker` 及原备份/图库代码。Wi-Fi 必须使用实际 transport 判断，不能仅依赖 UNMETERED；清理仅当前设备自动历史，默认 15。恢复预检缓存不得在正式确认时再次联网下载。相关 JVM 用例位于 `app/src/test/java/com/example/cardtally/cloud/`，未执行；真实协议验证需要指定服务和用户另外要求。

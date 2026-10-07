@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="about_title">About</string>
+    <string name="about_version_value">Version %1$s (%2$d) · %3$s</string>
+    <string name="about_updates">App updates</string>
+    <string name="about_check">Check for updates</string>
+    <string name="about_check_hint">Manually check stable GitHub Releases. You decide whether to download and install.</string>
+    <string name="about_checking">Checking GitHub Release…</string>
+    <string name="about_current">Your app is up to date.</string>
+    <string name="about_no_package">The latest stable release has no package for this app. Dev and release use separate update packages. View the GitHub releases for details.</string>
+    <string name="about_available">New version %1$s\n\n%2$s</string>
+    <string name="about_download">Download update</string>
+    <string name="about_install">Install update</string>
+    <string name="about_downloading">Downloading: %1$d%%</string>
+    <string name="about_ready">Download complete and verified. Tap Install update, then confirm in the system installer.</string>
+    <string name="about_confirm_download">Download version %1$s (about %2$.1f MB) from GitHub? Data charges may apply.</string>
+    <string name="about_verify_failed">Package verification failed. Check its checksum, package name, version code and signing certificate.</string>
+    <string name="about_network_failed">Unable to check or download. Check your connection and try again.</string>
+    <string name="about_permission_hint">Allow this app to install apps in Settings. Returning after granting permission opens the system installer.</string>
+    <string name="about_open_settings">Open Settings</string>
+    <string name="about_permission_denied">Installation permission was not granted. You can try installing again later.</string>
+    <string name="about_open_failed">Unable to open this page. Check that a browser or system installer is available.</string>
+    <string name="about_file_missing">The cached package was removed. Check and download again.</string>
+    <string name="about_releases">GitHub releases</string>
+</resources>

@@ -236,13 +236,15 @@
     
     <!-- 导航文本 -->
     <style name="TextAppearance.CardTally.Nav" parent="TextAppearance.CardTally.Caption">
-        <item name="android:textColor">@color/navUnselected_light</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">@color/onSurfaceVariant_light</item>
     </style>
     
     <!-- 导航文本 - 选中 -->
     <style name="TextAppearance.CardTally.NavSelected" parent="TextAppearance.CardTally.Nav">
-        <item name="android:textColor">@color/navSelected_light</item>
-        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/onSurface_light</item>
+        <item name="android:textStyle">normal</item>
     </style>
     
     <!-- 统计标签 -->

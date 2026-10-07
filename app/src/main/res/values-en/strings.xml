@@ -1,8 +1,8 @@
 ﻿<resources>
     <string name="record_asset_sheet_empty">No assets available. Add an account on the Assets page first.</string>
     <string name="record_asset_sheet_empty_nav">No accounts yet. The assets entry is currently hidden, so enable it under My → Account Assets, then add an account.</string>
-    <string name="app_name">小猫记帐</string>
-    <string name="app_name_en">小猫记帐</string>
+    <string name="app_name">卡片记账</string>
+    <string name="app_name_en">卡片记账</string>
     <string name="hello_world">Hello</string>
 
     <string name="nav_ledger">Bills</string>
@@ -326,7 +326,7 @@
     <string name="agent_reasoning_expand">Expand thinking</string>
     <string name="agent_reasoning_collapse">Collapse thinking</string>
     <string name="agent_role_you">You</string>
-    <string name="agent_greeting">Hello, I am the AI assistant in 小猫记帐. We can discuss spending, budgets and financial plans. With bill operations enabled, you can request searches, additions, edits or deletions in the current ledger. Additions, edits and deletions run only after you review and confirm.</string>
+    <string name="agent_greeting">Hello, I am the AI assistant in 卡片记账. We can discuss spending, budgets and financial plans. With bill operations enabled, you can request searches, additions, edits or deletions in the current ledger. Additions, edits and deletions run only after you review and confirm.</string>
     <string name="agent_sample_user_message">Help me log a dinner expense for ¥35</string>
     <string name="agent_assistant_follow_up">Certainly. I detected an expense of <b>¥35</b>. Should I place it under <b>Dining</b>?</string>
     <string name="agent_chronicle">THE CHRONICLE</string>

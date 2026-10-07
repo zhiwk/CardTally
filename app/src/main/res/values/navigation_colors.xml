@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Navigation stays opaque and distinct from user-adjustable page cards. -->
+    <color name="navigation_dock_surface">@color/surface_container</color>
+    <color name="navigation_dock_selected">@color/surface_container_highest</color>
+    <color name="navigation_dock_outline">@color/outline_light</color>
+</resources>

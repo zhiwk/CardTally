@@ -55,7 +55,7 @@ class BackupArchiveManager(private val context: Context) {
         exportZipTo(CipherOutputStream(MacOutputStream(output, mac), cipher))
     }
 
-    private fun exportZipTo(output: OutputStream) {
+    internal fun exportZipTo(output: OutputStream) {
         val tables = DataTransferManager(context).use { it.exportTables() }
         tables.remove("record_deletion_undo")
         val source = sourceId()
@@ -75,6 +75,10 @@ class BackupArchiveManager(private val context: Context) {
         }
         root.put("photos", photoEntries)
 
+        val wallpapers = WallpaperHelper.backupFiles(context)
+        root.put("wallpapers", JSONArray().apply { wallpapers.forEachIndexed { index, pair ->
+            put(JSONObject().put("id", pair.first).put("entry", "wallpapers/$index.webp"))
+        } }).put("selectedWallpaper", WallpaperHelper.currentImageId(context))
         val manifestBytes = root.toString().toByteArray(Charsets.UTF_8)
         require(manifestBytes.size <= MAX_MANIFEST_BYTES) { "Backup manifest is too large" }
         var totalPhotoBytes = 0L
@@ -102,6 +106,14 @@ class BackupArchiveManager(private val context: Context) {
                         }
                     }
                     ?: throw IllegalStateException("A record photo cannot be read")
+                zip.closeEntry()
+            }
+            wallpapers.forEachIndexed { index, pair ->
+                require(pair.second.length() <= 32L * 1024 * 1024)
+                totalPhotoBytes += pair.second.length()
+                require(totalPhotoBytes <= MAX_TOTAL_PHOTO_BYTES)
+                zip.putNextEntry(ZipEntry("wallpapers/$index.webp"))
+                pair.second.inputStream().use { it.copyTo(zip) }
                 zip.closeEntry()
             }
         }
@@ -290,13 +302,14 @@ class BackupArchiveManager(private val context: Context) {
 
     private fun importZip(input: InputStream, dryRun: Boolean, useBackupBalances: Boolean): MergeResult {
         val newFiles = mutableListOf<File>()
+        val wallpaperStages = mutableListOf<File>()
         try {
             ZipInputStream(input).use { zip ->
                 require(zip.nextEntry?.name == "manifest.json") { "Missing backup manifest" }
                 val manifest = readLimited(zip, MAX_MANIFEST_BYTES).toString(Charsets.UTF_8)
                 zip.closeEntry()
                 val root = JSONObject(manifest)
-                require(root.optString("format") == FORMAT && root.optInt("version") == VERSION) {
+                require(root.optString("format") == FORMAT && root.optInt("version") in 2..VERSION) {
                     "Unsupported backup version"
                 }
                 require(root.optString("sourceId").isNotBlank()) { "Missing backup source" }
@@ -334,9 +347,38 @@ class BackupArchiveManager(private val context: Context) {
                         context, context.packageName + ".fileprovider", file
                     ).toString()
                 }
+                val wallpaperFiles = mutableListOf<Pair<String, File>>()
+                val wallpapers = root.optJSONArray("wallpapers") ?: JSONArray()
+                val ids = mutableSetOf<String>()
+                for (index in 0 until wallpapers.length()) {
+                    val image = wallpapers.getJSONObject(index)
+                    val id = image.getString("id")
+                    require(ids.add(id) && (id == "legacy" || Regex("[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}").matches(id)))
+                    require(WallpaperHelper.defaultImageNumber(id) == null)
+                    require(image.getString("entry") == "wallpapers/$index.webp" && zip.nextEntry?.name == image.getString("entry"))
+                    val file = File.createTempFile("wallpaper_import_", ".webp", context.cacheDir)
+                    wallpaperStages += file
+                    file.outputStream().use { destination ->
+                        val bytes = readLimited(zip, 32 * 1024 * 1024)
+                        totalPhotoBytes += bytes.size
+                        require(totalPhotoBytes <= MAX_TOTAL_PHOTO_BYTES)
+                        destination.write(bytes)
+                    }
+                    val options = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    android.graphics.BitmapFactory.decodeFile(file.path, options)
+                    require(options.outWidth > 0 && options.outHeight > 0)
+                    wallpaperFiles += id to file
+                    zip.closeEntry()
+                }
                 require(zip.nextEntry == null) { "Unexpected backup entry" }
                 require(photoUris.keys == referencedPhotoUris(tables)) { "Incomplete record photos" }
+                val adoptWallpaper = !context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE).contains("theme_mode") &&
+                    WallpaperHelper.backupFiles(context).isEmpty() && WallpaperHelper.currentImageId(context) == WallpaperHelper.DEFAULT_IMAGE_ID
                 val result = merge(root, photoUris, dryRun, useBackupBalances)
+                try {
+                    if (!dryRun && root.has("wallpapers")) WallpaperHelper.restoreBackupFiles(context, wallpaperFiles,
+                        root.optString("selectedWallpaper", WallpaperHelper.DEFAULT_IMAGE_ID), adoptWallpaper)
+                } finally { wallpaperFiles.forEach { it.second.delete() } }
                 cleanupUnreferenced(newFiles)
                 return result
             }
@@ -344,7 +386,7 @@ class BackupArchiveManager(private val context: Context) {
             // The database may already have committed even if a preference write failed.
             runCatching { cleanupUnreferenced(newFiles) }
             throw error
-        }
+        } finally { wallpaperStages.forEach { it.delete() } }
     }
 
     private fun backupKeys(password: CharArray, salt: ByteArray): ByteArray {
@@ -986,7 +1028,7 @@ class BackupArchiveManager(private val context: Context) {
     companion object {
         private val ENCRYPTED_MAGIC = byteArrayOf('C'.code.toByte(), 'T'.code.toByte(), 'B'.code.toByte(), '3'.code.toByte())
         private const val FORMAT = "cardtally-backup"
-        private const val VERSION = 2
+        private const val VERSION = 3
         private const val MAX_MANIFEST_BYTES = 128 * 1024 * 1024
         private const val MAX_PHOTO_BYTES = 50L * 1024 * 1024
         private const val MAX_TOTAL_PHOTO_BYTES = 1024L * 1024 * 1024

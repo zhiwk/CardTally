@@ -52,6 +52,8 @@
     <!-- Floating bottom navigation / FAB -->
     <dimen name="floating_nav_horizontal_margin">16dp</dimen>
     <dimen name="floating_nav_bottom_margin">24dp</dimen>
+    <!-- Shell sits above the system navigation area; only add a small visual gap. -->
+    <dimen name="floating_nav_shell_bottom_padding">8dp</dimen>
     <dimen name="floating_nav_vertical_padding">6dp</dimen>
     <dimen name="floating_primary_fab_end_margin">28dp</dimen>
     <dimen name="floating_primary_fab_gap_above_nav">15dp</dimen>

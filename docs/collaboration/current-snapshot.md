@@ -4,6 +4,74 @@
 
 以下按时间记录交接事实；较早条目中的页面、主题和验证状态可能已被上方新条目取代，接手时仍以当前源码为准。
 
+- 2026-10-07：按用户要求串行编译并覆盖安装 dev，包含设置云备份/关于入口与两页卡片显式0dp描边。`:app:assembleEverydayDebug` 成功（8 秒），核对 `app/build/outputs/apk/debug/app-debug.apk` 为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-borderless-cards-build-2026-10-07.log`。未构建或安装 release、运行测试、启动页面验证或推送。
+
+- 2026-10-07：按截图移除设置页云备份/关于入口及云备份页/关于页共六张卡片的边缘色。MaterialCardView 显式 strokeWidth=0dp，覆盖主题默认描边；保留12dp圆角、cardSurfaceColor透明度、0dp阴影、输入下划线及交互，导航胶囊仍沿用既有独立描边。同步 DESIGN，XML/差异静态复核通过；未编译、测试、安装或推送。
+
+- 2026-10-07：按用户要求串行编译并覆盖安装 dev，包含浮动菜单底部留白21dp改为8dp、FAB随共享避让整体下移13dp。`:app:assembleEverydayDebug` 成功（17 秒），核对 `app/build/outputs/apk/debug/app-debug.apk` 为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-lower-dock-build-2026-10-07.log`。未构建或安装 release、运行测试、启动页面验证或推送。
+
+- 2026-10-07：按用户参考 FlClash 下移浮动菜单与 FAB，共享 nav_shell 底部 padding 从21dp改为8dp（新增 floating_nav_shell_bottom_padding），系统导航区仍由窗口避让。菜单整体下移13dp；MainActivity 既有动态 shell 高度联动使账单新增/回顶及统计/资产新增 FAB 同步下移13dp，保留15dp基准间隔、尺寸、横向边距及动效/滚动显示规则。页面内容仍满屏，不新增日卡片空白。同步 DESIGN/入口，XML及差异静态复核通过，未编译、测试、安装或推送。
+
+- 2026-10-07：按用户要求串行编译并覆盖安装 dev，包含新云备份配置默认勾选加密保存密码及 Wi-Fi 每日自动备份，已有配置保留原选择。`:app:assembleEverydayDebug` 成功（9 秒），核对 `app/build/outputs/apk/debug/app-debug.apk` 为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-cloud-defaults-build-2026-10-07.log`。未构建或安装 release、运行测试、启动页面验证、连接真实云服务或推送。
+
+- 2026-10-07：按用户要求，新 WebDAV/S3 配置默认勾选「在本机加密保存备份密码」「每日自动备份，仅 Wi-Fi」；XML 初值与未保存配置加载一致。已有配置沿用保存的密码/自动设置及当前目标，不强制覆盖用户关闭选择；只有有效配置经既有保存确认后才落盘/安排 WorkManager，页面默认勾选不发起任务。取消保存密码仍联动关闭自动备份。同步 README、DESIGN 和云备份决策，取代早期自动默认关闭规则；仅静态复核，未编译、测试、安装、连接云端或推送。
+
+- 2026-10-07：按用户要求串行编译并覆盖安装 dev，包含坚果云 MOVE409 在确切目标HEAD成功时按目标已存在处理，以及路径冲突提示。`:app:assembleEverydayDebug` 成功（13 秒），核对 `app/build/outputs/apk/debug/app-debug.apk` 为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-jianguoyun-409-build-2026-10-07.log`。未构建或安装 release、运行测试、启动页面验证、连接真实云服务或推送，实际兼容效果待用户再次操作确认。
+
+- 2026-10-07：用户指定坚果云并提供 MOVE HTTP409。查阅 KeePass2Android 原始 issue3010/评论，确认存在目标时坚果云返回409的服务差异；新增严格 dav.jianguoyun.com + MOVE409 + 确切目标HEAD成功的已存在兼容，继续连接测试读回原内容比对，不删除目标或直接覆盖。其他409映射独立路径冲突提示，HTTP方法/状态保留。同步决策并静态复核资源/调用/差异；未构建、测试、安装、读取用户凭据、访问真实云端或推送，截图具体失败阶段及服务效果仍待实际确认。
+
+- 2026-10-07：按用户要求串行编译并覆盖安装 dev，包含 WebDAV 随机暂存上传 + 禁止覆盖 MOVE、MKCOL 尾斜杠及失败操作/HTTP 状态提示。`:app:assembleEverydayDebug` 成功（14 秒），核对 `app/build/outputs/apk/debug/app-debug.apk` 为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-webdav-move-build-2026-10-07.log`。未构建或安装 release、运行测试、启动页面验证、连接真实云服务或推送，服务兼容性仍待实际操作确认。
+
+- 2026-10-07：针对真实 WebDAV 兼容性提示，条件创建从单一 If-None-Match PUT 改为随机暂存上传 + MOVE Destination/Overwrite:F（S3 沿用条件 PUT），连接测试继续验证已有目标拒绝且内容未改变；不使用先检查后直接覆盖的降级。MKCOL 统一尾斜杠；MOVE 失败/取消尽力清理本次暂存，断网/进程终止可能留孤立暂存。失败 UI 区分防覆盖测试未通过与 HTTP 方法不支持，显示安全的方法/状态码，便于定位。同步云备份决策，依据 RFC4918；未访问用户云凭据/远端、编译、测试、安装或推送，仅静态复核，具体服务兼容仍待实际验证。
+
+- 2026-10-07：按用户要求串行编译并覆盖安装 dev，包含云备份错误分类与字段输入校验调整。`:app:assembleEverydayDebug` 成功（15 秒），核对 `app/build/outputs/apk/debug/app-debug.apk` 为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-cloud-errors-build-2026-10-07.log`。未构建或安装 release、运行测试、启动页面验证、连接真实云服务或推送。
+
+- 2026-10-07：针对云备份错误截图，修正前台错误归类：备份空间密码验证失败及服务不遵守条件创建分别使用独立异常；登录认证、404、429、重定向、405/501、远端格式问题分别提示，不再将所有 IllegalArgumentException 与完整性错误混成同一句。配置校验改为对应 EditText 原生 error/聚焦，覆盖 HTTPS、必填凭据、S3 桶/区域、目录路径段、至少 8 位备份密码及保留份数。中英文同步；未放宽 HTTPS/重定向/条件写保护，未读取设备凭据或访问用户远端。已静态复核 XML/资源/调用及差异，未编译、测试、安装或推送。截图无法区分具体异常，真实服务原因仍需用户再次操作后的具体提示确认。
+
+- 2026-10-07：按用户要求串行编译并覆盖安装 dev，包含键盘弹出/收起时共享壁纸固定窗口裁切与显式 adjustResize。`:app:assembleEverydayDebug` 成功（9 秒），核对 `app/build/outputs/apk/debug/app-debug.apk` 为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-stable-wallpaper-build-2026-10-07.log`。未构建或安装 release、运行测试、启动页面验证或推送，键盘背景实际效果待用户查看。
+
+- 2026-10-07：修复系统键盘弹出后共享壁纸重裁切：原全屏 ImageView centerCrop 随内容高度缩小导致背景缩放/偏移，改为 `StableWallpaperImageView` 使用固定窗口基准的 MATRIX center-crop。Android 11+ 按 currentWindowMetrics 排除系统栏/刘海计算高度；Android 7–10 从根 IME/navigation insets 还原并在键盘可见期间保留参考高度，配置/宽度变化重算。MainActivity 显式 adjustResize，页面输入和滚动继续正常避让；壁纸加载、遮罩、预览、配色及卡片透明度不变。同步 DESIGN 和任务入口，仅静态复核，未编译、测试、安装或推送；键盘动画、旧系统及多窗口实际效果待设备验证。
+
+- 2026-10-07：按用户要求串行编译并覆盖安装 dev，包含云备份左右标题/输入与说明、中文名称「卡片记账 (Dev)」及底部菜单图文 2dp 间距。`:app:assembleEverydayDebug` 成功（15 秒），核对 `app/build/outputs/apk/debug/app-debug.apk` 为 `com.example.cardtally`、`0.0.3 / 3`、新应用名称；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-cloud-form-build-2026-10-07.log`。未构建或安装 release、运行测试、启动页面验证、联调云服务或推送。
+
+- 2026-10-07：云备份配置的九个输入项改为左侧常驻标题、右侧输入，标题与 EditText 通过 labelFor 关联，最小行高 56dp、文字 16sp。WebDAV/S3 分别显示用户名/登录密码与 Access Key/Secret Key；为默认 cardtally 备份目录、至少 8 位加密密码和默认 15 份自动历史增加中英文说明，明确手动备份不自动清理。保留原字段 ID、配置保存/校验/切换及密码遮蔽，未改备份逻辑。同步 DESIGN，XML/资源及差异静态复核通过；未编译、测试、安装或推送，布局及大字体实际效果尚待设备确认。
+
+- 2026-10-07：按用户要求中文应用名改为「卡片记账」，Debug 名称为「卡片记账 (Dev)」。同步主资源及英文环境中显示的中文品牌、AI 新会话欢迎语、更新安装权限提示、README、DESIGN、图标说明与本地 release 工作流后续草稿标题；原小猫图标、包名、版本、签名、APK 资产文件名匹配及已存聊天历史保留，不影响原发布更新兼容。修改 XML 可解析，差异检查通过；未编译、测试、安装、推送或修改既有 GitHub Release，设备名称仍为上轮安装版本。
+
+- 2026-10-07：按用户截图收紧底部菜单图标与文字间距。`ElasticBottomNavigationView.onLayout` 将原生图标容器与标签容器按 2dp 间距整体垂直居中，消除原生顶部/底部分别锚定产生的过量空隙；位置每次布局重新按未变换坐标计算，不累计偏移。保留菜单高度、22dp 图标、12sp 字号、全项触摸区、选中胶囊及 Q 弹动效，兼容三/四/五入口。静态核对 Material 1.11 子视图 ID 并重新阅读改动，无构建、测试、安装或推送。
+
+- 2026-10-07：按用户要求编译并覆盖安装最新 dev，包含账单页两个 FAB 按滚动方向/空闲 1.5 秒显示，以及回顶两屏阈值、月份切换及回顶过程隐藏和生命周期清理。串行 `:app:assembleEverydayDebug` 成功（4 秒），`app/build/outputs/apk/debug/app-debug.apk` 核对为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-scroll-actions-build-2026-10-07.log`，未修改 SDK、wrapper 或签名材料；未构建或安装 release、运行测试、启动页面验证或推送，实际交互待用户查看。
+
+- 2026-10-07：实现用户确认的账单页两个 FAB 按需显示。新增视图生命周期 `LedgerFloatingActionsController`，当前月份外层列表向下/向上累计 24dp 隐藏/恢复，惯性结束后空闲 1.5 秒恢复；回顶受既有设置控制，仅超过两屏可视高度出现、低于 1.5 屏或到顶退出。月份横滑及程序回顶期间隐藏，完成恢复，手动拖动可打断回顶抑制。沿用 Material FAB 淡出/缩放，动画关闭即时切换，隐藏时禁点击及键盘/无障碍焦点；暂停/销毁移除延时任务、取消跟踪动画。原分页/滚动恢复/底栏避让不变，其他页面及导航未修改。已重新阅读源码并静态核对 Material 1.11 API 和差异；未构建、测试、安装或推送，实际交互尚待验证。
+
+- 2026-10-07：按用户要求编译并覆盖安装最新 dev，包含日卡片过量留白修复和导航胶囊中性灰底/1dp 描边/单层选中底色，保留柔和阴影与 Q 弹动效。串行 `:app:assembleEverydayDebug` 成功（13 秒），`app/build/outputs/apk/debug/app-debug.apk` 核对为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-dock-contrast-build-2026-10-07.log`，未修改 SDK、wrapper 或签名材料；未构建或安装 release、运行测试、启动页面验证或推送，实际效果待用户查看。
+
+- 2026-10-07：按用户确认强化菜单与账单卡片的层级区分。新增导航专用颜色别名：胶囊使用不透明 `surface_container`、选中单层使用 `surface_container_highest`、边线使用 `outline_light`；加 1dp 外描边，保留柔和 6dp 阴影和 Q 弹动效，浅深色均沿用现有中性色阶。账单卡片透明度及五项固定宽度不变，日卡片空白修复仍在工作区。静态 XML/资源与差异检查通过，未构建、测试、安装或推送，设备尚不包含本轮修改。
+
+- 2026-10-07：修复日卡片底部过量留白根因：共享避让递归误给 `recycler_day_records` 等内容自适应的嵌套列表追加整页底栏空间。RecyclerView 避让限定为整月外层 `recycler_records`，NestedScrollView 沿用整页尾部留白；日内记录及资产内层列表不再追加。仅静态复核，未构建、测试或安装。菜单与卡片层级区分本轮给出设计建议，尚未变更颜色/描边。
+
+- 2026-10-07：按用户要求编译并覆盖安装最新 dev，包含全屏内容下的悬浮菜单、三/四/五项同宽等距、透明点击波纹去双圈及紧凑图文间距，并包含列表/FAB/AI 输入区避让调整。串行 `:app:assembleEverydayDebug` 成功（11 秒），`app/build/outputs/apk/debug/app-debug.apk` 核对为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-overlay-dock-build-2026-10-07.log`，未修改 SDK、wrapper 或签名材料；未构建或安装 release、运行测试、启动页面验证或推送，实际效果待用户查看。
+
+- 2026-10-07：按用户截图修正悬浮菜单布局：页面容器延伸至可用窗口底部，菜单覆盖内容，不再整块预留底部区域；三/四/五项均保持同一五项宽度、等距分布。底栏改为 60dp 最小高度、22dp 图标及 4dp 项目上下间距，原生条目背景/点击波纹透明，去掉与自绘选中底色叠加的灰色双圈，Q 弹保留。MainActivity 根据当前菜单占位调整滚动尾部、FAB 及 AI 输入主内容的底部空间，弱引用缓存初始值防止重复叠加，二级页及临时隐藏恢复。已静态核对布局/资源/宿主，无数据修改；未构建、测试、安装或推送，设备仍是上一轮悬浮菜单。
+
+- 2026-10-07：按用户要求编译并覆盖安装最新 dev，包含 FlClash 截图参考的完整悬浮胶囊底栏与 Q 弹动效，无右侧开启/暂停按钮。串行 `:app:assembleEverydayDebug` 成功（17 秒），`app/build/outputs/apk/debug/app-debug.apk` 核对为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。本机日志为仓库外 `dev-floating-dock-build-2026-10-07.log`，SDK、wrapper、签名材料未修改。未构建或安装 release、运行测试、启动页面验证或推送；实际样式和手感待用户查看。
+
+- 2026-10-07：按用户 FlClash 截图将整个底部菜单改为悬浮胶囊，21dp 两侧/底部留白、64dp 最小高度、4dp 内边距、6dp 柔和阴影，选中中性底色包住图标和文字，标签统一 12sp 常规字重；保留原五项入口、Q 弹动效和二级页隐藏。五项铺满可用宽度，三/四项居中收窄，透明外围露出当前画布/壁纸，内容仍在菜单占位之上，无右侧开启/暂停按钮。同步 DESIGN 和入口以覆盖原全宽无阴影规则；仅静态复核，未构建、测试、安装或推送，设备仍是上轮全宽底栏。
+
+- 2026-10-07：按用户要求编译并覆盖安装最新 dev，包含底部导航胶囊弹性动效，以及此前关于页/GitHub 更新和 WebDAV/S3 云备份等工作区改动。串行 `:app:assembleEverydayDebug` 成功（50 秒），`app/build/outputs/apk/debug/app-debug.apk` 核对包名 `com.example.cardtally`、版本 `0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。构建仅见既有弃用警告，本机 SDK、wrapper、签名配置未修改；日志为仓库外 `dev-elastic-cloud-build-2026-10-07.log`。本轮未构建或安装 release、运行单元/设备测试、启动页面验证、联调真实云服务或推送；Q 弹实际手感及新增功能运行行为仍待验证。
+
+- 2026-10-07：补充 FlClash NavigationDock 弹性动效参考，新增 `ElasticBottomNavigationView`，保留原生底部导航点击、波纹、键盘与无障碍语义，选中胶囊采用连续弹簧位移和随速度拉伸/压缩，按下图标及胶囊轻微膨胀、释放回弹；连续点击保留速度，系统动画关闭时即时切换，退出清理帧回调及图标缩放。仍沿用全宽底栏，不增加拖动切换或模糊；仅静态复核，未构建、测试、安装或推送，Q 弹效果待真机查看。
+
+- 2026-10-07：底部导航参考 FlClash 竖屏常规 Material NavigationBar，改为 80dp 最小高度、24dp 图标、始终显示 12sp 标签与 64×32dp 选中胶囊。标签选中加粗、浅深色使用语义配色，图片模式导航仍为实底；关闭横向位移以保持 3/4/5 项等宽。沿用原五个入口、显示开关及二级页隐藏逻辑，无导航或数据行为修改。已静态复核 XML 和资源，未构建、测试、安装或推送。
+
+- 2026-10-07：新增「我的 → 云备份」及 WebDAV / S3 配置、系统密钥保护凭据、手动上传/列表/预检恢复/删除与 Wi-Fi 每日自动任务。附件按本机设备命名空间的内容 HMAC 去重，数据保持完整快照，压缩后 AES-GCM；只发布完整加密清单，无变化自动跳过。默认保留当前设备自动历史 15 份，可设 1–365，手动历史不自动删除，无引用的本设备文件才清理；dev/release 隔离。恢复确认复用已验证缓存，不重复下载。完整备份扩展 v3 ZIP 包含自选背景图库/选择，兼容 v2/旧 JSON，原合并及余额规则保留；不做跨设备实时同步或跨设备去重。添加 crypto/retention/SigV4 JVM 用例但未执行；静态资源与差异检查完成，未构建、测试、安装、真实服务联调或推送，设备尚不具备本轮新功能。
+
+- 2026-10-07：新增「我的 → 关于」二级页及手动 GitHub 更新流程，源码默认版本改为 0.0.3 / 3。确认仓库公开且 v0.0.2 正式发布；读取最新稳定 Release，按 dev/release 匹配资产，原生确认后下载、进度与取消、SHA-256/长度/包名/版本号/签名校验，通过后由用户点击打开系统安装器及必要的安装权限设置。当前发布仅附 release APK，dev 不跨渠道更新。添加协议 JVM 用例但未执行；本轮只静态复核，未构建、测试、安装、推送或发布，设备仍是上一轮安装版本。
+
+- 2026-10-07：按用户要求串行编译并覆盖安装 dev、release，包含三张新 PNG 默认背景及「再记」导航修复。`:app:assembleEverydayDebug` 成功（9 秒），随后 `:app:assembleEverydayRelease` 成功（48 秒），发布 Lint 通过；两包名称、包名、调试属性及三张新 PNG 资源均核对，release 签名验证通过。ADB 对 `app/build/outputs/apk/debug/app-debug.apk` 和 `app/build/outputs/apk/release/app-release.apk` 分别执行 `install -r`，均返回 `Success`，保留各自数据；本机 SDK 配置、wrapper 和签名材料未修改。本机日志为仓库外 `dev-default-wallpaper-replace-build-2026-10-07.log` / `release-default-wallpaper-replace-build-2026-10-07.log`。本轮未运行单元/设备测试或启动应用验证页面，默认图实际展示及导航交互仍待验证，未推送或创建云端 Release。
+
+- 2026-10-07：按用户新附件顺序替换「默认图片 1、2、3」为黑西装长裤人物、猫耳眼镜办公室人物及 Q 版猫耳人物。三张均为 941×1672 PNG，原样复制到 `drawable-nodpi/appearance_wallpaper.png`、`raw/appearance_wallpaper_option_one.png` / `option_two.png`，删除原 WebP/JPEG 打包文件，资源名称及既有 default/UUID 映射不变，默认图不可删除，自选图库、配色、不透明度及当前选择 ID 保留。同步 DESIGN、外观决策及入口，静态核对附件字节一致、格式/尺寸与每个资源名唯一；无代码/偏好/数据库变化。本轮未编译、运行测试、安装或推送，设备尚未应用新默认图片。
+
 - 2026-10-07：按用户 GitHub 上传要求整理「再记」导航修复、隔离设备回归用例及交接说明，目标 master。静态检查补齐设备清单 main-layout 12→14 项、总数 147→149 项及验证说明，按源码核对 14 组各项预期和所有测试类唯一覆盖，差异空白检查通过。沿用上一轮 dev 编译/覆盖安装成功证据，本轮未重新构建或执行测试；本次不纳入此前本地 release 工作流默认值模板修改、本机配置、签名材料、APK、日志或截图，不触发云端构建或创建新 Release。
 
 - 2026-10-07：按用户要求编译并覆盖安装最新 dev，包含「再记」后返回页面重叠、编辑转新建的重建恢复及快速记账根页返回修复。使用现有本机 JDK 17、SDK 与 wrapper，串行执行 `:app:assembleEverydayDebug` 成功（36 秒）；产物 `app/build/outputs/apk/debug/app-debug.apk` 核对为可调试的 `com.example.cardtally`，名称「小猫记帐 (Dev)」。ADB `install -r` 返回 `Success`，保留 dev 数据，release 未操作；本机配置和 wrapper 未修改，日志位于仓库外 `dev-save-again-fix-build-2026-10-07.log`。本轮未运行单元/设备测试或启动应用验证页面，返回路径的真机交互仍待验证，未推送。

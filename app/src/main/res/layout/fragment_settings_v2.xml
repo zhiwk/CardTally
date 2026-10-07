@@ -149,5 +149,9 @@
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/card_cloud_backup" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/cardSurfaceColor" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeWidth="0dp"><TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="56dp" android:gravity="center_vertical" android:padding="16dp" android:text="@string/cloud_title" android:textColor="?attr/colorOnSurface" android:textSize="16sp" /></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/card_about" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/cardSurfaceColor" app:cardCornerRadius="12dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="56dp" android:gravity="center_vertical" android:padding="16dp" android:text="@string/about_title" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 </ScrollView>

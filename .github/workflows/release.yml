@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: '版本名称，例如 1.0.1'
+        description: '版本名称，例如 0.0.1'
         required: true
-        default: '1.0.1'
+        default: '0.0.1'
         type: string
       version_code:
-        description: '递增版本号，须大于已发布版本，例如 2'
+        description: '首次填 1，以后逐次递增：2、3……'
         required: true
-        default: '2'
+        default: '1'
         type: string
 
 permissions:
@@ -62,9 +62,9 @@ jobs:
           name = os.environ['VERSION_NAME']
           code = os.environ['VERSION_CODE']
           if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', name):
-              raise SystemExit('Version name must use X.Y.Z, for example 1.0.1')
-          if not re.fullmatch(r'[1-9][0-9]*', code) or not 1 < int(code) <= 2100000000:
-              raise SystemExit('Version code must be an integer between 2 and 2100000000')
+              raise SystemExit('Version name must use X.Y.Z, for example 0.0.1')
+          if not re.fullmatch(r'[1-9][0-9]*', code) or not 1 <= int(code) <= 2100000000:
+              raise SystemExit('Version code must be an integer between 1 and 2100000000')
           path = Path('app/build.gradle')
           text = path.read_text()
           text, codes = re.subn(r'(?m)^(\s*versionCode\s*=\s*)[0-9]+\s*$', lambda m: m[1] + code, text)
@@ -138,7 +138,7 @@ jobs:
           set -euo pipefail
           gh release create "v$VERSION_NAME" dist/*.apk dist/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "小猫记帐 $VERSION_NAME" --draft --generate-notes
+            --title "卡片记账 $VERSION_NAME" --draft --generate-notes
 
       - name: Remove signing files
         if: always()

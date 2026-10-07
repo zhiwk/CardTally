@@ -20,6 +20,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.IncomeExpenseColorScheme
+import com.example.cardtally.util.LedgerFloatingActionsController
 import com.example.cardtally.util.LedgerMonthIndex
 import com.example.cardtally.util.Money
 import com.example.cardtally.util.ScrollTopFabHelper
@@ -32,7 +33,7 @@ class LedgerFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
     private var pager: ViewPager2? = null
     private var pages: MonthAdapter? = null
-    private var fabScrollTop: FloatingActionButton? = null
+    private var floatingActions: LedgerFloatingActionsController? = null
     private var currentMonth = SimpleDateFormat("yyyy-MM", Locale.US).format(Calendar.getInstance().time)
     private var ledgerId: Long? = null
     private val states = mutableMapOf<Int, MonthState>()
@@ -87,34 +88,43 @@ class LedgerFragment : Fragment() {
         root.findViewById<View>(R.id.button_ledger_calendar).setOnClickListener {
             open(CalendarFragment.newInstance(currentMonth))
         }
-        root.findViewById<View>(R.id.fab_add).setOnClickListener { open(AddRecordFragment()) }
-        fabScrollTop = root.findViewById<FloatingActionButton>(R.id.fab_scroll_top).apply {
-            setOnClickListener { activeHolder()?.list?.smoothScrollToPosition(0) }
+        val add = root.findViewById<FloatingActionButton>(R.id.fab_add).apply {
+            setOnClickListener { open(AddRecordFragment()) }
         }
+        val top = root.findViewById<FloatingActionButton>(R.id.fab_scroll_top).apply {
+            setOnClickListener { floatingActions?.returnToTop() }
+        }
+        floatingActions = LedgerFloatingActionsController(root, add, top,
+            activeList = { activeHolder()?.list },
+            monthPaging = { pager?.scrollState != ViewPager2.SCROLL_STATE_IDLE },
+            topEnabled = { isAdded && ScrollTopFabHelper.isEnabled(requireContext()) })
         return root
     }
 
     private val pageCallback = object : ViewPager2.OnPageChangeCallback() {
         override fun onPageSelected(position: Int) {
             currentMonth = LedgerMonthIndex.month(position)
+            floatingActions?.onMonthSelected()
             pager?.post {
                 if (view != null && pager?.scrollState == ViewPager2.SCROLL_STATE_IDLE) {
                     trimMonthStates()
-                    updateScrollTopFab()
+                    refreshFloatingActions()
                 }
             }
-            updateScrollTopFab()
+            refreshFloatingActions()
         }
         override fun onPageScrollStateChanged(state: Int) {
             if (state == ViewPager2.SCROLL_STATE_IDLE) {
                 trimMonthStates()
-                updateScrollTopFab()
-            } else fabScrollTop?.visibility = View.GONE
+                refreshFloatingActions()
+            }
+            floatingActions?.onMonthPagingChanged()
         }
     }
 
     override fun onResume() {
         super.onResume()
+        floatingActions?.resume()
         saveScrollPositions()
         val selectedLedger = databaseHelper.getCurrentLedger()?.id
         if (ledgerId != selectedLedger) {
@@ -129,7 +139,7 @@ class LedgerFragment : Fragment() {
             .associate { it.id to it.icon.orEmpty() }
         states.values.forEach { it.loaded = false }
         pages?.notifyDataSetChanged()
-        pager?.post { if (view != null) updateScrollTopFab() }
+        pager?.post { if (view != null) refreshFloatingActions() }
     }
 
     private fun open(fragment: Fragment) {
@@ -185,9 +195,14 @@ class LedgerFragment : Fragment() {
             list.layoutManager = LinearLayoutManager(root.context)
             list.itemAnimator = null
             list.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    if (!restoring && monthPosition == LedgerMonthIndex.position(currentMonth)) {
+                        floatingActions?.onScrollStateChanged(list, newState)
+                    }
+                }
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     if (monthPosition < 0 || restoring) return
-                    if (monthPosition == LedgerMonthIndex.position(currentMonth)) updateScrollTopFab()
+                    if (monthPosition == LedgerMonthIndex.position(currentMonth)) floatingActions?.onScrolled(list, dy)
                     val manager = list.layoutManager as LinearLayoutManager
                     if (dy > 0 && manager.findLastVisibleItemPosition() >= rows.itemCount - 5) {
                         val state = states[monthPosition] ?: return
@@ -236,7 +251,7 @@ class LedgerFragment : Fragment() {
             state.scroll?.let { list.layoutManager?.onRestoreInstanceState(it) }
                 ?: list.scrollToPosition(0)
             restoring = false
-            list.post { if (monthPosition == LedgerMonthIndex.position(currentMonth)) updateScrollTopFab() }
+            list.post { if (monthPosition == LedgerMonthIndex.position(currentMonth)) refreshFloatingActions() }
         }
         private fun updateRows(state: MonthState) {
             val groups = state.records.groupBy { it.date }.toSortedMap(compareByDescending { it })
@@ -257,11 +272,7 @@ class LedgerFragment : Fragment() {
     }
     private fun saveScrollPositions() { pages?.holders?.forEach { it.saveScroll() } }
     private fun activeHolder() = pages?.holders?.firstOrNull { it.monthPosition == LedgerMonthIndex.position(currentMonth) }
-    private fun updateScrollTopFab() {
-        fabScrollTop?.visibility = if (isAdded && ScrollTopFabHelper.isEnabled(requireContext()) &&
-            pager?.scrollState == ViewPager2.SCROLL_STATE_IDLE && activeHolder()?.list?.canScrollVertically(-1) == true)
-            View.VISIBLE else View.GONE
-    }
+    private fun refreshFloatingActions() { floatingActions?.refresh() }
 
     private fun bindSummary(header: View, month: String, state: MonthState) {
         header.findViewById<TextView>(R.id.text_month_summary_title).text = monthSummaryTitle(month)
@@ -328,14 +339,20 @@ class LedgerFragment : Fragment() {
             else -> getString(R.string.ledger_month_summary_other_year, year, number)
         }
     }
+    override fun onPause() {
+        floatingActions?.pause()
+        super.onPause()
+    }
+
     override fun onDestroyView() {
+        floatingActions?.dispose()
+        floatingActions = null
         saveScrollPositions()
         pages?.holders?.forEach { it.list.stopScroll() }
         pager?.unregisterOnPageChangeCallback(pageCallback)
         pager?.adapter = null
         pager = null
         pages = null
-        fabScrollTop = null
         databaseHelper.close()
         super.onDestroyView()
     }
