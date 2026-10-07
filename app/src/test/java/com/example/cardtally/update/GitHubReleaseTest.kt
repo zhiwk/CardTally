@@ -7,7 +7,7 @@ import org.junit.Test
 
 class GitHubReleaseTest {
     private val hash = "a".repeat(64)
-    private fun release(name: String = "XiaomaoJizhang-0.0.4.apk", url: String = "https://github.com/zhiwk/CardTally/releases/download/v0.0.4/$name"): JSONObject =
+    private fun release(name: String = "cardtally-0.0.4.apk", url: String = "https://github.com/zhiwk/CardTally/releases/download/v0.0.4/$name"): JSONObject =
         JSONObject().put("tag_name", "v0.0.4").put("draft", false).put("prerelease", false)
             .put("assets", JSONArray().put(JSONObject().put("name", name).put("size", 1024)
                 .put("browser_download_url", url).put("digest", "sha256:$hash")))
@@ -23,15 +23,23 @@ class GitHubReleaseTest {
         val json = release()
         assertEquals(hash, GitHubRelease.fromJson(json.toString(), "com.example.cardtally.release")!!.sha256)
         assertNull(GitHubRelease.fromJson(json.toString(), "com.example.cardtally"))
-        assertNotNull(GitHubRelease.fromJson(release("XiaomaoJizhang-dev-0.0.4.apk").toString(), "com.example.cardtally"))
+        assertNotNull(GitHubRelease.fromJson(release("cardtally-dev-0.0.4.apk").toString(), "com.example.cardtally"))
         assertNull(GitHubRelease.fromJson(json.put("draft", true).toString(), "com.example.cardtally.release"))
         assertNull(GitHubRelease.fromJson(json.put("draft", false).put("prerelease", true).toString(), "com.example.cardtally.release"))
     }
 
+    @Test fun legacyNamesRemainCompatibleAndNewNameTakesPriority() {
+        val legacy = release("XiaomaoJizhang-0.0.4.apk")
+        assertNotNull(GitHubRelease.fromJson(legacy.toString(), "com.example.cardtally.release"))
+        assertNotNull(GitHubRelease.fromJson(release("XiaomaoJizhang-dev-0.0.4.apk").toString(), "com.example.cardtally"))
+        legacy.getJSONArray("assets").put(release().getJSONArray("assets").getJSONObject(0))
+        assertEquals("cardtally-0.0.4.apk", GitHubRelease.fromJson(legacy.toString(), "com.example.cardtally.release")!!.assetName)
+    }
+
     @Test fun unrelatedOrInsecureDownloadUrlsAreRejected() {
-        listOf("http://github.com/zhiwk/CardTally/releases/download/v0.0.4/XiaomaoJizhang-0.0.4.apk",
-            "https://example.com/zhiwk/CardTally/releases/download/v0.0.4/XiaomaoJizhang-0.0.4.apk",
-            "https://github.com/other/CardTally/releases/download/v0.0.4/XiaomaoJizhang-0.0.4.apk").forEach { url ->
+        listOf("http://github.com/zhiwk/CardTally/releases/download/v0.0.4/cardtally-0.0.4.apk",
+            "https://example.com/zhiwk/CardTally/releases/download/v0.0.4/cardtally-0.0.4.apk",
+            "https://github.com/other/CardTally/releases/download/v0.0.4/cardtally-0.0.4.apk").forEach { url ->
             try { GitHubRelease.fromJson(release(url = url).toString(), "com.example.cardtally.release"); fail("URL accepted") }
             catch (_: IllegalArgumentException) { }
         }

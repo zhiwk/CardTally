@@ -2,6 +2,8 @@
 
 ## 当前有效快照
 
+- 2026-10-07：按用户要求将发布 APK 文件前缀改为 cardtally，工作流后续产出 cardtally-X.Y.Z.apk；更新解析优先新名称并兼容历史 XiaomaoJizhang 渠道名称，补充对应测试源码。仅静态复核，未构建或运行测试；已安装 0.0.3 仍使用原解析规则，后续新名称更新需要先安装包含新解析的版本。
+
 以下按时间记录交接事实；较早条目中的页面、主题和验证状态可能已被上方新条目取代，接手时仍以当前源码为准。
 
 - 2026-10-07：按用户要求串行编译并覆盖安装 dev，包含设置云备份/关于入口与两页卡片显式0dp描边。`:app:assembleEverydayDebug` 成功（8 秒），核对 `app/build/outputs/apk/debug/app-debug.apk` 为 `com.example.cardtally`、`0.0.3 / 3`；ADB `install -r` 返回 `Success`，保留 dev 数据。日志为仓库外 `dev-borderless-cards-build-2026-10-07.log`。未构建或安装 release、运行测试、启动页面验证或推送。

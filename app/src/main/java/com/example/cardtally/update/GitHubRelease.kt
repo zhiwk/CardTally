@@ -41,22 +41,23 @@ data class GitHubRelease(
             if (root.optBoolean("draft") || root.optBoolean("prerelease")) return null
             val tag = root.getString("tag_name")
             val version = ReleaseVersion.parse(tag) ?: return null
-            val name = when (applicationId) {
-                "com.example.cardtally.release" -> "XiaomaoJizhang-$version.apk"
-                "com.example.cardtally" -> "XiaomaoJizhang-dev-$version.apk"
+            val names = when (applicationId) {
+                "com.example.cardtally.release" -> listOf("cardtally-$version.apk", "XiaomaoJizhang-$version.apk")
+                "com.example.cardtally" -> listOf("cardtally-dev-$version.apk", "XiaomaoJizhang-dev-$version.apk")
                 else -> return null
             }
             val assets = root.getJSONArray("assets")
-            var apk: JSONObject? = null
+            val apks = mutableMapOf<String, JSONObject>()
             var checksum: JSONObject? = null
             for (index in 0 until assets.length()) {
                 val asset = assets.getJSONObject(index)
                 when (asset.optString("name")) {
-                    name -> { require(apk == null); apk = asset }
+                    in names -> { val name = asset.getString("name"); require(apks.put(name, asset) == null) }
                     "SHA256SUMS.txt" -> { require(checksum == null); checksum = asset }
                 }
             }
-            val artifact = apk ?: return null
+            val name = names.firstOrNull { it in apks } ?: return null
+            val artifact = apks.getValue(name)
             val size = artifact.getLong("size")
             require(size in 1..MAX_APK_BYTES)
             val url = checkedAssetUrl(artifact.getString("browser_download_url"), tag, name)

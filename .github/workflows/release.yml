@@ -128,7 +128,7 @@ jobs:
             exit 1
           fi
           mkdir -p dist
-          cp "$apk" "dist/XiaomaoJizhang-$VERSION_NAME.apk"
+          cp "$apk" "dist/cardtally-$VERSION_NAME.apk"
           (cd dist && sha256sum *.apk > SHA256SUMS.txt)
 
       - name: Create GitHub Release draft
