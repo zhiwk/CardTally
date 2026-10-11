@@ -5,12 +5,14 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.drawable.GradientDrawable
 import android.provider.Settings
 import android.util.AttributeSet
 import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import com.example.cardtally.R
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlin.math.abs
@@ -46,11 +48,33 @@ class ElasticBottomNavigationView @JvmOverloads constructor(
     init {
         // Draw one travelling capsule instead of Material's per-item fading indicators.
         isItemActiveIndicatorEnabled = false
+        // Share the themed card RGB, while keeping the floating dock fully opaque.
+        val colors = context.obtainStyledAttributes(intArrayOf(R.attr.cardSurfaceColor))
+        val cardColor = try {
+            colors.getColor(0, ContextCompat.getColor(context, R.color.navigation_dock_surface))
+        } finally {
+            colors.recycle()
+        }
+        val dock = ContextCompat.getDrawable(context, R.drawable.bg_navigation_dock)
+            ?.mutate() as? GradientDrawable
+        dock?.setColor(ColorUtils.setAlphaComponent(cardColor, 255))
+        backgroundTintList = null
+        if (dock != null) background = dock
     }
 
     private fun animationScale(): Float = Settings.Global.getFloat(
         context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f
     ).coerceAtLeast(0f)
+
+    fun setDocked(docked: Boolean) {
+        val shape = background as? GradientDrawable ?: return
+        shape.cornerRadii = if (docked) floatArrayOf(12 * density, 12 * density,
+            12 * density, 12 * density, 0f, 0f, 0f, 0f) else FloatArray(8) { 1000 * density }
+        shape.setStroke(if (docked) 0 else (density + 0.5f).toInt(),
+            ContextCompat.getColor(context, R.color.navigation_dock_outline))
+        invalidateOutline()
+        invalidate()
+    }
 
     private fun iconOf(item: View): View? = item.findViewById(
         com.google.android.material.R.id.navigation_bar_item_icon_view

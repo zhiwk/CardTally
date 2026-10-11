@@ -30,6 +30,11 @@
 
 ## 常见任务入口
 
+### 改底部菜单样式选择
+
+先读 BottomNavigationSettingsFragment、BottomNavigationPreferences、MainActivity.refreshBottomNavigationStyle 和 ElasticBottomNavigationView.setDocked。默认悬浮；吸附时 page bottomToTop=nav_shell，非吸附/二级页 bottomToBottom=parent。菜单尺寸由同一 shell 测量，只有悬浮模式添加滚动尾部/FAB额外避让；样式偏好参与完整/云备份。
+
+
 ### 改账单页浮动操作显示
 
 先读 `LedgerFragment.kt`、`util/LedgerFloatingActionsController.kt` 与 DESIGN 的 Floating action button。只把当前月份外层列表的滚动事件传给控制器；其他月份、布局恢复不应触发方向隐藏。向下/向上累计 24dp 隐藏/恢复，惯性完全结束后 1.5 秒恢复；回顶启用门槛为两屏、退出门槛为 1.5 屏，继续遵守 `ScrollTopFabHelper` 设置。月份切换、回顶过程、手动打断及暂停/销毁统一处理，不能另行直接改 FAB visibility 与控制器竞争。分页加载、月份/列表滚动位置恢复、底栏避让和日卡片留白规则保持原样。
@@ -161,7 +166,7 @@
 
 卡片不透明度滑杆见 `AppearanceSettingsFragment`、`ThemeHelper.getCardOpacity`、`values/card_opacity_styles.xml`：图片模式默认 80%，可按 5% 步长调至 0–100%，保存后松手应用；外观页 `scroll_appearance` 必须保留稳定 ID，使 NestedScrollView 随页面重建恢复当前位置；Activity 在 `super.onCreate` 处理夜间模式之后、布局加载之前叠加颜色属性覆盖，防止基础主题重应用覆盖当前不透明度。切换任何背景/图片配色前保存滑杆当前值，图片三种配色共用这一值，不分别记忆。偏好键为 `theme_prefs/card_opacity` 和图片配色 `theme_prefs/wallpaper_palette`，修改持久化时核对 `BackupArchiveManager` 白名单和 `DataTransferManager` 旧整数恢复，不能通过整卡 View alpha 降低文字可读性。
 
-图片库见 `WallpaperHelper`、`WallpaperGalleryAdapter` 与外观页的 `OpenDocument` 回调：32MB 输入上限、采样/方向归一，新增 UUID WebP 文件到私有 `appearance/wallpapers/`；三张用户指定 PNG（`res/drawable-nodpi/appearance_wallpaper.png` 与 `res/raw/appearance_wallpaper_option_*.png`）为默认图片 1、2、3，按固定 ID 与顺序直接从打包资源列出/采样解码，不再复制 JPG 或读写 seed 标记；此前已删除备选图也重新可用，原选择 ID 保留，本地 `selected_wallpaper` 文件原子保存经过校验的图片 ID；旧 `appearance/wallpaper.webp` 保留为图库条目，缺少选择标记时继续使用旧图。添加不覆盖旧图，恢复默认仅切换选择，导入失败/取消清理本次临时文件，不先删原图。三张默认图均不提供删除入口且存储层拒绝删除，只有用户导入/旧自选图的缩略图右上角 × 使用独立回调和 48dp 触区；删除当前图前原子保存默认选择，删文件失败尝试恢复原选择。删除后台串行执行后重建但不启用图片模式，保留原配色/不透明度及滚动恢复，不能复用默认会启用图片的导入成功逻辑。横向 RecyclerView 展示默认图片 1、2、3 / 旧图 / 新增图，视口两侧固定 16dp margin，不能以允许绘制穿透的 padding 模拟边距；适配器采用 PREVENT_WHEN_EMPTY 延后恢复位置，重建时不再主动定位选中图。缩略图后台按需解码并缓存，复用取消旧任务且回调核对条目 ID，离开页面关闭线程与缓存；预览/全屏共用绑定及弱缓存。内置图作为恢复/缺图回退，无外部 URI 偏好或新增权限。图库与选择在 v3 完整备份中导出，旧 v2 仍可导入；恢复使用内容去重与选择映射，须核对 BackupArchiveManager 和 WallpaperHelper，不导出不可移植的本机路径。
+图片库见 `WallpaperHelper`、`WallpaperGalleryAdapter` 与外观页的 `OpenDocument` 回调：32MB 输入上限、采样/方向归一，新增 UUID WebP 文件到私有 `appearance/wallpapers/`；四张用户指定 PNG（`res/drawable-nodpi/appearance_wallpaper.png` 与 `res/raw/appearance_wallpaper_option_*.png`）为默认图片 1、2、3、4，按固定 ID 与顺序直接从打包资源列出/采样解码，不再复制 JPG 或读写 seed 标记；此前已删除备选图也重新可用，原选择 ID 保留，本地 `selected_wallpaper` 文件原子保存经过校验的图片 ID；旧 `appearance/wallpaper.webp` 保留为图库条目，缺少选择标记时继续使用旧图。添加不覆盖旧图，恢复默认仅切换选择，导入失败/取消清理本次临时文件，不先删原图。四张默认图均不提供删除入口且存储层拒绝删除，只有用户导入/旧自选图的缩略图右上角 × 使用独立回调和 48dp 触区；删除当前图前原子保存默认选择，删文件失败尝试恢复原选择。删除后台串行执行后重建但不启用图片模式，保留原配色/不透明度及滚动恢复，不能复用默认会启用图片的导入成功逻辑。横向 RecyclerView 展示默认图片 1、2、3、4 / 旧图 / 新增图，视口两侧固定 16dp margin，不能以允许绘制穿透的 padding 模拟边距；适配器采用 PREVENT_WHEN_EMPTY 延后恢复位置，重建时不再主动定位选中图。缩略图后台按需解码并缓存，复用取消旧任务且回调核对条目 ID，离开页面关闭线程与缓存；预览/全屏共用绑定及弱缓存。内置图作为恢复/缺图回退，无外部 URI 偏好或新增权限。图库与选择在 v3 完整备份中导出，旧 v2 仍可导入；恢复使用内容去重与选择映射，须核对 BackupArchiveManager 和 WallpaperHelper，不导出不可移植的本机路径。
 
 外观选择在 `AppearanceSettingsFragment` / `fragment_appearance_settings.xml` 独立二级页，分为纯色、图片两张卡片，各直接提供浅色/深色/跟随系统；两组全页互斥，点选另一卡片即切换背景，状态恢复期间只同步不触发保存，`SettingsFragment` 仅保留入口与模式摘要。调整该页需同时核对 `MainActivity` 的重建后导航归属、返回栈及底部导航隐藏行为。
 

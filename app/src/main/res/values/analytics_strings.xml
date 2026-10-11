@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="analytics_title">分享启动统计</string>
+  <string name="analytics_hint">默认开启，可关闭；不含财务数据，点击查看说明</string>
+  <string name="analytics_unavailable">仅配置了统计服务的正式版可用；Dev 不发送统计</string>
+  <string name="analytics_enable">同意并开启</string>
+  <string name="analytics_consent">开启后，每次应用冷启动将向 PostHog 美国区发送随机安装标识、启动事件标识、时间、版本及正式版渠道。不会发送账单、金额、照片、聊天或设备硬件标识，不创建用户档案，并禁用 IP 地理位置分析。网络请求仍会让服务接收方看到连接 IP。\n\n可随时关闭：停止后续上报、取消待发送任务并清除本机安装标识；已上传数据不会自动删除。开启时会记录本次启动。重新开启将生成新标识，可能计为新的安装实例。</string>
+</resources>

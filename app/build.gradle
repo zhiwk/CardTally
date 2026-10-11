@@ -24,8 +24,15 @@ android {
         applicationId = "com.example.cardtally"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "0.0.3"
+        versionCode = 4
+        versionName = "0.0.4"
+
+        def analyticsProperties = new Properties()
+        def analyticsFile = rootProject.file('analytics.properties')
+        if (analyticsFile.exists()) analyticsFile.withInputStream { analyticsProperties.load(it) }
+        def analyticsToken = System.getenv('POSTHOG_PROJECT_TOKEN') ?: analyticsProperties.getProperty('POSTHOG_PROJECT_TOKEN', '')
+        if (analyticsToken && !(analyticsToken ==~ /phc_[A-Za-z0-9]+/)) throw new GradleException('Invalid PostHog project token format')
+        buildConfigField 'String', 'POSTHOG_PROJECT_TOKEN', '"' + analyticsToken + '"'
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

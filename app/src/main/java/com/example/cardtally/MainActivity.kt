@@ -19,6 +19,11 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
+    override fun onResume() {
+        super.onResume()
+        com.example.cardtally.analytics.LaunchAnalytics.recordLaunch(this)
+    }
+
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var navShell: View
     private lateinit var fragmentContainer: View
@@ -98,7 +103,7 @@ class MainActivity : AppCompatActivity() {
             is AssetFragment -> R.id.nav_asset
             is StatisticsFragment -> R.id.nav_statistics
             is AgentFragment -> R.id.nav_agent
-            is SettingsFragment, is AppearanceSettingsFragment, is AboutFragment, is com.example.cardtally.cloud.CloudBackupFragment -> R.id.nav_settings
+            is SettingsFragment, is AppearanceSettingsFragment, is AboutFragment, is BottomNavigationSettingsFragment, is com.example.cardtally.cloud.CloudBackupFragment -> R.id.nav_settings
             else -> R.id.nav_ledger
         }
         bottomNavigationView.menu.findItem(restoredDestination).isChecked = true
@@ -189,13 +194,32 @@ class MainActivity : AppCompatActivity() {
         val visibility = if (isTopLevel && !isBottomNavigationTemporarilyHidden) View.VISIBLE else View.GONE
         navShell.visibility = visibility
         bottomNavigationView.visibility = visibility
+        refreshBottomNavigationStyle()
         fragment.view?.post { applyFloatingNavigationInsets() }
+    }
+
+    fun refreshBottomNavigationStyle() {
+        val docked = com.example.cardtally.util.BottomNavigationPreferences.isDocked(this)
+        val side = if (docked) 0 else (21 * resources.displayMetrics.density + 0.5f).toInt()
+        val top = if (docked) 0 else (8 * resources.displayMetrics.density + 0.5f).toInt()
+        val bottom = if (docked) 0 else resources.getDimensionPixelSize(R.dimen.floating_nav_shell_bottom_padding)
+        navShell.setPaddingRelative(side, top, side, bottom)
+        val menuParams = bottomNavigationView.layoutParams
+        menuParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+        bottomNavigationView.layoutParams = menuParams
+        (bottomNavigationView as? com.example.cardtally.view.ElasticBottomNavigationView)?.setDocked(docked)
+        val pageParams = fragmentContainer.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
+        val reserve = docked && navShell.visibility == View.VISIBLE
+        pageParams.bottomToTop = if (reserve) R.id.nav_shell else androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.UNSET
+        pageParams.bottomToBottom = if (reserve) androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.UNSET else androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+        fragmentContainer.layoutParams = pageParams
+        navShell.post { applyFloatingNavigationInsets() }
     }
 
     private fun applyFloatingNavigationInsets() {
         val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container) ?: return
         val root = fragment.view ?: return
-        val inset = if (navShell.visibility == View.VISIBLE) navShell.height else 0
+        val inset = if (navShell.visibility == View.VISIBLE && !com.example.cardtally.util.BottomNavigationPreferences.isDocked(this)) navShell.height else 0
         val gap = resources.getDimensionPixelSize(R.dimen.floating_primary_fab_gap_above_nav)
         // Only scrolling tails and anchored controls reserve room. The page canvas stays full-screen.
         for (id in intArrayOf(R.id.fab_add, R.id.fab_scroll_top)) {
@@ -225,7 +249,7 @@ class MainActivity : AppCompatActivity() {
                 (view is androidx.recyclerview.widget.RecyclerView && view.id == R.id.recycler_records)) {
                 // Daily/asset child lists wrap their content; never add the page's dock inset to them.
                 val baseline = floatingViewBaselines.getOrPut(view) { view.paddingBottom }
-                val target = maxOf(baseline, inset + gap)
+                val target = if (inset > 0) maxOf(baseline, inset + gap) else baseline
                 if (view.paddingBottom != target) view.setPaddingRelative(
                     view.paddingStart, view.paddingTop, view.paddingEnd, target
                 )

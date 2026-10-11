@@ -1033,14 +1033,14 @@ class BackupArchiveManager(private val context: Context) {
         private const val MAX_PHOTO_BYTES = 50L * 1024 * 1024
         private const val MAX_TOTAL_PHOTO_BYTES = 1024L * 1024 * 1024
         private const val MAX_ENCRYPTED_BYTES = 1200L * 1024 * 1024
-        private val EXCLUDED_PREFS = setOf("beta_reset_control", "backup_internal")
+        private val EXCLUDED_PREFS = setOf("beta_reset_control", "backup_internal", "launch_analytics")
         private val KNOWN_PREFS = setOf(
             "ai_assistant_settings_prefs", "asset_display_prefs", "quick_add_prefs",
             "record_photo_settings", "record_entry_mode_prefs", "ledger_ux_prefs",
             "category_hierarchy_settings_prefs", "ledger_session", "theme_prefs",
             "default_record_asset_prefs", "cardtally_preferences", "language_prefs",
             "statistics_ranking_mode_prefs", "scroll_top_fab_prefs",
-            "record_category_order_prefs"
+            "record_category_order_prefs", "bottom_navigation_prefs"
         )
         private val PREF_TYPES = setOf("boolean", "int", "long", "float", "string", "string_set")
         private val ROW_TABLES = listOf(

@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: '版本名称，例如 0.0.1'
+        description: '版本名称，例如 0.0.4'
         required: true
-        default: '0.0.1'
+        default: '0.0.4'
         type: string
       version_code:
-        description: '首次填 1，以后逐次递增：2、3……'
+        description: '递增版本号，须大于已发布版本，例如 4'
         required: true
-        default: '1'
+        default: '4'
         type: string
 
 permissions:
@@ -31,6 +31,7 @@ jobs:
     env:
       VERSION_NAME: ${{ inputs.version_name }}
       VERSION_CODE: ${{ inputs.version_code }}
+      POSTHOG_PROJECT_TOKEN: ${{ secrets.POSTHOG_PROJECT_TOKEN }}
     defaults:
       run:
         shell: bash

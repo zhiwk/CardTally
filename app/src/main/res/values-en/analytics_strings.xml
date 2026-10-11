@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="analytics_title">Share launch statistics</string>
+  <string name="analytics_hint">On by default; optional, no financial data. Tap for details.</string>
+  <string name="analytics_unavailable">Available in configured release builds only; Dev sends no analytics</string>
+  <string name="analytics_enable">Agree and enable</string>
+  <string name="analytics_consent">When enabled, each cold launch sends a random installation ID, event ID, time, version and release channel to PostHog US. No financial records, amounts, photos, chats or hardware identifiers are sent. Person profiles and IP geolocation enrichment are disabled. The receiving service can still see the connection IP.\n\nTurning this off stops future reporting, cancels pending uploads and removes the local installation ID; previously uploaded data is not automatically deleted. Enabling records this launch. Re-enabling creates a new ID and may count as a new installation.</string>
+</resources>

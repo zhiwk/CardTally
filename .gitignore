@@ -164,5 +164,6 @@ screenshot/
 
 # Release signing secrets (never commit)
 keystore.properties
+analytics.properties
 *.jks
 *.keystore

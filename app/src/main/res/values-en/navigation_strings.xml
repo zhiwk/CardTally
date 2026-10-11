@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="settings_bottom_navigation">Bottom navigation style</string>
+  <string name="navigation_style_floating">Floating</string>
+  <string name="navigation_style_floating_desc">A floating capsule above full-screen page content</string>
+  <string name="navigation_style_docked">Docked</string>
+  <string name="navigation_style_docked_desc">A full-width bottom card with page content above it</string>
+</resources>

@@ -22,12 +22,13 @@ object WallpaperHelper {
     private val defaultImages = linkedMapOf(
         DEFAULT_IMAGE_ID to R.drawable.appearance_wallpaper,
         "1c1b789c-7f29-4e9b-a9b7-9db0ba3e14d1" to R.raw.appearance_wallpaper_option_one,
-        "1c1b789c-7f29-4e9b-a9b7-9db0ba3e14d2" to R.raw.appearance_wallpaper_option_two
+        "1c1b789c-7f29-4e9b-a9b7-9db0ba3e14d2" to R.raw.appearance_wallpaper_option_two,
+        "1c1b789c-7f29-4e9b-a9b7-9db0ba3e14d3" to R.raw.appearance_wallpaper_option_three
     )
     private val imageIdPattern = Regex("[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}")
     val defaultImageCount: Int get() = defaultImages.size
 
-    /** Fixed package order; these IDs and numbers survive upgrades and cannot be deleted. */
+    /** Fixed package order; packaged default pictures cannot be deleted. */
     fun defaultImageNumber(id: String): Int? =
         defaultImages.keys.indexOf(id).takeIf { it >= 0 }?.plus(1)
 

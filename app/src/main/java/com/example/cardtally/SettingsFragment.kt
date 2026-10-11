@@ -313,6 +313,35 @@ class SettingsFragment : Fragment() {
         switchScrollTopFab.setOnClickListener {
             ScrollTopFabHelper.saveEnabled(requireContext(), switchScrollTopFab.isChecked)
         }
+        val analyticsSwitch = view.findViewById<Switch>(R.id.switch_launch_analytics)
+        analyticsSwitch.isChecked = com.example.cardtally.analytics.LaunchAnalytics.enabled(requireContext())
+        analyticsSwitch.isEnabled = com.example.cardtally.analytics.LaunchAnalytics.available()
+        view.findViewById<TextView>(R.id.text_launch_analytics_hint).setText(
+            if (analyticsSwitch.isEnabled) R.string.analytics_hint else R.string.analytics_unavailable)
+        view.findViewById<TextView>(R.id.text_launch_analytics_hint).setOnClickListener {
+            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.analytics_title)
+                .setMessage(R.string.analytics_consent)
+                .setPositiveButton(android.R.string.ok, null).show()
+        }
+        analyticsSwitch.setOnClickListener {
+            if (!analyticsSwitch.isChecked) {
+                com.example.cardtally.analytics.LaunchAnalytics.setEnabled(requireContext(), false)
+            } else {
+                analyticsSwitch.isChecked = false
+                androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.analytics_title)
+                    .setMessage(R.string.analytics_consent)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.analytics_enable) { _, _ ->
+                        if (isAdded && this.view === view) {
+                            com.example.cardtally.analytics.LaunchAnalytics.setEnabled(requireContext(), true)
+                            analyticsSwitch.isChecked = true
+                            com.example.cardtally.analytics.LaunchAnalytics.recordLaunch(requireContext())
+                        }
+                    }.show()
+            }
+        }
         cardRecordPhotoLimit.setOnClickListener { showRecordPhotoLimitDialog() }
         cardIncomeExpenseColor.setOnClickListener { showIncomeExpenseColorDialog() }
         cardRecordEntryMode.setOnClickListener {
@@ -360,6 +389,10 @@ class SettingsFragment : Fragment() {
                 .addToBackStack(null).commit()
         }
 
+        view.findViewById<View>(R.id.card_bottom_navigation).setOnClickListener {
+            parentFragmentManager.beginTransaction().replace(R.id.fragment_container, BottomNavigationSettingsFragment())
+                .addToBackStack(null).commit()
+        }
         cardTheme.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, AppearanceSettingsFragment())
@@ -395,6 +428,10 @@ class SettingsFragment : Fragment() {
     }
 
     private fun refreshSettingsFromStorage() {
+        view?.findViewById<TextView>(R.id.text_bottom_navigation_style)?.setText(
+            if (com.example.cardtally.util.BottomNavigationPreferences.isDocked(requireContext()))
+                R.string.navigation_style_docked else R.string.navigation_style_floating)
+
         updateThemeText()
         updateCurrentLanguageText()
         updateAiApiKeyStatus()

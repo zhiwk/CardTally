@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="settings_bottom_navigation">底部菜单样式</string>
+  <string name="navigation_style_floating">悬浮菜单</string>
+  <string name="navigation_style_floating_desc">胶囊悬浮在页面上方，内容铺满屏幕</string>
+  <string name="navigation_style_docked">吸附底部</string>
+  <string name="navigation_style_docked_desc">卡片贴底铺满宽度，页面内容停在菜单上方</string>
+</resources>
