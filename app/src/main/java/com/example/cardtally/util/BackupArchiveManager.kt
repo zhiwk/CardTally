@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.example.cardtally.database.DatabaseHelper
+import com.example.cardtally.database.DefaultCategoryCatalog
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -743,6 +744,7 @@ class BackupArchiveManager(private val context: Context) {
             "1|理财|黄金" to "tabler_pig_money"
         )
         val actual = mutableMapOf<String, String>()
+        val actualOrders = mutableMapOf<String, Int>()
         val nonzeroSortOrders = mapOf(
             "0||餐饮" to 1, "0||居住" to 2, "0||交通" to 3,
             "1||理财" to 1, "1|工作|报销" to 1,
@@ -757,11 +759,16 @@ class BackupArchiveManager(private val context: Context) {
                 count++
                 if (cursor.getLong(4) != seedLedger) return@use false
                 val key = "${cursor.getInt(0)}|${cursor.getString(1)}|${cursor.getString(2)}"
-                if (cursor.getString(5) != "#F5F5F5" ||
-                    cursor.getInt(6) != (nonzeroSortOrders[key] ?: 0)) return@use false
+                if (cursor.getString(5) != "#F5F5F5") return@use false
+                actualOrders[key] = cursor.getInt(6)
                 if (actual.put(key, cursor.getString(3)) != null) return@use false
             }
-            count == expected.size && actual == expected
+            val currentEntries = DefaultCategoryCatalog.entries
+            val currentIcons = currentEntries.associate { it.pathKey to it.icon }
+            val currentOrders = currentEntries.associate { it.pathKey to it.sortOrder }
+            val legacyOrders = expected.keys.associateWith { nonzeroSortOrders[it] ?: 0 }
+            count == actual.size && ((actual == currentIcons && actualOrders == currentOrders) ||
+                (actual == expected && actualOrders == legacyOrders))
         }
         if (!matches) return false
         db.delete("categories", null, null)

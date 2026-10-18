@@ -30,6 +30,11 @@
 
 ## 常见任务入口
 
+### 改默认分类目录
+
+先读 `database/DefaultCategoryCatalog.kt`、`CategoryDefaultsSeeder.kt`、`DatabaseHelper` 的默认补建入口，以及 `BackupArchiveManager.removePristineSeed`。分类全局共享，仅新库/既有空分类补建使用默认目录，新账本不复制分类；目录和备份初始树识别共用事实源，保留旧树识别。当前二级目录参考蜜蜂记账，22支出父类+101子类、14收入父类+40子类，图标使用现有资源；参考及范围见2026-10-17默认分类决策。不要为了替换默认值改写已用分类/账单或清库。
+
+
 ### 改底部菜单样式选择
 
 先读 BottomNavigationSettingsFragment、BottomNavigationPreferences、MainActivity.refreshBottomNavigationStyle 和 ElasticBottomNavigationView.setDocked。默认悬浮；吸附时 page bottomToTop=nav_shell，非吸附/二级页 bottomToBottom=parent。菜单尺寸由同一 shell 测量，只有悬浮模式添加滚动尾部/FAB额外避让；样式偏好参与完整/云备份。

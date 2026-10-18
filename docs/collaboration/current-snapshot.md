@@ -2,6 +2,11 @@
 
 ## 当前有效快照
 
+- 2026-10-17：按用户要求串行编译并覆盖安装dev，包含参考蜜蜂记账的177节点默认分类目录与备份初始树识别。`:app:assembleEverydayDebug` 成功（34秒），产物 app/build/outputs/apk/debug/app-debug.apk 核对为 com.example.cardtally、0.0.4/4；通过mDNS发现并连接已配对手机，指定连接 install -r 返回 Success，保留数据。日志在仓库外 dev-default-categories-build-2026-10-17.log。已有分类不被覆盖；未运行单测/设备测试、启动页面验证、构建/安装release或推送。
+
+- 2026-10-17：按用户要求参考蜜蜂记账二级分类目录，默认初始化改为22支出父类/101子类、14收入父类/40子类，共177节点；中文名称/分组/顺序参考固定上游提交54844964，Kotlin初始化独立实现，沿用已有Tabler图标。DefaultCategoryCatalog作为初始化与完整备份初始树识别共同源，保留旧19节点初始树识别；只影响新库与原有空分类补建，已有全局分类/账单/新账本共享契约不变，无数据库迁移。新增目录契约测试源码，同步README/入口/决策；静态核对分类/排序/图标资源及差异，未构建、运行测试、安装或推送。
+
+
 - 2026-10-11：用户要求上传并触发 Release 构建。当前已发布0.0.3，本轮源码版本及工作流输入默认更新为0.0.4/4；确认GitHub POSTHOG_PROJECT_TOKEN Repository Secret名称存在（未读取值），准备在master运行现有单测→签名Release→草稿流程。当前功能代码最近dev构建和覆盖安装已成功；本轮版本修改尚未本机重建，云端结果以对应Action为准。
 
 - 2026-10-11：按用户要求串行编译并覆盖安装最新 dev，包含底部菜单悬浮/吸附样式二级选择页及正式版统计默认开启逻辑（dev 仍不发送）。`:app:assembleEverydayDebug` 成功（21秒），镜像 APK 为 com.example.cardtally、0.0.3/3，指定已连接设备 ADB install -r 返回 Success，保留数据。日志位于仓库外 dev-navigation-style-build-2026-10-11.log。未构建/安装 release、运行测试、启动页面验证或推送。
