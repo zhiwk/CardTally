@@ -150,8 +150,8 @@
     <string name="record_date_placeholder">2026-04-07</string>
     <string name="record_asset_label">Asset</string>
     <string name="record_transfer_from_asset">From asset</string>
-    <string name="record_transfer_from_asset_hint">Select account</string>
-    <string name="record_transfer_to_asset_hint">Select account</string>
+    <string name="record_transfer_from_asset_hint">Select source account</string>
+    <string name="record_transfer_to_asset_hint">Select destination account</string>
     <string name="record_fee_label">Fee</string>
     <string name="record_fee_invalid">Enter a valid fee</string>
     <string name="record_fee_included">Incl. fee %1$s</string>
@@ -290,6 +290,9 @@
     <string name="ledger_management_merge_action">Merge</string>
     <string name="search_date_range_separator">to</string>
     <string name="record_transfer_swap_content_description">Swap source and destination assets</string>
+    <string name="record_transfer_swap_accounts">Swap accounts</string>
+    <string name="record_transfer_current_balance">Current balance　¥%1$s</string>
+    <string name="record_transfer_balance_unselected">Choose an account to see its balance</string>
 
     <string name="validation_select_date">Please select a date</string>
     <string name="validation_enter_amount">Please enter an amount</string>

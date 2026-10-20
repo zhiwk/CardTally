@@ -1,0 +1,54 @@
+// Server-side integration checks; no device, installation or release build.
+// Run with JDK 17 and the Android SDK configured:
+// gradle -I scripts/verify-signing.init.gradle :app:verifyDebugSigning --no-parallel
+gradle.projectsEvaluated {
+    def app = gradle.rootProject.project(':app')
+    app.tasks.register('verifyDebugSigning') {
+        group = 'verification'
+        description = 'Verify dev/project and verification/debug certificates on actual Debug APKs.'
+        dependsOn 'assembleDevDebug', 'assembleVerificationDebug'
+        doLast {
+            def android = app.extensions.getByName('android')
+            if (!gradle.rootProject.file('keystore.properties').isFile()) {
+                throw new GradleException('Project signing configuration is required for this check.')
+            }
+            def requireCheck = { boolean passed, String message ->
+                if (!passed) throw new GradleException(message)
+                logger.lifecycle("PASS: ${message}")
+            }
+            def fingerprint = { config ->
+                def store = java.security.KeyStore.getInstance(config.storeType)
+                config.storeFile.withInputStream { store.load(it, config.storePassword.toCharArray()) }
+                def certificate = store.getCertificate(config.keyAlias)
+                if (certificate == null) throw new GradleException('Signing certificate not found.')
+                java.security.MessageDigest.getInstance('SHA-256').digest(certificate.encoded).encodeHex().toString()
+            }
+            def runTool = { List<String> command ->
+                def process = new ProcessBuilder(command).redirectErrorStream(true).start()
+                def output = process.inputStream.getText('UTF-8')
+                if (process.waitFor() != 0) throw new GradleException("APK inspection failed: ${output}")
+                output
+            }
+            def tools = new File(android.sdkDirectory, "build-tools/${android.buildToolsVersion}")
+            def suffix = System.getProperty('os.name').toLowerCase().contains('windows') ? '.bat' : ''
+            def aaptSuffix = suffix ? '.exe' : ''
+            ['devDebug', 'verificationDebug'].each { name ->
+                def variant = android.applicationVariants.find { it.name == name }
+                def expected = name == 'devDebug' ? android.signingConfigs.release : android.signingConfigs.debug
+                requireCheck(variant != null && variant.signingConfig != null, "${name}: effective signing configuration exists")
+                requireCheck(variant.signingConfig.storeFile.canonicalFile == expected.storeFile.canonicalFile &&
+                    variant.signingConfig.keyAlias == expected.keyAlias, "${name}: effective signing configuration matches intended key")
+                def apk = app.file("build/outputs/apk/${variant.flavorName}/debug/app-debug.apk")
+                requireCheck(apk.isFile(), "${name}: APK exists")
+                def signature = runTool([new File(tools, "apksigner${suffix}").path, 'verify', '--print-certs', apk.path])
+                def digests = signature.readLines().findAll { it ==~ /Signer #\d+ certificate SHA-256 digest: .+/ }
+                requireCheck(digests.size() == 1 && digests[0].split(': ', 2)[1] == fingerprint(expected),
+                    "${name}: APK signature verifies and certificate matches intended key")
+                def badging = runTool([new File(tools, "aapt${aaptSuffix}").path, 'dump', 'badging', apk.path])
+                def packageName = name == 'devDebug' ? 'com.example.cardtally' : 'com.example.cardtally.verification'
+                requireCheck(badging.contains("package: name='${packageName}'"), "${name}: applicationId unchanged")
+                requireCheck(badging.readLines().any { it.startsWith('application-debuggable') }, "${name}: remains debuggable")
+            }
+        }
+    }
+}

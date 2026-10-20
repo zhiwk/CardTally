@@ -55,6 +55,8 @@ import com.example.cardtally.util.LedgerDateRange
 import com.example.cardtally.util.LedgerPeriodHelper
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.TablerIconCatalog
+import com.example.cardtally.util.AssetTypeIconCatalog
+import com.example.cardtally.util.BankIconCatalog
 import com.example.cardtally.util.AmountKeypadController
 import com.example.cardtally.util.AmountKeypadCompletionMode
 import com.example.cardtally.util.EntryAmountLayoutController
@@ -78,6 +80,16 @@ open class AddRecordFragment : Fragment() {
         private const val KEY_INITIAL_FORM_STATE = "initial_form_state"
         private const val KEY_ENTRY_LEDGER_ID = "entry_ledger_id"
 
+        fun newAssetRecordInstance(assetId: Long, ledgerId: Long, date: String): AddRecordFragment {
+            val initialState = RecordFormState.DEFAULT.copy(
+                selectedDate = date,
+                selectedAssetId = assetId,
+                expenseAssetId = assetId,
+                hasEnteredExpense = true
+            )
+            return newEntryInstance(initialState, ledgerId)
+        }
+
         fun newTransferInstance(sourceAssetId: Long, ledgerId: Long, date: String): AddRecordFragment {
             val initialState = RecordFormState.DEFAULT.copy(
                 recordType = RecordType.TRANSFER,
@@ -86,6 +98,10 @@ open class AddRecordFragment : Fragment() {
                 transferSourceAssetId = sourceAssetId,
                 hasEnteredTransfer = true
             )
+            return newEntryInstance(initialState, ledgerId)
+        }
+
+        private fun newEntryInstance(initialState: RecordFormState, ledgerId: Long): AddRecordFragment {
             return AddRecordFragment().apply {
                 arguments = Bundle().apply {
                     putBundle(KEY_INITIAL_FORM_STATE, Bundle().also(initialState::writeTo))
@@ -119,8 +135,6 @@ open class AddRecordFragment : Fragment() {
     private var rowCategory: View? = null
     private var rowAssetSingle: View? = null
     private var textAssetSingleValue: TextView? = null
-    private var textSourceAssetLabel: TextView? = null
-    private var textDestinationAssetLabel: TextView? = null
     private var textSourceAssetBalance: TextView? = null
     private var textDestinationAssetBalance: TextView? = null
     private var rowFee: View? = null
@@ -225,8 +239,6 @@ open class AddRecordFragment : Fragment() {
 
         textDate = view.findViewById(R.id.text_date)
         textAssetValue = view.findViewById(R.id.text_asset_value)
-        textSourceAssetLabel = view.findViewById(R.id.text_asset_label)
-        textDestinationAssetLabel = view.findViewById(R.id.text_destination_asset_label)
         textSourceAssetBalance = view.findViewById(R.id.text_source_asset_balance)
         textDestinationAssetBalance = view.findViewById(R.id.text_destination_asset_balance)
         textCategoryValue = view.findViewById(R.id.text_category_value)
@@ -651,12 +663,9 @@ open class AddRecordFragment : Fragment() {
             if (visible) View.GONE else View.VISIBLE
         dividerAfterCategory?.visibility = if (visible) View.GONE else View.VISIBLE
         textAssetLabel.setText(R.string.record_transfer_from_asset)
-        textSourceAssetLabel?.isSelected = true
-        textDestinationAssetLabel?.isSelected = true
         updateAssetSummary()
         textDestinationAssetValue.text =
             selectedDestinationAsset?.name ?: getString(R.string.record_transfer_to_asset_hint)
-        textDestinationAssetValue.isSelected = true
         if (isQuickMode) {
             val destinationSelected = selectedDestinationAsset != null
             textDestinationAssetValue.setTypeface(
@@ -1133,15 +1142,14 @@ open class AddRecordFragment : Fragment() {
             } else {
                 getString(noneLabel)
             }
-        textAssetValue.isSelected = true
-        textSourceAssetBalance?.apply {
-            text = "¥${Money.formatYuan(selectedAsset?.amount ?: 0.0)}"
-            isSelected = true
-        }
-        textDestinationAssetBalance?.apply {
-            text = "¥${Money.formatYuan(selectedDestinationAsset?.amount ?: 0.0)}"
-            isSelected = true
-        }
+        textSourceAssetBalance?.text = transferBalanceLabel(selectedAsset)
+        textDestinationAssetBalance?.text = transferBalanceLabel(selectedDestinationAsset)
+        bindTransferAssetIcon(R.id.image_source_asset_icon, selectedAsset)
+        bindTransferAssetIcon(R.id.image_destination_asset_icon, selectedDestinationAsset)
+        bindTransferAccountVisibility(rowAsset, selectedAsset, R.id.image_source_asset_icon,
+            R.id.text_asset_label, R.id.text_source_asset_balance)
+        bindTransferAccountVisibility(rowDestinationAsset, selectedDestinationAsset, R.id.image_destination_asset_icon,
+            R.id.text_destination_asset_label, R.id.text_destination_asset_balance)
         if (isQuickMode && currentType == 2) {
             textAssetValue.setTypeface(null, if (sourceSelected) Typeface.BOLD else Typeface.NORMAL)
             textAssetValue.setTextColor(
@@ -1155,6 +1163,54 @@ open class AddRecordFragment : Fragment() {
                 )
             )
         }
+    }
+
+    private fun transferBalanceLabel(asset: Asset?): String {
+        if (asset == null) return getString(R.string.record_transfer_balance_unselected)
+        val number = java.text.NumberFormat.getNumberInstance(Locale.getDefault()).apply {
+            minimumFractionDigits = 2
+            maximumFractionDigits = 2
+            isGroupingUsed = true
+        }.format(java.math.BigDecimal(Money.formatYuan(asset.amount)))
+        return "¥$number"
+    }
+
+    private fun bindTransferAccountVisibility(row: View, asset: Asset?, iconId: Int, labelId: Int, balanceId: Int) {
+        val visibility = if (asset == null) View.GONE else View.VISIBLE
+        (row.findViewById<ImageView>(iconId).parent as View).visibility = visibility
+        row.findViewById<View>(labelId).visibility = visibility
+        row.findViewById<TextView>(balanceId).apply {
+            this.visibility = visibility
+            contentDescription = if (asset == null) null else
+                getString(R.string.record_transfer_current_balance, text.toString().removePrefix("¥"))
+        }
+    }
+
+    private fun bindTransferAssetIcon(viewId: Int, asset: Asset?) {
+        val icon = rootView?.findViewById<ImageView>(viewId) ?: return
+        val customIcon = asset?.categoryIconName?.takeIf {
+            it.isNotBlank() && it !in setOf("tabler_category", "ic_category_other", "ic_asset")
+        }?.let(TablerIconCatalog::resourceId)?.takeIf { it != 0 }
+        val bank = asset?.let { BankIconCatalog.forCard(it.categoryLabel, it.categoryIconName, it.type) }
+        val resource = bank?.iconRes
+            ?: asset?.let { AssetTypeIconCatalog.resourceForLabel(it.categoryLabel) }
+            ?: customIcon
+            ?: when (asset?.type) {
+                0 -> R.drawable.tabler_cash
+                1 -> R.drawable.tabler_building_bank
+                2 -> R.drawable.ic_asset_brand_alipay
+                3 -> R.drawable.ic_asset_brand_wechat
+                else -> R.drawable.ic_asset
+            }
+        AssetTypeIconCatalog.bindIcon(icon, resource, 20,
+            ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnPrimaryContainer))
+        (icon.parent as? View)?.backgroundTintList = ColorStateList.valueOf(
+            if (AssetTypeIconCatalog.isBrandIcon(resource)) {
+                ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.surface_container_lowest)
+            } else {
+                ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorPrimaryContainer)
+            }
+        )
     }
 
     private fun updateCategorySummary() {

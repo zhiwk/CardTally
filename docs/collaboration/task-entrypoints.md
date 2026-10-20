@@ -32,7 +32,7 @@
 
 ### 改默认分类目录
 
-先读 `database/DefaultCategoryCatalog.kt`、`CategoryDefaultsSeeder.kt`、`DatabaseHelper` 的默认补建入口，以及 `BackupArchiveManager.removePristineSeed`。分类全局共享，仅新库/既有空分类补建使用默认目录，新账本不复制分类；目录和备份初始树识别共用事实源，保留旧树识别。当前二级目录参考蜜蜂记账，22支出父类+101子类、14收入父类+40子类，图标使用现有资源；参考及范围见2026-10-17默认分类决策。不要为了替换默认值改写已用分类/账单或清库。
+先读 `database/DefaultCategoryCatalog.kt`、`CategoryDefaultsSeeder.kt`、`CategoryDefaultsAppender.kt`、`DatabaseHelper` 的升级/默认补建入口，以及 `BackupArchiveManager.removePristineSeed`。分类全局共享，新库/既有空分类补建使用默认目录；升级到v43时一次性将缺少的默认分类追加到相应已有同级列表末尾，新账本不复制分类。保留现有行及叶子绑定，同名叶子不能改成父类；相同现有默认叶子复用，升级后不按启动反复补齐。目录和备份初始树识别共用事实源，保留旧树识别。当前二级目录参考蜜蜂记账，22支出父类+101子类、14收入父类+40子类，图标使用现有资源；参考及范围见2026-10-17默认分类决策。不要为了替换默认值改写已用分类/账单或清库。
 
 
 ### 改底部菜单样式选择
@@ -70,7 +70,7 @@
 
 ### 改重复记账 / 转账资产选择
 
-账户详情的「转账」入口见 `AssetRecordsFragment.openTransfer` 与 `AddRecordFragment.newTransferInstance`：以当前账本和当前可用资产 ID 初始化转账草稿，预选转出方，转入方为空；保存沿用原记账事务，返回详情重新读取余额及流水。共享资产可转账，不以管理所有权限制记账。
+账户详情入口见 `AssetRecordsFragment.openRecord` / `openTransfer` 与 `AddRecordFragment.newAssetRecordInstance` / `newTransferInstance`：两者以当前账本和当前可用资产 ID 初始化草稿。「记一笔」只预选本资产为支出账户，收入和转账仍沿用原逻辑；直接「转账」预选本资产为转出方，转入方为空。仅初始化草稿，后续用户选择及重建恢复优先，不修改全局默认资产；保存沿用原记账事务，返回详情重新读取余额及流水。共享资产可转账，不以管理所有权限制记账。
 
 先读：
 

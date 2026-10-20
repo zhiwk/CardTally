@@ -69,6 +69,14 @@ class MainActivityThemeApplicationTest {
                 assertEquals(true, appearance is AppearanceSettingsFragment)
                 assertEquals(View.GONE, activity.findViewById<View>(R.id.nav_shell).visibility)
                 assertEquals(true, appearance!!.requireView().findViewById<RadioButton>(R.id.radio_theme_dark).isChecked)
+                listOf(R.id.radio_theme_light, R.id.radio_theme_dark, R.id.radio_theme_system,
+                    R.id.radio_wallpaper_light, R.id.radio_wallpaper_dark, R.id.radio_wallpaper_system).forEach { id ->
+                    val option = appearance.requireView().findViewById<RadioButton>(id)
+                    assertEquals("appearance options must not retain a start-side radio", null, option.buttonDrawable)
+                    assertEquals("appearance options need an end-side indicator", true,
+                        option.compoundDrawablesRelative[2] != null)
+                    assertEquals("whole appearance option must remain clickable", true, option.isClickable)
+                }
                 appearance.requireView().findViewById<RadioButton>(R.id.radio_wallpaper_dark).performClick()
             }
             instrumentation.waitForIdleSync()

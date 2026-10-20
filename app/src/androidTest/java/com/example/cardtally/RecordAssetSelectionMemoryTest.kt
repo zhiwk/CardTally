@@ -113,6 +113,48 @@ class RecordAssetSelectionMemoryTest {
                     root.findViewById<TextView>(R.id.text_asset_single_value).text)
             }
         }
+        assertAssetDetailExpenseAccount()
+    }
+
+    private fun assertAssetDetailExpenseAccount() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            scenario.onActivity { activity ->
+                val manager = activity.supportFragmentManager
+                manager.beginTransaction()
+                    .replace(R.id.fragment_container,
+                        AssetRecordsFragment.newInstance("转出账户", 0.0, 0, transferSourceAssetId))
+                    .commitNow()
+                manager.findFragmentById(R.id.fragment_container)!!.requireView()
+                    .findViewById<TextView>(R.id.action_record).performClick()
+                manager.executePendingTransactions()
+                val root = manager.findFragmentById(R.id.fragment_container)!!.requireView()
+                assertEquals("转出账户", root.findViewById<TextView>(R.id.text_asset_single_value).text)
+                root.findViewById<TextView>(R.id.btn_income).performClick()
+                assertEquals("默认收入", root.findViewById<TextView>(R.id.text_asset_single_value).text)
+                root.findViewById<TextView>(R.id.btn_transfer).performClick()
+                assertEquals(activity.getString(R.string.record_transfer_from_asset_hint),
+                    root.findViewById<TextView>(R.id.text_asset_value).text)
+                assertEquals(activity.getString(R.string.record_transfer_to_asset_hint),
+                    root.findViewById<TextView>(R.id.text_destination_asset_value).text)
+                root.findViewById<TextView>(R.id.btn_expense).performClick()
+                assertEquals("转出账户", root.findViewById<TextView>(R.id.text_asset_single_value).text)
+                // A subsequent user choice must win over the entry seed on toggles/recreation.
+                manager.setFragmentResult(RecordAssetPickerBottomSheetFragment.RESULT_KEY, Bundle().apply {
+                    putLong(RecordAssetPickerBottomSheetFragment.RESULT_ASSET_ID, expenseAssetId)
+                    putBoolean(RecordAssetPickerBottomSheetFragment.RESULT_SELECT_DESTINATION, false)
+                })
+                root.findViewById<TextView>(R.id.btn_income).performClick()
+                root.findViewById<TextView>(R.id.btn_expense).performClick()
+                assertEquals("默认支出", root.findViewById<TextView>(R.id.text_asset_single_value).text)
+            }
+            scenario.recreate()
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            scenario.onActivity { activity ->
+                val root = activity.supportFragmentManager.findFragmentById(R.id.fragment_container)!!.requireView()
+                assertEquals("默认支出", root.findViewById<TextView>(R.id.text_asset_single_value).text)
+            }
+        }
     }
 
     @Test

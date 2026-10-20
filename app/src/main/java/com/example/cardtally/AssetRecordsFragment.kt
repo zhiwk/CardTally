@@ -92,10 +92,7 @@ class AssetRecordsFragment : Fragment() {
             openTransfer()
         }
         view.findViewById<View>(R.id.action_record).setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, AddRecordFragment())
-                .addToBackStack(null)
-                .commit()
+            openRecord()
         }
         databaseHelper = DatabaseHelper(requireContext())
         val canManage = assetId == 0L || databaseHelper.canManageAsset(assetId)
@@ -118,6 +115,17 @@ class AssetRecordsFragment : Fragment() {
         loadRecords()
 
         return view
+    }
+
+    private fun openRecord() {
+        val ledgerId = databaseHelper.getCurrentLedger()?.id
+        val asset = databaseHelper.getAllAssets().firstOrNull { it.id == assetId && assetId > 0L }
+        if (ledgerId == null || asset == null) return
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container,
+                AddRecordFragment.newAssetRecordInstance(asset.id, ledgerId, databaseHelper.getCurrentDate()))
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun openTransfer() {

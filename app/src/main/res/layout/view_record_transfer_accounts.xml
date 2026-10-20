@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scroll_transfer_accounts"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:isScrollContainer="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/row_asset"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="72dp" android:padding="16dp"
+            android:background="@drawable/bg_card_surface" android:foreground="?attr/selectableItemBackground"
+            android:clickable="true" android:focusable="true"
+            android:gravity="center_vertical" android:orientation="horizontal">
+            <FrameLayout android:layout_width="32dp" android:layout_height="32dp" android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_circle_primary_container" android:backgroundTint="?attr/colorPrimaryContainer">
+                <ImageView android:id="@+id/image_source_asset_icon"
+                    android:layout_width="20dp" android:layout_height="20dp" android:layout_gravity="center"
+                    android:importantForAccessibility="no" android:src="@drawable/ic_asset" app:tint="?attr/colorOnPrimaryContainer" />
+            </FrameLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginEnd="8dp">
+                <TextView android:id="@+id/text_asset_value" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:maxLines="2" android:ellipsize="end" android:textSize="16sp" android:textColor="?attr/colorOnSurface"
+                    android:text="@string/record_transfer_from_asset_hint" />
+                <TextView android:id="@+id/text_asset_label" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant"
+                    android:text="@string/record_transfer_from_asset" />
+            </LinearLayout>
+            <TextView android:id="@+id/text_source_asset_balance"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:gravity="end" android:fontFeatureSettings="tnum" android:textSize="16sp" android:textColor="?attr/colorOnSurface" />
+            <ImageView android:id="@+id/image_source_asset_chevron" android:layout_width="16dp" android:layout_height="16dp"
+                android:visibility="gone" android:importantForAccessibility="no" android:src="@drawable/tabler_chevron_right" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center_vertical" android:orientation="horizontal">
+            <ImageView android:id="@+id/transfer_flow" android:layout_width="20dp" android:layout_height="20dp"
+                android:importantForAccessibility="no" android:src="@drawable/tabler_arrow_down" app:tint="?attr/colorOnSurfaceVariant" />
+            <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btn_swap_transfer_assets"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp"
+                android:insetTop="0dp" android:insetBottom="0dp" android:text="@string/record_transfer_swap_accounts"
+                android:contentDescription="@string/record_transfer_swap_content_description"
+                android:textSize="14sp" android:textAllCaps="false" android:textColor="?attr/colorOnSurfaceVariant"
+                app:icon="@drawable/tabler_arrows_up_down" app:iconSize="16dp" app:iconTint="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/row_destination_asset"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="72dp" android:padding="16dp"
+            android:background="@drawable/bg_card_surface" android:foreground="?attr/selectableItemBackground"
+            android:clickable="true" android:focusable="true"
+            android:gravity="center_vertical" android:orientation="horizontal">
+            <FrameLayout android:layout_width="32dp" android:layout_height="32dp" android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_circle_primary_container" android:backgroundTint="?attr/colorPrimaryContainer">
+                <ImageView android:id="@+id/image_destination_asset_icon"
+                    android:layout_width="20dp" android:layout_height="20dp" android:layout_gravity="center"
+                    android:importantForAccessibility="no" android:src="@drawable/ic_asset" app:tint="?attr/colorOnPrimaryContainer" />
+            </FrameLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginEnd="8dp">
+                <TextView android:id="@+id/text_destination_asset_value" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:maxLines="2" android:ellipsize="end" android:textSize="16sp" android:textColor="?attr/colorOnSurface"
+                    android:text="@string/record_transfer_to_asset_hint" />
+                <TextView android:id="@+id/text_destination_asset_label" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp" android:textSize="12sp" android:textColor="?attr/colorOnSurfaceVariant"
+                    android:text="@string/record_destination_asset_label" />
+            </LinearLayout>
+            <TextView android:id="@+id/text_destination_asset_balance"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:gravity="end" android:fontFeatureSettings="tnum" android:textSize="16sp" android:textColor="?attr/colorOnSurface" />
+            <ImageView android:id="@+id/image_destination_asset_chevron" android:layout_width="16dp" android:layout_height="16dp"
+                android:visibility="gone" android:importantForAccessibility="no" android:src="@drawable/tabler_chevron_right" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

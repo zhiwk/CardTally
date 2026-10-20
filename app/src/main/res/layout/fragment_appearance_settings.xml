@@ -65,37 +65,28 @@
                         android:orientation="vertical">
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/radio_theme_light"
+                            style="@style/Widget.CardTally.AppearanceChoice"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:background="?attr/selectableItemBackground"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:minHeight="48dp"
-                            android:paddingHorizontal="16dp"
-                            android:paddingVertical="8dp"
                             android:text="@string/theme_light"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp" />
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/radio_theme_dark"
+                            style="@style/Widget.CardTally.AppearanceChoice"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:background="?attr/selectableItemBackground"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:minHeight="48dp"
-                            android:paddingHorizontal="16dp"
-                            android:paddingVertical="8dp"
                             android:text="@string/theme_dark"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp" />
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/radio_theme_system"
+                            style="@style/Widget.CardTally.AppearanceChoice"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:background="?attr/selectableItemBackground"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:minHeight="48dp"
-                            android:paddingHorizontal="16dp"
-                            android:paddingVertical="8dp"
                             android:text="@string/theme_system"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp" />
@@ -136,37 +127,28 @@
                         android:orientation="vertical">
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/radio_wallpaper_light"
+                            style="@style/Widget.CardTally.AppearanceChoice"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:background="?attr/selectableItemBackground"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:minHeight="48dp"
-                            android:paddingHorizontal="16dp"
-                            android:paddingVertical="8dp"
                             android:text="@string/theme_light"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp" />
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/radio_wallpaper_dark"
+                            style="@style/Widget.CardTally.AppearanceChoice"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:background="?attr/selectableItemBackground"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:minHeight="48dp"
-                            android:paddingHorizontal="16dp"
-                            android:paddingVertical="8dp"
                             android:text="@string/theme_dark"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp" />
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/radio_wallpaper_system"
+                            style="@style/Widget.CardTally.AppearanceChoice"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:background="?attr/selectableItemBackground"
-                            android:buttonTint="?attr/colorPrimary"
-                            android:minHeight="48dp"
-                            android:paddingHorizontal="16dp"
-                            android:paddingVertical="8dp"
                             android:text="@string/theme_system"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp" />

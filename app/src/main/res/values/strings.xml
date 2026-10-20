@@ -158,8 +158,8 @@
     <string name="record_date_placeholder">2026-04-07</string>
     <string name="record_asset_label">资产</string>
     <string name="record_transfer_from_asset">转出资产</string>
-    <string name="record_transfer_from_asset_hint">选择账户</string>
-    <string name="record_transfer_to_asset_hint">选择账户</string>
+    <string name="record_transfer_from_asset_hint">选择转出账户</string>
+    <string name="record_transfer_to_asset_hint">选择转入账户</string>
     <string name="record_fee_label">手续费</string>
     <string name="record_fee_invalid">请输入有效手续费</string>
     <string name="record_fee_included">含手续费 %1$s</string>
@@ -270,6 +270,9 @@
     <string name="ledger_management_merge_action">合并</string>
     <string name="search_date_range_separator">至</string>
     <string name="record_transfer_swap_content_description">交换转入转出资产</string>
+    <string name="record_transfer_swap_accounts">交换账户</string>
+    <string name="record_transfer_current_balance">当前余额　¥%1$s</string>
+    <string name="record_transfer_balance_unselected">选择账户后显示余额</string>
 
     <string name="validation_select_date">请选择日期</string>
     <string name="validation_enter_amount">请输入金额</string>

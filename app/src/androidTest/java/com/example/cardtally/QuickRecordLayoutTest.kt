@@ -91,17 +91,22 @@ class QuickRecordLayoutTest {
                     is com.google.android.material.card.MaterialCardView
             )
             assertNotNull(
-                "quick transfer account card must expose the direct adaptive container",
-                screen.findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.scroll_transfer_accounts)
+                "quick transfer account card must allow vertical scrolling on small windows",
+                screen.findViewById<androidx.core.widget.NestedScrollView>(R.id.scroll_transfer_accounts)
             )
-            assertTrue(
-                "source account name must be single-line marquee",
-                screen.findViewById<TextView>(R.id.text_asset_value).isSingleLine
-            )
-            assertTrue(
-                "destination account name must be single-line marquee",
-                screen.findViewById<TextView>(R.id.text_destination_asset_value).isSingleLine
-            )
+            listOf(R.id.text_asset_value, R.id.text_destination_asset_value).forEach { id ->
+                val name = screen.findViewById<TextView>(id)
+                assertEquals("account names may wrap to two lines", 2, name.maxLines)
+                assertEquals("account names use static end ellipsis, not a marquee",
+                    android.text.TextUtils.TruncateAt.END, name.ellipsize)
+            }
+            listOf(R.id.text_source_asset_balance, R.id.text_destination_asset_balance).forEach { id ->
+                val balance = screen.findViewById<TextView>(id)
+                assertNull("balances must never be ellipsized", balance.ellipsize)
+                assertFalse("balances must wrap instead of scrolling horizontally", balance.isSingleLine)
+            }
+            assertNotNull("source identity icon must be available", screen.findViewById<View>(R.id.image_source_asset_icon))
+            assertNotNull("destination identity icon must be available", screen.findViewById<View>(R.id.image_destination_asset_icon))
             assertEquals(
                 "source and destination account values must use the same text size",
                 screen.findViewById<TextView>(R.id.text_asset_value).textSize,
@@ -123,29 +128,12 @@ class QuickRecordLayoutTest {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 screen.findViewById<View>(R.id.row_destination_asset).layoutParams.height
             )
-            val destinationParams = screen.findViewById<View>(R.id.row_destination_asset)
-                .layoutParams as ConstraintLayout.LayoutParams
-            assertEquals(
-                "destination card must be anchored to the adaptive container bottom",
-                ConstraintLayout.LayoutParams.PARENT_ID,
-                destinationParams.bottomToBottom
-            )
-            assertEquals(
-                "destination card must be anchored to the adaptive container end",
-                ConstraintLayout.LayoutParams.PARENT_ID,
-                destinationParams.endToEnd
-            )
-            val flowParams = screen.findViewById<View>(R.id.transfer_flow).layoutParams
-            assertEquals(
-                "flow curve must stretch across the card gap horizontally",
-                0,
-                flowParams.width
-            )
-            assertEquals(
-                "flow curve must follow the adaptive card height",
-                0,
-                flowParams.height
-            )
+            listOf(R.id.row_asset, R.id.row_destination_asset).forEach { id ->
+                assertEquals("each account must use the full content width", ViewGroup.LayoutParams.MATCH_PARENT,
+                    screen.findViewById<View>(id).layoutParams.width)
+            }
+            assertTrue("swap control must have an explicit visible label",
+                screen.findViewById<TextView>(R.id.btn_swap_transfer_assets).text.isNotBlank())
         }
     }
 
@@ -277,6 +265,8 @@ class QuickRecordLayoutTest {
             transferCard.visibility = View.VISIBLE
             categoryCard.visibility = View.GONE
             keypad.visibility = View.GONE
+            screen.findViewById<TextView>(R.id.text_asset_value).text = "较长的资产账户名称用于验证静态换行"
+            screen.findViewById<TextView>(R.id.text_source_asset_balance).text = "当前余额 ¥123,456,789,012.34"
 
             fun measureAndLayout(heightDp: Int) {
                 screen.measure(
@@ -297,17 +287,24 @@ class QuickRecordLayoutTest {
                 panel.top - dp(12),
                 transferCard.bottom
             )
-            assertTrue("source account must remain inside the transfer card", source.top >= accounts.paddingTop)
-            assertTrue(
-                "destination account must remain inside the transfer card",
-                destination.bottom <= accounts.height
-            )
-            assertTrue("flow curve must shrink with the available height", flow.height < fullFlowHeight)
-            assertEquals(
-                "flow curve must fill the adaptive container height",
-                accounts.height - accounts.paddingTop - accounts.paddingBottom,
-                flow.height
-            )
+            assertTrue("source account must remain in the scroll content", source.top >= 0)
+            assertTrue("destination must follow the source vertically", destination.top >= source.bottom)
+            val scroll = accounts as androidx.core.widget.NestedScrollView
+            assertTrue("scroll content must contain the complete destination account",
+                destination.bottom <= scroll.getChildAt(0).height)
+            assertTrue("account content must stay vertically scrollable", scroll.isScrollContainer)
+            assertEquals("account divider must retain a stable size", fullFlowHeight, flow.height)
+            listOf(R.id.text_asset_value to R.id.image_source_asset_icon,
+                R.id.text_destination_asset_value to R.id.image_destination_asset_icon).forEach { (nameId, iconId) ->
+                val nameRow = screen.findViewById<View>(nameId).parent as View
+                val iconContainer = screen.findViewById<View>(iconId).parent as View
+                assertTrue("asset identity icon must share the account name row", iconContainer.parent === nameRow.parent)
+            }
+            val balance = screen.findViewById<TextView>(R.id.text_source_asset_balance)
+            assertTrue("long balances must remain fully laid out", balance.layout != null && balance.lineCount > 0)
+            for (line in 0 until balance.lineCount) {
+                assertEquals("long balances must not be truncated", 0, balance.layout.getEllipsisCount(line))
+            }
         }
     }
 

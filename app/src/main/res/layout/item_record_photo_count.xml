@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:gravity="start|center_vertical"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="12dp"
+    android:background="?attr/selectableItemBackground"
+    android:textColor="?attr/colorOnSurface"
+    android:textSize="16sp"
+    android:checkMark="@drawable/record_photo_count_check"
+    android:checkMarkTint="?attr/colorOnSurface" />

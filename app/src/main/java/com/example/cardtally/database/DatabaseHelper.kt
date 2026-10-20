@@ -317,8 +317,8 @@ class DatabaseHelper(
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
         private val RECURRING_PROCESS_LOCK = Any()
-        /** v42 adds local-only AI messages and the native-confirmed record operation audit. */
-        private const val DATABASE_VERSION = 42
+        /** v43 appends missing default categories while retaining existing rows and leaf bindings. */
+        private const val DATABASE_VERSION = 43
         const val MAX_RECORD_QUERY_LIMIT = 200
         const val RECORD_UNDO_WINDOW_MS = 10_000L
 
@@ -926,6 +926,9 @@ class DatabaseHelper(
             ensureColumn(db, TABLE_AI_CHAT_MESSAGES, "local_only",
                 "ALTER TABLE $TABLE_AI_CHAT_MESSAGES ADD COLUMN local_only INTEGER NOT NULL DEFAULT 0")
             db.execSQL(com.example.cardtally.ai.AiRecordAuditStore.CREATE_TABLE_SQL)
+        }
+        if (oldVersion < 43) {
+            categoryDefaultsSeeder.appendMissing(db, 1L)
         }
     }
 

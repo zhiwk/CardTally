@@ -7,7 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Switch
 import android.widget.TextView
-import android.widget.NumberPicker
+import android.widget.ArrayAdapter
+import android.widget.CheckedTextView
+import androidx.appcompat.widget.ListPopupWindow
+import android.graphics.drawable.GradientDrawable
 import android.widget.Toast
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -61,6 +64,7 @@ class SettingsFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
     private val transferExecutor = Executors.newSingleThreadExecutor()
     private var pendingExportPassword: CharArray? = null
+    private var photoCountPopup: ListPopupWindow? = null
 
     private val exportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -446,6 +450,8 @@ class SettingsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        photoCountPopup?.dismiss()
+        photoCountPopup = null
         if (::databaseHelper.isInitialized) {
             databaseHelper.close()
         }
@@ -521,21 +527,43 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showRecordPhotoLimitDialog() {
-        val pickerView = layoutInflater.inflate(R.layout.dialog_record_photo_limit, null)
-        val picker = pickerView.findViewById<NumberPicker>(R.id.picker_record_photo_limit)
-        picker.minValue = 1
-        picker.maxValue = 9
-        picker.value = RecordPhotoSettingsHelper.getMaxPhotos(requireContext()).coerceIn(1, 9)
-        picker.wrapSelectorWheel = false
-
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setView(pickerView)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                RecordPhotoSettingsHelper.saveMaxPhotos(requireContext(), picker.value)
+        photoCountPopup?.dismiss()
+        val context = requireContext()
+        val density = resources.displayMetrics.density
+        val current = RecordPhotoSettingsHelper.getMaxPhotos(context)
+        val labels = (1..9).map { getString(R.string.settings_record_photo_limit_value, it) }
+        val adapter = object : ArrayAdapter<String>(context, R.layout.item_record_photo_count, labels) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
+                (super.getView(position, convertView, parent) as CheckedTextView).apply {
+                    isChecked = position + 1 == current
+                }
+        }
+        val popup = ListPopupWindow(context).apply {
+            anchorView = cardRecordPhotoLimit
+            isModal = true
+            setDropDownGravity(android.view.Gravity.END)
+            width = minOf((200 * density).toInt(), cardRecordPhotoLimit.width)
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+            setBackgroundDrawable(GradientDrawable().apply {
+                setColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_light))
+                cornerRadius = 20 * density
+            })
+            setAdapter(adapter)
+            setOnItemClickListener { _, _, position, _ ->
+                RecordPhotoSettingsHelper.saveMaxPhotos(context, position + 1)
                 updateRecordPhotoLimitText()
+                dismiss()
             }
-            .show()
+            setOnDismissListener { photoCountPopup = null }
+        }
+        photoCountPopup = popup
+        popup.show()
+        popup.listView?.apply {
+            divider = null
+            setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
+            setSelection(current - 1)
+            clipToOutline = true
+        }
     }
 
     private fun updateIncomeExpenseColorText() {

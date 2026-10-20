@@ -2,6 +2,7 @@ package com.example.cardtally.database
 
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
+import com.example.cardtally.model.Category
 
 /** Creates the canonical initial income/expense category tree for a new local database. */
 internal class CategoryDefaultsSeeder(private val columns: Columns) {
@@ -29,6 +30,28 @@ internal class CategoryDefaultsSeeder(private val columns: Columns) {
                 if (parentId != null) put(columns.parentId, parentId)
             })
             if (entry.parent == null) parentIds[entry.type to entry.name] = id
+        }
+    }
+
+    /** Called inside SQLiteOpenHelper's one-time upgrade transaction. */
+    fun appendMissing(db: SQLiteDatabase, ledgerId: Long) {
+        val existing = mutableListOf<Category>()
+        db.query(columns.table, arrayOf(columns.id, columns.name, columns.type, columns.parentId, columns.sortOrder),
+            null, null, null, null, null).use { cursor ->
+            while (cursor.moveToNext()) {
+                existing += Category(id = cursor.getLong(0), name = cursor.getString(1), type = cursor.getInt(2),
+                    parentId = if (cursor.isNull(3)) null else cursor.getLong(3), sortOrder = cursor.getInt(4))
+            }
+        }
+        CategoryDefaultsAppender.append(existing) { entry, parentId, order ->
+            db.insertOrThrow(columns.table, null, ContentValues().apply {
+                put(columns.name, entry.name)
+                put(columns.type, entry.type)
+                put(columns.icon, entry.icon)
+                put(columns.sortOrder, order)
+                put(columns.ledgerId, ledgerId)
+                if (parentId != null) put(columns.parentId, parentId)
+            })
         }
     }
 }

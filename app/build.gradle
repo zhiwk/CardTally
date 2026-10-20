@@ -3,9 +3,9 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-// Release signing credentials live in an untracked keystore.properties so the
-// key and passwords are never committed. If the file is absent the release
-// artifact is simply left unsigned (and cannot be installed).
+// Everyday dev/release signing credentials live in an untracked keystore.properties
+// so the key and passwords are never committed. Without it, dev Debug uses the
+// default debug key and release remains unsigned (and cannot be installed).
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
@@ -49,6 +49,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Let each flavor select its certificate instead of the build-type default.
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = null
+            }
+        }
         release {
             minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -68,10 +74,15 @@ android {
     productFlavors {
         dev {
             dimension "audience"
+            // Keep everyday Debug updates on the same project-managed certificate.
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
         verification {
             dimension "audience"
             applicationIdSuffix ".verification"
+            signingConfig signingConfigs.debug
         }
     }
     compileOptions {

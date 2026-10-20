@@ -245,6 +245,20 @@ Statistics uses a two-page ViewPager2 for expense and income charts plus ranking
 - **States:** default, pressed/focused only if whole card opens a destination, selected in a settings preview, loading only for explicitly requested AI content, error, empty.
 - **Accessibility:** one grouped summary description; individual values remain reachable when independently actionable. Income/expense announced in words and signs.
 
+### Record photo count menu
+- The per-record photo limit opens an anchored trailing popup rather than a wheel dialog. Show 1–9 in 48dp minimum rows, with a trailing check on the saved value; selecting saves immediately and closes. Outside tap/back dismisses without changing the value.
+- Use an opaque themed surface, 20dp corners and a 200dp preferred width constrained to the anchor. Scroll when window space is limited; keep the current value in view. Dismiss the popup when the settings view is destroyed. Limits, defaults and existing photos are unchanged.
+
+### Appearance choice rows
+- Solid/Picture palette options follow the Language page: 16sp start-aligned labels and a trailing single-choice circle, 56dp minimum row height, 16dp start padding and 24dp end inset. The entire row is clickable and grows for enlarged text. Checked uses onSurface, unchecked uses onSurfaceVariant, and disabled states remain perceivable.
+- Retain native RadioButton/RadioGroup semantics and existing cross-group exclusivity, state restoration and import-time disabling. Only the indicator moves; wallpaper selection, opacity and apply behavior remain unchanged.
+
+### Transfer account selection
+- Source and destination use two independent compact 12dp neutral cards on a transparent container, each min 72dp high with 16dp padding. A compact 48dp row between them contains a small downward arrow and a labelled Swap accounts button. No large enclosing white surface, diagonal curve or decorative underlines.
+- Each selected account presents its actual 32dp identity icon on the left, 16sp name (up to two lines with static end ellipsis) with a 12sp source/destination caption in the middle, and the complete 16sp balance on the right. Names and balances share the remaining width; long balances may wrap rather than truncate. Unselected accounts show only the explicit Choose source/destination account prompt. Match bank/brand/category icon resolution and preserve brand colors. Balance accessibility text retains the Current balance label without repeating it visually.
+- Balances use full grouped values with two decimal places and tabular figures. Never marquee, abbreviate or ellipsize balances; allow wrapping. An unselected account shows an instruction, not a fabricated zero balance. The transaction amount remains the main numeric focus.
+- Keep existing asset picker callbacks, exclusions, swap semantics and per-type draft restoration. The account card content scrolls vertically when the window or large text needs more space, without moving the pinned amount panel/keypad or changing wallpaper behavior. Card children remain transparent in picture mode.
+
 ### Record group and record row
 - **Structure:** one outlined group card per date/section; rows contain category icon, title/description, metadata, and aligned signed amount, separated by subtle lines.
 - **Variants:** overview today row, dense Ledger row, asset-record row, swipe-revealed destructive action.
