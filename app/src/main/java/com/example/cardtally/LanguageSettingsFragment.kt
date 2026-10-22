@@ -42,8 +42,6 @@ class LanguageSettingsFragment : Fragment() {
 
     private fun selectLanguage(languageTag: String?, refresh: () -> Unit) {
         if (languageTag.isNullOrBlank()) return
-        val current = LanguageHelper.getCurrentLanguageTag(requireContext())
-        if (languageTag == current) return
         LanguageHelper.updateLanguage(requireContext(), languageTag)
         refresh()
     }

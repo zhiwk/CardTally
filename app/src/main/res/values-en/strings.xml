@@ -486,6 +486,13 @@
     <string name="category_error_in_use">This category is referenced by records and cannot be deleted</string>
 
     <string name="language_dialog_title">Choose Language</string>
+    <string name="settings_income_expense_color">Income and expense colors</string>
+    <string name="settings_income_expense_color_income_green_expense_red">Income (green), expense (red)</string>
+    <string name="settings_income_expense_color_income_red_expense_green">Income (red), expense (green)</string>
+    <string name="settings_income_expense_color_both_black">Use the same text color for income and expenses</string>
+    <string name="settings_record_photo_limit">Photos per record</string>
+    <string name="settings_record_photo_limit_hint">Maximum number of photos saved for each new record</string>
+    <string name="settings_record_photo_limit_value">%1$d photos</string>
     <string name="language_option_chinese">Chinese</string>
     <string name="language_option_english">English</string>
     <string-array name="supported_language_entries">

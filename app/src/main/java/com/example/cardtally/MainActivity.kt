@@ -19,6 +19,10 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(LanguageHelper.attachLanguageContext(newBase))
+    }
+
     override fun onResume() {
         super.onResume()
         com.example.cardtally.analytics.LaunchAnalytics.recordLaunch(this)
@@ -32,7 +36,6 @@ class MainActivity : AppCompatActivity() {
     private var isBottomNavigationTemporarilyHidden = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        LanguageHelper.applySavedLanguage(this)
         applyTheme()
         super.onCreate(savedInstanceState)
         // AppCompat may reapply the base theme when resolving night mode during super.onCreate.

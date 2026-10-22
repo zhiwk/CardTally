@@ -186,7 +186,10 @@ class SettingsFragment : Fragment() {
             password?.fill('\u0000')
             hostActivity?.runOnUiThread {
                 if (!isAdded) return@runOnUiThread
-                if (result.isSuccess && view != null) refreshSettingsFromStorage()
+                if (result.isSuccess && view != null) {
+                    LanguageHelper.applySavedLanguage(requireContext())
+                    refreshSettingsFromStorage()
+                }
                 val message = result.fold(
                     onSuccess = {
                         if (it.legacy) getString(R.string.settings_legacy_import_success)
