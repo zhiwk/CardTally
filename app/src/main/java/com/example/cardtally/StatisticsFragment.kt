@@ -168,6 +168,7 @@ class StatisticsFragment : Fragment() {
     private var currentStatsType = TYPE_EXPENSE
     private var currentPeriodPreset = LedgerPeriodPreset.WEEK
     private var currentRange = LedgerPeriodHelper.resolveRange(LedgerPeriodPreset.WEEK)
+    private var lastWeekStart: Int? = null
     private var currentChartMode = CHART_MODE_LINE
     private var currentRankingMode = StatisticsRankingMode.SECONDARY
     private var openFilterSurface = FilterSurface.NONE
@@ -365,6 +366,17 @@ class StatisticsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        val weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext())
+        if (lastWeekStart != null && lastWeekStart != weekStart && currentPeriodPreset == LedgerPeriodPreset.WEEK) {
+            // Keep the browsed week's midpoint rather than unexpectedly jumping back to today.
+            val anchor = Calendar.getInstance().apply {
+                currentRange.startDate?.let { time = LedgerPeriodHelper.parseIsoDate(it) }
+                add(Calendar.DAY_OF_YEAR, 3)
+            }
+            currentRange = LedgerPeriodHelper.resolveRange(LedgerPeriodPreset.WEEK, anchor.timeInMillis,
+                weekStart = weekStart)
+        }
+        lastWeekStart = weekStart
         currentRankingMode = StatisticsRankingModePreferences.getMode(requireContext())
         updateRankingModeUi()
         renderCurrentView()
@@ -468,7 +480,8 @@ class StatisticsFragment : Fragment() {
                 else -> Unit
             }
         }
-        currentRange = LedgerPeriodHelper.resolveRange(currentPeriodPreset, calendar.timeInMillis)
+        currentRange = LedgerPeriodHelper.resolveRange(currentPeriodPreset, calendar.timeInMillis,
+            weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext()))
         renderCurrentView()
     }
 
@@ -861,7 +874,8 @@ class StatisticsFragment : Fragment() {
         return if (preset == LedgerPeriodPreset.ALL) {
             resolveAllRange()
         } else {
-            LedgerPeriodHelper.resolveRange(preset)
+            LedgerPeriodHelper.resolveRange(preset,
+                weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext()))
         }
     }
 
@@ -869,6 +883,7 @@ class StatisticsFragment : Fragment() {
         openFilterSurface = FilterSurface.PERIOD
         val dialog = BottomSheetDialog(requireContext())
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_ledger_period, null)
+        com.example.cardtally.util.WeekStartPreferences.bindHeader(sheetView)
         dialog.setContentView(sheetView)
 
         val textSelectionLabel = sheetView.findViewById<TextView>(R.id.text_period_selection_label)
@@ -1072,7 +1087,8 @@ class StatisticsFragment : Fragment() {
             LedgerPeriodHelper.buildMonthCells(
                 year = displayYear,
                 month = displayMonth,
-                selectedRange = selectedRange
+                selectedRange = selectedRange,
+                weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext())
             )
         )
         btnApply.isEnabled = canApply
@@ -1173,7 +1189,8 @@ class StatisticsFragment : Fragment() {
         currentRange = when (state.periodPreset) {
             PeriodPreset.ALL -> resolveAllRange()
             PeriodPreset.CUSTOM -> LedgerDateRange(state.customStartDate, state.customEndDate)
-            else -> LedgerPeriodHelper.resolveRange(currentPeriodPreset)
+            else -> LedgerPeriodHelper.resolveRange(currentPeriodPreset,
+                weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext()))
         }
         currentChartMode = if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM || currentPeriodPreset == LedgerPeriodPreset.ALL) {
             CHART_MODE_PIE

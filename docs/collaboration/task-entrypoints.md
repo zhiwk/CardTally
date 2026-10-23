@@ -84,6 +84,10 @@
 
 注意：普通「记一笔」和重复记账共用资产选择器，通过 `FragmentResult` 回传资产 ID 与是否为转入资产；分别验证两个宿主的结果处理及弹层关闭行为。任务账本通过 `pickerLedgerId` 限制资产列表，不应改变当前账本。默认资产设置使用独立的 `DefaultRecordAssetPickerBottomSheetFragment` 结果契约。
 
+默认支出/收入账户与普通/编辑/重复记账通过 `AssetPickerSheetFragment` 复用 `bottom_sheet_default_record_asset_picker.xml`、`DefaultRecordAssetPickerAdapter` 和纯筛选器 `DefaultAssetPickerOptions`，不再内嵌 AssetFragment。两个具体Fragment保留独立结果契约：默认设置仍是 `selected_id`/`for_income`，记账仍是 `selected_asset_id`/`select_destination`。保留普通收支可选无资产（ID0）及转账排除另一侧账户规则，重复记账继续传任务ledgerId并复用原getAllAssets(ledgerId)范围，不改默认账户清空语义。共享层只返回选择、不保存默认值，保留记账页键盘shown/dismissed回调；超过5个账户显示搜索，最多占可用窗口75%。
+
+默认选择器按资产页的资金/信用/充值/理财/应收/应付类型分组；置顶仅在所属组内靠前，空组和搜索后无结果组不展示，不另设重复的置顶列表。修改分类标签映射时同时核对 `AssetFragment` 与 `DefaultAssetPickerOptions.groupOf`，定位选中项须计入标题行。
+
 ### 改数据库或数据展示
 
 先读：

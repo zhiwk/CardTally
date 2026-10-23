@@ -38,18 +38,19 @@ object LedgerPeriodHelper {
         preset: LedgerPeriodPreset,
         nowMillis: Long = System.currentTimeMillis(),
         customRange: LedgerDateRange? = null,
-        allRange: LedgerDateRange? = null
+        allRange: LedgerDateRange? = null,
+        weekStart: Int = Calendar.MONDAY
     ): LedgerDateRange {
         val calendar = Calendar.getInstance().apply {
             timeInMillis = nowMillis
-            firstDayOfWeek = Calendar.MONDAY
+            firstDayOfWeek = weekStart
         }
 
         return when (preset) {
             LedgerPeriodPreset.WEEK -> {
                 val start = calendar.clone() as Calendar
                 val end = calendar.clone() as Calendar
-                val delta = (start.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY + 7) % 7
+                val delta = (start.get(Calendar.DAY_OF_WEEK) - weekStart + 7) % 7
                 start.add(Calendar.DAY_OF_YEAR, -delta)
                 end.timeInMillis = start.timeInMillis
                 end.add(Calendar.DAY_OF_YEAR, 6)
@@ -107,16 +108,17 @@ object LedgerPeriodHelper {
         year: Int,
         month: Int,
         selectedRange: LedgerDateRange,
-        todayMillis: Long = System.currentTimeMillis()
+        todayMillis: Long = System.currentTimeMillis(),
+        weekStart: Int = Calendar.MONDAY
     ): List<LedgerCalendarDay> {
         val firstDay = Calendar.getInstance().apply {
-            firstDayOfWeek = Calendar.MONDAY
+            firstDayOfWeek = weekStart
             set(Calendar.YEAR, year)
             set(Calendar.MONTH, month)
             set(Calendar.DAY_OF_MONTH, 1)
             clearTime()
         }
-        val leadingCount = (firstDay.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY + 7) % 7
+        val leadingCount = (firstDay.get(Calendar.DAY_OF_WEEK) - weekStart + 7) % 7
         val daysInMonth = firstDay.getActualMaximum(Calendar.DAY_OF_MONTH)
         val totalCells = 42
         val todayIso = formatIsoDate(Date(todayMillis))

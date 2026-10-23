@@ -53,6 +53,11 @@
                 <TextView android:id="@+id/text_income_expense_color" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" />
                 <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_marginStart="8dp" android:src="@drawable/ic_arrow_right" app:tint="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
+            <LinearLayout android:id="@+id/card_week_start" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="56dp" android:padding="16dp" android:gravity="center_vertical" android:orientation="horizontal" android:clickable="true" android:focusable="true" android:background="?attr/selectableItemBackground">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/settings_week_start" android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
+                <TextView android:id="@+id/text_week_start" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="14sp" />
+                <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_arrow_right" app:tint="?attr/colorOnSurfaceVariant" android:importantForAccessibility="no" />
+            </LinearLayout>
              <LinearLayout android:id="@+id/card_record_entry_mode" android:layout_width="match_parent" android:layout_height="48dp" android:paddingStart="16dp" android:paddingEnd="16dp" android:gravity="center_vertical" android:orientation="horizontal">
                      <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/settings_record_entry_mode" android:textColor="?attr/colorOnSurface" android:textSize="14sp" />
                      <TextView android:id="@+id/text_record_entry_mode" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="?attr/colorOnSurfaceVariant" android:textSize="12sp" />

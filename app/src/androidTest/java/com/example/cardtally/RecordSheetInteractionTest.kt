@@ -49,7 +49,7 @@ class RecordSheetInteractionTest {
     fun portrait_amountKeypadSwitchesCleanlyToDateAndAssetSheets() {
         withRecordForm { scenario ->
             verifySheetSwitch(scenario, R.id.row_date, R.id.recycler_date_calendar, R.id.btn_confirm_date)
-            verifySheetSwitch(scenario, R.id.row_asset, R.id.recycler_assets, R.id.button_record_asset_none)
+            verifySheetSwitch(scenario, R.id.row_asset, R.id.recycler_default_assets, R.id.button_record_asset_none)
         }
     }
 
@@ -117,7 +117,7 @@ class RecordSheetInteractionTest {
             val dialog = fragment.activeSheetDialogForTest
             assertNotNull("record sheet must be open", dialog)
             val decor = requireNotNull(dialog!!.window).decorView
-            val closeId = if (sheetContentId == R.id.recycler_assets) R.id.btn_archive else R.id.btn_close_sheet
+            val closeId = if (sheetContentId == R.id.recycler_default_assets) R.id.button_close_default_asset else R.id.btn_close_sheet
             val close = decor.findViewById<View>(closeId)
             val content = decor.findViewById<View>(sheetContentId)
             assertTrue("sheet close action must be visible", close.isShown)
@@ -144,7 +144,7 @@ class RecordSheetInteractionTest {
                 action.performClick()
             }
             if (requiredActionId == null) {
-                val closeId = if (sheetContentId == R.id.recycler_assets) R.id.btn_archive else R.id.btn_close_sheet
+                val closeId = if (sheetContentId == R.id.recycler_default_assets) R.id.button_close_default_asset else R.id.btn_close_sheet
                 decor.findViewById<View>(closeId).performClick()
             }
         }

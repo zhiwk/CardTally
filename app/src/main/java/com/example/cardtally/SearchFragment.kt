@@ -367,7 +367,8 @@ class SearchFragment : Fragment() {
                     applyRange(format.format(start.time), format.format(end.time), getString(R.string.search_range_last_month))
                 }
                 "week" -> {
-                    val delta = (start.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY + 7) % 7
+                    val delta = (start.get(Calendar.DAY_OF_WEEK) -
+                        com.example.cardtally.util.WeekStartPreferences.get(requireContext()) + 7) % 7
                     start.add(Calendar.DAY_OF_MONTH, -delta)
                     end.time = start.time
                     end.add(Calendar.DAY_OF_MONTH, 6)
@@ -416,7 +417,9 @@ class SearchFragment : Fragment() {
                 rangeLabel = "$value - ${rangeEnd ?: value}"
                 startButton.text = rangeStart
                 endButton.text = rangeEnd ?: getString(R.string.search_end_date)
-            }, selected.get(Calendar.YEAR), selected.get(Calendar.MONTH), selected.get(Calendar.DAY_OF_MONTH)).show()
+            }, selected.get(Calendar.YEAR), selected.get(Calendar.MONTH), selected.get(Calendar.DAY_OF_MONTH)).apply {
+                datePicker.firstDayOfWeek = com.example.cardtally.util.WeekStartPreferences.get(requireContext())
+            }.show()
         }
         startButton.setOnClickListener { pickDate(true) }
         endButton.setOnClickListener { pickDate(false) }

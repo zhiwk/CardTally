@@ -486,6 +486,14 @@
     <string name="category_error_in_use">This category is referenced by records and cannot be deleted</string>
 
     <string name="language_dialog_title">Choose Language</string>
+    <string name="settings_week_start">First day of week</string>
+    <string name="week_start_sunday">Sunday</string>
+    <string name="week_start_monday">Monday</string>
+    <string name="default_asset_expense_description">Used for new expenses. You can change it while recording.</string>
+    <string name="default_asset_income_description">Used for new income. You can change it while recording.</string>
+    <string name="default_asset_search_hint">Search account name or bank</string>
+    <string name="default_asset_no_matches">No matching accounts. Try another search.</string>
+    <string name="default_asset_balance">Balance ¥%1$s</string>
     <string name="settings_income_expense_color">Income and expense colors</string>
     <string name="settings_income_expense_color_income_green_expense_red">Income (green), expense (red)</string>
     <string name="settings_income_expense_color_income_red_expense_green">Income (red), expense (green)</string>

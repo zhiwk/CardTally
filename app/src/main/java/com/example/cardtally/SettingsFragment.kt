@@ -300,6 +300,7 @@ class SettingsFragment : Fragment() {
         updateAiApiKeyStatus()
         updateRecordPhotoLimitText()
         updateIncomeExpenseColorText()
+        updateWeekStartText()
         updateRecordEntryModeText()
         updateDefaultRecordAssetText()
 
@@ -350,6 +351,15 @@ class SettingsFragment : Fragment() {
         }
         cardRecordPhotoLimit.setOnClickListener { showRecordPhotoLimitDialog() }
         cardIncomeExpenseColor.setOnClickListener { showIncomeExpenseColorDialog() }
+        view.findViewById<View>(R.id.card_week_start).setOnClickListener { anchor ->
+            val days = listOf(java.util.Calendar.SUNDAY, java.util.Calendar.MONDAY)
+            showSettingsChoiceMenu(anchor,
+                listOf(getString(R.string.week_start_sunday), getString(R.string.week_start_monday)),
+                days.indexOf(com.example.cardtally.util.WeekStartPreferences.get(requireContext())), 200) { index ->
+                com.example.cardtally.util.WeekStartPreferences.save(requireContext(), days[index])
+                updateWeekStartText()
+            }
+        }
         cardRecordEntryMode.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, RecordEntryModeSettingsFragment())
@@ -443,6 +453,7 @@ class SettingsFragment : Fragment() {
         updateAiApiKeyStatus()
         updateRecordPhotoLimitText()
         updateIncomeExpenseColorText()
+        updateWeekStartText()
         updateRecordEntryModeText()
         updateDefaultRecordAssetText()
         switchQuickAdd.isChecked = QuickAddHelper.getQuickAdd(requireContext())
@@ -470,6 +481,12 @@ class SettingsFragment : Fragment() {
     private fun updateCurrentLanguageText() {
         if (!::textCurrentLanguage.isInitialized || !isAdded) return
         textCurrentLanguage.text = LanguageHelper.getCurrentLanguageDisplayName(requireContext())
+    }
+
+    private fun updateWeekStartText() {
+        view?.findViewById<TextView>(R.id.text_week_start)?.setText(
+            if (com.example.cardtally.util.WeekStartPreferences.get(requireContext()) == java.util.Calendar.SUNDAY)
+                R.string.week_start_sunday else R.string.week_start_monday)
     }
 
     private fun updateAiApiKeyStatus() {

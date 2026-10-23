@@ -117,6 +117,7 @@ class CalendarFragment : Fragment() {
     }
 
     private fun renderMonth() {
+        view?.let(com.example.cardtally.util.WeekStartPreferences::bindHeader)
         textMonth.text = String.format(Locale.US, "%04d年%02d月", year, month + 1)
         val monthKey = String.format(Locale.US, "%04d-%02d", year, month + 1)
         if (!selectedDate.startsWith(monthKey)) selectedDate = "$monthKey-01"
@@ -131,7 +132,8 @@ class CalendarFragment : Fragment() {
         val cells = LedgerPeriodHelper.buildMonthCells(
             year,
             month,
-            LedgerDateRange(selectedDate, selectedDate)
+            LedgerDateRange(selectedDate, selectedDate),
+            weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext())
         ).map { day ->
             val total = day.isoDate?.let { totals[it] }
             day.copy(

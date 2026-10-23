@@ -57,7 +57,7 @@ internal object SettingsRowLayout {
 
     fun bind(root: View) {
         val rows = listOf(R.id.card_theme, R.id.card_bottom_navigation, R.id.card_language,
-            R.id.card_income_expense_color, R.id.card_record_entry_mode, R.id.card_default_expense_asset,
+            R.id.card_income_expense_color, R.id.card_week_start, R.id.card_record_entry_mode, R.id.card_default_expense_asset,
             R.id.card_default_income_asset, R.id.card_ai_api_key, R.id.card_category,
             R.id.card_ledger_management, R.id.card_recurring_records, R.id.card_export_data,
             R.id.card_import_data, R.id.card_record_photo_limit, R.id.card_quick_add, R.id.card_show_asset)

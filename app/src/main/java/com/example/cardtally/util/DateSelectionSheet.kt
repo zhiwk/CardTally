@@ -41,13 +41,15 @@ object DateSelectionSheet {
         lateinit var adapter: LedgerCalendarAdapter
 
         fun renderCalendar() {
+            WeekStartPreferences.bindHeader(sheet)
             monthTitle.text = LedgerPeriodHelper.formatMonthTitle(displayYear, displayMonth)
             selectionValue.text = formatDisplayDate(localDate)
             adapter.submitList(
                 LedgerPeriodHelper.buildMonthCells(
                     displayYear,
                     displayMonth,
-                    LedgerDateRange(localDate, localDate)
+                    LedgerDateRange(localDate, localDate),
+                    weekStart = WeekStartPreferences.get(context)
                 )
             )
         }
