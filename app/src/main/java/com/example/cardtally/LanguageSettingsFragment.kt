@@ -16,33 +16,41 @@ class LanguageSettingsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_language_settings, container, false)
+        com.example.cardtally.util.SettingsRowLayout.bindChoices(view,
+            R.id.row_language_chinese, R.id.row_language_english)
         view.findViewById<TextView>(R.id.text_title).text = getString(R.string.settings_language)
-        val chinese = view.findViewById<RadioButton>(R.id.radio_language_chinese)
-        val english = view.findViewById<RadioButton>(R.id.radio_language_english)
         val languageValues = resources.getStringArray(R.array.supported_language_values)
-
-        fun bindCurrentLanguage() {
-            val current = LanguageHelper.getCurrentLanguageTag(requireContext())
-            chinese.isChecked = current == languageValues.getOrNull(0)
-            english.isChecked = current == languageValues.getOrNull(1)
-        }
 
         view.findViewById<View>(R.id.btn_back).setOnClickListener {
             parentFragmentManager.popBackStack()
         }
         view.findViewById<View>(R.id.row_language_chinese).setOnClickListener {
-            selectLanguage(languageValues.getOrNull(0)) { bindCurrentLanguage() }
+            selectLanguage(languageValues.getOrNull(0), view)
         }
         view.findViewById<View>(R.id.row_language_english).setOnClickListener {
-            selectLanguage(languageValues.getOrNull(1)) { bindCurrentLanguage() }
+            selectLanguage(languageValues.getOrNull(1), view)
         }
-        bindCurrentLanguage()
+        bindLanguageSelection(view, LanguageHelper.getCurrentLanguageTag(requireContext()))
         return view
     }
 
-    private fun selectLanguage(languageTag: String?, refresh: () -> Unit) {
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        // Framework restoration runs after onCreateView and can restore the old language's check.
+        view?.let { bindLanguageSelection(it, LanguageHelper.getCurrentLanguageTag(requireContext())) }
+    }
+
+    private fun bindLanguageSelection(root: View, languageTag: String) {
+        root.findViewById<RadioButton>(R.id.radio_language_chinese).isChecked =
+            languageTag == LanguageHelper.LANGUAGE_CHINESE
+        root.findViewById<RadioButton>(R.id.radio_language_english).isChecked =
+            languageTag == LanguageHelper.LANGUAGE_ENGLISH
+    }
+
+    private fun selectLanguage(languageTag: String?, root: View) {
         if (languageTag.isNullOrBlank()) return
+        // Show the user's choice immediately; locale application/recreation is asynchronous.
+        bindLanguageSelection(root, LanguageHelper.normalizeLanguageTag(languageTag))
         LanguageHelper.updateLanguage(requireContext(), languageTag)
-        refresh()
     }
 }

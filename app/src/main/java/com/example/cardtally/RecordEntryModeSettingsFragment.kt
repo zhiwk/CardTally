@@ -17,6 +17,8 @@ class RecordEntryModeSettingsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_record_entry_mode_settings, container, false)
+        com.example.cardtally.util.SettingsRowLayout.bindChoices(view,
+            R.id.row_record_entry_mode_standard, R.id.row_record_entry_mode_quick)
         view.findViewById<TextView>(R.id.text_title).text = getString(R.string.settings_record_entry_mode)
         val standard = view.findViewById<RadioButton>(R.id.radio_record_entry_mode_standard)
         val quick = view.findViewById<RadioButton>(R.id.radio_record_entry_mode_quick)
@@ -51,5 +53,13 @@ class RecordEntryModeSettingsFragment : Fragment() {
         if (mode == RecordEntryModePreferences.getMode(requireContext())) return
         RecordEntryModePreferences.saveMode(requireContext(), mode)
         refresh()
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        val root = view ?: return
+        val quick = RecordEntryModePreferences.getMode(requireContext()) == RecordEntryMode.QUICK
+        root.findViewById<RadioButton>(R.id.radio_record_entry_mode_standard).isChecked = !quick
+        root.findViewById<RadioButton>(R.id.radio_record_entry_mode_quick).isChecked = quick
     }
 }

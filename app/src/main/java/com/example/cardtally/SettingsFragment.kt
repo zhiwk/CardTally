@@ -1,7 +1,6 @@
 package com.example.cardtally
 
 import android.os.Bundle
-import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,7 +31,6 @@ import com.example.cardtally.util.BackupArchiveManager
 import com.example.cardtally.util.DefaultRecordAssetPreferences
 import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.ThemeHelper
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.util.concurrent.Executors
 
 class SettingsFragment : Fragment() {
@@ -64,7 +62,7 @@ class SettingsFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
     private val transferExecutor = Executors.newSingleThreadExecutor()
     private var pendingExportPassword: CharArray? = null
-    private var photoCountPopup: ListPopupWindow? = null
+    private var settingsChoicePopup: ListPopupWindow? = null
 
     private val exportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -263,6 +261,7 @@ class SettingsFragment : Fragment() {
             )
         }
         val view = inflater.inflate(R.layout.fragment_settings_v2, container, false)
+        com.example.cardtally.util.SettingsRowLayout.bind(view)
 
         cardQuickAdd = view.findViewById(R.id.card_quick_add)
         switchQuickAdd = view.findViewById(R.id.switch_quick_add)
@@ -453,8 +452,8 @@ class SettingsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        photoCountPopup?.dismiss()
-        photoCountPopup = null
+        settingsChoicePopup?.dismiss()
+        settingsChoicePopup = null
         if (::databaseHelper.isInitialized) {
             databaseHelper.close()
         }
@@ -530,22 +529,30 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showRecordPhotoLimitDialog() {
-        photoCountPopup?.dismiss()
+        val labels = (1..9).map { getString(R.string.settings_record_photo_limit_value, it) }
+        showSettingsChoiceMenu(cardRecordPhotoLimit, labels,
+            RecordPhotoSettingsHelper.getMaxPhotos(requireContext()) - 1, 200) { position ->
+            RecordPhotoSettingsHelper.saveMaxPhotos(requireContext(), position + 1)
+            updateRecordPhotoLimitText()
+        }
+    }
+
+    private fun showSettingsChoiceMenu(anchor: View, labels: List<String>, selected: Int,
+        widthDp: Int, onSelected: (Int) -> Unit) {
+        settingsChoicePopup?.dismiss()
         val context = requireContext()
         val density = resources.displayMetrics.density
-        val current = RecordPhotoSettingsHelper.getMaxPhotos(context)
-        val labels = (1..9).map { getString(R.string.settings_record_photo_limit_value, it) }
         val adapter = object : ArrayAdapter<String>(context, R.layout.item_record_photo_count, labels) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
                 (super.getView(position, convertView, parent) as CheckedTextView).apply {
-                    isChecked = position + 1 == current
+                    isChecked = position == selected
                 }
         }
         val popup = ListPopupWindow(context).apply {
-            anchorView = cardRecordPhotoLimit
+            anchorView = anchor
             isModal = true
             setDropDownGravity(android.view.Gravity.END)
-            width = minOf((200 * density).toInt(), cardRecordPhotoLimit.width)
+            width = minOf((widthDp * density).toInt(), anchor.width)
             height = ViewGroup.LayoutParams.WRAP_CONTENT
             setBackgroundDrawable(GradientDrawable().apply {
                 setColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_light))
@@ -553,18 +560,17 @@ class SettingsFragment : Fragment() {
             })
             setAdapter(adapter)
             setOnItemClickListener { _, _, position, _ ->
-                RecordPhotoSettingsHelper.saveMaxPhotos(context, position + 1)
-                updateRecordPhotoLimitText()
+                onSelected(position)
                 dismiss()
             }
-            setOnDismissListener { photoCountPopup = null }
+            setOnDismissListener { settingsChoicePopup = null }
         }
-        photoCountPopup = popup
+        settingsChoicePopup = popup
         popup.show()
         popup.listView?.apply {
             divider = null
             setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
-            setSelection(current - 1)
+            setSelection(selected)
             clipToOutline = true
         }
     }
@@ -597,73 +603,11 @@ class SettingsFragment : Fragment() {
             getString(R.string.settings_income_expense_color_income_red_expense_green),
             getString(R.string.settings_income_expense_color_both_black)
         )
-        val dialog = BottomSheetDialog(requireContext())
-        val sheet = layoutInflater.inflate(R.layout.bottom_sheet_income_expense_color, null)
-        val options = sheet.findViewById<android.widget.LinearLayout>(R.id.radio_income_expense_color_options)
-        labels.forEachIndexed { index, label ->
-            val row = android.widget.LinearLayout(requireContext()).apply {
-                orientation = android.widget.LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                layoutParams = android.widget.LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    56.dp()
-                ).apply {
-                    leftMargin = 14.dp()
-                    rightMargin = 14.dp()
-                }
-                setPadding(0, 0, 0, 0)
-                isClickable = true
-                isFocusable = true
-            }
-            row.addView(android.widget.TextView(requireContext()).apply {
-                text = label
-                textSize = 16f
-                setTextColor(ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface))
-                layoutParams = android.widget.LinearLayout.LayoutParams(
-                    0,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    1f
-                )
-            })
-            row.addView(android.widget.RadioButton(requireContext()).apply {
-                isChecked = index == IncomeExpenseColorScheme.getMode(requireContext())
-                minWidth = 48.dp()
-                minHeight = 48.dp()
-                buttonTintList = androidx.core.content.ContextCompat.getColorStateList(
-                    requireContext(),
-                    R.color.outlineVariant_light
-                )
-                layoutParams = android.widget.LinearLayout.LayoutParams(48.dp(), 48.dp())
-            })
-            row.setOnClickListener {
-                IncomeExpenseColorScheme.saveMode(requireContext(), index)
-                updateIncomeExpenseColorText()
-                dialog.dismiss()
-            }
-            options.addView(row)
-            if (index < labels.lastIndex) {
-                options.addView(View(requireContext()).apply {
-                    layoutParams = android.widget.LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        1.dp()
-                    ).apply {
-                        leftMargin = 14.dp()
-                        rightMargin = 14.dp()
-                    }
-                    setBackgroundColor(requireContext().getColor(R.color.outlineVariant_light))
-                })
-            }
+        showSettingsChoiceMenu(cardIncomeExpenseColor, labels,
+            IncomeExpenseColorScheme.getMode(requireContext()), 280) { index ->
+            IncomeExpenseColorScheme.saveMode(requireContext(), index)
+            updateIncomeExpenseColorText()
         }
-        sheet.findViewById<View>(R.id.btn_income_expense_color_close).setOnClickListener { dialog.dismiss() }
-        dialog.setContentView(sheet)
-        dialog.setOnShowListener {
-            dialog.findViewById<android.widget.FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
-                ?.background = ColorDrawable(requireContext().getColor(R.color.background_light))
-            dialog.behavior.isDraggable = true
-            dialog.behavior.skipCollapsed = false
-            dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
-        }
-        dialog.show()
     }
 
     private fun Int.dp(): Int = (this * resources.displayMetrics.density).toInt()
