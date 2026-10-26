@@ -605,6 +605,7 @@ class StatisticsFragment : Fragment() {
             textEmpty.visibility = View.GONE
             recyclerRecords.visibility = View.VISIBLE
             val dateGroups = groupRecordsByDate(detailRecords)
+            val categoryPaths = com.example.cardtally.util.RecordCategoryDisplay.paths(databaseHelper.getAllCategories())
             if (recordsAdapter == null) {
                 recordsAdapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
                     override fun onOpenDetails(record: Record) {
@@ -630,9 +631,9 @@ class StatisticsFragment : Fragment() {
                     override fun onDeleteSelected(records: List<Record>) {}
                     override fun onEnterMultiSelectMode(record: Record) {}
                     override fun onToggleMultiSelect(record: Record) {}
-                })
+                }, categoryPathsById = categoryPaths)
             } else {
-                recordsAdapter?.updateDateGroups(dateGroups)
+                recordsAdapter?.updateDateGroups(dateGroups, categoryPaths)
             }
             if (recyclerRecords.adapter !== recordsAdapter) recyclerRecords.adapter = recordsAdapter
         }

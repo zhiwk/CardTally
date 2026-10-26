@@ -15,7 +15,8 @@ class LedgerDateGroupAdapter(
     private var groups: List<DateGroup>,
     private val listener: DateGroupAdapter.OnRecordActionListener,
     private val onHeaderBound: (View) -> Unit,
-    private val categoryIconsById: Map<Long, String> = emptyMap()
+    private val categoryIconsById: Map<Long, String> = emptyMap(),
+    private val categoryPathsById: Map<Long, String> = emptyMap()
 ) : RecyclerView.Adapter<LedgerDateGroupAdapter.GroupViewHolder>() {
 
     private companion object {
@@ -84,7 +85,8 @@ class LedgerDateGroupAdapter(
                 showTypeSubtitle = false,
                 roundTopCorners = position == 0,
                 roundBottomCorners = position == records.lastIndex,
-                parentProvidesBackground = true
+                parentProvidesBackground = true,
+                categoryPathsById = categoryPathsById
             )
         }
 

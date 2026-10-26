@@ -29,7 +29,8 @@ class DateGroupAdapter(
      * the asset/transfer route. Only the asset-detail history uses this, so other
      * bill and search pages keep their existing asset label semantics.
      */
-    private val showAssetRoute: Boolean = true
+    private val showAssetRoute: Boolean = true,
+    private var categoryPathsById: Map<Long, String> = emptyMap()
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -99,7 +100,8 @@ class DateGroupAdapter(
                     showAssetRoute = showAssetRoute,
                     showDivider = recordIndex < dateGroup.records.lastIndex,
                     roundTopCorners = recordIndex == 0,
-                    roundBottomCorners = recordIndex == dateGroup.records.lastIndex
+                    roundBottomCorners = recordIndex == dateGroup.records.lastIndex,
+                    categoryPathsById = categoryPathsById
                 )
                 return
             }
@@ -115,7 +117,8 @@ class DateGroupAdapter(
         return count
     }
 
-    fun updateDateGroups(newDateGroups: List<DateGroup>) {
+    fun updateDateGroups(newDateGroups: List<DateGroup>, categoryPathsById: Map<Long, String> = this.categoryPathsById) {
+        this.categoryPathsById = categoryPathsById
         dateGroups = newDateGroups
         notifyDataSetChanged()
     }
@@ -289,7 +292,8 @@ class DateGroupAdapter(
             showDivider: Boolean = false,
             roundTopCorners: Boolean = false,
             roundBottomCorners: Boolean = false,
-            parentProvidesBackground: Boolean = false
+            parentProvidesBackground: Boolean = false,
+            categoryPathsById: Map<Long, String> = emptyMap()
         ) {
             currentRecord = record
             recordDivider.visibility = if (showDivider) View.VISIBLE else View.GONE
@@ -300,9 +304,7 @@ class DateGroupAdapter(
             textCategory.text = if (record.type == 2) {
                 transferRoute.ifBlank { itemView.context.getString(R.string.record_type_transfer) }
             } else {
-                record.categoryPathSnapshot?.takeIf { it.isNotBlank() }
-                    ?: record.categoryNameSnapshot?.takeIf { it.isNotBlank() }
-                    ?: record.category
+                com.example.cardtally.util.RecordCategoryDisplay.label(record, categoryPathsById)
             }
             textTime.text = buildSubtitle(record)
             textTime.visibility = if (showTypeSubtitle) View.VISIBLE else View.GONE

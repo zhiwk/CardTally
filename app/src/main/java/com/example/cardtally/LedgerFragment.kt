@@ -38,6 +38,7 @@ class LedgerFragment : Fragment() {
     private var ledgerId: Long? = null
     private val states = mutableMapOf<Int, MonthState>()
     private var categoryIcons = emptyMap<Long, String>()
+    private var categoryPaths = emptyMap<Long, String>()
 
     private class MonthState {
         val records = mutableListOf<Record>()
@@ -135,7 +136,9 @@ class LedgerFragment : Fragment() {
         ledgerId = selectedLedger
         view?.findViewById<TextView>(R.id.text_month)?.text =
             databaseHelper.getCurrentLedger()?.name ?: getString(R.string.ledger_book_name)
-        categoryIcons = databaseHelper.getAllCategories().filter { !it.icon.isNullOrEmpty() }
+        val categories = databaseHelper.getAllCategories()
+        categoryPaths = com.example.cardtally.util.RecordCategoryDisplay.paths(categories)
+        categoryIcons = categories.filter { !it.icon.isNullOrEmpty() }
             .associate { it.id to it.icon.orEmpty() }
         states.values.forEach { it.loaded = false }
         pages?.notifyDataSetChanged()
@@ -244,7 +247,7 @@ class LedgerFragment : Fragment() {
             }
             rows = LedgerDateGroupAdapter(emptyList(), recordListener, { header ->
                 bindSummary(header, month, state)
-            }, categoryIcons)
+            }, categoryIcons, categoryPaths)
             restoring = true
             list.adapter = rows
             updateRows(state)

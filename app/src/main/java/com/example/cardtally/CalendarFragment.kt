@@ -181,7 +181,11 @@ class CalendarFragment : Fragment() {
                 override fun onEnterMultiSelectMode(record: Record) = Unit
                 override fun onToggleMultiSelect(record: Record) = Unit
             }
-        recordsRecycler.adapter = CalendarRecordAdapter(dayRecords, listener)
+        val categories = databaseHelper.getAllCategories()
+        val categoryPaths = com.example.cardtally.util.RecordCategoryDisplay.paths(categories)
+        val categoryIcons = categories.filter { !it.icon.isNullOrEmpty() }
+            .associate { it.id to it.icon.orEmpty() }
+        recordsRecycler.adapter = CalendarRecordAdapter(dayRecords, listener, categoryPaths, categoryIcons)
         appendDayPage(databaseHelper.getRecordsPage(selectedDate, selectedDate))
     }
 
@@ -206,7 +210,9 @@ class CalendarFragment : Fragment() {
 
     private class CalendarRecordAdapter(
         private val records: List<Record>,
-        private val listener: DateGroupAdapter.OnRecordActionListener
+        private val listener: DateGroupAdapter.OnRecordActionListener,
+        private val categoryPathsById: Map<Long, String>,
+        private val categoryIconsById: Map<Long, String>
     ) : RecyclerView.Adapter<DateGroupAdapter.RecordViewHolder>() {
         override fun onCreateViewHolder(
             parent: ViewGroup,
@@ -221,7 +227,8 @@ class CalendarFragment : Fragment() {
             holder: DateGroupAdapter.RecordViewHolder,
             position: Int
         ) {
-            holder.bind(records[position], listener, false, false)
+            holder.bind(records[position], listener, false, false,
+                categoryIconsById = categoryIconsById, categoryPathsById = categoryPathsById)
         }
 
         override fun getItemCount(): Int = records.size

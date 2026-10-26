@@ -285,7 +285,9 @@ class AssetRecordsFragment : Fragment() {
             recyclerRecords.visibility = View.VISIBLE
 
             val dateGroups = groupRecordsByDate(loadedRecords)
-            val categoryIconsById = databaseHelper.getAllCategories()
+            val categories = databaseHelper.getAllCategories()
+            val categoryPaths = com.example.cardtally.util.RecordCategoryDisplay.paths(categories)
+            val categoryIconsById = categories
                 .filter { !it.icon.isNullOrEmpty() }
                 .associate { it.id to it.icon.orEmpty() }
 
@@ -322,11 +324,12 @@ class AssetRecordsFragment : Fragment() {
                         override fun onToggleMultiSelect(record: Record) {}
                     },
                     categoryIconsById = categoryIconsById,
-                    showAssetRoute = false
+                    showAssetRoute = false,
+                    categoryPathsById = categoryPaths
                 )
                 recyclerRecords.adapter = adapter
             } else {
-                adapter?.updateDateGroups(dateGroups)
+                adapter?.updateDateGroups(dateGroups, categoryPaths)
                 if (recyclerRecords.adapter == null) {
                     recyclerRecords.adapter = adapter
                 }

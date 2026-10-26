@@ -279,9 +279,10 @@ class SearchFragment : Fragment() {
             recyclerRecords.visibility = View.VISIBLE
             val dateGroups = groupRecordsByDate(loadedRecords)
             val categories = databaseHelper.getAllCategories()
-                .filter { !it.icon.isNullOrEmpty() }
-            val categoryIconsById = categories.associate { it.id to it.icon.orEmpty() }
-            val categoryIconsByName = categories.associate { it.name to it.icon.orEmpty() }
+            val categoryPaths = com.example.cardtally.util.RecordCategoryDisplay.paths(categories)
+            val iconCategories = categories.filter { !it.icon.isNullOrEmpty() }
+            val categoryIconsById = iconCategories.associate { it.id to it.icon.orEmpty() }
+            val categoryIconsByName = iconCategories.associate { it.name to it.icon.orEmpty() }
 
             if (adapter == null) {
                 adapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
@@ -315,10 +316,10 @@ class SearchFragment : Fragment() {
 
                     override fun onToggleMultiSelect(record: Record) {
                     }
-                }, categoryIconsById, categoryIconsByName, showTypeSubtitle = false)
+                }, categoryIconsById, categoryIconsByName, showTypeSubtitle = false, categoryPathsById = categoryPaths)
                 recyclerRecords.adapter = adapter
             } else {
-                adapter?.updateDateGroups(dateGroups)
+                adapter?.updateDateGroups(dateGroups, categoryPaths)
                 if (recyclerRecords.adapter == null) {
                     recyclerRecords.adapter = adapter
                 }
