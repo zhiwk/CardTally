@@ -135,7 +135,7 @@ class CategoryManageFragment : Fragment() {
         if (targets.isEmpty()) { Toast.makeText(requireContext(), R.string.category_merge_no_targets, Toast.LENGTH_LONG).show(); return }
         val labels = targets.map { CategoryMergePlanner.path(rows, it.id) }
         val dialog = BottomSheetDialog(requireContext())
-        val content = Ui.content(requireContext(), getString(R.string.category_merge_choose_target)) { dialog.dismiss() }
+        val content = Ui.listContent(requireContext(), getString(R.string.category_merge_choose_target)) { dialog.dismiss() }
         val search = EditText(requireContext()).apply {
             hint = getString(R.string.category_search_hint); setSingleLine(true); textSize = 16f
             setBackgroundResource(R.drawable.bg_input_surface); backgroundTintList = null
@@ -147,8 +147,13 @@ class CategoryManageFragment : Fragment() {
         content.body.addView(search)
         val empty = Ui.text(requireContext(), getString(R.string.default_asset_no_matches), 14f)
         content.body.addView(empty)
-        val list = RecyclerView(requireContext()).apply { layoutManager = LinearLayoutManager(context) }
-        content.body.addView(list, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(requireContext(), (targets.size * 56).coerceAtMost(280))))
+        val list = RecyclerView(requireContext()).apply {
+            layoutManager = LinearLayoutManager(context)
+            isNestedScrollingEnabled = true
+        }
+        // Only the list shrinks when the window/IME limits the sheet; header and search stay fixed.
+        content.body.addView(list, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+            Ui.dp(requireContext(), (targets.size * 72).coerceAtMost(280)), 1f))
         var filtered = targets.indices.toList()
         val choices = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             override fun getItemCount() = filtered.size

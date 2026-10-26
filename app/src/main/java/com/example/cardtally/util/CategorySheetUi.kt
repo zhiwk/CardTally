@@ -29,7 +29,14 @@ internal object CategorySheetUi {
         setPadding(0, dp(context, 8), 0, dp(context, 8))
     }
     data class Content(val root: LinearLayout, val body: LinearLayout, val footer: LinearLayout)
-    fun content(context: Context, title: String, close: () -> Unit): Content {
+    fun content(context: Context, title: String, close: () -> Unit): Content =
+        createContent(context, title, scrollBody = true, close = close)
+
+    /** Lists own nested scrolling; wrapping them would make the sheet track the outer scroll view. */
+    fun listContent(context: Context, title: String, close: () -> Unit): Content =
+        createContent(context, title, scrollBody = false, close = close)
+
+    private fun createContent(context: Context, title: String, scrollBody: Boolean, close: () -> Unit): Content {
         fun column() = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         val root = column().apply {
             setPadding(dp(context, 20), dp(context, 12), dp(context, 20), dp(context, 16))
@@ -58,7 +65,8 @@ internal object CategorySheetUi {
             }, LinearLayout.LayoutParams(dp(context, 48), dp(context, 48)))
         })
         val body = column()
-        root.addView(NestedScrollView(context).apply { addView(body); isFillViewport = false },
+        val bodyView = if (scrollBody) NestedScrollView(context).apply { addView(body); isFillViewport = false } else body
+        root.addView(bodyView,
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         val footer = column()
         root.addView(footer)
