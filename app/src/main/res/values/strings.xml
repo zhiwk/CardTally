@@ -915,4 +915,27 @@
     <string name="ai_record_write_finished">本条账单操作已完成。如需操作其他账单，请发送新的请求。</string>
     <string name="record_asset_no_selection">不选择</string>
     <string name="ai_record_no_asset_effect">不关联资产，本次操作不会改变任何资产余额。</string>
+    <string name="category_merge_action">合并到其他分类</string>
+    <string name="category_merge_choose_target">选择合并目标</string>
+    <string name="category_merge_no_targets">没有可用目标。请选择同为收入或支出、结构相容且不冲突的分类；不能合并到自己、祖先或后代。</string>
+    <string name="category_merge_confirm_title">确认合并分类</string>
+    <string name="category_merge_summary">%1$s → %2$s\n影响所有账本：%3$d 笔账单、%4$d 个重复记账任务、%5$d 条待撤销记录。\n账单分类名称、路径和统计归属将一起改变，原分类将移除。金额、余额、日期、备注和附件不变。此操作没有一键撤销。</string>
+    <string name="category_merge_detail">合并：%1$s → %2$s</string>
+    <string name="category_merge_move_detail">移动子分类：%1$s → %2$s</string>
+    <string name="category_merge_confirm">确认合并</string>
+    <string name="category_merge_success">分类已合并，关联账单已更新</string>
+    <string name="category_merge_stale">分类或影响数量已变化，请重新选择目标并确认</string>
+    <string name="category_merge_conflict">同名子分类存在结构冲突，请先重命名或整理子分类</string>
+    <string name="category_merge_invalid">无法合并：请检查收支类型、分类结构、层级上限和历史分类关联</string>
+    <string name="category_merge_failed">合并失败，数据库改动已回滚，请重试</string>
+    <string name="category_name_label">分类名称</string>
+    <string name="category_save">保存</string>
+    <string name="category_color_choice">背景颜色 %1$s</string>
+    <string name="category_search_hint">搜索分类名称或路径</string>
+    <string name="category_merge_toggle_details">展开／收起处理明细</string>
+    <string name="category_unsaved_title">尚有未保存的修改</string>
+    <string name="category_discard_message">关闭后将放弃当前修改，是否继续？</string>
+    <string name="category_action_unsaved_message">此操作使用已保存的分类，不会保存当前修改。取消后可继续编辑，是否继续？</string>
+    <string name="category_continue">继续</string>
+    <string name="category_editor_save_failed">操作未完成，请检查分类状态、层级限制或名称后重试</string>
 </resources>

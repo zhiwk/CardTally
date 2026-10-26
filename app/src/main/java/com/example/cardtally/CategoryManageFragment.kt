@@ -1,368 +1,228 @@
 package com.example.cardtally
 
-import android.app.AlertDialog
 import android.os.Bundle
-import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.CategoryAdapter
-import com.example.cardtally.adapter.IconPickerDialog
+import com.example.cardtally.database.CategoryMergeException
+import com.example.cardtally.database.CategoryMergePlanner
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Category
 import com.example.cardtally.util.CategoryHierarchySettingsHelper
-import com.example.cardtally.util.TablerIconCatalog
+import com.example.cardtally.util.CategorySheetUi as Ui
 import com.example.cardtally.util.ThemeColorHelper
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayout
 
 class CategoryManageFragment : Fragment() {
-    companion object {
-        const val CATEGORY_SAVED_RESULT = "category_saved"
-    }
-
-    private lateinit var tabLayout: TabLayout
+    companion object { const val CATEGORY_SAVED_RESULT = "category_saved" }
+    private lateinit var databaseHelper: DatabaseHelper
     private lateinit var recyclerCategories: RecyclerView
     private lateinit var textEmpty: TextView
-    private lateinit var btnAdd: Button
-    private lateinit var databaseHelper: DatabaseHelper
     private var adapter: CategoryAdapter? = null
     private var currentType = 0
+    private val sheets = mutableSetOf<BottomSheetDialog>()
 
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_category_manage, container, false)
-
-        tabLayout = view.findViewById(R.id.tab_layout)
-        recyclerCategories = view.findViewById(R.id.recycler_categories)
-        textEmpty = view.findViewById(R.id.text_empty)
-        btnAdd = view.findViewById(R.id.btn_add)
-        view.findViewById<View>(R.id.btn_back).setOnClickListener {
-            parentFragmentManager.popBackStack()
-        }
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        val root = inflater.inflate(R.layout.fragment_category_manage, container, false)
         databaseHelper = DatabaseHelper(requireContext())
-        parentFragmentManager.setFragmentResultListener(
-            CATEGORY_SAVED_RESULT,
-            viewLifecycleOwner
-        ) { _, _ ->
-            loadCategories()
+        currentType = savedInstanceState?.getInt("type") ?: currentType
+        recyclerCategories = root.findViewById(R.id.recycler_categories)
+        textEmpty = root.findViewById(R.id.text_empty)
+        root.findViewById<View>(R.id.btn_back).setOnClickListener { parentFragmentManager.popBackStack() }
+        root.findViewById<View>(R.id.btn_add).setOnClickListener { editor(null, null) }
+        parentFragmentManager.setFragmentResultListener(CATEGORY_SAVED_RESULT, viewLifecycleOwner) { _, _ -> loadCategories() }
+        parentFragmentManager.setFragmentResultListener(CategoryEditorSheetFragment.ACTION, viewLifecycleOwner) { _, result ->
+            val id = result.getLong("id")
+            if (result.getString("action") == "merge") showMergeTargets(id)
+            else databaseHelper.getCategoryById(id)?.let(::showDeleteSheet)
         }
         recyclerCategories.layoutManager = LinearLayoutManager(requireContext())
-        val reorderCallback = object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN,
-            0
-        ) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ): Boolean {
-                val from = viewHolder.adapterPosition
-                val to = target.adapterPosition
-                if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
-                adapter?.moveParent(from, to)
+        ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+            override fun onMove(list: RecyclerView, from: RecyclerView.ViewHolder, to: RecyclerView.ViewHolder): Boolean {
+                val a = from.bindingAdapterPosition
+                val b = to.bindingAdapterPosition
+                if (a == RecyclerView.NO_POSITION || b == RecyclerView.NO_POSITION) return false
+                adapter?.moveParent(a, b)
                 return true
             }
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
-
-            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
-                super.clearView(recyclerView, viewHolder)
+            override fun onSwiped(holder: RecyclerView.ViewHolder, direction: Int) = Unit
+            override fun clearView(list: RecyclerView, holder: RecyclerView.ViewHolder) {
+                super.clearView(list, holder)
                 adapter?.parentIdsInOrder()?.let(databaseHelper::updateCategorySortOrders)
             }
-        }
-        ItemTouchHelper(reorderCallback).attachToRecyclerView(recyclerCategories)
-
-        for (position in 0 until tabLayout.tabCount) {
-            val tab = tabLayout.getTabAt(position) ?: continue
+        }).attachToRecyclerView(recyclerCategories)
+        val tabs = root.findViewById<TabLayout>(R.id.tab_layout)
+        for (index in 0 until tabs.tabCount) tabs.getTabAt(index)?.let { tab ->
             tab.setCustomView(R.layout.item_category_type_tab)
             (tab.customView as? TextView)?.text = tab.text
         }
-        tabLayout.getTabAt(currentType)?.select()
-        for (position in 0 until tabLayout.tabCount) {
-            styleTypeTab(tabLayout.getTabAt(position), position == currentType)
+        fun style(tab: TabLayout.Tab?, selected: Boolean) {
+            (tab?.customView as? TextView)?.apply {
+                setTextColor(if (selected) Ui.color(context, com.google.android.material.R.attr.colorOnSurface)
+                    else ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_text_muted))
+                paint.isFakeBoldText = selected; invalidate()
+            }
         }
-        loadCategories()
-
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                currentType = tab?.position ?: 0
-                styleTypeTab(tab, true)
-                loadCategories()
-            }
-
-            override fun onTabUnselected(tab: TabLayout.Tab?) {
-                styleTypeTab(tab, false)
-            }
-
+        tabs.getTabAt(currentType)?.select()
+        for (index in 0 until tabs.tabCount) style(tabs.getTabAt(index), index == currentType)
+        tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) { currentType = tab?.position ?: 0; style(tab, true); loadCategories() }
+            override fun onTabUnselected(tab: TabLayout.Tab?) { style(tab, false) }
             override fun onTabReselected(tab: TabLayout.Tab?) = Unit
         })
-
-        btnAdd.setOnClickListener {
-            openCategoryEditor(parentId = null)
-        }
-
-        return view
+        loadCategories()
+        return root
     }
-
-    private fun styleTypeTab(tab: TabLayout.Tab?, selected: Boolean) {
-        val label = tab?.customView as? TextView ?: return
-        label.setTextColor(
-            if (selected) ThemeColorHelper.resolveColor(requireContext(), com.google.android.material.R.attr.colorOnSurface)
-            else ThemeColorHelper.resolveThemeAwareResource(requireContext(), R.color.editorial_text_muted)
-        )
-        label.paint.isFakeBoldText = selected
-        label.invalidate()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // AddCategoryFragment saves before popping the back stack. Reload here
-        // so returning to this page always reflects the persisted categories,
-        // including the transition from an empty state.
-        if (::databaseHelper.isInitialized && ::recyclerCategories.isInitialized) {
-            loadCategories()
-        }
-    }
-
+    override fun onResume() { super.onResume(); if (::databaseHelper.isInitialized) loadCategories() }
+    override fun onSaveInstanceState(outState: Bundle) { super.onSaveInstanceState(outState); outState.putInt("type", currentType) }
     override fun onDestroyView() {
-        if (::databaseHelper.isInitialized) {
-            databaseHelper.close()
-        }
+        sheets.toList().forEach { it.dismiss() }; sheets.clear()
+        recyclerCategories.adapter = null
+        if (::databaseHelper.isInitialized) databaseHelper.close()
         super.onDestroyView()
     }
-
     private fun loadCategories() {
-        val categories = databaseHelper.getCategoryTreeByType(currentType)
-        if (categories.isEmpty()) {
-            textEmpty.visibility = View.VISIBLE
-            recyclerCategories.visibility = View.GONE
-            return
+        val rows = databaseHelper.getCategoryTreeByType(currentType)
+        textEmpty.visibility = if (rows.isEmpty()) View.VISIBLE else View.GONE
+        recyclerCategories.visibility = if (rows.isEmpty()) View.GONE else View.VISIBLE
+        if (adapter == null) adapter = CategoryAdapter(rows, object : CategoryAdapter.OnCategoryActionListener {
+            override fun onEdit(category: Category) = editor(category, null)
+            override fun onDelete(category: Category) = showDeleteSheet(category)
+            override fun onAddChild(parent: Category) = editor(null, parent.id)
+            override fun onChildOrderChanged(children: List<Category>) = databaseHelper.updateCategorySortOrders(children.map { it.id })
+        }) else adapter?.updateCategories(rows)
+        if (recyclerCategories.adapter !== adapter) recyclerCategories.adapter = adapter
+    }
+    private fun editor(category: Category?, parentId: Long?) {
+        if (parentFragmentManager.findFragmentByTag(CategoryEditorSheetFragment.TAG) == null)
+            CategoryEditorSheetFragment.newInstance(currentType, parentId, category?.id ?: 0L)
+                .show(parentFragmentManager, CategoryEditorSheetFragment.TAG)
+    }
+    private fun show(dialog: BottomSheetDialog, content: Ui.Content) {
+        dialog.setContentView(content.root); sheets += dialog
+        dialog.setOnDismissListener { sheets -= dialog }
+        dialog.show(); Ui.configure(dialog, content.root)
+    }
+    private fun complete() {
+        sheets.toList().forEach { it.dismiss() }
+        (parentFragmentManager.findFragmentByTag(CategoryEditorSheetFragment.TAG) as? CategoryEditorSheetFragment)?.dismiss()
+        loadCategories()
+    }
+    private fun error(error: CategoryMergeException) {
+        Toast.makeText(requireContext(), when (error.reason) {
+            CategoryMergeException.Reason.STALE -> R.string.category_merge_stale
+            CategoryMergeException.Reason.NAME_CONFLICT -> R.string.category_merge_conflict
+            else -> R.string.category_merge_invalid
+        }, Toast.LENGTH_LONG).show()
+    }
+    private fun showMergeTargets(sourceId: Long) {
+        val rows = databaseHelper.getAllCategories()
+        val depth = CategoryHierarchySettingsHelper.getCategoryMaxDepth(requireContext())
+        val targets = rows.filter {
+            try { CategoryMergePlanner.prepare(rows, sourceId, it.id, depth); true }
+            catch (_: CategoryMergeException) { false }
         }
-
-        textEmpty.visibility = View.GONE
-        recyclerCategories.visibility = View.VISIBLE
-
-        if (adapter == null) {
-            adapter = CategoryAdapter(
-                categories = categories,
-                listener = object : CategoryAdapter.OnCategoryActionListener {
-                    override fun onEdit(category: Category) {
-                        showCategoryDialog(category)
-                    }
-
-                    override fun onDelete(category: Category) {
-                        showDeleteDialog(category)
-                    }
-
-                    override fun onAddChild(parent: Category) {
-                        openCategoryEditor(parentId = parent.id)
-                    }
-
-                    override fun onChildOrderChanged(children: List<Category>) {
-                        databaseHelper.updateCategorySortOrders(children.map { it.id })
-                    }
-                }
-            )
-            recyclerCategories.adapter = adapter
-        } else {
-            adapter?.updateCategories(categories)
-            // The Fragment view can be recreated when returning from
-            // AddCategoryFragment. The adapter instance survives, but the new
-            // RecyclerView does not have an adapter attached yet.
-            if (recyclerCategories.adapter !== adapter) {
-                recyclerCategories.adapter = adapter
+        if (targets.isEmpty()) { Toast.makeText(requireContext(), R.string.category_merge_no_targets, Toast.LENGTH_LONG).show(); return }
+        val labels = targets.map { CategoryMergePlanner.path(rows, it.id) }
+        val dialog = BottomSheetDialog(requireContext())
+        val content = Ui.content(requireContext(), getString(R.string.category_merge_choose_target)) { dialog.dismiss() }
+        val search = EditText(requireContext()).apply {
+            hint = getString(R.string.category_search_hint); setSingleLine(true); textSize = 16f
+            setBackgroundResource(R.drawable.bg_input_surface); backgroundTintList = null
+            setTextColor(Ui.color(context, com.google.android.material.R.attr.colorOnSurface))
+            setHintTextColor(Ui.color(context, com.google.android.material.R.attr.colorOnSurfaceVariant))
+            setPadding(Ui.dp(context, 12), Ui.dp(context, 12), Ui.dp(context, 12), Ui.dp(context, 12))
+            visibility = if (targets.size > 5) View.VISIBLE else View.GONE
+        }
+        content.body.addView(search)
+        val empty = Ui.text(requireContext(), getString(R.string.default_asset_no_matches), 14f)
+        content.body.addView(empty)
+        val list = RecyclerView(requireContext()).apply { layoutManager = LinearLayoutManager(context) }
+        content.body.addView(list, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(requireContext(), (targets.size * 56).coerceAtMost(280))))
+        var filtered = targets.indices.toList()
+        val choices = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            override fun getItemCount() = filtered.size
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder = object : RecyclerView.ViewHolder(
+                Ui.text(parent.context, "").apply {
+                    minHeight = Ui.dp(context, 56); gravity = android.view.Gravity.CENTER_VERTICAL
+                    isFocusable = true; isClickable = true
+                    val attrs = context.obtainStyledAttributes(intArrayOf(android.R.attr.selectableItemBackground))
+                    foreground = attrs.getDrawable(0); attrs.recycle()
+                    layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                }) {}
+            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                val index = filtered[position]
+                (holder.itemView as TextView).text = labels[index]
+                holder.itemView.setOnClickListener { showMergeConfirmation(sourceId, targets[index].id) }
             }
+        }
+        list.adapter = choices
+        fun refresh() {
+            filtered = targets.indices.filter { labels[it].contains(search.text.toString().trim(), true) }
+            empty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+            list.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+            // Keep enough room for wrapping paths, without retaining a blank viewport for no results.
+            list.layoutParams = list.layoutParams.apply { height = Ui.dp(requireContext(), (filtered.size * 72).coerceAtMost(280)) }
+            choices.notifyDataSetChanged()
+        }
+        search.doAfterTextChanged { refresh() }; refresh(); show(dialog, content)
+    }
+    private fun showMergeConfirmation(sourceId: Long, targetId: Long) {
+        val preview = try { databaseHelper.previewCategoryMerge(sourceId, targetId) }
+        catch (e: CategoryMergeException) { error(e); return }
+        catch (_: android.database.sqlite.SQLiteException) { Toast.makeText(requireContext(), R.string.category_merge_failed, Toast.LENGTH_LONG).show(); return }
+        val plan = preview.plan
+        fun before(id: Long) = CategoryMergePlanner.path(plan.original, id)
+        fun after(id: Long) = CategoryMergePlanner.path(plan.result, id)
+        val details = plan.aliases.map { (old, target) -> getString(R.string.category_merge_detail, before(old), after(target)) } +
+            plan.moved.keys.map { getString(R.string.category_merge_move_detail, before(it), after(it)) }
+        val dialog = BottomSheetDialog(requireContext())
+        val content = Ui.content(requireContext(), getString(R.string.category_merge_confirm_title)) { dialog.dismiss() }
+        content.body.addView(Ui.text(requireContext(), getString(R.string.category_merge_summary, before(sourceId), after(targetId), preview.records, preview.recurring, preview.undo)))
+        val detailText = Ui.text(requireContext(), details.joinToString("\n"), 14f).apply { visibility = View.GONE }
+        content.body.addView(Ui.button(requireContext(), getString(R.string.category_merge_toggle_details)) {
+            detailText.visibility = if (detailText.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        })
+        content.body.addView(detailText)
+        val confirm = Ui.button(requireContext(), getString(R.string.category_merge_confirm), primary = true) {}
+        content.footer.addView(confirm)
+        content.footer.addView(Ui.button(requireContext(), getString(R.string.dialog_cancel)) { dialog.dismiss() })
+        show(dialog, content)
+        confirm.setOnClickListener {
+            confirm.isEnabled = false
+            try { databaseHelper.mergeCategories(preview); complete(); Toast.makeText(requireContext(), R.string.category_merge_success, Toast.LENGTH_SHORT).show() }
+            catch (e: CategoryMergeException) { dialog.dismiss(); error(e) }
+            catch (_: android.database.sqlite.SQLiteException) { dialog.dismiss(); Toast.makeText(requireContext(), R.string.category_merge_failed, Toast.LENGTH_LONG).show() }
         }
     }
-
-    private fun bindCategoryIcon(imageView: ImageView, icon: String?, categoryName: String? = null) {
-        if (icon.isNullOrEmpty()) {
-            imageView.setImageResource(
-                when (categoryName) {
-                    "购物" -> R.drawable.tabler_shopping_cart
-                    "餐饮" -> R.drawable.tabler_tools_kitchen
-                    "居住", "住房" -> R.drawable.tabler_home
-                    "交通" -> R.drawable.tabler_car
-                    else -> R.drawable.tabler_category
-                }
-            )
-            return
-        }
-
-        val resourceId = TablerIconCatalog.resourceId(requireContext(), icon)
-        val hasGenericIcon = icon == "tabler_category" || icon == "ic_category_other"
-        if (resourceId != 0 && !hasGenericIcon) {
-            imageView.setImageResource(resourceId)
-        } else {
-            imageView.setImageResource(
-                when (categoryName) {
-                    "购物" -> R.drawable.tabler_shopping_cart
-                    "餐饮" -> R.drawable.tabler_tools_kitchen
-                    "居住", "住房" -> R.drawable.tabler_home
-                    "交通" -> R.drawable.tabler_car
-                    else -> R.drawable.tabler_category
-                }
-            )
-        }
-    }
-
-    private fun categoryOperationMessage(error: DatabaseHelper.CategoryOperationError): String {
-        return when (error) {
-            DatabaseHelper.CategoryOperationError.PARENT_NOT_FOUND,
-            DatabaseHelper.CategoryOperationError.PARENT_TYPE_MISMATCH -> {
-                getString(R.string.category_error_invalid_parent)
-            }
-            DatabaseHelper.CategoryOperationError.SELF_PARENT -> {
-                getString(R.string.category_error_self_parent)
-            }
-            DatabaseHelper.CategoryOperationError.DESCENDANT_CYCLE -> {
-                getString(R.string.category_error_cycle)
-            }
-            DatabaseHelper.CategoryOperationError.MAX_DEPTH_EXCEEDED -> {
-                getString(
-                    R.string.category_error_depth_exceeded,
-                    CategoryHierarchySettingsHelper.getCategoryMaxDepth(requireContext())
-                )
-            }
-            DatabaseHelper.CategoryOperationError.HAS_CHILDREN -> {
-                getString(R.string.category_error_has_children)
-            }
-            DatabaseHelper.CategoryOperationError.IN_USE_BY_RECORDS -> {
-                getString(R.string.category_error_in_use)
+    private fun showDeleteSheet(category: Category) {
+        val dialog = BottomSheetDialog(requireContext())
+        val content = Ui.content(requireContext(), getString(R.string.category_delete_title)) { dialog.dismiss() }
+        content.body.addView(Ui.text(requireContext(), getString(R.string.category_delete_message, databaseHelper.buildCategoryPathLabel(category.id) ?: category.name)))
+        val confirm = Ui.button(requireContext(), getString(R.string.category_delete_title), primary = true, danger = true) {}
+        content.footer.addView(confirm)
+        content.footer.addView(Ui.button(requireContext(), getString(R.string.dialog_cancel)) { dialog.dismiss() })
+        show(dialog, content)
+        confirm.setOnClickListener {
+            confirm.isEnabled = false
+            try { databaseHelper.deleteCategory(category.id); complete(); Toast.makeText(requireContext(), R.string.toast_delete_success, Toast.LENGTH_SHORT).show() }
+            catch (e: DatabaseHelper.CategoryOperationException) {
+                confirm.isEnabled = true
+                Toast.makeText(requireContext(), if (e.error == DatabaseHelper.CategoryOperationError.HAS_CHILDREN) R.string.category_error_has_children
+                    else R.string.category_error_in_use, Toast.LENGTH_LONG).show()
+            } catch (_: android.database.sqlite.SQLiteException) {
+                confirm.isEnabled = true; Toast.makeText(requireContext(), R.string.category_editor_save_failed, Toast.LENGTH_LONG).show()
             }
         }
-    }
-
-    private fun showCategoryDialog(category: Category?, initialParentId: Long? = null) {
-        val isEditing = category != null
-        val dialogView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.dialog_add_category, null)
-        val editName = dialogView.findViewById<EditText>(R.id.edit_category_name)
-        val imageIcon = dialogView.findViewById<ImageView>(R.id.image_category_icon)
-        var selectedIcon = category?.icon
-        editName.setText(category?.name.orEmpty())
-        bindCategoryIcon(imageIcon, selectedIcon, category?.name)
-
-        imageIcon.setOnClickListener {
-            showIconPickerDialog(selectedIcon) { icon ->
-                selectedIcon = icon
-                bindCategoryIcon(imageIcon, selectedIcon, category?.name)
-            }
-        }
-
-        val dialogBuilder = AlertDialog.Builder(requireContext())
-            .setTitle(if (isEditing) R.string.category_edit_title else R.string.category_add_title)
-            .setView(dialogView)
-            .setNegativeButton(R.string.dialog_cancel, null)
-            .setPositiveButton(R.string.dialog_confirm, null)
-        // A child category can be removed from the left side of the action row.
-        // Parent categories keep the simpler edit flow because deleting them may
-        // affect their children and is handled separately by the category list.
-        if (isEditing && category?.parentId != null) {
-            dialogBuilder.setNeutralButton(R.string.category_remove, null)
-        }
-        val dialog = dialogBuilder.create()
-
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val name = editName.text.toString().trim()
-                if (TextUtils.isEmpty(name)) {
-                    Toast.makeText(requireContext(), R.string.category_error_empty_name, Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-
-                val targetCategory = (category?.copy() ?: Category(type = currentType)).apply {
-                    this.name = name
-                    this.type = currentType
-                    this.icon = selectedIcon
-                    this.parentId = category?.parentId ?: initialParentId
-                }
-
-                try {
-                    if (isEditing) {
-                        val rowsAffected = databaseHelper.updateCategory(targetCategory)
-                        if (rowsAffected <= 0) {
-                            Toast.makeText(requireContext(), R.string.toast_update_failed, Toast.LENGTH_SHORT).show()
-                            return@setOnClickListener
-                        }
-                        Toast.makeText(requireContext(), R.string.toast_update_success, Toast.LENGTH_SHORT).show()
-                    } else {
-                        val id = databaseHelper.addCategory(targetCategory)
-                        if (id == -1L) {
-                            Toast.makeText(requireContext(), R.string.category_add_failed, Toast.LENGTH_SHORT).show()
-                            return@setOnClickListener
-                        }
-                        Toast.makeText(requireContext(), R.string.category_add_success, Toast.LENGTH_SHORT).show()
-                    }
-                } catch (exception: DatabaseHelper.CategoryOperationException) {
-                    Toast.makeText(
-                        requireContext(),
-                        categoryOperationMessage(exception.error),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return@setOnClickListener
-                }
-
-                loadCategories()
-                dialog.dismiss()
-            }
-            if (isEditing && category?.parentId != null) {
-                dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setOnClickListener {
-                    showDeleteDialog(category)
-                    dialog.dismiss()
-                }
-            }
-        }
-
-        dialog.show()
-    }
-
-    private fun showIconPickerDialog(
-        selectedIcon: String?,
-        onIconSelected: (String?) -> Unit
-    ) {
-        IconPickerDialog.show(requireContext(), selectedIcon, onIconSelected)
-    }
-
-    private fun openCategoryEditor(parentId: Long?) {
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, AddCategoryFragment.newInstance(currentType, parentId))
-            .addToBackStack(null)
-            .commit()
-    }
-
-    private fun showDeleteDialog(category: Category) {
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.category_delete_title)
-            .setMessage(getString(R.string.category_delete_message, category.name))
-            .setPositiveButton(R.string.dialog_confirm) { _, _ ->
-                try {
-                    databaseHelper.deleteCategory(category.id)
-                    Toast.makeText(requireContext(), R.string.toast_delete_success, Toast.LENGTH_SHORT).show()
-                    loadCategories()
-                } catch (exception: DatabaseHelper.CategoryOperationException) {
-                    Toast.makeText(
-                        requireContext(),
-                        categoryOperationMessage(exception.error),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-            .setNegativeButton(R.string.dialog_cancel, null)
-            .show()
     }
 }

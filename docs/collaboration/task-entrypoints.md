@@ -32,7 +32,7 @@
 
 ### 改默认分类目录
 
-先读 `database/DefaultCategoryCatalog.kt`、`CategoryDefaultsSeeder.kt`、`CategoryDefaultsAppender.kt`、`DatabaseHelper` 的升级/默认补建入口，以及 `BackupArchiveManager.removePristineSeed`。分类全局共享，新库/既有空分类补建使用默认目录；升级到v43时一次性将缺少的默认分类追加到相应已有同级列表末尾，新账本不复制分类。保留现有行及叶子绑定，同名叶子不能改成父类；相同现有默认叶子复用，升级后不按启动反复补齐。目录和备份初始树识别共用事实源，保留旧树识别。当前二级目录参考蜜蜂记账，22支出父类+101子类、14收入父类+40子类，图标使用现有资源；参考及范围见2026-10-17默认分类决策。不要为了替换默认值改写已用分类/账单或清库。
+先读 `database/DefaultCategoryCatalog.kt`、`ReferencedCategoryCatalog.kt`、`MergedCategoryMigration.kt`、`CategoryDefaultsSeeder.kt`、`CategoryDefaultsAppender.kt`、`DatabaseHelper` 的升级/打开/全空补建入口，以及 `BackupArchiveManager.removePristineSeed`。当前按2026-10-23融合分类决策使用15支出父类/91二级、9收入父类/29二级，共144节点；三餐统一餐饮。onOpen→completeOnce按目录版本2在事务内先整理明确旧路径再补齐并标记完成，覆盖已为v43和已完成版本1的旧库。旧19节点与参考177节点的路径见迁移器；未知自定义/深层子树/无法细分名称保留，不猜测、不清库。同名根叶子不转父类；合并叶子时同步records/recurring_records/record_deletion_undo分类ID及backup_import_map，不改金额及历史名称快照。持久化别名保证提交后标准/快速排序偏好可幂等恢复。分类、目录状态、别名均为数据库本地；后两者不参与财务备份，成功后不随每次打开恢复删除/重命名项。备份严格空白种子识别兼容19/177/144目录。新账本仍共享全局分类，不复制分类。
 
 
 ### 改底部菜单样式选择
@@ -41,6 +41,8 @@
 
 
 ### 改账单页浮动操作显示
+
+账单吸附底栏尾部留白：MainActivity.applyFloatingNavigationInsets仅对LedgerFragment的整月recycler_records调用LedgerScrollTail，吸附且菜单可见时使用ledger_docked_scroll_tail=32dp，悬浮仍按原XML112dp基线及max(基线,悬浮高度+gap)计算。保留floatingViewBaselines原值，月份ViewHolder绑定后post重新应用，避免新月/复用列表漏设；不要将此修复扩到统计/资产/设置、日内列表、FAB位置或系统导航边距。
 
 先读 `LedgerFragment.kt`、`util/LedgerFloatingActionsController.kt` 与 DESIGN 的 Floating action button。只把当前月份外层列表的滚动事件传给控制器；其他月份、布局恢复不应触发方向隐藏。向下/向上累计 24dp 隐藏/恢复，惯性完全结束后 1.5 秒恢复；回顶启用门槛为两屏、退出门槛为 1.5 屏，继续遵守 `ScrollTopFabHelper` 设置。月份切换、回顶过程、手动打断及暂停/销毁统一处理，不能另行直接改 FAB visibility 与控制器竞争。分页加载、月份/列表滚动位置恢复、底栏避让和日卡片留白规则保持原样。
 
@@ -51,6 +53,12 @@
 ### 改账本 / 记录 / 设置等页面
 
 先读对应 Fragment，再读关联布局、Adapter、资源文件。
+
+「我的」列表样式集中在SettingsRowLayout.bind/styleRow：10个选项结果ID显式识别并放右侧箭头前，14sp次级色、剩余文本空间42%限宽/末尾省略，真实说明留标题下；不要再把结果与说明一起移入左列。保留所有TextView ID及其完整text、开关和原点击/保存契约，小窗/字体变化由布局回调重算限宽。
+
+「我的」收支颜色/周起始日/图片数量菜单由SettingsFragment.showSettingsChoiceMenu委托SettingsChoiceMenu（PopupWindow+ListView）及纯SettingsChoiceMenuGeometry处理，不再使用显示后追加padding的ListPopupWindow。完整测量换行行高、勾选/selector占位和上下8dp内边距，菜单宽度可超过锚点但限制在可见应用窗口8dp安全边距内；下方能完整容纳就向下，否则上方空间更多时向上。两侧都放不全时取较大一侧限高内部滚动，空间相同优先下方；双侧连一整项都容纳不了时回退窗口内展示。能放全时从首项开始，溢出才定位勾选项。窗口变化重算、锚点离屏/移除及宿主销毁关闭；不修改已注册的选择/保存回调。
+
+分类新增/编辑当前入口为CategoryManageFragment→CategoryEditorSheetFragment，使用CategorySheetUi共用圆角底部表单及合并/删除弹层；不是旧AddCategoryFragment整页或dialog_add_category系统弹窗。保留CATEGORY_SAVED_RESULT，新增category_editor_action只转发已保存ID的合并/删除请求；草稿有关闭确认且不随合并提交，图标选择器返回Dialog供生命周期清理。目标列表搜索完整路径，合并确认明细可展开；不要更改事务、迁移或删除保护规则。
 
 ### 改“记一笔” / “编辑记录”录入页
 
@@ -89,6 +97,8 @@
 默认选择器按资产页的资金/信用/充值/理财/应收/应付类型分组；置顶仅在所属组内靠前，空组和搜索后无结果组不展示，不另设重复的置顶列表。修改分类标签映射时同时核对 `AssetFragment` 与 `DefaultAssetPickerOptions.groupOf`，定位选中项须计入标题行。
 
 ### 改数据库或数据展示
+
+手动分类合并见2026-10-23-manual-category-merge决策、CategoryMergePlanner、CategoryMergeRepository、DatabaseHelper.previewCategoryMerge/mergeCategories及CategoryManageFragment。先规划兼容目标，确认完整路径及跨账本影响数量，再在事务内重新校验并合并；同时迁移账单/撤销的分类ID与名称/路径快照、重复任务、备份导入映射和排序别名，不调用会影响余额的保存/删除业务。叶子/整组分别处理，结构冲突或历史非叶子绑定拒绝；不要与自动目录迁移保留历史名称的策略混同。
 
 先读：
 
@@ -216,4 +226,4 @@
 
 ## 云备份 / 自动备份
 
-先读 `docs/requirements/decisions/2026-10-07-cloud-backup.md` 与完整备份决策，再核对 `cloud/CloudBackupFragment`、`CloudSettings`、`CloudBackupManager`、`CloudStore`、`S3Signer`、`CloudCrypto`、`CloudBackupWorker` 及原备份/图库代码。Wi-Fi 必须使用实际 transport 判断，不能仅依赖 UNMETERED；清理仅当前设备自动历史，默认 15。恢复预检缓存不得在正式确认时再次联网下载。相关 JVM 用例位于 `app/src/test/java/com/example/cardtally/cloud/`，未执行；真实协议验证需要指定服务和用户另外要求。
+先读 `docs/requirements/decisions/2026-10-07-cloud-backup.md` 与完整备份决策，再核对 `cloud/CloudBackupFragment`、`CloudSettings`、`CloudBackupManager`、`CloudStore`、`CloudCrypto`、`CloudBackupWorker` 及原备份/图库代码。当前仅支持HTTPS WebDAV，未验证的S3入口/字段/签名/协议实现已移除；旧非WebDAV自动目标必须先停用并返回空配置，不能自动切到休眠WebDAV或重用其他提供方凭据。确认保存WebDAV时替换旧云连接配置，断开仍清除所有本机云凭据，不删除远端。Wi-Fi 必须使用实际 transport 判断，不能仅依赖 UNMETERED；清理仅当前设备自动历史，默认 15。恢复预检缓存不得在正式确认时再次联网下载。相关 JVM 用例位于 `app/src/test/java/com/example/cardtally/cloud/`，未执行；真实协议验证需要指定服务和用户另外要求。

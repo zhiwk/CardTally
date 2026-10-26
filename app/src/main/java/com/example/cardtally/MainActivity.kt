@@ -219,10 +219,11 @@ class MainActivity : AppCompatActivity() {
         navShell.post { applyFloatingNavigationInsets() }
     }
 
-    private fun applyFloatingNavigationInsets() {
+    internal fun applyFloatingNavigationInsets() {
         val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container) ?: return
         val root = fragment.view ?: return
-        val inset = if (navShell.visibility == View.VISIBLE && !com.example.cardtally.util.BottomNavigationPreferences.isDocked(this)) navShell.height else 0
+        val dockedVisible = navShell.visibility == View.VISIBLE && com.example.cardtally.util.BottomNavigationPreferences.isDocked(this)
+        val inset = if (navShell.visibility == View.VISIBLE && !dockedVisible) navShell.height else 0
         val gap = resources.getDimensionPixelSize(R.dimen.floating_primary_fab_gap_above_nav)
         // Only scrolling tails and anchored controls reserve room. The page canvas stays full-screen.
         for (id in intArrayOf(R.id.fab_add, R.id.fab_scroll_top)) {
@@ -252,7 +253,12 @@ class MainActivity : AppCompatActivity() {
                 (view is androidx.recyclerview.widget.RecyclerView && view.id == R.id.recycler_records)) {
                 // Daily/asset child lists wrap their content; never add the page's dock inset to them.
                 val baseline = floatingViewBaselines.getOrPut(view) { view.paddingBottom }
-                val target = if (inset > 0) maxOf(baseline, inset + gap) else baseline
+                val target = if (fragment is LedgerFragment && view.id == R.id.recycler_records) {
+                    com.example.cardtally.util.LedgerScrollTail.resolve(
+                        baseline, inset, gap, dockedVisible,
+                        resources.getDimensionPixelSize(R.dimen.ledger_docked_scroll_tail)
+                    )
+                } else if (inset > 0) maxOf(baseline, inset + gap) else baseline
                 if (view.paddingBottom != target) view.setPaddingRelative(
                     view.paddingStart, view.paddingTop, view.paddingEnd, target
                 )

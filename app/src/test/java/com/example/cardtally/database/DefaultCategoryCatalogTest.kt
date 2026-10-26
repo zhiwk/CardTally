@@ -6,17 +6,15 @@ import org.junit.Test
 class DefaultCategoryCatalogTest {
     @Test fun defaultGroupsHaveTheRequestedOrderAndCoverage() {
         val entries = DefaultCategoryCatalog.entries
-        assertEquals(listOf("餐饮", "零食", "水果", "饮品", "糕点", "做饭食材", "购物", "宠物",
-            "交通", "汽车", "服饰", "日用品", "教育", "投资亏损", "娱乐", "游戏", "保健品",
-            "订阅服务", "运动", "住房", "居家", "美容"),
+        assertEquals(listOf("餐饮食品", "日用购物", "服饰美容", "数码电子", "居住家庭", "交通出行",
+            "汽车用车", "通信订阅", "医疗健康", "教育学习", "休闲运动", "旅行度假", "宠物", "人情往来", "其他支出"),
             entries.filter { it.type == 0 && it.parent == null }.map { it.name })
-        assertEquals(listOf("工资", "理财", "红包", "奖金", "报销", "兼职", "礼金", "利息", "退款",
-            "投资收益", "二手交易", "社会福利", "退税", "公积金"),
+        assertEquals(listOf("工资奖金", "兼职副业", "投资理财", "红包礼金", "报销", "退款", "二手交易", "福利补贴", "其他收入"),
             entries.filter { it.type == 1 && it.parent == null }.map { it.name })
-        assertEquals(101, entries.count { it.type == 0 && it.parent != null })
-        assertEquals(40, entries.count { it.type == 1 && it.parent != null })
-        assertEquals(listOf("早餐", "午餐", "晚餐", "美团外卖", "饿了么外卖", "京东外卖", "餐厅", "美食"),
-            entries.filter { it.type == 0 && it.parent == "餐饮" }.map { it.name })
+        assertEquals(91, entries.count { it.type == 0 && it.parent != null })
+        assertEquals(29, entries.count { it.type == 1 && it.parent != null })
+        assertEquals(listOf("餐饮", "外卖", "零食", "水果", "饮品", "糕点", "食材"),
+            entries.filter { it.type == 0 && it.parent == "餐饮食品" }.map { it.name })
     }
 
     @Test fun pathsAreUniqueParentsPrecedeChildrenAndSiblingOrdersAreContinuous() {

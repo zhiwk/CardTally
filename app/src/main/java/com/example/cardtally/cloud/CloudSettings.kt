@@ -14,17 +14,19 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-data class CloudConfig(val type: String, val endpoint: String, val user: String, val secret: String,
-    val bucket: String, val region: String, val prefix: String, val pathStyle: Boolean,
-    val sessionToken: String, val password: String, val automatic: Boolean, val keep: Int) {
+data class CloudConfig(val endpoint: String, val user: String, val secret: String,
+    val prefix: String, val password: String, val automatic: Boolean, val keep: Int) {
+    val type: String get() = "webdav"
     fun json() = JSONObject().put("type", type).put("endpoint", endpoint).put("user", user).put("secret", secret)
-        .put("bucket", bucket).put("region", region).put("prefix", prefix).put("pathStyle", pathStyle)
-        .put("sessionToken", sessionToken).put("password", password).put("automatic", automatic).put("keep", keep)
+        .put("prefix", prefix).put("password", password).put("automatic", automatic).put("keep", keep)
     companion object {
-        fun from(json: JSONObject) = CloudConfig(json.getString("type"), json.getString("endpoint"),
-            json.getString("user"), json.getString("secret"), json.optString("bucket"), json.optString("region", "us-east-1"),
-            json.optString("prefix", "cardtally"), json.optBoolean("pathStyle", true), json.optString("sessionToken"),
-            json.getString("password"), json.optBoolean("automatic"), json.optInt("keep", 15).also { require(it in 1..365) })
+        fun from(json: JSONObject): CloudConfig {
+            // Never reinterpret credentials from an unsupported provider as a DAV login.
+            require(json.optString("type") == "webdav")
+            return CloudConfig(json.getString("endpoint"), json.getString("user"), json.getString("secret"),
+                json.optString("prefix", "cardtally"), json.getString("password"), json.optBoolean("automatic"),
+                json.optInt("keep", 15).also { require(it in 1..365) })
+        }
     }
 }
 
@@ -49,7 +51,8 @@ object CloudSettings {
     }
     @Synchronized fun save(context: Context, config: CloudConfig) {
         require((config.password.isEmpty() || config.password.length >= 8) && (!config.automatic || config.password.length >= 8) && config.keep in 1..365)
-        val json = read(context).put("active", config.type).put(config.type, config.json())
+        // Explicitly saving the sole supported connection also drops obsolete local provider credentials.
+        val json = JSONObject().put("active", config.type).put(config.type, config.json())
         write(context, json)
         schedule(context, config.automatic)
     }
@@ -61,7 +64,15 @@ object CloudSettings {
         try { stage.outputStream().use { it.write(cipher.iv); it.write(cipher.doFinal(plaintext)); it.fd.sync() }
             check(stage.renameTo(target)) } finally { stage.delete() }
     }
-    fun active(context: Context): CloudConfig? { val json = read(context); return json.optJSONObject(json.optString("active"))?.let(CloudConfig::from) }
+    internal fun unsupportedActive(json: JSONObject): Boolean = json.optString("active").let { it.isNotEmpty() && it != "webdav" }
+    internal fun activeConfig(json: JSONObject): CloudConfig? =
+        if (json.optString("active") == "webdav") json.optJSONObject("webdav")?.let(CloudConfig::from) else null
+
+    fun active(context: Context): CloudConfig? {
+        val json = read(context)
+        if (unsupportedActive(json)) schedule(context, false)
+        return activeConfig(json)
+    }
     @Synchronized fun disconnect(context: Context) {
         schedule(context, false)
         val target = file(context)

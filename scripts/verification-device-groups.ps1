@@ -32,7 +32,10 @@ $deviceTestGroups = @(
         'com.example.cardtally.database.DatabaseHelperAssetGroupTest',
         'com.example.cardtally.database.DatabaseHelperNegativeAssetTest'
     ) },
-    @{ Name = 'category-db'; Expected = 12; Classes = @(
+    @{ Name = 'category-db'; Expected = 20; Classes = @(
+        'com.example.cardtally.CategoryEditorSheetTest',
+        'com.example.cardtally.database.CategoryManualMergeTest',
+        'com.example.cardtally.database.CategoryDefaultsCompletionTest',
         'com.example.cardtally.database.DatabaseHelperCategoryTreeTest',
         'com.example.cardtally.database.DatabaseHelperRecursiveCategoryQueryTest',
         'com.example.cardtally.database.DatabaseHelperRecursiveCategoryMigrationTest',

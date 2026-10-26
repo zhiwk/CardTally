@@ -40,4 +40,13 @@
             android:maxLines="1" />
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_merge_category"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/category_merge_action"
+        android:visibility="gone" />
 </LinearLayout>

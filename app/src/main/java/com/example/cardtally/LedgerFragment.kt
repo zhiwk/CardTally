@@ -251,7 +251,12 @@ class LedgerFragment : Fragment() {
             state.scroll?.let { list.layoutManager?.onRestoreInstanceState(it) }
                 ?: list.scrollToPosition(0)
             restoring = false
-            list.post { if (monthPosition == LedgerMonthIndex.position(currentMonth)) refreshFloatingActions() }
+            list.post {
+                if (this@LedgerFragment.view == null || monthPosition < 0) return@post
+                // Neighbour/new month views can be created after the nav shell's last layout callback.
+                (activity as? MainActivity)?.applyFloatingNavigationInsets()
+                if (monthPosition == LedgerMonthIndex.position(currentMonth)) refreshFloatingActions()
+            }
         }
         private fun updateRows(state: MonthState) {
             val groups = state.records.groupBy { it.date }.toSortedMap(compareByDescending { it })

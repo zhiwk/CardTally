@@ -829,4 +829,27 @@ Type: %7$s · Destination: %8$s · Fee: ¥%9$s</string>
     <string name="ai_record_write_finished">This record operation is complete. Send a new request to work on another record.</string>
     <string name="record_asset_no_selection">No selection</string>
     <string name="ai_record_no_asset_effect">No asset is linked. This operation will not change any asset balance.</string>
+    <string name="category_merge_action">Merge into another category</string>
+    <string name="category_merge_choose_target">Choose merge target</string>
+    <string name="category_merge_no_targets">No compatible target. Choose another category of the same income/expense type with compatible structure and no conflicts. Self, ancestor and descendant targets are not allowed.</string>
+    <string name="category_merge_confirm_title">Confirm category merge</string>
+    <string name="category_merge_summary">%1$s → %2$s\nAcross all ledgers: %3$d records, %4$d recurring tasks and %5$d pending undo records.\nCategory names, paths and statistics grouping will change. Source categories will be removed. Amounts, balances, dates, notes and attachments stay unchanged. There is no one-tap undo.</string>
+    <string name="category_merge_detail">Merge: %1$s → %2$s</string>
+    <string name="category_merge_move_detail">Move child: %1$s → %2$s</string>
+    <string name="category_merge_confirm">Confirm merge</string>
+    <string name="category_merge_success">Categories merged and linked records updated</string>
+    <string name="category_merge_stale">Categories or affected counts changed. Choose the target and confirm again.</string>
+    <string name="category_merge_conflict">Same-named children have conflicting structures. Rename or reorganize them first.</string>
+    <string name="category_merge_invalid">Cannot merge. Check income/expense type, structure, depth limit and historical category references.</string>
+    <string name="category_merge_failed">Merge failed. Database changes were rolled back. Please retry.</string>
+    <string name="category_name_label">Category name</string>
+    <string name="category_save">Save</string>
+    <string name="category_color_choice">Background color %1$s</string>
+    <string name="category_search_hint">Search category name or path</string>
+    <string name="category_merge_toggle_details">Show / hide merge details</string>
+    <string name="category_unsaved_title">Unsaved changes</string>
+    <string name="category_discard_message">Closing will discard your changes. Continue?</string>
+    <string name="category_action_unsaved_message">This action uses the saved category and will not save your edits. You can continue editing if you cancel. Continue?</string>
+    <string name="category_continue">Continue</string>
+    <string name="category_editor_save_failed">Action not completed. Check the category, depth limit or name and try again.</string>
 </resources>

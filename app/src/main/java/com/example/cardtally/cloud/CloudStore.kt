@@ -10,8 +10,7 @@ import org.xmlpull.v1.XmlPullParser
 import java.io.File
 import java.io.IOException
 import java.net.URI
-import java.text.SimpleDateFormat
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 internal data class RemoteFile(val name: String, val size: Long)
@@ -24,41 +23,27 @@ internal class CloudStore(private val config: CloudConfig, private val gate: () 
         .addNetworkInterceptor { chain -> gate(); chain.proceed(chain.request()) }.build()
     init {
         require(base.scheme == "https" && base.username.isEmpty() && base.password.isEmpty() && base.query == null && base.fragment == null)
-        require(config.type in setOf("webdav", "s3") && prefix.none { it == "." || it == ".." })
-        if (config.type == "s3") require(Regex("[a-zA-Z0-9.-]{3,63}").matches(config.bucket) && Regex("[a-z0-9-]+").matches(config.region))
+        require(prefix.none { it == "." || it == ".." })
     }
     fun cancel() = client.dispatcher.cancelAll()
-    private fun url(name: String? = null, query: Map<String, String> = emptyMap()): HttpUrl {
+    private fun url(name: String? = null): HttpUrl {
         name?.let { require(Regex("[a-zA-Z0-9._-]+").matches(it)) }
         val builder = base.newBuilder()
-        if (config.type == "s3") {
-            if (config.pathStyle) builder.addPathSegment(config.bucket)
-            else builder.host("${config.bucket}.${base.host}")
-        }
         prefix.forEach { builder.addPathSegment(it) }
         if (name != null) builder.addPathSegment(name)
-        else if (config.type == "webdav") builder.addPathSegment("")
-        query.forEach { (key, value) -> builder.addQueryParameter(key, value) }
+        else builder.addPathSegment("")
         return builder.build()
     }
-    private fun request(method: String, url: HttpUrl, body: RequestBody? = null, payloadHash: String = EMPTY_HASH,
+    private fun request(method: String, url: HttpUrl, body: RequestBody? = null,
         headers: Map<String, String> = emptyMap()): Request {
         val builder = Request.Builder().url(url).method(method, body)
         headers.forEach { (name, value) -> builder.header(name, value) }
-        if (config.type == "webdav") builder.header("Authorization", Credentials.basic(config.user, config.secret))
-        else {
-            val stamp = SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'", Locale.US).apply {
-                timeZone = TimeZone.getTimeZone("UTC")
-            }.format(Date())
-            S3Signer.headers(method, url, payloadHash, config.user, config.secret, config.region, stamp,
-                config.sessionToken, headers).forEach { (name, value) -> builder.header(name, value) }
-        }
+        builder.header("Authorization", Credentials.basic(config.user, config.secret))
         return builder.build()
     }
     private fun call(request: Request): Response { gate(); return client.newCall(request).execute() }
     private fun requireSuccess(response: Response) { if (!response.isSuccessful) throw CloudHttpException(response.code, response.request.method) }
     fun prepare() {
-        if (config.type != "webdav") return
         val builder = base.newBuilder()
         for (part in prefix) {
             builder.addPathSegment(part)
@@ -79,12 +64,12 @@ internal class CloudStore(private val config: CloudConfig, private val gate: () 
         }
     }
     fun put(name: String, file: File, createOnly: Boolean = false, progress: (Long) -> Unit = {}): Boolean {
-        if (createOnly && config.type == "webdav") {
+        if (createOnly) {
             // DAV's Overwrite header applies to the destination, unlike a PUT precondition.
             val staged = "upload-${UUID.randomUUID()}.tmp"
             var moved = false
             try {
-                uploadFile(staged, file, false, progress)
+                uploadFile(staged, file, progress)
                 return call(request("MOVE", url(staged), headers = mapOf(
                     "Destination" to url(name).toString(), "Overwrite" to "F"
                 ))).use { response ->
@@ -102,7 +87,8 @@ internal class CloudStore(private val config: CloudConfig, private val gate: () 
                 if (!moved) runCatching { delete(staged) }
             }
         }
-        return uploadFile(name, file, createOnly, progress)
+        uploadFile(name, file, progress)
+        return true
     }
     private fun destinationExists(name: String): Boolean =
         call(request("HEAD", url(name))).use { response ->
@@ -113,7 +99,7 @@ internal class CloudStore(private val config: CloudConfig, private val gate: () 
             }
         }
 
-    private fun uploadFile(name: String, file: File, createOnly: Boolean, progress: (Long) -> Unit): Boolean {
+    private fun uploadFile(name: String, file: File, progress: (Long) -> Unit) {
         val body = object : RequestBody() {
             override fun contentType() = "application/octet-stream".toMediaType()
             override fun contentLength() = file.length()
@@ -123,34 +109,14 @@ internal class CloudStore(private val config: CloudConfig, private val gate: () 
                     sink.write(buffer, 0, count); total += count; progress(total) }
             } }
         }
-        call(request("PUT", url(name), body, CloudCrypto.hash(file), if (createOnly) mapOf("If-None-Match" to "*") else emptyMap())).use {
-            if (createOnly && it.code == 412) return false
-            requireSuccess(it); return true
-        }
+        call(request("PUT", url(name), body)).use { requireSuccess(it) }
     }
     fun delete(name: String) { call(request("DELETE", url(name))).use { if (it.code != 404) requireSuccess(it) } }
     fun list(): List<RemoteFile> {
-        if (config.type == "webdav") {
-            val body = "<d:propfind xmlns:d=\"DAV:\"><d:prop><d:getcontentlength/><d:resourcetype/></d:prop></d:propfind>".toRequestBody("application/xml".toMediaType())
-            call(request("PROPFIND", url(), body, headers = mapOf("Depth" to "1"))).use {
-                requireSuccess(it); return parseList(readXml(it), false).first
-            }
+        val body = "<d:propfind xmlns:d=\"DAV:\"><d:prop><d:getcontentlength/><d:resourcetype/></d:prop></d:propfind>".toRequestBody("application/xml".toMediaType())
+        call(request("PROPFIND", url(), body, headers = mapOf("Depth" to "1"))).use {
+            requireSuccess(it); return parseList(readXml(it))
         }
-        val result = mutableListOf<RemoteFile>(); var token: String? = null
-        val seen = mutableSetOf<String>()
-        do {
-            val query = linkedMapOf("list-type" to "2", "prefix" to (prefix.joinToString("/") + if (prefix.isEmpty()) "" else "/"), "max-keys" to "1000")
-            token?.let { query["continuation-token"] = it }
-            val bucketUrl = base.newBuilder().apply {
-                if (config.pathStyle) addPathSegment(config.bucket) else host("${config.bucket}.${base.host}")
-                query.forEach { (key, value) -> addQueryParameter(key, value) }
-            }.build()
-            call(request("GET", bucketUrl)).use { response -> requireSuccess(response)
-                val parsed = parseList(readXml(response), true); result += parsed.first; token = parsed.second }
-            require(result.size <= 100000)
-            token?.let { require(seen.add(it)) }
-        } while (token != null)
-        return result
     }
     private fun readXml(response: Response): String {
         val body = requireNotNull(response.body); require(body.contentLength() <= 8 * 1024 * 1024)
@@ -160,28 +126,24 @@ internal class CloudStore(private val config: CloudConfig, private val gate: () 
         } }
         return out.toString("UTF-8")
     }
-    private fun parseList(xml: String, s3: Boolean): Pair<List<RemoteFile>, String?> {
+    private fun parseList(xml: String): List<RemoteFile> {
         require(!xml.contains("<!DOCTYPE", true) && !xml.contains("<!ENTITY", true))
         val parser = Xml.newPullParser(); parser.setInput(xml.reader())
-        val files = mutableListOf<RemoteFile>(); var name = ""; var size = 0L; var collection = false; var token: String? = null
+        val files = mutableListOf<RemoteFile>(); var name = ""; var size = 0L; var collection = false
         val rootPath = url().encodedPath
         while (parser.eventType != XmlPullParser.END_DOCUMENT) {
             if (parser.eventType == XmlPullParser.START_TAG) when (parser.name) {
-                "Contents", "response" -> { name = ""; size = 0; collection = false }
-                "Key" -> { val key = parser.nextText(); val start = prefix.joinToString("/") + if (prefix.isEmpty()) "" else "/"
-                    if (key.startsWith(start)) name = key.removePrefix(start) }
+                "response" -> { name = ""; size = 0; collection = false }
                 "href" -> { val path = URI(parser.nextText()).rawPath.orEmpty()
                     if (path.startsWith(rootPath)) name = path.removePrefix(rootPath) }
-                "Size", "getcontentlength" -> size = parser.nextText().toLongOrNull() ?: 0
+                "getcontentlength" -> size = parser.nextText().toLongOrNull() ?: 0
                 "collection" -> collection = true
-                "NextContinuationToken" -> token = parser.nextText().takeIf(String::isNotEmpty)
             }
-            if (parser.eventType == XmlPullParser.END_TAG && parser.name == (if (s3) "Contents" else "response")) {
+            if (parser.eventType == XmlPullParser.END_TAG && parser.name == "response") {
                 if (!collection && Regex("[a-zA-Z0-9._-]+").matches(name)) files += RemoteFile(name, size)
             }
             parser.next()
         }
-        return files to token
+        return files
     }
-    companion object { private const val EMPTY_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" }
 }

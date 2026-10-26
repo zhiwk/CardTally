@@ -177,8 +177,44 @@ class MainActivityThemeApplicationTest {
                 assertEquals(true, settings is SettingsFragment)
                 assertEquals(activity.getString(R.string.theme_system), settings!!.requireView()
                     .findViewById<TextView>(R.id.text_current_theme).text.toString())
+                val settingsRoot = settings.requireView()
+                val valueRows = mapOf(
+                    R.id.card_theme to R.id.text_current_theme,
+                    R.id.card_bottom_navigation to R.id.text_bottom_navigation_style,
+                    R.id.card_language to R.id.text_current_language,
+                    R.id.card_income_expense_color to R.id.text_income_expense_color,
+                    R.id.card_week_start to R.id.text_week_start,
+                    R.id.card_record_entry_mode to R.id.text_record_entry_mode,
+                    R.id.card_default_expense_asset to R.id.text_default_expense_asset,
+                    R.id.card_default_income_asset to R.id.text_default_income_asset,
+                    R.id.card_ai_api_key to R.id.text_ai_api_key_status,
+                    R.id.card_record_photo_limit to R.id.text_record_photo_limit
+                )
+                valueRows.forEach { (rowId, valueId) ->
+                    val row = settingsRoot.findViewById<android.widget.LinearLayout>(rowId)
+                    val value = settingsRoot.findViewById<TextView>(valueId)
+                    assertEquals("Option result must stay in the trailing row column", row, value.parent)
+                    assertEquals(1, value.maxLines)
+                    assertEquals(android.text.TextUtils.TruncateAt.END, value.ellipsize)
+                    assertEquals(true, value.maxWidth <= row.width / 2)
+                }
+                val photoRow = settingsRoot.findViewById<android.widget.LinearLayout>(R.id.card_record_photo_limit)
+                assertEquals("Title and real description must remain together", 2,
+                    (photoRow.getChildAt(0) as android.widget.LinearLayout).childCount)
                 assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.nav_shell).visibility)
                 assertEquals(R.id.nav_settings, activity.findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId)
+                settingsRoot.findViewById<View>(R.id.card_income_expense_color).performClick()
+            }
+            instrumentation.waitForIdleSync()
+            for (label in listOf(R.string.settings_income_expense_color_income_green_expense_red,
+                R.string.settings_income_expense_color_income_red_expense_green, R.string.settings_income_expense_color_both_black)) {
+                androidx.test.espresso.Espresso.onView(androidx.test.espresso.matcher.ViewMatchers.withText(label))
+                    .inRoot(androidx.test.espresso.matcher.RootMatchers.isPlatformPopup())
+                    .check(androidx.test.espresso.assertion.ViewAssertions.matches(androidx.test.espresso.matcher.ViewMatchers.isCompletelyDisplayed()))
+            }
+            androidx.test.espresso.Espresso.pressBack()
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
                 activity.findViewById<BottomNavigationView>(R.id.bottom_navigation).selectedItemId = R.id.nav_ledger
             }
             instrumentation.waitForIdleSync()

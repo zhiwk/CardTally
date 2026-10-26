@@ -7,6 +7,21 @@ import com.example.cardtally.model.Category
 object RecordCategoryOrderPreferences {
     private const val PREFS_NAME = "record_category_order_prefs"
 
+    internal fun remapMergedIds(context: Context, aliases: Map<Long, Long>) {
+        if (aliases.isEmpty()) return
+        val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val editor = preferences.edit()
+        var changed = false
+        for (type in 0..1) for (quick in listOf(false, true)) {
+            val key = keyFor(type, quick)
+            val old = preferences.getString(key, null) ?: continue
+            val updated = old.split(',').mapNotNull { it.toLongOrNull() }
+                .map { aliases[it] ?: it }.distinct().joinToString(",")
+            if (old != updated) { editor.putString(key, updated); changed = true }
+        }
+        if (changed) editor.apply()
+    }
+
     fun orderForMode(context: Context, categories: List<Category>, quickMode: Boolean): List<Category> {
         val candidates = if (quickMode) leafCategories(categories) else parentCategories(categories)
         val order = readOrder(context, keyFor(categories.firstOrNull()?.type ?: 0, quickMode))

@@ -6,6 +6,12 @@ import com.example.cardtally.model.Category
 
 /** Creates the canonical initial income/expense category tree for a new local database. */
 internal class CategoryDefaultsSeeder(private val columns: Columns) {
+    companion object {
+        // Local migration state, deliberately excluded from financial backup tables.
+        const val COMPLETION_TABLE = "category_defaults_state"
+        private const val CATALOG_VERSION = 2
+    }
+
     data class Columns(
         val table: String,
         val id: String,
@@ -33,7 +39,35 @@ internal class CategoryDefaultsSeeder(private val columns: Columns) {
         }
     }
 
-    /** Called inside SQLiteOpenHelper's one-time upgrade transaction. */
+    /** Covers existing v43 databases too, without restoring later user deletions on each open. */
+    fun completeOnce(db: SQLiteDatabase, ledgerId: Long) {
+        if (completedVersion(db) >= CATALOG_VERSION) return
+        db.beginTransaction()
+        try {
+            // Another helper may have completed the catalog while this connection waited.
+            if (completedVersion(db) < CATALOG_VERSION) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS $COMPLETION_TABLE (" +
+                    "id INTEGER PRIMARY KEY CHECK (id = 1), catalog_version INTEGER NOT NULL)")
+                MergedCategoryMigration.apply(db) { appendMissing(db, ledgerId) }
+                db.execSQL("INSERT OR REPLACE INTO $COMPLETION_TABLE (id, catalog_version) VALUES (1, ?)",
+                    arrayOf(CATALOG_VERSION))
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    private fun completedVersion(db: SQLiteDatabase): Int {
+        val exists = db.rawQuery("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            arrayOf(COMPLETION_TABLE)).use { it.moveToFirst() }
+        if (!exists) return 0
+        return db.rawQuery("SELECT catalog_version FROM $COMPLETION_TABLE WHERE id = 1", null).use {
+            if (it.moveToFirst()) it.getInt(0) else 0
+        }
+    }
+
+    /** Caller owns the transaction, whether this is an upgrade or catalog completion. */
     fun appendMissing(db: SQLiteDatabase, ledgerId: Long) {
         val existing = mutableListOf<Category>()
         db.query(columns.table, arrayOf(columns.id, columns.name, columns.type, columns.parentId, columns.sortOrder),

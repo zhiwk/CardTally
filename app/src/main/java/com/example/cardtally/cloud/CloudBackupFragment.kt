@@ -16,26 +16,16 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
     private lateinit var model: CloudBackupViewModel
     private var binding: View? = null
     private var dialog: AlertDialog? = null
-    private var rendering = false
-    private val fields = listOf(R.id.cloud_endpoint, R.id.cloud_user, R.id.cloud_secret, R.id.cloud_bucket,
-        R.id.cloud_region, R.id.cloud_prefix, R.id.cloud_token, R.id.cloud_password, R.id.cloud_keep)
+    private val fields = listOf(R.id.cloud_endpoint, R.id.cloud_user, R.id.cloud_secret,
+        R.id.cloud_prefix, R.id.cloud_password, R.id.cloud_keep)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding = view
         model = ViewModelProvider(this)[CloudBackupViewModel::class.java]
         view.findViewById<TextView>(R.id.text_title).setText(R.string.cloud_title)
         view.findViewById<View>(R.id.btn_back).setOnClickListener { parentFragmentManager.popBackStack() }
-        val types = view.findViewById<RadioGroup>(R.id.cloud_type)
-        types.setOnCheckedChangeListener { _, _ -> if (!rendering) {
-            updateType(); loadConfig()
-        } }
-        if (savedInstanceState == null) {
-            try { rendering = true
-                types.check(if (CloudSettings.read(requireContext()).optString("active") == "s3") R.id.cloud_s3 else R.id.cloud_webdav)
-            } catch (_: Exception) { toast(R.string.cloud_config_failed) } finally { rendering = false }
-            loadConfig()
-        }
-        updateType()
+        if (savedInstanceState == null) loadConfig()
+        else stopUnsupportedTarget()
         view.findViewById<CheckBox>(R.id.cloud_auto).setOnCheckedChangeListener { _, checked ->
             if (checked) view.findViewById<CheckBox>(R.id.cloud_remember).isChecked = true
         }
@@ -48,6 +38,7 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
                 .setNegativeButton(android.R.string.cancel, null).setPositiveButton(R.string.cloud_save) { _, _ ->
                     try {
                         CloudSettings.save(requireContext(), config.copy(password = if (view.findViewById<CheckBox>(R.id.cloud_remember).isChecked) config.password else ""))
+                        stopUnsupportedTarget()
                         toast(R.string.cloud_saved)
                     } catch (_: Exception) { toast(R.string.cloud_config_failed) }
                 }.show()
@@ -71,31 +62,37 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
         if (stamp > 0) view.findViewById<TextView>(R.id.cloud_last).text = getString(R.string.cloud_last_value,
             DateFormat.getDateTimeInstance().format(Date(stamp)), message(prefs.getString("status", "idle").orEmpty()))
     }
-    private fun type() = if (binding!!.findViewById<RadioGroup>(R.id.cloud_type).checkedRadioButtonId == R.id.cloud_s3) "s3" else "webdav"
-    private fun updateType() {
-        val view = binding ?: return
-        val s3 = type() == "s3"
-        view.findViewById<View>(R.id.cloud_s3_fields).visibility = if (s3) View.VISIBLE else View.GONE
-        view.findViewById<TextView>(R.id.cloud_user_label).setText(if (s3) R.string.cloud_access_key else R.string.cloud_user)
-        view.findViewById<TextView>(R.id.cloud_secret_label).setText(if (s3) R.string.cloud_secret_key else R.string.cloud_secret)
+    private fun stopUnsupportedTarget() {
+        try {
+            val unsupported = CloudSettings.unsupportedActive(CloudSettings.read(requireContext()))
+            if (unsupported) CloudSettings.schedule(requireContext(), false)
+            binding?.findViewById<View>(R.id.cloud_unsupported_notice)?.visibility = if (unsupported) View.VISIBLE else View.GONE
+        } catch (_: Exception) { toast(R.string.cloud_config_failed) }
+    }
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        // Old versions could have saved non-DAV endpoint/user fields in the view hierarchy.
+        if (savedInstanceState != null && savedInstanceState.getString("cloud_form_provider") != "webdav") loadConfig()
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("cloud_form_provider", "webdav")
     }
     private fun loadConfig() {
         val view = binding ?: return
         try {
             val all = CloudSettings.read(requireContext())
-            val config = all.optJSONObject(type())?.let(CloudConfig::from)
-            rendering = true
+            stopUnsupportedTarget()
+            val config = all.optJSONObject("webdav")?.let(CloudConfig::from)
             fun value(id: Int, text: String) { view.findViewById<EditText>(id).setText(text) }
             value(R.id.cloud_endpoint, config?.endpoint.orEmpty()); value(R.id.cloud_user, config?.user.orEmpty())
-            value(R.id.cloud_secret, config?.secret.orEmpty()); value(R.id.cloud_bucket, config?.bucket.orEmpty())
-            value(R.id.cloud_region, config?.region ?: "us-east-1"); value(R.id.cloud_prefix, config?.prefix ?: "cardtally")
-            value(R.id.cloud_token, config?.sessionToken.orEmpty()); value(R.id.cloud_password, config?.password.orEmpty())
+            value(R.id.cloud_secret, config?.secret.orEmpty()); value(R.id.cloud_prefix, config?.prefix ?: "cardtally")
+            value(R.id.cloud_password, config?.password.orEmpty())
             value(R.id.cloud_keep, (config?.keep ?: 15).toString())
-            view.findViewById<CheckBox>(R.id.cloud_path_style).isChecked = config?.pathStyle ?: true
             view.findViewById<CheckBox>(R.id.cloud_remember).isChecked = config == null || config.password.isNotEmpty()
-            view.findViewById<CheckBox>(R.id.cloud_auto).isChecked = config == null || (config.automatic && all.optString("active") == type())
+            view.findViewById<CheckBox>(R.id.cloud_auto).isChecked = !CloudSettings.unsupportedActive(all) &&
+                (config == null || (config.automatic && all.optString("active") == "webdav"))
         } catch (_: Exception) { toast(R.string.cloud_config_failed) }
-        finally { rendering = false }
     }
     private fun config(): CloudConfig? {
         val view = binding ?: return null
@@ -113,21 +110,13 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
             return reject(R.id.cloud_endpoint, R.string.cloud_endpoint_error)
         if (text(R.id.cloud_user).isBlank()) return reject(R.id.cloud_user, R.string.cloud_required_error)
         if (text(R.id.cloud_secret).isBlank()) return reject(R.id.cloud_secret, R.string.cloud_required_error)
-        if (type() == "s3") {
-            if (!Regex("[a-zA-Z0-9.-]{3,63}").matches(text(R.id.cloud_bucket).trim()))
-                return reject(R.id.cloud_bucket, R.string.cloud_bucket_error)
-            if (!Regex("[a-z0-9-]+").matches(text(R.id.cloud_region).trim()))
-                return reject(R.id.cloud_region, R.string.cloud_region_error)
-        }
         val prefix = text(R.id.cloud_prefix).trim()
         if (prefix.trim('/').split('/').any { it == "." || it == ".." })
             return reject(R.id.cloud_prefix, R.string.cloud_prefix_error)
         if (text(R.id.cloud_password).length < 8) return reject(R.id.cloud_password, R.string.cloud_password_error)
         val keep = text(R.id.cloud_keep).toIntOrNull()
         if (keep == null || keep !in 1..365) return reject(R.id.cloud_keep, R.string.cloud_keep_error)
-        val config = CloudConfig(type(), endpoint, text(R.id.cloud_user).trim(), text(R.id.cloud_secret),
-            text(R.id.cloud_bucket).trim(), text(R.id.cloud_region).trim(), prefix,
-            view.findViewById<CheckBox>(R.id.cloud_path_style).isChecked, text(R.id.cloud_token), text(R.id.cloud_password),
+        val config = CloudConfig(endpoint, text(R.id.cloud_user).trim(), text(R.id.cloud_secret), prefix, text(R.id.cloud_password),
             view.findViewById<CheckBox>(R.id.cloud_auto).isChecked, keep)
         return try {
             CloudStore(config).cancel() // Validate locally; do not send credentials or perform a request.
@@ -171,7 +160,7 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
         view.findViewById<View>(R.id.cloud_progress).visibility = if (ui.busy) View.VISIBLE else View.GONE
         view.findViewById<View>(R.id.cloud_cancel).visibility = if (ui.busy && ui.message != "restore") View.VISIBLE else View.GONE
         fields.forEach { view.findViewById<View>(it).isEnabled = !ui.busy }
-        listOf(R.id.cloud_type, R.id.cloud_webdav, R.id.cloud_s3, R.id.cloud_remember, R.id.cloud_auto, R.id.cloud_path_style,
+        listOf(R.id.cloud_remember, R.id.cloud_auto,
             R.id.cloud_save, R.id.cloud_test, R.id.cloud_backup, R.id.cloud_list, R.id.cloud_disconnect).forEach {
             view.findViewById<View>(it).isEnabled = !ui.busy
         }

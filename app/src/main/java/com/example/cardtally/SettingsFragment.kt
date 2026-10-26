@@ -6,10 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Switch
 import android.widget.TextView
-import android.widget.ArrayAdapter
-import android.widget.CheckedTextView
-import androidx.appcompat.widget.ListPopupWindow
-import android.graphics.drawable.GradientDrawable
+import android.widget.PopupWindow
 import android.widget.Toast
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -29,7 +26,6 @@ import com.example.cardtally.util.ScrollTopFabHelper
 import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.example.cardtally.util.BackupArchiveManager
 import com.example.cardtally.util.DefaultRecordAssetPreferences
-import com.example.cardtally.util.ThemeColorHelper
 import com.example.cardtally.util.ThemeHelper
 import java.util.concurrent.Executors
 
@@ -62,7 +58,7 @@ class SettingsFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
     private val transferExecutor = Executors.newSingleThreadExecutor()
     private var pendingExportPassword: CharArray? = null
-    private var settingsChoicePopup: ListPopupWindow? = null
+    private var settingsChoicePopup: PopupWindow? = null
 
     private val exportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -557,39 +553,8 @@ class SettingsFragment : Fragment() {
     private fun showSettingsChoiceMenu(anchor: View, labels: List<String>, selected: Int,
         widthDp: Int, onSelected: (Int) -> Unit) {
         settingsChoicePopup?.dismiss()
-        val context = requireContext()
-        val density = resources.displayMetrics.density
-        val adapter = object : ArrayAdapter<String>(context, R.layout.item_record_photo_count, labels) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
-                (super.getView(position, convertView, parent) as CheckedTextView).apply {
-                    isChecked = position == selected
-                }
-        }
-        val popup = ListPopupWindow(context).apply {
-            anchorView = anchor
-            isModal = true
-            setDropDownGravity(android.view.Gravity.END)
-            width = minOf((widthDp * density).toInt(), anchor.width)
-            height = ViewGroup.LayoutParams.WRAP_CONTENT
-            setBackgroundDrawable(GradientDrawable().apply {
-                setColor(ThemeColorHelper.resolveThemeAwareResource(context, R.color.surface_light))
-                cornerRadius = 20 * density
-            })
-            setAdapter(adapter)
-            setOnItemClickListener { _, _, position, _ ->
-                onSelected(position)
-                dismiss()
-            }
-            setOnDismissListener { settingsChoicePopup = null }
-        }
-        settingsChoicePopup = popup
-        popup.show()
-        popup.listView?.apply {
-            divider = null
-            setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())
-            setSelection(selected)
-            clipToOutline = true
-        }
+        settingsChoicePopup = com.example.cardtally.util.SettingsChoiceMenu.show(
+            anchor, labels, selected, widthDp, { settingsChoicePopup = null }, onSelected)
     }
 
     private fun updateIncomeExpenseColorText() {

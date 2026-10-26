@@ -932,7 +932,21 @@ class DatabaseHelper(
         }
     }
 
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        if (!db.isReadOnly) {
+            categoryDefaultsSeeder.completeOnce(db, 1L)
+            // Replay durable aliases after commit, including after a process death before preference saving.
+            val aliases = db.rawQuery("SELECT old_id, new_id FROM ${MergedCategoryMigration.ALIASES}", null).use { cursor ->
+                buildMap { while (cursor.moveToNext()) put(cursor.getLong(0), cursor.getLong(1)) }
+            }
+            com.example.cardtally.util.RecordCategoryOrderPreferences.remapMergedIds(appContext, aliases)
+        }
+    }
+
     private fun resetAllDataForVerification(db: SQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS ${CategoryDefaultsSeeder.COMPLETION_TABLE}")
+        db.execSQL("DROP TABLE IF EXISTS ${MergedCategoryMigration.ALIASES}")
         db.execSQL("DROP TABLE IF EXISTS ai_record_audit")
         db.execSQL("DROP TABLE IF EXISTS backup_pending_settings")
         db.execSQL("DROP TABLE IF EXISTS backup_asset_snapshot")
@@ -1277,6 +1291,18 @@ class DatabaseHelper(
     }
 
     fun addCategory(category: Category): Long = categoryWriteRepository.add(category)
+
+    private fun categoryMergeRepository() = CategoryMergeRepository({ writableDatabase }) {
+        CategoryHierarchySettingsHelper.getCategoryMaxDepth(appContext)
+    }
+
+    fun previewCategoryMerge(sourceId: Long, targetId: Long): CategoryMergePreview =
+        categoryMergeRepository().preview(sourceId, targetId)
+
+    fun mergeCategories(preview: CategoryMergePreview) {
+        categoryMergeRepository().merge(preview)
+        com.example.cardtally.util.RecordCategoryOrderPreferences.remapMergedIds(appContext, preview.plan.aliases)
+    }
 
     fun updateCategorySortOrders(categoryIds: List<Long>) =
         categoryWriteRepository.updateSortOrders(categoryIds)

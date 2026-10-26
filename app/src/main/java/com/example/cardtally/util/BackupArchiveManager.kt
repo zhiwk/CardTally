@@ -767,7 +767,10 @@ class BackupArchiveManager(private val context: Context) {
             val currentIcons = currentEntries.associate { it.pathKey to it.icon }
             val currentOrders = currentEntries.associate { it.pathKey to it.sortOrder }
             val legacyOrders = expected.keys.associateWith { nonzeroSortOrders[it] ?: 0 }
-            count == actual.size && ((actual == currentIcons && actualOrders == currentOrders) ||
+            val referenced = com.example.cardtally.database.ReferencedCategoryCatalog.entries
+            val matchesReferenced = actual == referenced.associate { it.pathKey to it.icon } &&
+                actualOrders == referenced.associate { it.pathKey to it.sortOrder }
+            count == actual.size && ((actual == currentIcons && actualOrders == currentOrders) || matchesReferenced ||
                 (actual == expected && actualOrders == legacyOrders))
         }
         if (!matches) return false

@@ -20,7 +20,7 @@ object IconPickerDialog {
         context: Context,
         initialSelectedIcon: String?,
         onIconSelected: (String?) -> Unit
-    ) {
+    ): BottomSheetDialog {
         val dialog = BottomSheetDialog(context)
         val sheetView = LayoutInflater.from(context).inflate(R.layout.dialog_icon_picker, null)
         val labels = FeaturedIconLabels.load(context)
@@ -49,5 +49,6 @@ object IconPickerDialog {
             dialog.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
         }
         dialog.show()
+        return dialog
     }
 }
