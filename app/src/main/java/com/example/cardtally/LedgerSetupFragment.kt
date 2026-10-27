@@ -1,6 +1,7 @@
 package com.example.cardtally
 
 import android.os.Bundle
+import android.app.Dialog
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
@@ -10,6 +11,9 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
+import androidx.core.widget.doAfterTextChanged
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -21,6 +25,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.util.LedgerSession
 import com.example.cardtally.util.TablerIconCatalog
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
  * Creates a ledger (name, icon and which asset group it uses) or edits an
@@ -48,7 +53,6 @@ class LedgerSetupFragment : Fragment() {
     private lateinit var databaseHelper: DatabaseHelper
     private lateinit var nameInput: EditText
     private lateinit var iconView: ImageView
-    private var iconLabel: TextView? = null
     private lateinit var groupSummary: TextView
     private lateinit var groupName: TextView
     private lateinit var groupRow: View
@@ -62,6 +66,12 @@ class LedgerSetupFragment : Fragment() {
     private var selectedIconName = "tabler_book"
     private var useExistingGroup = true
     private var selectedGroupRootId: Long? = null
+    private var submitting = false
+    private var saved = false
+    private var activePicker: Dialog? = null
+    private var discardDialog: AlertDialog? = null
+    private data class Draft(val name: String, val icon: String, val existing: Boolean, val root: Long?)
+    private var initialDraft = Draft("", "tabler_book", true, null)
 
     private val editingLedgerId: Long? by lazy {
         arguments?.getLong(ARG_LEDGER_ID, -1L)?.takeIf { it > 0L }
@@ -88,8 +98,13 @@ class LedgerSetupFragment : Fragment() {
         saveButton = view.findViewById(R.id.button_ledger_setup_save)
 
         val isEditing = editingLedgerId != null
+        val original = editingLedgerId?.let { id -> databaseHelper.getLedgers().firstOrNull { it.id == id } }
+        initialDraft = Draft(original?.name.orEmpty(), original?.iconName ?: "tabler_book", true, databaseHelper.getMasterLedgerId())
+        submitting = false
+        saved = false
         view.findViewById<View>(R.id.ledger_setup_asset_relation_section).visibility =
             if (isEditing) View.GONE else View.VISIBLE
+        view.findViewById<View>(R.id.ledger_setup_create_note).visibility = if (isEditing) View.GONE else View.VISIBLE
 
         view.findViewById<TextView>(R.id.ledger_setup_title).setText(
             if (isEditing) R.string.ledger_setup_edit_title else R.string.ledger_setup_title
@@ -99,11 +114,12 @@ class LedgerSetupFragment : Fragment() {
         )
 
         view.findViewById<View>(R.id.button_ledger_setup_back).setOnClickListener {
-            parentFragmentManager.popBackStack()
+            requestClose()
         }
         view.findViewById<View>(R.id.ledger_setup_icon_picker).setOnClickListener {
             hideSoftKeyboard()
-            IconPickerDialog.show(requireContext(), initialSelectedIcon = selectedIconName) { icon ->
+            activePicker?.dismiss()
+            activePicker = IconPickerDialog.show(requireContext(), initialSelectedIcon = selectedIconName) { icon ->
                 selectedIconName = icon ?: "tabler_book"
                 renderIcon()
             }
@@ -122,8 +138,46 @@ class LedgerSetupFragment : Fragment() {
         restoreState(savedInstanceState, isEditing)
         renderIcon()
         renderGroupState()
+        nameInput.doAfterTextChanged {
+            nameInput.error = null
+            updateSaveState()
+        }
+        updateSaveState()
         focusNameWithoutOpeningKeyboard()
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = requestClose()
+        })
+    }
+
+    private fun requestClose() {
+        if (submitting || discardDialog?.isShowing == true) return
+        val dirty = nameInput.text.toString().trim() != initialDraft.name.trim() || selectedIconName != initialDraft.icon ||
+            (editingLedgerId == null && (useExistingGroup != initialDraft.existing ||
+                (useExistingGroup && selectedGroupRootId != initialDraft.root)))
+        if (saved || !dirty) {
+            parentFragmentManager.popBackStack()
+            return
+        }
+        discardDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.ledger_setup_discard_title)
+            .setMessage(R.string.ledger_setup_discard_message)
+            .setNegativeButton(R.string.ledger_setup_continue_editing, null)
+            .setPositiveButton(R.string.ledger_setup_discard) { _, _ -> parentFragmentManager.popBackStack() }
+            .create().also { dialog ->
+                dialog.setOnDismissListener { discardDialog = null }
+                dialog.show()
+            }
+    }
+
+    private fun updateSaveState() {
+        saveButton.isEnabled = !submitting && !saved && nameInput.text.toString().isNotBlank() &&
+            (editingLedgerId != null || !useExistingGroup || groupRow.isEnabled)
+        saveButton.alpha = if (saveButton.isEnabled) 1f else .4f
     }
 
     private fun focusNameWithoutOpeningKeyboard() {
@@ -210,23 +264,21 @@ class LedgerSetupFragment : Fragment() {
         iconView.setImageResource(
             TablerIconCatalog.resourceId(selectedIconName).takeIf { it != 0 } ?: R.drawable.ic_book
         )
-        iconLabel?.text = getString(R.string.ledger_setup_icon_selected)
     }
 
     private fun renderGroupState() {
         if (editingLedgerId != null) return
         independentRadio.isChecked = !useExistingGroup
         existingRadio.isChecked = useExistingGroup
+        ViewCompat.setStateDescription(independentRow, getString(if (useExistingGroup) R.string.ledger_ui_unchecked else R.string.ledger_ui_checked))
+        ViewCompat.setStateDescription(existingRow, getString(if (useExistingGroup) R.string.ledger_ui_checked else R.string.ledger_ui_unchecked))
         assetList.visibility = if (useExistingGroup) View.VISIBLE else View.GONE
 
         val groups = databaseHelper.getAssetGroups()
-        val selected = if (useExistingGroup) {
-            groups.firstOrNull { it.rootLedgerId == selectedGroupRootId }
-                ?: groups.firstOrNull { it.isMaster }
-                ?: groups.firstOrNull()
-        } else {
-            null
-        }
+        // Keep the last existing-group choice even while the independent option hides it.
+        val selected = groups.firstOrNull { it.rootLedgerId == selectedGroupRootId }
+            ?: groups.firstOrNull { it.isMaster }
+            ?: groups.firstOrNull()
         selectedGroupRootId = selected?.rootLedgerId
 
         if (selected == null) {
@@ -235,18 +287,18 @@ class LedgerSetupFragment : Fragment() {
             groupRow.isEnabled = false
         } else {
             groupName.text = displayNameFor(selected)
-            groupSummary.text = getString(
-                R.string.ledger_asset_group_members_assets,
-                selected.memberLedgerNames.joinToString("、"),
-                selected.assetCount
-            )
+            val members = selected.memberLedgerNames
+            groupSummary.text = if (members.size > 2) getString(R.string.ledger_setup_group_compact,
+                members.take(2).joinToString("、"), members.size, selected.assetCount)
+            else getString(R.string.ledger_setup_group_summary, members.joinToString("、"), selected.assetCount)
             groupRow.isEnabled = true
         }
         groupRow.contentDescription = getString(
             R.string.ledger_asset_group_row_accessibility,
             groupName.text,
-            groupSummary.text
+            selected?.let { getString(R.string.ledger_asset_group_members_assets, it.memberLedgerNames.joinToString("、"), it.assetCount) }.orEmpty()
         )
+        updateSaveState()
     }
 
     private fun displayNameFor(group: DatabaseHelper.AssetGroupDescriptor): String {
@@ -255,12 +307,16 @@ class LedgerSetupFragment : Fragment() {
     }
 
     private fun openGroupPicker() {
+        hideSoftKeyboard()
         val groups = databaseHelper.getAssetGroups()
         if (groups.isEmpty()) {
             Toast.makeText(requireContext(), R.string.ledger_asset_group_empty, Toast.LENGTH_SHORT).show()
             return
         }
         val dialog = BottomSheetDialog(requireContext())
+        activePicker?.dismiss()
+        activePicker = dialog
+        dialog.setOnDismissListener { if (activePicker === dialog) activePicker = null }
         val sheet = layoutInflater.inflate(R.layout.bottom_sheet_asset_group_picker, null)
         val recycler = sheet.findViewById<RecyclerView>(R.id.recycler_asset_groups)
         val empty = sheet.findViewById<TextView>(R.id.text_asset_group_empty)
@@ -290,34 +346,60 @@ class LedgerSetupFragment : Fragment() {
     }
 
     private fun saveLedger() {
+        if (submitting || saved) return
         val name = nameInput.text.toString().trim()
         if (name.isEmpty()) {
             nameInput.error = getString(R.string.ledger_setup_name_required)
             nameInput.requestFocus()
             return
         }
-        val editingId = editingLedgerId
-        if (editingId != null) {
-            if (!databaseHelper.updateLedgerDetails(editingId, selectedIconName, name)) return
-            Toast.makeText(requireContext(), R.string.ledger_setup_updated, Toast.LENGTH_SHORT).show()
-        } else {
-            val groupRootId = if (useExistingGroup) selectedGroupRootId else null
-            val ledgerId = databaseHelper.createLedgerInAssetGroup(
-                name = name,
-                sharedSourceLedgerId = groupRootId,
-                iconName = selectedIconName
-            )
-            if (ledgerId == null) {
-                Toast.makeText(
-                    requireContext(),
-                    R.string.ledger_asset_group_created_failed,
-                    Toast.LENGTH_SHORT
-                ).show()
-                return
-            }
-            LedgerSession.setCurrentId(requireContext(), ledgerId)
-            Toast.makeText(requireContext(), R.string.ledger_setup_saved, Toast.LENGTH_SHORT).show()
+        if (editingLedgerId == null && useExistingGroup && databaseHelper.getAssetGroups().none { it.rootLedgerId == selectedGroupRootId }) {
+            renderGroupState()
+            Toast.makeText(requireContext(), R.string.ledger_setup_group_changed, Toast.LENGTH_SHORT).show()
+            return
         }
-        parentFragmentManager.popBackStack()
+        submitting = true
+        updateSaveState()
+        try {
+            val editingId = editingLedgerId
+            if (editingId != null) {
+                if (!databaseHelper.updateLedgerDetails(editingId, selectedIconName, name)) {
+                    Toast.makeText(requireContext(), R.string.ledger_setup_save_failed, Toast.LENGTH_SHORT).show()
+                    return
+                }
+                Toast.makeText(requireContext(), R.string.ledger_setup_updated, Toast.LENGTH_SHORT).show()
+            } else {
+                val groupRootId = if (useExistingGroup) selectedGroupRootId else null
+                val ledgerId = databaseHelper.createLedgerInAssetGroup(
+                    name = name,
+                    sharedSourceLedgerId = groupRootId,
+                    iconName = selectedIconName
+                )
+                if (ledgerId == null) {
+                    Toast.makeText(
+                        requireContext(),
+                        R.string.ledger_asset_group_created_failed,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return
+                }
+                LedgerSession.setCurrentId(requireContext(), ledgerId)
+                Toast.makeText(requireContext(), R.string.ledger_setup_saved, Toast.LENGTH_SHORT).show()
+            }
+            saved = true
+            hideSoftKeyboard()
+            parentFragmentManager.popBackStack()
+        } finally {
+            submitting = false
+            updateSaveState()
+        }
+    }
+
+    override fun onDestroyView() {
+        activePicker?.dismiss()
+        activePicker = null
+        discardDialog?.dismiss()
+        discardDialog = null
+        super.onDestroyView()
     }
 }

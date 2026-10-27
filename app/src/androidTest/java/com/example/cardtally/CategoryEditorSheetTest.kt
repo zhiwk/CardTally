@@ -66,6 +66,33 @@ class CategoryEditorSheetTest {
                     val child = db.getAllCategories().single { it.name == "新增子分类" }
                     assertEquals(parent, child.parentId); assertEquals(0, child.type)
                 }
+                activity.supportFragmentManager.executePendingTransactions()
+                val quick = RecordCategoryAddSheetFragment.newInstance(0, parent)
+                quick.showNow(activity.supportFragmentManager, RecordCategoryAddSheetFragment.TAG)
+                quick.requireView().findViewById<EditText>(R.id.edit_category_name).setText("弹层子分类草稿")
+                quick.requireView().findViewById<View>(R.id.button_record_category_choose_parent).performClick()
+                assertTrue(quick.requireView().findViewById<View>(R.id.button_record_category_parent_icon).isShown)
+                assertTrue(views(quick.requireView()).filterIsInstance<android.widget.ImageView>().any { it.drawable != null })
+                assertFalse(views(quick.requireView()).filterIsInstance<TextView>().any { it.text.toString() == activity.getString(R.string.record_category_new_parent) })
+                quick.requireView().findViewById<EditText>(R.id.edit_record_category_parent_name).setText("弹层一级草稿")
+                val draft = android.os.Bundle().also(quick::onSaveInstanceState)
+                assertTrue(draft.getBoolean("new_parent"))
+                assertEquals(0L, draft.getLong("pending"))
+                views(quick.requireView()).first { it is android.widget.LinearLayout && it.contentDescription == "新增宿主" }.performClick()
+                assertEquals("", quick.requireView().findViewById<EditText>(R.id.edit_record_category_parent_name).text.toString())
+                quick.requireView().findViewById<EditText>(R.id.edit_record_category_parent_name).setText("弹层一级草稿")
+            }
+            scenario.recreate()
+            scenario.onActivity { activity ->
+                val quick = activity.supportFragmentManager.findFragmentByTag(RecordCategoryAddSheetFragment.TAG) as RecordCategoryAddSheetFragment
+                assertEquals("弹层一级草稿", quick.requireView().findViewById<EditText>(R.id.edit_record_category_parent_name).text.toString())
+                DatabaseHelper(activity).use { db ->
+                    assertFalse(db.getAllCategories().any { it.name == "弹层一级草稿" || it.name == "弹层子分类草稿" })
+                }
+                quick.dismissNow()
+                DatabaseHelper(activity).use { db ->
+                    assertFalse(db.getAllCategories().any { it.name == "弹层一级草稿" || it.name == "弹层子分类草稿" })
+                }
             }
         }
     }

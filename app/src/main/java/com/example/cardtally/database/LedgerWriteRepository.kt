@@ -280,31 +280,39 @@ internal class LedgerWriteRepository(
         return DatabaseHelper.LedgerMergeFailure.NONE
     }
 
-    fun mergeLedgerInto(sourceLedgerId: Long, targetLedgerId: Long): Boolean {
-        if (validateMerge(sourceLedgerId, targetLedgerId) != DatabaseHelper.LedgerMergeFailure.NONE) return false
-        val root = poolRoot(sourceLedgerId)
-        val members = getLedgers().map { it.id }.filter { poolRoot(it) == root }
+    fun mergeLedgerInto(sourceLedgerId: Long, targetLedgerId: Long): Boolean =
+        mergeLedgersInto(setOf(sourceLedgerId), targetLedgerId)
+
+    /** All sources merge in one transaction; no partial batch can be committed. */
+    fun mergeLedgersInto(sourceLedgerIds: Set<Long>, targetLedgerId: Long): Boolean {
+        val sources = sourceLedgerIds.toSet()
+        if (sources.isEmpty() || targetLedgerId in sources) return false
         val db = writableDatabase()
         db.beginTransaction()
         return try {
-            if (validateMerge(sourceLedgerId, targetLedgerId) != DatabaseHelper.LedgerMergeFailure.NONE) return false
-            db.update(
-                columns.recordsTable,
-                ContentValues().apply { put(columns.recordLedgerId, targetLedgerId) },
-                "${columns.recordLedgerId} = ?",
-                arrayOf(sourceLedgerId.toString())
-            )
-            if (root == sourceLedgerId) {
+            if (sources.any { validateMerge(it, targetLedgerId) != DatabaseHelper.LedgerMergeFailure.NONE }) return false
+            sources.forEach { sourceLedgerId ->
+                // Earlier sources may have owned the pool. Resolve membership again after each removal.
+                val root = poolRoot(sourceLedgerId)
+                val members = getLedgers().map { it.id }.filter { poolRoot(it) == root }
                 db.update(
-                    columns.assetsTable,
-                    ContentValues().apply { put(columns.assetLedgerId, targetLedgerId) },
-                    "${columns.assetLedgerId} = ?",
+                    columns.recordsTable,
+                    ContentValues().apply { put(columns.recordLedgerId, targetLedgerId) },
+                    "${columns.recordLedgerId} = ?",
                     arrayOf(sourceLedgerId.toString())
                 )
+                if (root == sourceLedgerId) {
+                    db.update(
+                        columns.assetsTable,
+                        ContentValues().apply { put(columns.assetLedgerId, targetLedgerId) },
+                        "${columns.assetLedgerId} = ?",
+                        arrayOf(sourceLedgerId.toString())
+                    )
+                }
+                db.delete(columns.sharedLedgersTable, "${columns.sharedLedgerId} = ?", arrayOf(sourceLedgerId.toString()))
+                db.delete(columns.ledgersTable, "${columns.ledgerId} = ?", arrayOf(sourceLedgerId.toString()))
+                repointSharedReferences(db, members, sourceLedgerId, targetLedgerId)
             }
-            db.delete(columns.sharedLedgersTable, "${columns.sharedLedgerId} = ?", arrayOf(sourceLedgerId.toString()))
-            db.delete(columns.ledgersTable, "${columns.ledgerId} = ?", arrayOf(sourceLedgerId.toString()))
-            repointSharedReferences(db, members, sourceLedgerId, targetLedgerId)
             db.setTransactionSuccessful()
             true
         } catch (_: Exception) {

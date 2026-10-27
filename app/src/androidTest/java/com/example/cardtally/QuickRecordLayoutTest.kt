@@ -616,6 +616,22 @@ class QuickRecordLayoutTest {
             recycler.getChildAt(rendered.indexOf(0)).performClick()
             assertTrue("only leaf ids are reported", selected.isNotEmpty() && selected.all { it in listOf(2L, 3L, 4L) })
             assertEquals("selection is tracked by stable id", selected.last(), adapter.getSelectedCategoryId())
+            var addRequests = 0
+            adapter.onAddCategory = { addRequests++ }
+            adapter.updateCategories(categories)
+            assertEquals(4, adapter.itemCount)
+            assertEquals(listOf(2L, 3L, 4L), adapter.categoryIdsInOrder())
+            assertFalse(adapter.isCategoryPosition(3))
+            val addHolder = adapter.onCreateViewHolder(recycler, 0)
+            adapter.onBindViewHolder(addHolder, 3)
+            val selectedBefore = adapter.getSelectedCategoryId()
+            addHolder.itemView.performClick()
+            assertEquals(1, addRequests)
+            assertEquals(selectedBefore, adapter.getSelectedCategoryId())
+            adapter.moveCategory(0, 3)
+            assertEquals(listOf(2L, 3L, 4L), adapter.categoryIdsInOrder())
+            adapter.showAddCategory = false
+            assertEquals(3, adapter.itemCount)
         }
     }
 }

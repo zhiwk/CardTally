@@ -74,6 +74,10 @@
 
 注意：两种模式共用 `fragment_add_record_quick.xml`，区别在页内分类列表；金额键盘常驻，日期和资产仍使用底部选择器。
 
+页内新增分类见`RecordCategoryAddSheetFragment`、`CategorySelectorAdapter.onAddCategory`、`RecordCategoryGroupAdapter.onAddCategory`及`DatabaseHelper.getRecordCategoryParents/addLeafCategoryForRecord`→`CategoryWriteRepository`。尾部添加项仅由AddRecordFragment显式开启，不参与选择、拖拽或排序ID；转账隐藏，重复记账等旧宿主不自动增加。一个弹窗内切换表单/一级分类选择/暂拟一级分类；最终父子同事务保存，同名复用且校验叶子，已被账单/有效撤销/重复任务直接引用的一级分类不做父级。FragmentResult只更新同类型新分类选择，保留录入草稿；打开/关闭及恢复重建须维护openSheet/金额键盘/系统IME契约，不能在新增弹窗恢复时再打开旧分类树选择器。
+
+一级选择使用上图标/下名称三列网格，列表下方常驻新一级图标+名称输入，不再有展开新建按钮；已有选择与新草稿互斥，parentIcon/pendingIcon分别保存，最终通过newParentIcon可选参数同事务落库。两处图标入口统一经openIconPicker等待IME隐藏/动画结束/窗口稳定，再在本宿主局部configureIconPicker限75%并给图标内容弹性高度；不要改共享IconPickerDialog其他宿主，也不要用固定延时替代窗口检查，离页/停止时须取消等待。
+
 收支可不选择资产，见 `docs/requirements/decisions/2026-10-04-optional-record-assets.md`。`RecordAssetPickerBottomSheetFragment` 的 `allowNoAsset` 默认关闭，普通收支开启后以 `NO_ASSET_ID = 0` 回传清空，宿主保存 null；转账、重复记账及默认资产设置不启用此入口。修改该回调必须核对所有宿主，不能把清空标记当真实资产 ID。
 
 ### 改重复记账 / 转账资产选择

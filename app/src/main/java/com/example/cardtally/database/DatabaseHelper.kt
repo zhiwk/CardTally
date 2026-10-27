@@ -67,6 +67,13 @@ class DatabaseHelper(
             },
             hasChildren = ::categoryHasChildren,
             isReferencedByRecord = ::categoryIsReferencedByRecordId,
+            findCategory = ::getCategoryByIdInternal,
+            canUseAsRecordParent = { db, id ->
+                !categoryIsReferencedByRecordId(db, id) && !db.rawQuery(
+                    "SELECT 1 FROM $TABLE_RECURRING_RECORDS WHERE $COLUMN_RECURRING_CATEGORY_ID = ? LIMIT 1",
+                    arrayOf(id.toString())
+                ).use { it.moveToFirst() }
+            },
             throwError = { throw CategoryOperationException(it) },
             columns = CATEGORY_WRITE_COLUMNS
         )
@@ -1292,6 +1299,12 @@ class DatabaseHelper(
 
     fun addCategory(category: Category): Long = categoryWriteRepository.add(category)
 
+    fun getRecordCategoryParents(type: Int): List<Category> =
+        categoryWriteRepository.recordParents(getCategoriesByTypeInternal(readableDatabase, type))
+
+    fun addLeafCategoryForRecord(category: Category, newParentName: String? = null, newParentIcon: String = "tabler_category"): Category =
+        categoryWriteRepository.addForRecord(category, newParentName, newParentIcon)
+
     private fun categoryMergeRepository() = CategoryMergeRepository({ writableDatabase }) {
         CategoryHierarchySettingsHelper.getCategoryMaxDepth(appContext)
     }
@@ -1519,6 +1532,10 @@ class DatabaseHelper(
 
     fun mergeLedgerInto(sourceLedgerId: Long, targetLedgerId: Long): Boolean =
         ledgerWriteRepository.mergeLedgerInto(sourceLedgerId, targetLedgerId)
+
+    /** Atomically merges all source ledgers into the retained target. */
+    fun mergeLedgersInto(sourceLedgerIds: Set<Long>, targetLedgerId: Long): Boolean =
+        ledgerWriteRepository.mergeLedgersInto(sourceLedgerIds, targetLedgerId)
 
     /** Legacy name-keyed query retained for callers that still need its old contract; ranking uses IDs. */
     fun getCategoryStatistics(type: Int): Map<String, Double> =

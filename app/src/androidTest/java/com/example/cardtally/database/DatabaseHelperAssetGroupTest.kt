@@ -195,6 +195,34 @@ class DatabaseHelperAssetGroupTest {
         assertFalse(databaseHelper.mergeLedgerInto(independentId, master))
         assertFalse(databaseHelper.mergeLedgerInto(master, independentId))
         assertEquals("no ledger may be removed by a rejected merge", 2, databaseHelper.getLedgers().size)
+
+        val sourceA = createSharedLedger("批量来源A", master)
+        val sourceB = createSharedLedger("批量来源B", master)
+        switchLedger(sourceA)
+        databaseHelper.addRecord(Record(date = "2026-09-01", amount = 10.0, category = "餐饮", type = 0))
+        val before = databaseHelper.getLedgers().map { it.id }.toSet()
+        assertFalse(databaseHelper.mergeLedgersInto(emptySet(), master))
+        assertFalse(databaseHelper.mergeLedgersInto(setOf(sourceA, master), master))
+        assertFalse(databaseHelper.mergeLedgersInto(setOf(sourceA, independentId), master))
+        assertFalse(databaseHelper.mergeLedgersInto(setOf(sourceA, 9999L), master))
+        assertFalse(databaseHelper.mergeLedgersInto(setOf(sourceA, master), sourceB))
+        assertEquals(before, databaseHelper.getLedgers().map { it.id }.toSet())
+        assertEquals(1, databaseHelper.getLedgerRecordCount(sourceA))
+
+        // Fail after A has already moved, proving that writes from earlier sources roll back too.
+        databaseHelper.writableDatabase.execSQL("CREATE TRIGGER fail_batch_merge BEFORE DELETE ON ledgers WHEN OLD.id = $sourceB BEGIN SELECT RAISE(ABORT, 'injected'); END")
+        try {
+            assertFalse(databaseHelper.mergeLedgersInto(linkedSetOf(sourceA, sourceB), master))
+            assertEquals(before, databaseHelper.getLedgers().map { it.id }.toSet())
+            assertEquals(1, databaseHelper.getLedgerRecordCount(sourceA))
+            assertEquals(0, databaseHelper.getLedgerRecordCount(master))
+            assertEquals(master, databaseHelper.getAssetGroupRootId(sourceA))
+        } finally {
+            databaseHelper.writableDatabase.execSQL("DROP TRIGGER fail_batch_merge")
+        }
+        assertTrue(databaseHelper.mergeLedgersInto(setOf(sourceA, sourceB), master))
+        assertEquals(1, databaseHelper.getLedgerRecordCount(master))
+        assertFalse(databaseHelper.getLedgers().any { it.id == sourceA || it.id == sourceB })
     }
 
     @Test
@@ -235,17 +263,25 @@ class DatabaseHelperAssetGroupTest {
 
         val memberB = createSharedLedger("成员B", rootId)
         val memberC = createSharedLedger("成员C", rootId)
+        val memberD = createSharedLedger("成员D", rootId)
+        databaseHelper.addRecord(Record(date = "2026-09-01", amount = 10.0, category = "餐饮", type = 0, assetId = ownAssetId))
+        switchLedger(memberD)
+        databaseHelper.addRecord(Record(date = "2026-09-02", amount = 20.0, category = "餐饮", type = 0, assetId = ownAssetId))
+        val balanceBeforeMerge = databaseHelper.getAllAssets().single().amount
 
-        assertTrue(databaseHelper.mergeLedgerInto(rootId, memberB))
+        assertTrue(databaseHelper.mergeLedgersInto(linkedSetOf(rootId, memberD), memberB))
 
         assertNull(databaseHelper.getLedgers().firstOrNull { it.id == rootId })
+        assertNull(databaseHelper.getLedgers().firstOrNull { it.id == memberD })
+        assertEquals(2, databaseHelper.getLedgerRecordCount(memberB))
+        assertTrue(databaseHelper.getAllRecordsByAssetId(ownAssetId).all { it.ledgerId == memberB })
         assertEquals("B becomes the kept root", memberB, databaseHelper.getAssetGroupRootId(memberB))
         assertEquals("C must still resolve into the same group", memberB, databaseHelper.getAssetGroupRootId(memberC))
         switchLedger(memberC)
         val assets = databaseHelper.getAllAssets()
         assertEquals(1, assets.size)
         assertEquals(ownAssetId, assets.first().id)
-        assertEquals(300.0, assets.first().amount, 0.0)
+        assertEquals(balanceBeforeMerge, assets.first().amount, 0.0)
         // The master group is untouched by that merge.
         switchLedger(masterId())
         val masterAssets = databaseHelper.getAllAssets()

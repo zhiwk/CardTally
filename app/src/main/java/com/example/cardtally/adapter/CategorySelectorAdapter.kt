@@ -22,6 +22,10 @@ class CategorySelectorAdapter(
     // Records may only reference leaf categories. Keep this adapter safe as well as
     // the tree selector, because older callers can still pass a flat category list.
     private var leafCategories: List<Category> = deriveLeaves(categories)
+    var onAddCategory: (() -> Unit)? = null
+    var showAddCategory = true
+        set(value) { field = value; notifyDataSetChanged() }
+    fun isCategoryPosition(position: Int) = position in leafCategories.indices
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -30,6 +34,19 @@ class CategorySelectorAdapter(
     }
 
     override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) {
+        if (!isCategoryPosition(position)) {
+            holder.textName.setText(R.string.record_category_quick_add)
+            holder.textName.isSelected = false
+            holder.imageIcon.setImageResource(R.drawable.ic_add)
+            holder.imageSelected.visibility = View.GONE
+            holder.cardCategory.setCardBackgroundColor(ThemeColorHelper.resolveColor(holder.itemView.context, com.google.android.material.R.attr.colorSurface))
+            val color = ThemeColorHelper.resolveColor(holder.itemView.context, com.google.android.material.R.attr.colorOnSurfaceVariant)
+            holder.imageIcon.setColorFilter(color)
+            holder.textName.setTextColor(color)
+            holder.itemView.contentDescription = holder.itemView.context.getString(R.string.record_category_quick_add)
+            holder.itemView.setOnClickListener { onAddCategory?.invoke() }
+            return
+        }
         val category = leafCategories[position]
         holder.textName.text = category.name
         // Keep every category label on one line; long labels scroll instead of
@@ -76,7 +93,7 @@ class CategorySelectorAdapter(
         }
     }
 
-    override fun getItemCount(): Int = leafCategories.size
+    override fun getItemCount(): Int = leafCategories.size + if (showAddCategory && onAddCategory != null) 1 else 0
 
     fun updateCategories(newCategories: List<Category>) {
         leafCategories = deriveLeaves(newCategories)

@@ -11,6 +11,8 @@ internal class CategoryWriteRepository(
     private val findExistingId: (SQLiteDatabase, Category) -> Long?,
     private val hasChildren: (SQLiteDatabase, Long) -> Boolean,
     private val isReferencedByRecord: (SQLiteDatabase, Long) -> Boolean,
+    private val findCategory: (SQLiteDatabase, Long) -> Category?,
+    private val canUseAsRecordParent: (SQLiteDatabase, Long) -> Boolean,
     private val throwError: (DatabaseHelper.CategoryOperationError) -> Nothing,
     private val columns: Columns
 ) {
@@ -46,6 +48,34 @@ internal class CategoryWriteRepository(
             "${columns.id} = ?",
             arrayOf(category.id.toString())
         )
+    }
+
+    fun recordParents(categories: List<Category>): List<Category> {
+        val db = writableDatabase()
+        return categories.filter { it.parentId == null && canUseAsRecordParent(db, it.id) }
+    }
+
+    /** No parent is persisted until the leaf can also be saved and safely bound to a record. */
+    fun addForRecord(category: Category, newParentName: String?, newParentIcon: String = "tabler_category"): Category {
+        require(category.type in 0..1 && category.name.isNotBlank())
+        require((category.parentId != null) xor !newParentName.isNullOrBlank())
+        val db = writableDatabase()
+        db.beginTransaction()
+        try {
+            val parentId = category.parentId ?: add(Category(name = newParentName!!.trim(), type = category.type, icon = newParentIcon))
+            check(parentId > 0)
+            val parent = findCategory(db, parentId) ?: throwError(DatabaseHelper.CategoryOperationError.PARENT_NOT_FOUND)
+            if (parent.parentId != null || parent.type != category.type) throwError(DatabaseHelper.CategoryOperationError.PARENT_TYPE_MISMATCH)
+            if (!canUseAsRecordParent(db, parentId)) throwError(DatabaseHelper.CategoryOperationError.IN_USE_BY_RECORDS)
+            val id = add(category.copy(name = category.name.trim(), parentId = parentId))
+            check(id > 0)
+            if (hasChildren(db, id)) throwError(DatabaseHelper.CategoryOperationError.HAS_CHILDREN)
+            val leaf = checkNotNull(findCategory(db, id))
+            db.setTransactionSuccessful()
+            return leaf
+        } finally {
+            db.endTransaction()
+        }
     }
 
     fun delete(id: Long) {

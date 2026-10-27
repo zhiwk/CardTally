@@ -21,24 +21,40 @@ class RecordCategoryGroupAdapter(
     categories: List<Category>,
     selectedCategoryId: Long?,
     private val onCategorySelected: (Category) -> Unit
-) : RecyclerView.Adapter<RecordCategoryGroupAdapter.CategoryGroupViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var categories = categories
     private var selectedCategoryId = selectedCategoryId
     private val expandedIds = mutableSetOf<Long>()
+    var onAddCategory: (() -> Unit)? = null
+    var showAddCategory = true
+        set(value) { field = value; notifyDataSetChanged() }
+    fun isCategoryPosition(position: Int) = position in 0 until categories.count { it.parentId == null }
+    override fun getItemViewType(position: Int) = if (isCategoryPosition(position)) 0 else 1
 
     init {
         selectedCategoryId?.let(::expandAncestors)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryGroupViewHolder =
-        CategoryGroupViewHolder(
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+        if (viewType == 1) object : RecyclerView.ViewHolder(com.google.android.material.button.MaterialButton(parent.context).apply {
+            layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            setText(R.string.record_category_quick_add); isAllCaps = false
+            setIconResource(R.drawable.ic_add)
+            backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+            setTextColor(ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorOnSurfaceVariant))
+            iconTint = textColors
+        }) {} else CategoryGroupViewHolder(
             LayoutInflater.from(parent.context)
                 .inflate(R.layout.item_record_category_group, parent, false)
         )
 
-    override fun onBindViewHolder(holder: CategoryGroupViewHolder, position: Int) {
-        holder.bind(
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (!isCategoryPosition(position)) {
+            holder.itemView.setOnClickListener { onAddCategory?.invoke() }
+            return
+        }
+        (holder as CategoryGroupViewHolder).bind(
             categories.filter { it.parentId == null }[position],
             categories,
             expandedIds.contains(categories.filter { it.parentId == null }[position].id),
@@ -52,7 +68,7 @@ class RecordCategoryGroupAdapter(
         )
     }
 
-    override fun getItemCount(): Int = categories.count { it.parentId == null }
+    override fun getItemCount(): Int = categories.count { it.parentId == null } + if (showAddCategory && onAddCategory != null) 1 else 0
 
     fun updateCategories(newCategories: List<Category>) {
         categories = newCategories

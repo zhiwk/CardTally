@@ -8,6 +8,8 @@ import com.example.cardtally.model.Record
 import com.example.cardtally.util.CategoryHierarchySettingsHelper
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -46,6 +48,32 @@ class DatabaseHelperCategoryTreeTest {
             .map { it.name }
 
         assertEquals(listOf("父分类", "子分类", "孙分类"), hierarchyNames)
+
+        val quick = databaseHelper.addLeafCategoryForRecord(Category(name = "快速叶子", type = 0, icon = "tabler_shirt"), "快速父类", "tabler_heart")
+        assertTrue(quick.parentId != null)
+        assertEquals("快速父类", databaseHelper.getCategoryById(quick.parentId!!)!!.name)
+        assertEquals("tabler_heart", databaseHelper.getCategoryById(quick.parentId!!)!!.icon)
+        val another = databaseHelper.addLeafCategoryForRecord(Category(name = "另一个快速叶子", type = 0), "快速父类", "tabler_home")
+        assertEquals(quick.parentId, another.parentId)
+        assertEquals("tabler_heart", databaseHelper.getCategoryById(quick.parentId!!)!!.icon)
+        val duplicate = databaseHelper.addLeafCategoryForRecord(Category(name = "快速叶子", type = 0, parentId = quick.parentId))
+        assertEquals(quick.id, duplicate.id)
+        assertEquals("tabler_shirt", duplicate.icon)
+
+        databaseHelper.writableDatabase.execSQL("CREATE TRIGGER fail_quick_leaf BEFORE INSERT ON categories WHEN NEW.name = '失败叶子' BEGIN SELECT RAISE(ABORT, 'injected'); END")
+        try {
+            try {
+                databaseHelper.addLeafCategoryForRecord(Category(name = "失败叶子", type = 0), "不能留下的空父类")
+                fail("Both inserts must roll back")
+            } catch (_: IllegalStateException) {
+                // insert() may return -1 after an SQLite failure.
+            } catch (_: android.database.sqlite.SQLiteException) {
+                // SQLite implementations may propagate the trigger failure directly.
+            }
+            assertFalse(databaseHelper.getAllCategories().any { it.name == "不能留下的空父类" || it.name == "失败叶子" })
+        } finally {
+            databaseHelper.writableDatabase.execSQL("DROP TRIGGER fail_quick_leaf")
+        }
     }
 
     private fun expectCategoryOperationException(
@@ -69,6 +97,10 @@ class DatabaseHelperCategoryTreeTest {
         }
 
         assertEquals(DatabaseHelper.CategoryOperationError.PARENT_TYPE_MISMATCH, exception.error)
+        val quickException = expectCategoryOperationException {
+            databaseHelper.addLeafCategoryForRecord(Category(name = "错误类型快速叶子", type = 1, parentId = expenseParentId))
+        }
+        assertEquals(DatabaseHelper.CategoryOperationError.PARENT_TYPE_MISMATCH, quickException.error)
     }
 
     @Test
@@ -132,5 +164,11 @@ class DatabaseHelperCategoryTreeTest {
         }
 
         assertEquals(DatabaseHelper.CategoryOperationError.IN_USE_BY_RECORDS, exception.error)
+        assertFalse(databaseHelper.getRecordCategoryParents(0).any { it.id == categoryId })
+        val quickException = expectCategoryOperationException {
+            databaseHelper.addLeafCategoryForRecord(Category(name = "不能新增的子类", type = 0), "被引用分类")
+        }
+        assertEquals(DatabaseHelper.CategoryOperationError.IN_USE_BY_RECORDS, quickException.error)
+        assertFalse(databaseHelper.getAllCategories().any { it.name == "不能新增的子类" })
     }
 }

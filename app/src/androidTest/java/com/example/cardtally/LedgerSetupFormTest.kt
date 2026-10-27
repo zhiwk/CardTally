@@ -8,6 +8,11 @@ import androidx.core.view.isVisible
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Record
@@ -110,6 +115,14 @@ class LedgerSetupFormTest {
             val existing = view.findViewById<RadioButton>(R.id.ledger_setup_share_other_assets)
             assertTrue("the existing-group option must be the visible default", existing.isChecked)
             assertFalse("the independent option must not be preselected", independent.isChecked)
+            val save = view.findViewById<View>(R.id.button_ledger_setup_save)
+            val name = view.findViewById<EditText>(R.id.ledger_setup_name)
+            assertFalse("empty names disable creation", save.isEnabled)
+            name.setText("   ")
+            assertFalse("whitespace names disable creation", save.isEnabled)
+            name.setText(syntheticLedgerName)
+            assertTrue("valid names enable creation", save.isEnabled)
+            assertTrue(view.findViewById<View>(R.id.ledger_setup_create_note).isVisible)
             assertTrue(
                 "the icon row must meet the 48dp touch target",
                 view.findViewById<View>(R.id.ledger_setup_icon_picker).height >= dp(48f)
@@ -181,42 +194,42 @@ class LedgerSetupFormTest {
     @Test
     fun togglingAssetGroupMode_hidesTheWholeRowAndKeepsTheSameGroup() {
         databaseHelper.createLedgerInAssetGroup(syntheticLedgerName, null)
-        launchSetup { fragment ->
-            val view = requireNotNull(fragment.view)
-            val assetList = view.findViewById<View>(R.id.ledger_setup_asset_list)
-            val groupRow = view.findViewById<View>(R.id.ledger_setup_group_row)
-            val groupName = view.findViewById<TextView>(R.id.ledger_setup_group_name)
-            val divider = view.findViewById<View>(R.id.ledger_setup_group_divider)
-            assertTrue("the selection row starts visible in existing mode", groupRow.isVisible)
-
-            // The mode rows only change the mode; they must not open the picker.
-            view.findViewById<View>(R.id.ledger_setup_independent_row).performClick()
-            assertFalse("independent mode hides the selection row", assetList.isVisible)
-            if (divider != null) {
-                assertFalse("the divider is not shown with its row", divider.isShown)
+        val selectedName = context.getString(R.string.ledger_asset_group_label, syntheticLedgerName)
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, LedgerSetupFragment()).commitNow()
             }
-            assertTrue(
-                "the independent radio reflects the mode",
-                view.findViewById<RadioButton>(R.id.ledger_setup_independent_assets).isChecked
-            )
-
-            val selectedBefore = groupName.text.toString()
-            view.findViewById<View>(R.id.ledger_setup_existing_row).performClick()
-            assertTrue("existing mode restores the selection row", assetList.isVisible)
-            assertTrue("the selection row is reachable again", groupRow.isVisible)
-            assertTrue(
-                "the row must state a group again",
-                groupName.text.toString().isNotEmpty()
-            )
-            assertEquals(
-                "the master group is the stable default selection",
-                context.getString(R.string.ledger_asset_master_group),
-                groupName.text.toString()
-            )
-            assertTrue(
-                "the previous selection is documented for the round trip",
-                selectedBefore.isNotEmpty()
-            )
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                activity.findViewById<View>(R.id.ledger_setup_group_row).performClick()
+            }
+            onView(withText(selectedName)).perform(click())
+            scenario.onActivity { activity ->
+                val view = (activity.supportFragmentManager.findFragmentById(R.id.fragment_container) as LedgerSetupFragment).requireView()
+                assertEquals(selectedName, view.findViewById<TextView>(R.id.ledger_setup_group_name).text.toString())
+                view.findViewById<View>(R.id.ledger_setup_independent_row).performClick()
+                assertFalse(view.findViewById<View>(R.id.ledger_setup_asset_list).isVisible)
+                assertTrue(view.findViewById<RadioButton>(R.id.ledger_setup_independent_assets).isChecked)
+                view.findViewById<View>(R.id.ledger_setup_existing_row).performClick()
+                assertTrue(view.findViewById<View>(R.id.ledger_setup_asset_list).isVisible)
+                assertEquals("non-default groups survive mode changes", selectedName,
+                    view.findViewById<TextView>(R.id.ledger_setup_group_name).text.toString())
+                view.findViewById<EditText>(R.id.ledger_setup_name).setText(syntheticLedgerName)
+            }
+            scenario.recreate()
+            scenario.onActivity { activity ->
+                assertEquals(selectedName, activity.findViewById<TextView>(R.id.ledger_setup_group_name).text.toString())
+                assertEquals(syntheticLedgerName, activity.findViewById<EditText>(R.id.ledger_setup_name).text.toString())
+                activity.onBackPressedDispatcher.onBackPressed()
+            }
+            onView(withText(R.string.ledger_setup_discard_title)).check(matches(isDisplayed()))
+            onView(withText(R.string.ledger_setup_continue_editing)).perform(click())
+            scenario.onActivity { activity ->
+                assertEquals(syntheticLedgerName, activity.findViewById<EditText>(R.id.ledger_setup_name).text.toString())
+                activity.findViewById<View>(R.id.button_ledger_setup_back).performClick()
+            }
+            onView(withText(R.string.ledger_setup_discard_title)).check(matches(isDisplayed()))
         }
     }
 
@@ -258,9 +271,12 @@ class LedgerSetupFormTest {
             view.findViewById<EditText>(R.id.ledger_setup_name).setText(syntheticLedgerName)
             view.findViewById<View>(R.id.ledger_setup_independent_row).performClick()
             view.findViewById<View>(R.id.button_ledger_setup_save).performClick()
+            view.findViewById<View>(R.id.button_ledger_setup_save).performClick()
 
             val created = databaseHelper.getLedgers().firstOrNull { it.name == syntheticLedgerName }
             assertNotNull("saving must create the ledger", created)
+            assertEquals("repeated clicks must not create duplicate ledgers", 1,
+                databaseHelper.getLedgers().count { it.name == syntheticLedgerName })
             assertEquals(
                 "an independent ledger must own its own group root",
                 created!!.id,

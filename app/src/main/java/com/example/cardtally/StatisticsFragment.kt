@@ -1084,14 +1084,23 @@ class StatisticsFragment : Fragment() {
             selectedRange.endDate == null -> LedgerPeriodHelper.formatSingleDateLabel(selectedRange.startDate)
             else -> LedgerPeriodHelper.formatRangeLabel(selectedRange)
         }
-        adapter.submitList(
-            LedgerPeriodHelper.buildMonthCells(
-                year = displayYear,
-                month = displayMonth,
-                selectedRange = selectedRange,
-                weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext())
-            )
+        val cells = LedgerPeriodHelper.buildMonthCells(
+            year = displayYear,
+            month = displayMonth,
+            selectedRange = selectedRange,
+            weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext())
         )
+        // Include adjacent-month cells too, independently of the currently selected range.
+        val dates = cells.mapNotNull { it.isoDate }
+        val totals = if (dates.isEmpty()) emptyMap() else
+            databaseHelper.getDailyTotals(dates.first(), dates.last())
+        adapter.submitList(cells.map { day ->
+            val total = day.isoDate?.let(totals::get)
+            day.copy(
+                income = Money.toMajorDouble(total?.incomeMinor ?: 0L),
+                expense = Money.toMajorDouble(total?.expenseMinor ?: 0L)
+            )
+        })
         btnApply.isEnabled = canApply
         btnApply.alpha = if (canApply) 1f else 0.5f
     }

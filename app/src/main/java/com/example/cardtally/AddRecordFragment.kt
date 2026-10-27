@@ -341,12 +341,17 @@ open class AddRecordFragment : Fragment() {
                 selectedCategory = category
                 updateCategorySummary()
             }
+            quickCategoryAdapter?.onAddCategory = ::showQuickAddCategory
             quickGrid.adapter = quickCategoryAdapter
             ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
                 ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT,
                 0
             ) {
                 private var moved = false
+
+                override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
+                    if (quickCategoryAdapter?.isCategoryPosition(viewHolder.bindingAdapterPosition) == true)
+                        super.getMovementFlags(recyclerView, viewHolder) else 0
 
                 override fun onMove(
                     recyclerView: RecyclerView,
@@ -356,6 +361,7 @@ open class AddRecordFragment : Fragment() {
                     val from = viewHolder.adapterPosition
                     val to = target.adapterPosition
                     if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                    if (quickCategoryAdapter?.isCategoryPosition(from) != true || quickCategoryAdapter?.isCategoryPosition(to) != true) return false
                     quickCategoryAdapter?.moveCategory(from, to)
                     moved = true
                     return true
@@ -382,6 +388,7 @@ open class AddRecordFragment : Fragment() {
                 selectedCategory = category
                 updateCategorySummary()
             }
+            standardCategoryAdapter?.onAddCategory = ::showQuickAddCategory
             standardGrid.layoutManager = LinearLayoutManager(requireContext())
             standardGrid.adapter = standardCategoryAdapter
             ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
@@ -389,6 +396,10 @@ open class AddRecordFragment : Fragment() {
                 0
             ) {
                 private var moved = false
+
+                override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int =
+                    if (standardCategoryAdapter?.isCategoryPosition(viewHolder.bindingAdapterPosition) == true)
+                        super.getMovementFlags(recyclerView, viewHolder) else 0
 
                 override fun onMove(
                     recyclerView: RecyclerView,
@@ -398,6 +409,7 @@ open class AddRecordFragment : Fragment() {
                     val from = viewHolder.adapterPosition
                     val to = target.adapterPosition
                     if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                    if (standardCategoryAdapter?.isCategoryPosition(from) != true || standardCategoryAdapter?.isCategoryPosition(to) != true) return false
                     standardCategoryAdapter?.moveParent(from, to)
                     moved = true
                     return true
@@ -537,6 +549,18 @@ open class AddRecordFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupBackNavigation()
+        parentFragmentManager.setFragmentResultListener(RecordCategoryAddSheetFragment.RESULT, viewLifecycleOwner) { _, result ->
+            openSheet = RecordSheet.NONE
+            val id = result.getLong("id")
+            if (id > 0 && result.getInt("type") == currentType && currentType != 2) {
+                loadCategories(currentType, id)
+                val grid = view.findViewById<RecyclerView>(if (isQuickCategoryMode) R.id.recycler_quick_categories else R.id.recycler_standard_categories)
+                val index = if (isQuickCategoryMode) quickCategoryAdapter?.categoryIdsInOrder()?.indexOf(id)
+                    else standardCategoryAdapter?.parentIdsInOrder()?.indexOf(selectedCategory?.parentId ?: id)
+                index?.takeIf { it >= 0 }?.let { grid?.scrollToPosition(it) }
+            }
+            restoreAmountKeypadAfterSheet()
+        }
         parentFragmentManager.setFragmentResultListener(
             RecordAssetPickerBottomSheetFragment.RESULT_KEY,
             viewLifecycleOwner
@@ -620,7 +644,9 @@ open class AddRecordFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         hideBottomNav()
+        if (parentFragmentManager.findFragmentByTag(RecordCategoryAddSheetFragment.TAG) != null) openSheet = RecordSheet.CATEGORY
         suppressSystemImeForNumericInput()
+        if (parentFragmentManager.findFragmentByTag(RecordCategoryAddSheetFragment.TAG) != null) hideAmountKeypad()
     }
 
     override fun onPause() {
@@ -703,6 +729,8 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun loadCategories(type: Int, selectedCategoryId: Long? = null) {
+        quickCategoryAdapter?.showAddCategory = type != 2
+        standardCategoryAdapter?.showAddCategory = type != 2
         if (type == 2) {
             currentCategories = mutableListOf()
             selectedCategory = null
@@ -1052,6 +1080,17 @@ open class AddRecordFragment : Fragment() {
         dialog.show()
     }
 
+    private fun showQuickAddCategory() {
+        if (currentType == 2 || parentFragmentManager.findFragmentByTag(RecordCategoryAddSheetFragment.TAG) != null) return
+        openSheet = RecordSheet.CATEGORY
+        dismissKeyboardAndClearFocus()
+        hideAmountKeypad()
+        val parents = databaseHelper.getRecordCategoryParents(currentType)
+        val initial = selectedCategory?.parentId ?: selectedCategory?.id
+        RecordCategoryAddSheetFragment.newInstance(currentType, initial?.takeIf { id -> parents.any { it.id == id } })
+            .showNow(parentFragmentManager, RecordCategoryAddSheetFragment.TAG)
+    }
+
     private fun showAddChildCategoryDialog(parent: Category, onCreated: (Category) -> Unit) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_category, null)
         val editName = dialogView.findViewById<EditText>(R.id.edit_category_name)
@@ -1245,6 +1284,11 @@ open class AddRecordFragment : Fragment() {
     }
 
     private fun restoreOpenSheet() {
+        if (parentFragmentManager.findFragmentByTag(RecordCategoryAddSheetFragment.TAG) != null) {
+            openSheet = RecordSheet.CATEGORY
+            hideAmountKeypad()
+            return
+        }
         when (openSheet) {
             RecordSheet.NONE -> Unit
             RecordSheet.DATE -> showDateSheet()
