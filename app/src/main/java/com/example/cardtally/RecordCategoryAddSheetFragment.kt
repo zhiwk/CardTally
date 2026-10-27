@@ -209,7 +209,8 @@ class RecordCategoryAddSheetFragment : BottomSheetDialogFragment() {
 
     private data class ParentCell(val view: LinearLayout, val image: ImageView, val label: TextView, val check: ImageView, val category: Category)
 
-    private fun iconResource(value: String?) = value?.let { TablerIconCatalog.resourceId(it) }?.takeIf { it != 0 } ?: R.drawable.ic_category_other
+    private fun iconResource(value: String?) = TablerIconCatalog.resourceId(requireContext(), value)
+        .takeIf { it != 0 } ?: R.drawable.ic_category_other
 
     private fun iconButton(value: String) = androidx.appcompat.widget.AppCompatImageButton(requireContext()).apply {
         setImageResource(iconResource(value))
