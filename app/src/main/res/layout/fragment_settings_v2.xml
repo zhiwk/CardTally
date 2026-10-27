@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="?attr/pageBackgroundColor"
     android:clipToPadding="false"
-    android:paddingBottom="96dp">
+    android:paddingBottom="@dimen/navigation_scroll_gap">
 
     <LinearLayout
         android:layout_width="match_parent"

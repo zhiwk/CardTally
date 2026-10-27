@@ -42,7 +42,7 @@
 
 ### 改账单页浮动操作显示
 
-账单吸附底栏尾部留白：MainActivity.applyFloatingNavigationInsets仅对LedgerFragment的整月recycler_records调用LedgerScrollTail，吸附且菜单可见时使用ledger_docked_scroll_tail=32dp，悬浮仍按原XML112dp基线及max(基线,悬浮高度+gap)计算。保留floatingViewBaselines原值，月份ViewHolder绑定后post重新应用，避免新月/复用列表漏设；不要将此修复扩到统计/资产/设置、日内列表、FAB位置或系统导航边距。
+一级页滚动尾部留白：MainActivity.applyFloatingNavigationInsets使用NavigationScrollTail统一处理账单整月recycler_records、统计scroll_content、资产asset_content_scroll和我的根ScrollView。悬浮尾垫为实际nav_shell高度减顶部透明阴影留白再加navigation_scroll_gap=12dp，吸附/隐藏仅12dp，替代旧112/132/96dp固定尾垫及账单吸附32dp策略；统计外层内容不再额外叠16dp底部padding。只给整页容器设置，不给日内/资产分组/图表内层列表追加；保留月份ViewHolder绑定后post重新应用、分页/位置恢复、FAB和AI输入区原有避让及系统边距。floatingViewBaselines仍用于FAB/AI，不再用于四页滚动尾垫。
 
 先读 `LedgerFragment.kt`、`util/LedgerFloatingActionsController.kt` 与 DESIGN 的 Floating action button。只把当前月份外层列表的滚动事件传给控制器；其他月份、布局恢复不应触发方向隐藏。向下/向上累计 24dp 隐藏/恢复，惯性完全结束后 1.5 秒恢复；回顶启用门槛为两屏、退出门槛为 1.5 屏，继续遵守 `ScrollTopFabHelper` 设置。月份切换、回顶过程、手动打断及暂停/销毁统一处理，不能另行直接改 FAB visibility 与控制器竞争。分页加载、月份/列表滚动位置恢复、底栏避让和日卡片留白规则保持原样。
 

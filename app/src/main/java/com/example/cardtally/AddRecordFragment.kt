@@ -506,9 +506,6 @@ open class AddRecordFragment : Fragment() {
             restoreSelections(restoredState)
         }
         updateDisplayedDate()
-        view.findViewById<TextView>(R.id.text_title).text = getString(
-            if (isEditing()) R.string.record_title_edit else R.string.record_title_new
-        )
         if (isEditing()) {
             view.findViewById<TextView>(R.id.text_save_label)?.text = getString(R.string.record_update)
             (btnSave as? TextView)?.text = getString(R.string.record_update)
@@ -1558,7 +1555,6 @@ open class AddRecordFragment : Fragment() {
         openSheet = RecordSheet.NONE
         pendingCategoryId = null
         loadAssets()
-        rootView?.findViewById<TextView>(R.id.text_title)?.setText(R.string.record_title_new)
         rootView?.findViewById<TextView>(R.id.text_save_label)?.setText(R.string.record_quick_complete)
         amountKeypadController.refreshActions()
         selectNumericTarget(editAmount)

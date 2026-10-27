@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         android:clipToPadding="false"
         android:fillViewport="true"
-        android:paddingBottom="112dp"
+        android:paddingBottom="@dimen/navigation_scroll_gap"
         android:scrollbars="none">
         <LinearLayout
             android:id="@+id/asset_page_content"

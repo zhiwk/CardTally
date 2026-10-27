@@ -61,6 +61,10 @@ class EntryAmountLayoutTest {
             assertNotNull(prefix)
             val gap = amount.left - prefix.right
             assertTrue("prefix must sit next to the amount (gap=${gap}px)", gap in 0..dp(10))
+            val centerDifference = kotlin.math.abs(
+                (prefix.top + prefix.bottom) - (amount.top + amount.bottom)
+            )
+            assertTrue("currency prefix must be vertically centered with the amount", centerDifference <= 2)
         }
     }
 
@@ -71,7 +75,7 @@ class EntryAmountLayoutTest {
             val screen = android.view.LayoutInflater.from(ctx)
                 .inflate(R.layout.fragment_add_record_quick, FrameLayout(ctx), false)
             val amount = screen.findViewById<EditText>(R.id.edit_amount)
-            val longText = "1234567890.12"
+            val longText = "123456789012.34"
             amount.setText(longText)
             measureAndLayout(screen, dp(360), dp(800))
 
@@ -81,10 +85,10 @@ class EntryAmountLayoutTest {
             measureAndLayout(screen, dp(360), dp(800))
 
             assertTrue(
-                "long amount must shrink below the 30sp base " +
-                    "(size=${amount.textSize} base=${sp(30f)} width=${amount.width} " +
+                "long amount must shrink below the 26sp base " +
+                    "(size=${amount.textSize} base=${sp(26f)} width=${amount.width} " +
                     "row=${(amount.parent as View).width} natural=${amount.paint.measureText(longText)})",
-                amount.textSize < sp(30f)
+                amount.textSize < sp(26f)
             )
             assertTrue(
                 "amount must not shrink below the readable floor",

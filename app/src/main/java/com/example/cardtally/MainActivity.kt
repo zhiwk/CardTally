@@ -224,7 +224,6 @@ class MainActivity : AppCompatActivity() {
         val root = fragment.view ?: return
         val dockedVisible = navShell.visibility == View.VISIBLE && com.example.cardtally.util.BottomNavigationPreferences.isDocked(this)
         val inset = if (navShell.visibility == View.VISIBLE && !dockedVisible) navShell.height else 0
-        val gap = resources.getDimensionPixelSize(R.dimen.floating_primary_fab_gap_above_nav)
         // Only scrolling tails and anchored controls reserve room. The page canvas stays full-screen.
         for (id in intArrayOf(R.id.fab_add, R.id.fab_scroll_top)) {
             val fab = root.findViewById<View>(id) ?: continue
@@ -248,19 +247,22 @@ class MainActivity : AppCompatActivity() {
         }
         if (fragment !is LedgerFragment && fragment !is StatisticsFragment &&
             fragment !is AssetFragment && fragment !is SettingsFragment) return
+        val tail = com.example.cardtally.util.NavigationScrollTail.resolve(
+            inset, navShell.paddingTop,
+            resources.getDimensionPixelSize(R.dimen.navigation_scroll_gap)
+        )
         fun updateScrollTail(view: View) {
-            if (view is androidx.core.widget.NestedScrollView ||
-                (view is androidx.recyclerview.widget.RecyclerView && view.id == R.id.recycler_records)) {
-                // Daily/asset child lists wrap their content; never add the page's dock inset to them.
-                val baseline = floatingViewBaselines.getOrPut(view) { view.paddingBottom }
-                val target = if (fragment is LedgerFragment && view.id == R.id.recycler_records) {
-                    com.example.cardtally.util.LedgerScrollTail.resolve(
-                        baseline, inset, gap, dockedVisible,
-                        resources.getDimensionPixelSize(R.dimen.ledger_docked_scroll_tail)
-                    )
-                } else if (inset > 0) maxOf(baseline, inset + gap) else baseline
-                if (view.paddingBottom != target) view.setPaddingRelative(
-                    view.paddingStart, view.paddingTop, view.paddingEnd, target
+            val pageScroll = when (fragment) {
+                is LedgerFragment -> view is androidx.recyclerview.widget.RecyclerView && view.id == R.id.recycler_records
+                is StatisticsFragment -> view is androidx.core.widget.NestedScrollView && view.id == R.id.scroll_content
+                is AssetFragment -> view is androidx.core.widget.NestedScrollView && view.id == R.id.asset_content_scroll
+                is SettingsFragment -> view === root && view is android.widget.ScrollView
+                else -> false
+            }
+            if (pageScroll) {
+                // Only whole-page containers: never pad day lists, chart pages or asset groups.
+                if (view.paddingBottom != tail) view.setPaddingRelative(
+                    view.paddingStart, view.paddingTop, view.paddingEnd, tail
                 )
             }
             if (view is ViewGroup) for (index in 0 until view.childCount) updateScrollTail(view.getChildAt(index))

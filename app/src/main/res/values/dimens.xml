@@ -61,8 +61,8 @@
     <!-- Runtime helpers align FAB/composer to keep a fixed 15dp gap above bottom nav. -->
     <dimen name="floating_primary_fab_bottom_margin_with_nav">92dp</dimen>
     <dimen name="content_bottom_padding_with_floating_nav">132dp</dimen>
-    <!-- Docked ledger pages already end above the navigation bar; do not retain the 112dp floating tail. -->
-    <dimen name="ledger_docked_scroll_tail">32dp</dimen>
+    <!-- Final content on primary scrolling pages clears either navigation style. -->
+    <dimen name="navigation_scroll_gap">12dp</dimen>
     <dimen name="agent_composer_horizontal_inset">@dimen/floating_nav_horizontal_margin</dimen>
     <dimen name="agent_composer_shell_resting_height">56dp</dimen>
     <dimen name="agent_composer_send_button_size">48dp</dimen>
