@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="launcher_icon_title">App icon</string>
+    <string name="launcher_icon_white">Kitten on white</string>
+    <string name="launcher_icon_dark">Kitten on dark</string>
+    <string name="launcher_icon_system">Follow phone system</string>
+    <string name="launcher_icon_app">Follow app appearance</string>
+    <string name="launcher_icon_hint">Saved immediately; the home-screen icon updates when you leave the app. System mode uses the phone’s light/dark theme; app mode includes the picture background palette. Launcher refreshes may be delayed. System changes while the app is not running sync after the next visit and exit. Some launchers may require re-adding shortcuts after switching or upgrading. Icons in system settings and other surfaces may remain unchanged.</string>
+    <string name="launcher_icon_apply_failed">Could not update the home-screen icon. It will retry when you next leave the app.</string>
+</resources>

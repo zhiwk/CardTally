@@ -138,7 +138,11 @@
     <string name="ledger_chart_subtitle_line">按当前周期阅读金额波动的节奏</string>
     <string name="ledger_chart_mode_line">LINE</string>
     <string name="ledger_chart_mode_pie">PIE</string>
-    <string name="ledger_chart_total_label">TOTAL</string>
+    <string name="ledger_chart_total_label">合计</string>
+    <string name="chart_period_expense">本期支出</string>
+    <string name="chart_period_income">本期收入</string>
+    <string name="chart_switch_line">切换为折线图</string>
+    <string name="chart_switch_donut">切换为环形图</string>
     <string name="ledger_chart_other">其他</string>
     <string name="ledger_records_section_title">明细</string>
     <string name="ledger_summary_total_expense">本期支出</string>

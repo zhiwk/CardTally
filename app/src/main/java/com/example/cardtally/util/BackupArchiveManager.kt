@@ -907,7 +907,7 @@ class BackupArchiveManager(private val context: Context) {
             if (key == "category_hierarchy_max_depth") "int" else null
         "record_photo_settings" -> if (key == "max_photos_per_record") "int" else null
         "cardtally_preferences" -> if (key in setOf("income_expense_color_mode", "week_start_day")) "int" else null
-        "theme_prefs" -> if (key in setOf("theme_mode", "card_opacity", "wallpaper_palette")) "int" else null
+        "theme_prefs" -> if (key in setOf("theme_mode", "card_opacity", "wallpaper_palette", "launcher_icon_mode")) "int" else null
         "ledger_ux_prefs" -> when (key) {
             "ledger_ux_schema_version" -> "int"
             "ledger_startup_behavior", "ledger_last_view" -> "string"

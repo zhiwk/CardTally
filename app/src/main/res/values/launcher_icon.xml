@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fixed artwork color, independent of page theme. -->
+    <color name="launcher_icon_dark_background">#2B2F36</color>
+    <string name="launcher_icon_title">应用图标</string>
+    <string name="launcher_icon_white">白底小猫</string>
+    <string name="launcher_icon_dark">深底小猫</string>
+    <string name="launcher_icon_system">跟随手机系统</string>
+    <string name="launcher_icon_app">跟随应用设置</string>
+    <string name="launcher_icon_hint">选择立即保存，离开应用后更新桌面图标。跟随手机系统只读取系统深浅色；跟随应用设置包含图片背景配色。桌面可能延迟刷新，系统主题在应用未运行时改变，将在下次打开并离开应用后同步。部分桌面在切换或升级后可能需要重新添加快捷方式；系统设置等位置的图标可能保持原样。</string>
+    <string name="launcher_icon_apply_failed">桌面图标更新失败，下次离开应用时将重试</string>
+</resources>

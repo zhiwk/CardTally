@@ -28,6 +28,13 @@ class MainActivity : AppCompatActivity() {
         com.example.cardtally.analytics.LaunchAnalytics.recordLaunch(this)
     }
 
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations && !com.example.cardtally.util.LauncherIconHelper.sync(this)) {
+            android.widget.Toast.makeText(this, R.string.launcher_icon_apply_failed, android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var navShell: View
     private lateinit var fragmentContainer: View

@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.WallpaperGalleryAdapter
 import com.example.cardtally.util.ThemeHelper
+import com.example.cardtally.util.LauncherIconHelper
+import com.example.cardtally.util.LauncherIconMode
 import com.example.cardtally.util.WallpaperHelper
 import com.google.android.material.slider.Slider
 import java.util.concurrent.ExecutorService
@@ -33,6 +35,7 @@ class AppearanceSettingsFragment : Fragment() {
     private var importingWallpaper = false
     private var syncingSelection = false
     private var appearanceReady = false
+    private var syncingIconSelection = false
     private val chooseWallpaper = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) importWallpaper(uri)
     }
@@ -64,7 +67,39 @@ class AppearanceSettingsFragment : Fragment() {
         }
         configureCardOpacity(view)
         configureAppearanceChoices(view)
+        configureLauncherIconChoices(view)
         configureWallpaperGallery(view, restoringState = savedInstanceState != null)
+    }
+
+    private fun configureLauncherIconChoices(root: View) {
+        ViewCompat.setAccessibilityHeading(root.findViewById(R.id.text_launcher_icon_title), true)
+        syncLauncherIconChoices(root)
+        root.findViewById<RadioGroup>(R.id.group_launcher_icon).setOnCheckedChangeListener { _, checkedId ->
+            if (!appearanceReady || syncingIconSelection) return@setOnCheckedChangeListener
+            val mode = when (checkedId) {
+                R.id.radio_launcher_white -> LauncherIconMode.WHITE
+                R.id.radio_launcher_dark -> LauncherIconMode.DARK
+                R.id.radio_launcher_system -> LauncherIconMode.SYSTEM
+                R.id.radio_launcher_app -> LauncherIconMode.APP
+                else -> return@setOnCheckedChangeListener
+            }
+            // Save immediately; MainActivity applies aliases after leaving the foreground.
+            LauncherIconHelper.saveMode(requireContext(), mode)
+        }
+    }
+
+    private fun syncLauncherIconChoices(root: View) {
+        syncingIconSelection = true
+        try {
+            root.findViewById<RadioGroup>(R.id.group_launcher_icon).check(when (LauncherIconHelper.getMode(requireContext())) {
+                LauncherIconMode.WHITE -> R.id.radio_launcher_white
+                LauncherIconMode.DARK -> R.id.radio_launcher_dark
+                LauncherIconMode.SYSTEM -> R.id.radio_launcher_system
+                LauncherIconMode.APP -> R.id.radio_launcher_app
+            })
+        } finally {
+            syncingIconSelection = false
+        }
     }
 
     private fun configureAppearanceChoices(root: View) {
@@ -124,6 +159,7 @@ class AppearanceSettingsFragment : Fragment() {
         super.onViewStateRestored(savedInstanceState)
         view?.let { root ->
             syncAppearanceChoices(root)
+            syncLauncherIconChoices(root)
             root.findViewById<Slider>(R.id.slider_card_opacity).value = ThemeHelper.getCardOpacity(requireContext()).toFloat()
         }
         appearanceReady = true

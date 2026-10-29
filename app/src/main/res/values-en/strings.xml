@@ -130,7 +130,11 @@
     <string name="ledger_chart_subtitle_line">Read the rhythm of amount movement across this period.</string>
     <string name="ledger_chart_mode_line">LINE</string>
     <string name="ledger_chart_mode_pie">PIE</string>
-    <string name="ledger_chart_total_label">TOTAL</string>
+    <string name="ledger_chart_total_label">Total</string>
+    <string name="chart_period_expense">Period expenses</string>
+    <string name="chart_period_income">Period income</string>
+    <string name="chart_switch_line">Switch to line chart</string>
+    <string name="chart_switch_donut">Switch to donut chart</string>
     <string name="ledger_chart_other">Other</string>
     <string name="ledger_records_section_title">Details</string>
     <string name="ledger_summary_total_expense">Period Expense</string>

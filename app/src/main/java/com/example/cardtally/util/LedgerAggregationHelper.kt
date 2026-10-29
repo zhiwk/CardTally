@@ -12,25 +12,12 @@ data class LedgerAggregationSummary(
 )
 
 object LedgerAggregationHelper {
-    fun summarize(
-        statistics: Map<String, Double>,
-        maxSlices: Int,
-        otherLabel: String
-    ): LedgerAggregationSummary {
-        val sortedEntries = statistics.entries.sortedByDescending { (_, amount) -> kotlin.math.abs(amount) }
-        val visibleCategoryCount = if (sortedEntries.size > maxSlices) maxSlices - 1 else maxSlices
-        val visibleEntries = sortedEntries.take(visibleCategoryCount)
-        val hiddenEntries = sortedEntries.drop(visibleCategoryCount)
-        val slices = visibleEntries.map { entry ->
+    /** One nonzero category per sector. Label budgeting belongs to the chart, not the data. */
+    fun summarize(statistics: Map<String, Double>): LedgerAggregationSummary {
+        val sortedEntries = statistics.entries.filter { it.value != 0.0 }
+            .sortedByDescending { (_, amount) -> kotlin.math.abs(amount) }
+        val slices = sortedEntries.map { entry ->
             LedgerCategorySlice(entry.key, kotlin.math.abs(entry.value), setOf(entry.key))
-        }.toMutableList()
-
-        if (hiddenEntries.isNotEmpty()) {
-            slices += LedgerCategorySlice(
-                label = otherLabel,
-                amount = hiddenEntries.sumOf { kotlin.math.abs(it.value) },
-                sourceLabels = hiddenEntries.mapTo(linkedSetOf<String>()) { it.key }
-            )
         }
 
         return LedgerAggregationSummary(

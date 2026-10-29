@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?attr/pageBackgroundColor" tools:context=".StatisticsFragment">
-  <androidx.core.widget.NestedScrollView android:id="@+id/scroll_content" android:layout_width="match_parent" android:layout_height="match_parent" android:clipToPadding="false" android:fillViewport="true" android:paddingBottom="@dimen/navigation_scroll_gap">
+  <com.example.cardtally.view.FabScrollView android:id="@+id/scroll_content" android:layout_width="match_parent" android:layout_height="match_parent" android:clipToPadding="false" android:fillViewport="true" android:paddingBottom="@dimen/navigation_scroll_gap">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="16dp" android:paddingTop="8dp">
       <LinearLayout android:id="@+id/layout_statistics_legacy_header" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
         <ImageButton android:id="@+id/btn_ledger_menu" android:layout_width="40dp" android:layout_height="40dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/nav_statistics" android:src="@drawable/ic_menu" app:tint="?attr/colorPrimary" />
@@ -65,6 +65,6 @@
       </LinearLayout>
       <TextView android:id="@+id/text_empty" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:layout_marginTop="40dp" android:textColor="@color/editorial_text_muted" android:textSize="15sp" android:visibility="gone" tools:text="暂无统计内容" />
     </LinearLayout>
-  </androidx.core.widget.NestedScrollView>
+  </com.example.cardtally.view.FabScrollView>
   <com.google.android.material.floatingactionbutton.FloatingActionButton android:id="@+id/fab_add" android:layout_width="56dp" android:layout_height="56dp" android:layout_gravity="bottom|end" android:layout_marginEnd="@dimen/floating_primary_fab_end_margin" android:layout_marginBottom="@dimen/floating_primary_fab_gap_above_nav" android:contentDescription="@string/add_record" android:src="@drawable/ic_add" app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.CardTally.FabCircle" app:backgroundTint="?attr/colorPrimary" app:elevation="@dimen/card_elevation_none" app:hoveredFocusedTranslationZ="@dimen/card_elevation_none" app:pressedTranslationZ="@dimen/card_elevation_none" app:tint="?attr/colorOnPrimary" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

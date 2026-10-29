@@ -11,7 +11,7 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.core.widget.NestedScrollView
+import com.example.cardtally.view.FabScrollView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -47,6 +47,7 @@ import com.example.cardtally.view.LedgerLineChartView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.Calendar
 
 class StatisticsFragment : Fragment() {
@@ -116,6 +117,8 @@ class StatisticsFragment : Fragment() {
         if (statisticsPageAdapters.isNotEmpty()) statisticsAdapter = statisticsPageAdapters[type]
     }
     override fun onDestroyView() {
+        fabScroll?.disposeFab()
+        fabScroll = null
         statisticsPager?.unregisterOnPageChangeCallback(statisticsPageCallback)
         statisticsPager?.adapter = null
         statisticsPager = null
@@ -149,7 +152,8 @@ class StatisticsFragment : Fragment() {
     private lateinit var textAxisStart: TextView
     private lateinit var textAxisMid: TextView
     private lateinit var textAxisEnd: TextView
-    private lateinit var fabAdd: View
+    private lateinit var fabAdd: FloatingActionButton
+    private var fabScroll: FabScrollView? = null
     private lateinit var layoutModeSelector: View
     private lateinit var layoutStatisticsContent: View
     private lateinit var cardStatisticsRanking: View
@@ -169,6 +173,7 @@ class StatisticsFragment : Fragment() {
     private var currentPeriodPreset = LedgerPeriodPreset.WEEK
     private var currentRange = LedgerPeriodHelper.resolveRange(LedgerPeriodPreset.WEEK)
     private var lastWeekStart: Int? = null
+    // The user's choice, independent of periods that can only render a pie chart.
     private var currentChartMode = CHART_MODE_LINE
     private var currentRankingMode = StatisticsRankingMode.SECONDARY
     private var openFilterSurface = FilterSurface.NONE
@@ -246,7 +251,8 @@ class StatisticsFragment : Fragment() {
         btnRangeNext.setOnClickListener { shiftCurrentRange(1) }
         recyclerStatistics.layoutManager = LinearLayoutManager(requireContext())
         recyclerRecords.layoutManager = LinearLayoutManager(requireContext())
-        val statisticsScroll = view.findViewById<NestedScrollView>(R.id.scroll_content)
+        val statisticsScroll = view.findViewById<FabScrollView>(R.id.scroll_content)
+        fabScroll = statisticsScroll.apply { bindFab(fabAdd) }
         statisticsScroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
             if (currentViewMode == VIEW_MODE_RECORDS) {
                 val remaining = statisticsScroll.getChildAt(0).height - scrollY - statisticsScroll.height
@@ -316,11 +322,11 @@ class StatisticsFragment : Fragment() {
         togglePeriodPreset.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             if (checkedId == R.id.btn_period_all) {
-                if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM) return@addOnButtonCheckedListener
+                if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM ||
+                    currentPeriodPreset == LedgerPeriodPreset.ALL) return@addOnButtonCheckedListener
                 clearTopPeriodToggleSelection()
                 currentPeriodPreset = LedgerPeriodPreset.CUSTOM
                 currentRange = LedgerDateRange(null, null)
-                currentChartMode = CHART_MODE_PIE
                 renderCurrentView()
                 return@addOnButtonCheckedListener
             }
@@ -330,7 +336,6 @@ class StatisticsFragment : Fragment() {
                 else -> LedgerPeriodPreset.MONTH
             }
             currentRange = resolveRangeFromPreset(currentPeriodPreset)
-            currentChartMode = CHART_MODE_LINE
             renderCurrentView()
         }
 
@@ -366,6 +371,7 @@ class StatisticsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        fabScroll?.resumeFab()
         val weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext())
         if (lastWeekStart != null && lastWeekStart != weekStart && currentPeriodPreset == LedgerPeriodPreset.WEEK) {
             // Keep the browsed week's midpoint rather than unexpectedly jumping back to today.
@@ -380,6 +386,11 @@ class StatisticsFragment : Fragment() {
         currentRankingMode = StatisticsRankingModePreferences.getMode(requireContext())
         updateRankingModeUi()
         renderCurrentView()
+    }
+
+    override fun onPause() {
+        fabScroll?.pauseFab()
+        super.onPause()
     }
 
     private fun updateRankingModeUi() {
@@ -662,27 +673,37 @@ class StatisticsFragment : Fragment() {
     private fun bindChart(stats: Map<String, Double>, entryCounts: Map<String, Int>) {
         val context = requireContext()
         val palette = listOf(
-            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorPrimary),
-            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorSecondary),
-            ThemeColorHelper.resolveColor(context, com.google.android.material.R.attr.colorTertiary),
-            ThemeColorHelper.resolveThemeAwareResource(context, R.color.editorial_outline)
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.chart_blue),
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.chart_mint),
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.chart_apricot),
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.chart_lavender),
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.chart_rose),
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.chart_aqua),
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.chart_butter),
+            ThemeColorHelper.resolveThemeAwareResource(context, R.color.chart_sage)
         )
-        val summary = LedgerAggregationHelper.summarize(
-            statistics = stats,
-            maxSlices = palette.size,
-            otherLabel = getString(R.string.ledger_chart_other)
-        )
+        fun sliceColor(index: Int): Int {
+            val base = palette[index % palette.size]
+            if (index < palette.size) return base
+            // Extend theme-derived pastel hues without limiting or merging categories.
+            val hsl = FloatArray(3)
+            androidx.core.graphics.ColorUtils.colorToHSL(base, hsl)
+            hsl[0] = (hsl[0] + (index / palette.size) * 17f) % 360f
+            return androidx.core.graphics.ColorUtils.HSLToColor(hsl)
+        }
+        val summary = LedgerAggregationHelper.summarize(stats)
         val slices = summary.slices.mapIndexed { index, slice ->
             LedgerDonutChartView.Slice(
                 value = slice.amount.toFloat(),
-                color = palette[index % palette.size],
-                label = slice.label.substringAfter(": ", slice.label).substringAfter("· ", slice.label)
+                color = sliceColor(index),
+                label = normalizeStatisticsCategoryLabel(slice.label)
             )
         }
 
         viewStatisticsChart.submitData(
             slices = slices,
-            totalLabel = getString(R.string.ledger_chart_total_label),
+            totalLabel = getString(if (currentStatsType == TYPE_EXPENSE)
+                R.string.chart_period_expense else R.string.chart_period_income),
             totalValue = "¥${Money.formatYuan(summary.completeTotal)}"
         )
 
@@ -735,7 +756,7 @@ class StatisticsFragment : Fragment() {
             val dot = legendView.findViewById<View>(R.id.view_legend_dot)
             val label = legendView.findViewById<TextView>(R.id.text_legend_label)
             val value = legendView.findViewById<TextView>(R.id.text_legend_value)
-            dot.backgroundTintList = android.content.res.ColorStateList.valueOf(palette[index % palette.size])
+            dot.backgroundTintList = android.content.res.ColorStateList.valueOf(slices[index].color)
 
             val entryCount = slice.sourceLabels.sumOf { sourceLabel ->
                 val normalizedLabel = normalizeStatisticsCategoryLabel(sourceLabel)
@@ -762,17 +783,19 @@ class StatisticsFragment : Fragment() {
     }
 
     private fun updateChartModeUi() {
-        val isPie = currentChartMode == CHART_MODE_PIE
         val showLineChart = currentPeriodPreset == LedgerPeriodPreset.WEEK ||
                 currentPeriodPreset == LedgerPeriodPreset.MONTH ||
                 currentPeriodPreset == LedgerPeriodPreset.YEAR
+        // Custom/all periods temporarily show a pie without overwriting the saved choice.
+        val isPie = !showLineChart || currentChartMode == CHART_MODE_PIE
 
         viewStatisticsChart.visibility = if (isPie && currentViewMode == VIEW_MODE_STATISTICS) View.VISIBLE else View.GONE
         layoutChartLegend.visibility = View.GONE
         (viewStatisticsChart.parent as? View)?.let { chartContainer ->
-            val targetHeight = if (isPie) 220 else 120
+            val targetHeight = if (isPie) 200 else 120
             chartContainer.layoutParams = chartContainer.layoutParams.apply {
-                height = (targetHeight * resources.displayMetrics.density).toInt()
+                height = (targetHeight * resources.displayMetrics.density *
+                    (if (isPie) maxOf(1f, resources.configuration.fontScale) else 1f)).toInt()
             }
             chartContainer.requestLayout()
         }
@@ -787,6 +810,8 @@ class StatisticsFragment : Fragment() {
         toggleChartMode.setImageResource(
             if (isPie) R.drawable.tabler_chart_donut else R.drawable.tabler_chart_line
         )
+        toggleChartMode.setContentDescription(getString(if (isPie)
+            R.string.chart_switch_line else R.string.chart_switch_donut))
         val showChartToggle = currentViewMode == VIEW_MODE_STATISTICS &&
                 currentPeriodPreset != LedgerPeriodPreset.CUSTOM &&
                 currentPeriodPreset != LedgerPeriodPreset.ALL
@@ -899,7 +924,8 @@ class StatisticsFragment : Fragment() {
         val btnClear = sheetView.findViewById<MaterialButton>(R.id.btn_period_clear)
 
         var localPreset = LedgerPeriodPreset.CUSTOM
-        var localRange = currentRange
+        // ALL may carry record bounds for rendering, but the picker must show no date restriction.
+        var localRange = if (currentPeriodPreset == LedgerPeriodPreset.ALL) LedgerDateRange(null, null) else currentRange
         val baseDate = localRange.startDate ?: databaseHelper.getCurrentDate()
         var displayYear = baseDate.substring(0, 4).toInt()
         var displayMonth = baseDate.substring(5, 7).toInt() - 1
@@ -1011,29 +1037,27 @@ class StatisticsFragment : Fragment() {
                 displayMonth,
                 localRange,
                 localPreset,
-                false,
+                canApplyPeriodSelection(localPreset, localRange),
                 btnApply
             )
         }
         btnApply.setOnClickListener {
             if (!canApplyPeriodSelection(localPreset, localRange)) return@setOnClickListener
-            currentPeriodPreset = localPreset
-            currentRange = if (localPreset == LedgerPeriodPreset.CUSTOM) {
+            // Commit an empty draft as the existing canonical ALL state, not invalid CUSTOM.
+            currentPeriodPreset = if (localRange.startDate == null && localRange.endDate == null) {
+                LedgerPeriodPreset.ALL
+            } else localPreset
+            currentRange = if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM) {
                 LedgerPeriodHelper.normalizeRange(tempStart, tempEnd)
             } else {
                 localRange
             }
-            if (localPreset == LedgerPeriodPreset.CUSTOM || localPreset == LedgerPeriodPreset.ALL) {
-                currentChartMode = CHART_MODE_PIE
+            if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM || currentPeriodPreset == LedgerPeriodPreset.ALL) {
                 toggleChartMode.visibility = View.GONE
             } else {
                 toggleChartMode.visibility = View.VISIBLE
             }
-            if (localPreset == LedgerPeriodPreset.CUSTOM) {
-                checkPeriodToggle(togglePeriodPreset, LedgerPeriodPreset.CUSTOM, false)
-            } else {
-                checkPeriodToggle(togglePeriodPreset, localPreset, false)
-            }
+            checkPeriodToggle(togglePeriodPreset, currentPeriodPreset, false)
             dialog.dismiss()
             renderCurrentView()
         }
@@ -1107,7 +1131,8 @@ class StatisticsFragment : Fragment() {
 
     private fun canApplyPeriodSelection(preset: LedgerPeriodPreset, range: LedgerDateRange): Boolean {
         return when (preset) {
-            LedgerPeriodPreset.CUSTOM -> !range.startDate.isNullOrBlank() && !range.endDate.isNullOrBlank()
+            LedgerPeriodPreset.CUSTOM -> (range.startDate == null && range.endDate == null) ||
+                (!range.startDate.isNullOrBlank() && !range.endDate.isNullOrBlank())
             else -> true
         }
     }
@@ -1131,7 +1156,7 @@ class StatisticsFragment : Fragment() {
             LedgerPeriodPreset.WEEK -> if (isSheet) -1 else R.id.btn_period_week
             LedgerPeriodPreset.MONTH -> if (isSheet) -1 else R.id.btn_period_month
             LedgerPeriodPreset.YEAR -> if (isSheet) -1 else R.id.btn_period_year
-            LedgerPeriodPreset.ALL -> -1
+            LedgerPeriodPreset.ALL -> if (isSheet) -1 else R.id.btn_period_all
             LedgerPeriodPreset.CUSTOM -> if (isSheet) -1 else R.id.btn_period_all
         }
         if (checkedId != -1) {
@@ -1202,9 +1227,7 @@ class StatisticsFragment : Fragment() {
             else -> LedgerPeriodHelper.resolveRange(currentPeriodPreset,
                 weekStart = com.example.cardtally.util.WeekStartPreferences.get(requireContext()))
         }
-        currentChartMode = if (currentPeriodPreset == LedgerPeriodPreset.CUSTOM || currentPeriodPreset == LedgerPeriodPreset.ALL) {
-            CHART_MODE_PIE
-        } else if (state.chartMode == ChartMode.LINE) {
+        currentChartMode = if (state.chartMode == ChartMode.LINE) {
             CHART_MODE_LINE
         } else {
             CHART_MODE_PIE

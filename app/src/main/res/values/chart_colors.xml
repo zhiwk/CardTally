@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="chart_blue">#A7C7EE</color>
+    <color name="chart_mint">#A9D9CA</color>
+    <color name="chart_apricot">#F1D0A5</color>
+    <color name="chart_lavender">#C9BCE5</color>
+    <color name="chart_other">#D6DADD</color>
+    <color name="chart_rose">#E7B8C9</color>
+    <color name="chart_aqua">#ADD5DF</color>
+    <color name="chart_butter">#E2D7A6</color>
+    <color name="chart_sage">#C6D4B0</color>
+</resources>

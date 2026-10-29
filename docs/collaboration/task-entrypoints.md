@@ -42,6 +42,8 @@
 
 ### 改账单页浮动操作显示
 
+三页加号显隐共用 `util/ScrollingFabController.kt`；账单通过 `LedgerFloatingActionsController` 保留月份/回顶编排，统计和资产通过 `view/FabScrollView.kt` 接入外层触摸及惯性滚动，在 non-touch 滚动真正结束后启动恢复计时。不要覆盖统计原分页监听；资产 pickerMode 不绑定控制器。宿主 resume/pause/destroy 负责恢复及清理，不改 FAB 点击去向、位置和底栏避让。
+
 一级页滚动尾部留白：MainActivity.applyFloatingNavigationInsets使用NavigationScrollTail统一处理账单整月recycler_records、统计scroll_content、资产asset_content_scroll和我的根ScrollView。悬浮尾垫为实际nav_shell高度减顶部透明阴影留白再加navigation_scroll_gap=12dp，吸附/隐藏仅12dp，替代旧112/132/96dp固定尾垫及账单吸附32dp策略；统计外层内容不再额外叠16dp底部padding。只给整页容器设置，不给日内/资产分组/图表内层列表追加；保留月份ViewHolder绑定后post重新应用、分页/位置恢复、FAB和AI输入区原有避让及系统边距。floatingViewBaselines仍用于FAB/AI，不再用于四页滚动尾垫。
 
 先读 `LedgerFragment.kt`、`util/LedgerFloatingActionsController.kt` 与 DESIGN 的 Floating action button。只把当前月份外层列表的滚动事件传给控制器；其他月份、布局恢复不应触发方向隐藏。向下/向上累计 24dp 隐藏/恢复，惯性完全结束后 1.5 秒恢复；回顶启用门槛为两屏、退出门槛为 1.5 屏，继续遵守 `ScrollTopFabHelper` 设置。月份切换、回顶过程、手动打断及暂停/销毁统一处理，不能另行直接改 FAB visibility 与控制器竞争。分页加载、月份/列表滚动位置恢复、底栏避让和日卡片留白规则保持原样。
@@ -51,6 +53,14 @@
 先读 `DESIGN.md` 的 Navigation shell、`activity_main.xml`、`MainActivity.kt`、`bottom_nav_menu.xml`、`bg_navigation_dock.xml`、`values/navigation_colors.xml`、导航颜色 selector、`view/ElasticBottomNavigationView.kt` 及导航文字样式。当前按用户 FlClash 截图使用悬浮胶囊：21dp 两侧、系统导航区之上 8dp 底部留白、60dp 最小高度、22dp 图标、12sp 标签、图标/标签容器 2dp 间距并整体垂直居中、选中底色包住图标和文字，无右侧开始/暂停按钮。不论三/四/五项，胶囊保持五项宽度，入口等距分布。页面容器覆盖整个可用窗口，滚动尾部、新增按钮及 AI 输入区单独避让悬浮底栏，见 `MainActivity.applyFloatingNavigationInsets`。只为整月 `recycler_records` / 整页 NestedScrollView 添加滚动尾部空间，不能给日内 `recycler_day_records` 或资产内层列表追加底部避让，否则每天卡片会产生大块空白。原生条目背景/波纹透明，避免双圈。弹性胶囊自绘，原生 active indicator 关闭；核对触摸取消、快速切换、布局恢复、系统动画关闭及离页清理，保留二级页隐藏契约。图片背景模式下胶囊为不透明中性灰、1dp 中性描边和 6dp 阴影，四周透明，不受卡片不透明度影响；选中层使用单独的较强中性色阶。
 
 ### 改账本 / 记录 / 设置等页面
+
+环图扇区数据经 `LedgerAggregationHelper.summarize(statistics)` 保留所有非零叶子分类，不再限制四扇区或合并“其他”；真实“其他”分类正常保留。StatisticsFragment扩展八色及主题派生色，颜色数不限制扇区数。LedgerDonutChartView仅限制引线标注（集中分布前两项，否则最多四项再按空间减少），不减少实际扇区；排行榜/总额/查询不改。
+
+统计周期重置：`showCustomPeriodSheet` 空起止草稿表示“全部记录”，与完整范围同样可确认，仅单端点不可确认；重置/翻月/选日期统一经 `canApplyPeriodSelection`。确认空范围归一为现有ALL状态，顶部自定义选中（回调识别ALL、不重写状态）；重新打开ALL时用空草稿，不把内部记录边界当自定义选区。关闭不应用，不改图表选择。
+
+统计图表类型记忆：`StatisticsFragment.currentChartMode` 仅代表用户选择，由图表切换按钮及 `LedgerScreenState.chartMode` 保存/恢复。切换周/月/年不写此字段；`updateChartModeUi` 对自定义/全部仅派生饼图显示，返回受支持周期恢复所选类型，不把临时回退保存成偏好；不新增全局设置。
+
+统计环图先读 `view/LedgerDonutChartView.kt`、`StatisticsFragment.bindChart/updateChartModeUi`、`item_statistics_type_page.xml` 和 DESIGN 的 Statistics donut。中心不偏移，缓存动态起始角/标签布局；至少三项且最大项≥85%或前两项合计≥90%时只标前两项，其余按空间精简，扇区/汇总保持不变。参考ECharts labelLine将文字贴引线端点而非卡片边缘，单折点/短引线禁止穿环及交叉，两项优先左右分置；14sp完整叶子名+占比，同名用路径，StaticLayout换行及实测高度避碰，不再省略名称。环图200dp随字体增高；长金额/大字体放不进中心时完整移到环下。专用浅/深色chart_colors，不改收支语义色；不引入ECharts依赖、不增加完整构成入口或修改排行榜。
 
 先读对应 Fragment，再读关联布局、Adapter、资源文件。
 
@@ -173,6 +183,8 @@
 注意：`verification` flavor 会把变体名拆开，日常命令写作 `:app:assembleDebug` / `:app:testDebugUnitTest` 仍可用（同 `:app:assembleEverydayDebug` / `:app:testEverydayUnitTest`）；会重置数据库的 device 测试只能跑 `:app:connectedVerificationDebugAndroidTest`，它以 `.verification` applicationId 安装并与日常数据隔离。项目只保留 `dev`、`verification` flavor，release 通过 build type 使用 `.release` applicationId。
 
 ### 改主题 / 样式 / 视觉一致性
+
+桌面图标四选一见 `LauncherIconMode/LauncherIconPolicy`、`LauncherIconHelper`、`AppearanceSettingsFragment` 及外观页尾部图标卡片。theme_prefs/launcher_icon_mode整数0–3，默认白底，已纳入BackupArchiveManager/DataTransferManager整数恢复；只备份模式，不备份PackageManager组件状态。系统深浅色读Resources.getSystem，应用深浅色复用ThemeHelper.nightModeFor（含壁纸配色）。MainActivity.onStop非配置重建时同步白/深两个applicationId别名；仅切换别名，不能禁用MainActivity。API33+批量，旧版先启用目标再禁用旧项，失败尝试回滚；不要加后台常驻或宣称关闭应用后系统变化可立即刷新。桌面快捷方式迁移/缓存和dev/release实际入口需要用户授权后设备验证。
 
 先读：
 

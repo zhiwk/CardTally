@@ -22,6 +22,7 @@ import com.example.cardtally.model.Asset
 import com.example.cardtally.util.Money
 import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.example.cardtally.util.ThemeColorHelper
+import com.example.cardtally.view.FabScrollView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class AssetFragment : Fragment() {
@@ -57,6 +58,7 @@ class AssetFragment : Fragment() {
     private lateinit var textReceivableTotal: TextView
     private lateinit var textPayableTotal: TextView
     private lateinit var fabAdd: FloatingActionButton
+    private var fabScroll: FabScrollView? = null
     private lateinit var btnArchive: ImageButton
     private lateinit var btnToggleAssetVisibility: ImageView
     private lateinit var databaseHelper: DatabaseHelper
@@ -145,6 +147,8 @@ class AssetFragment : Fragment() {
         if (pickerMode) {
             configurePickerMode(view)
         } else {
+            fabScroll = view.findViewById<FabScrollView>(R.id.asset_content_scroll)
+                .apply { bindFab(fabAdd) }
             fabAdd.setOnClickListener {
                 parentFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, AssetTypeSelectFragment())
@@ -170,7 +174,19 @@ class AssetFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        fabScroll?.resumeFab()
         loadAssets()
+    }
+
+    override fun onPause() {
+        fabScroll?.pauseFab()
+        super.onPause()
+    }
+
+    override fun onDestroyView() {
+        fabScroll?.disposeFab()
+        fabScroll = null
+        super.onDestroyView()
     }
 
     private fun loadAssets() {

@@ -307,6 +307,7 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
             "theme_prefs" to "theme_mode",
             "theme_prefs" to "card_opacity",
             "theme_prefs" to "wallpaper_palette",
+            "theme_prefs" to "launcher_icon_mode",
             "ledger_ux_prefs" to "ledger_ux_schema_version"
         )
         private val TABLES = listOf(
