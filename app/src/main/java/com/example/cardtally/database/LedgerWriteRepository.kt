@@ -330,29 +330,38 @@ internal class LedgerWriteRepository(
     }
 
     private fun copyAsset(db: SQLiteDatabase, assetId: Long, targetLedgerId: Long): Long {
-        val values = db.query(
-            columns.assetsTable,
-            null,
-            "${columns.assetId} = ?",
-            arrayOf(assetId.toString()),
-            null,
-            null,
-            null
-        ).use { cursor ->
-            if (!cursor.moveToFirst()) return -1L
-            ContentValues().apply {
-                put(columns.assetLedgerId, targetLedgerId)
-                put(columns.assetName, cursor.getString(cursor.getColumnIndexOrThrow(columns.assetName)))
-                put(columns.assetAmount, cursor.getLong(cursor.getColumnIndexOrThrow(columns.assetAmount)))
-                put(columns.assetType, cursor.getInt(cursor.getColumnIndexOrThrow(columns.assetType)))
-                put(columns.assetCategoryLabel, cursor.getString(cursor.getColumnIndexOrThrow(columns.assetCategoryLabel)))
-                put(columns.assetCategoryIcon, cursor.getString(cursor.getColumnIndexOrThrow(columns.assetCategoryIcon)))
-                put(columns.assetArchived, 0)
-                put(columns.assetPinned, 0)
-                put(columns.assetIncludeInTotal, cursor.getInt(cursor.getColumnIndexOrThrow(columns.assetIncludeInTotal)))
+        db.beginTransaction()
+        return try {
+            val values = db.query(
+                columns.assetsTable,
+                null,
+                "${columns.assetId} = ?",
+                arrayOf(assetId.toString()),
+                null,
+                null,
+                null
+            ).use { cursor ->
+                if (!cursor.moveToFirst()) return -1L
+                ContentValues().apply {
+                    put(columns.assetLedgerId, targetLedgerId)
+                    put(columns.assetName, cursor.getString(cursor.getColumnIndexOrThrow(columns.assetName)))
+                    put(columns.assetAmount, cursor.getLong(cursor.getColumnIndexOrThrow(columns.assetAmount)))
+                    put(columns.assetType, cursor.getInt(cursor.getColumnIndexOrThrow(columns.assetType)))
+                    put(columns.assetCategoryLabel, cursor.getString(cursor.getColumnIndexOrThrow(columns.assetCategoryLabel)))
+                    put(columns.assetCategoryIcon, cursor.getString(cursor.getColumnIndexOrThrow(columns.assetCategoryIcon)))
+                    put(columns.assetArchived, 0)
+                    put(columns.assetPinned, 0)
+                    put(columns.assetIncludeInTotal, cursor.getInt(cursor.getColumnIndexOrThrow(columns.assetIncludeInTotal)))
+                }
             }
+            val id = db.insertOrThrow(columns.assetsTable, null, values)
+            AssetHistoryRepository.insertBalanceEvent(db, id, com.example.cardtally.model.AssetBalanceEvent.INITIAL,
+                0, values.getAsLong(columns.assetAmount))
+            db.setTransactionSuccessful()
+            id
+        } finally {
+            db.endTransaction()
         }
-        return db.insertOrThrow(columns.assetsTable, null, values)
     }
 
     private fun assetExists(db: SQLiteDatabase, ledgerId: Long, assetId: Long) = db.query(

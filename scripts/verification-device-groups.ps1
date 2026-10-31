@@ -12,7 +12,8 @@ $deviceTestGroups = @(
         'com.example.cardtally.AssetExclusionBadgeTest'
     ) },
     @{ Name = 'ledger-form'; Expected = 8; Classes = @('com.example.cardtally.LedgerSetupFormTest') },
-    @{ Name = 'main-layout'; Expected = 14; Classes = @(
+    @{ Name = 'main-layout'; Expected = 16; Classes = @(
+        'com.example.cardtally.AssetHistoryAdapterTest',
         'com.example.cardtally.MainActivityFabLayoutTest',
         'com.example.cardtally.MainActivityThemeApplicationTest',
         'com.example.cardtally.LedgerMonthPagerTest',
@@ -28,7 +29,8 @@ $deviceTestGroups = @(
         'com.example.cardtally.RecordRowLayoutMeasurementTest',
         'com.example.cardtally.state.ScreenStateBundleTest'
     ) },
-    @{ Name = 'asset-groups'; Expected = 12; Classes = @(
+    @{ Name = 'asset-groups'; Expected = 20; Classes = @(
+        'com.example.cardtally.database.AssetBalanceHistoryTest',
         'com.example.cardtally.database.DatabaseHelperAssetGroupTest',
         'com.example.cardtally.database.DatabaseHelperNegativeAssetTest'
     ) },
@@ -55,7 +57,7 @@ $deviceTestGroups = @(
         'com.example.cardtally.database.DatabaseHelperLedgerAggregationContractTest',
         'com.example.cardtally.database.DatabaseHelperTodayRecordsPagingTest'
     ) },
-    @{ Name = 'backup-db'; Expected = 3; TimeoutSeconds = 360; Classes = @(
+    @{ Name = 'backup-db'; Expected = 6; TimeoutSeconds = 360; Classes = @(
         'com.example.cardtally.util.BackupArchiveManagerTest'
     ) },
     @{ Name = 'preferences'; Expected = 15; Classes = @(

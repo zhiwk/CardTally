@@ -1,8 +1,10 @@
 package com.example.cardtally.database
 
 import android.content.ContentValues
+import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase
 import com.example.cardtally.model.Asset
+import com.example.cardtally.model.AssetBalanceEvent
 import com.example.cardtally.util.Money
 
 /** Metadata and lifecycle writes for assets; record-balance transactions remain in DatabaseHelper. */
@@ -31,24 +33,21 @@ internal class AssetWriteRepository(
 
     fun add(asset: Asset): Long {
         val db = writableDatabase()
-        val id = db.insert(
-            columns.table,
-            null,
-            ContentValues().apply {
+        val amount = requireNotNull(Money.toMinor(asset.amount))
+        db.beginTransaction()
+        return try {
+            val id = db.insertOrThrow(columns.table, null, assetValues(asset, amount).apply {
                 put(columns.ledgerId, currentLedgerId())
-                put(columns.name, asset.name)
-                put(columns.amount, requireNotNull(Money.toMinor(asset.amount)))
-                put(columns.type, asset.type)
-                put(columns.categoryLabel, asset.categoryLabel)
-                put(columns.categoryIcon, asset.categoryIconName)
-                put(columns.archived, if (asset.isArchived) 1 else 0)
-                put(columns.pinned, if (asset.isPinned) 1 else 0)
-                put(columns.includeInTotal, if (asset.includeInTotal) 1 else 0)
                 put(columns.sortOrder, nextSortOrder(db))
-            }
-        )
-        db.close()
-        return id
+            })
+            AssetHistoryRepository.insertBalanceEvent(db, id, AssetBalanceEvent.INITIAL, 0, amount)
+            db.setTransactionSuccessful()
+            id
+        } catch (_: SQLException) {
+            -1L
+        } finally {
+            db.endTransaction()
+        }
     }
 
     fun archive(id: Long) {
@@ -72,21 +71,44 @@ internal class AssetWriteRepository(
         )
     }
 
-    fun update(asset: Asset): Int = writableDatabase().update(
-        columns.table,
-        ContentValues().apply {
-            put(columns.name, asset.name)
-            put(columns.amount, requireNotNull(Money.toMinor(asset.amount)))
-            put(columns.type, asset.type)
-            put(columns.categoryLabel, asset.categoryLabel)
-            put(columns.categoryIcon, asset.categoryIconName)
-            put(columns.archived, if (asset.isArchived) 1 else 0)
-            put(columns.pinned, if (asset.isPinned) 1 else 0)
-            put(columns.includeInTotal, if (asset.includeInTotal) 1 else 0)
-        },
-        "${columns.ledgerId} = ${currentLedgerId()} AND ${columns.id} = ?",
-        arrayOf(asset.id.toString())
-    )
+    fun update(asset: Asset): Int {
+        val db = writableDatabase()
+        val amount = requireNotNull(Money.toMinor(asset.amount))
+        val selection = "${columns.ledgerId} = ${currentLedgerId()} AND ${columns.id} = ?"
+        val args = arrayOf(asset.id.toString())
+        db.beginTransaction()
+        return try {
+            // Read the persisted balance here: editors may already have mutated their Asset instance.
+            val before = db.query(columns.table, arrayOf(columns.amount), selection, args, null, null, null).use {
+                if (!it.moveToFirst()) return 0
+                it.getLong(0)
+            }
+            Math.subtractExact(amount, before)
+            val updated = db.update(columns.table, assetValues(asset, amount), selection, args)
+            if (updated == 1 && before != amount) {
+                AssetHistoryRepository.insertBalanceEvent(db, asset.id, AssetBalanceEvent.ADJUSTMENT, before, amount)
+            }
+            db.setTransactionSuccessful()
+            updated
+        } catch (_: SQLException) {
+            0
+        } catch (_: ArithmeticException) {
+            0
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    private fun assetValues(asset: Asset, amount: Long) = ContentValues().apply {
+        put(columns.name, asset.name)
+        put(columns.amount, amount)
+        put(columns.type, asset.type)
+        put(columns.categoryLabel, asset.categoryLabel)
+        put(columns.categoryIcon, asset.categoryIconName)
+        put(columns.archived, if (asset.isArchived) 1 else 0)
+        put(columns.pinned, if (asset.isPinned) 1 else 0)
+        put(columns.includeInTotal, if (asset.includeInTotal) 1 else 0)
+    }
 
     fun setPinned(id: Long, pinned: Boolean): Int {
         val db = writableDatabase()

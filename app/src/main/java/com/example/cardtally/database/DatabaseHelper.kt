@@ -9,6 +9,7 @@ import com.example.cardtally.BuildConfig
 import com.example.cardtally.model.AiChatMessage
 import com.example.cardtally.model.AiChatSession
 import com.example.cardtally.model.Asset
+import com.example.cardtally.model.AssetHistoryEntry
 import com.example.cardtally.model.Category
 import com.example.cardtally.model.Record
 import com.example.cardtally.model.RecurringRecord
@@ -142,6 +143,9 @@ class DatabaseHelper(
             columns = ASSET_READ_COLUMNS
         )
     }
+    private val assetHistoryRepository by lazy {
+        AssetHistoryRepository({ readableDatabase }, ::currentLedgerId, ::createRecordFromCursor)
+    }
     private val assetWriteRepository by lazy {
         AssetWriteRepository(
             writableDatabase = { writableDatabase },
@@ -266,6 +270,7 @@ class DatabaseHelper(
                 CREATE_TABLE_RECORDS,
                 CREATE_TABLE_CATEGORIES,
                 CREATE_TABLE_ASSETS,
+                AssetHistoryRepository.CREATE_TABLE_SQL,
                 CREATE_TABLE_RECORD_DELETION_UNDO,
                 CREATE_TABLE_AI_CHAT_SESSIONS,
                 CREATE_TABLE_AI_CHAT_MESSAGES,
@@ -284,7 +289,8 @@ class DatabaseHelper(
                 CREATE_INDEX_ASSETS_LEDGER_ARCHIVED_ORDER,
                 CREATE_INDEX_AI_CHAT_SESSIONS_UPDATED_AT,
                 CREATE_INDEX_AI_CHAT_MESSAGES_SESSION_CREATED_AT,
-                CREATE_INDEX_RECURRING_DUE
+                CREATE_INDEX_RECURRING_DUE,
+                AssetHistoryRepository.CREATE_INDEX_SQL
             ),
             insertDefaultCategories = categoryDefaultsSeeder::seed
         )
@@ -324,8 +330,8 @@ class DatabaseHelper(
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
         private val RECURRING_PROCESS_LOCK = Any()
-        /** v43 appends missing default categories while retaining existing rows and leaf bindings. */
-        private const val DATABASE_VERSION = 43
+        /** v44 records future asset initialization/manual adjustments without fabricating old history. */
+        private const val DATABASE_VERSION = 44
         const val MAX_RECORD_QUERY_LIMIT = 200
         const val RECORD_UNDO_WINDOW_MS = 10_000L
 
@@ -832,6 +838,10 @@ class DatabaseHelper(
 
     data class RecordListPage(val records: List<Record>, val nextCursor: RecordListCursor?)
 
+    data class AssetHistoryCursor(val date: String, val kind: Int, val orderKey: Long, val tieKey: Long)
+
+    data class AssetHistoryPage(val entries: List<AssetHistoryEntry>, val nextCursor: AssetHistoryCursor?)
+
     data class RecordSearchTotals(val expenseMinor: Long, val incomeMinor: Long)
 
     data class CategoryTotal(
@@ -937,6 +947,10 @@ class DatabaseHelper(
         if (oldVersion < 43) {
             categoryDefaultsSeeder.appendMissing(db, 1L)
         }
+        if (oldVersion < 44) {
+            db.execSQL(AssetHistoryRepository.CREATE_TABLE_SQL)
+            db.execSQL(AssetHistoryRepository.CREATE_INDEX_SQL)
+        }
     }
 
     override fun onOpen(db: SQLiteDatabase) {
@@ -952,6 +966,7 @@ class DatabaseHelper(
     }
 
     private fun resetAllDataForVerification(db: SQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS ${AssetHistoryRepository.TABLE}")
         db.execSQL("DROP TABLE IF EXISTS ${CategoryDefaultsSeeder.COMPLETION_TABLE}")
         db.execSQL("DROP TABLE IF EXISTS ${MergedCategoryMigration.ALIASES}")
         db.execSQL("DROP TABLE IF EXISTS ai_record_audit")
@@ -1558,6 +1573,12 @@ class DatabaseHelper(
         recordStatisticsRepository.monthlyStatistics(type, year)
 
     fun addAsset(asset: Asset): Long = assetWriteRepository.add(asset)
+
+    /** Includes account-only balance events; ordinary bill queries/statistics remain unchanged. */
+    fun getAssetHistoryPage(
+        assetId: Long?, assetSource: String?, after: AssetHistoryCursor? = null,
+        limit: Int = MAX_RECORD_QUERY_LIMIT
+    ): AssetHistoryPage = assetHistoryRepository.page(assetId, assetSource, after, limit)
 
     fun getAllAssets(ledgerId: Long? = null): List<Asset> = assetReadRepository.getActive(ledgerId)
 

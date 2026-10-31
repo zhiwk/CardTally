@@ -3,6 +3,7 @@ package com.example.cardtally.util
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.cardtally.database.DatabaseHelper
+import com.example.cardtally.model.AssetBalanceEvent
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -115,6 +116,25 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
                 val id = existing.takeIf { it > 0 } ?: db.insertOrThrow("assets", null, content)
                 assetMap[oldId] = id
                 if (existing == 0L) assetCount++
+            }
+
+            // Legacy JSON keeps its existing content-based merge convention. Never apply these deltas twice.
+            rows(tables, "asset_balance_events").forEach { row ->
+                val asset = assetMap[row.getLong("asset_id")] ?: error("Missing balance-event asset")
+                val event = AssetBalanceEvent(assetId = asset, kind = row.getInt("kind"),
+                    date = row.getString("date"), createdAt = row.getLong("created_at"),
+                    balanceBeforeMinor = row.getLong("balance_before"), balanceAfterMinor = row.getLong("balance_after"))
+                val duplicate = db.rawQuery(
+                    "SELECT 1 FROM asset_balance_events WHERE asset_id = ? AND kind = ? AND date = ? " +
+                        "AND created_at = ? AND balance_before = ? AND balance_after = ? LIMIT 1",
+                    arrayOf(asset.toString(), event.kind.toString(), event.date, event.createdAt.toString(),
+                        event.balanceBeforeMinor.toString(), event.balanceAfterMinor.toString())
+                ).use { it.moveToFirst() }
+                if (!duplicate) {
+                    val content = values(row, setOf("id", "asset_id"), columns(db, "asset_balance_events"))
+                    content.put("asset_id", asset)
+                    db.insertOrThrow("asset_balance_events", null, content)
+                }
             }
 
             val existingRecordKeys = mutableSetOf<String>()
@@ -312,7 +332,7 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
         )
         private val TABLES = listOf(
             "ledgers", "ledger_shared_assets", "ledger_shared_ledgers", "categories", "assets",
-            "records", "record_deletion_undo", "recurring_records", "ai_chat_sessions", "ai_chat_messages"
+            "records", "record_deletion_undo", "recurring_records", "ai_chat_sessions", "ai_chat_messages", "asset_balance_events"
         )
     }
 }

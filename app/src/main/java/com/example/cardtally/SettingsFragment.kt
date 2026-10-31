@@ -123,7 +123,8 @@ class SettingsFragment : Fragment() {
                         val details = getString(R.string.settings_backup_preview,
                             result.ledgers, result.categories, result.assets, result.records,
                             result.recurring, result.sessions, result.messages,
-                            result.skipped, result.different) +
+                            result.skipped, result.different) + "\n" +
+                            getString(R.string.settings_backup_balance_events, result.balanceEvents) +
                             if (result.balanceConflicts > 0) "\n" +
                                 getString(R.string.settings_backup_balance_overwrite_count, result.balanceConflicts)
                             else ""
@@ -187,7 +188,8 @@ class SettingsFragment : Fragment() {
                 val message = result.fold(
                     onSuccess = {
                         if (it.legacy) getString(R.string.settings_legacy_import_success)
-                        else getString(R.string.settings_backup_import_success, it.ledgers, it.categories, it.assets, it.records, it.recurring, it.sessions, it.messages)
+                        else getString(R.string.settings_backup_import_success, it.ledgers, it.categories, it.assets, it.records, it.recurring, it.sessions, it.messages) +
+                            "\n" + getString(R.string.settings_backup_balance_events, it.balanceEvents)
                     },
                     onFailure = { error ->
                         when (error) {

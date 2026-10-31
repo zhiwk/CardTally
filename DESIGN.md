@@ -328,6 +328,8 @@ Chart-only pastel blue, mint, apricot, lavender, rose, aqua, butter and sage use
 - **States:** default, pressed, focused, selected, archive pending, disabled/protected, empty at list owner, error inline when a safeguard rejects deletion.
 - **Accessibility:** role Button for open; archive/restore/edit are separately named actions. Copy acknowledges name-based association limits where relevant.
 
+Asset-detail history also contains read-only Initial balance / Balance adjustment rows. Reuse the existing record-row geometry, themed card surface, 12dp group corners and long-amount fitting; use a quiet edit icon with the existing warning palette and a neutral signed amount, never income/expense colors. Show the event date and before → after balance. These rows have no bill-detail, edit, delete or swipe action, and their amount never enters the date header's income/expense totals. Ordinary bill rows retain ledger provenance and their existing detail navigation. Do not copy the reference screenshot's repayment action, monthly filter or whole-page styling as part of this addition.
+
 ### Settings group and settings row
 - **Structure:** one outlined group card with section label outside or in the card header; rows use title, current value/help, optional icon, and trailing switch/chevron.
 - **Variants:** navigation, switch, value/dialog, status.

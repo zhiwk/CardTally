@@ -36,10 +36,13 @@ class DatabaseHelperBetaSchemaTest {
         assertEquals("INTEGER", columnType(db, "records", "amount"))
         assertEquals("INTEGER", columnType(db, "records", "fee"))
         assertEquals("INTEGER", columnType(db, "assets", "amount"))
+        assertEquals("INTEGER", columnType(db, "asset_balance_events", "balance_before"))
+        assertEquals("INTEGER", columnType(db, "asset_balance_events", "balance_after"))
         assertEquals("INTEGER", columnType(db, "record_deletion_undo", "balance_delta"))
         assertTrue(indexNames(db, "records").contains("idx_records_ledger_date_sort"))
         assertTrue(indexNames(db, "records").contains("idx_records_ledger_type_date"))
         assertTrue(indexNames(db, "assets").contains("idx_assets_ledger_archived_name"))
+        assertTrue(indexNames(db, "asset_balance_events").contains("idx_asset_balance_events_date"))
     }
 
     private fun columnType(db: android.database.sqlite.SQLiteDatabase, table: String, column: String): String {

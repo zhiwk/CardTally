@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.database.DefaultCategoryCatalog
+import com.example.cardtally.model.AssetBalanceEvent
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -40,7 +41,7 @@ class BackupArchiveManager(private val context: Context) {
         val ledgers: Int, val categories: Int, val assets: Int, val records: Int,
         val recurring: Int, val sessions: Int, val messages: Int,
         val legacy: Boolean = false, val skipped: Int = 0, val different: Int = 0,
-        val balanceConflicts: Int = 0
+        val balanceConflicts: Int = 0, val balanceEvents: Int = 0
     )
 
     fun exportTo(output: OutputStream, password: CharArray) {
@@ -315,7 +316,8 @@ class BackupArchiveManager(private val context: Context) {
                 }
                 require(root.optString("sourceId").isNotBlank()) { "Missing backup source" }
                 val tables = root.getJSONObject("tables")
-                ROW_TABLES.forEach { require(tables.optJSONArray(it) != null) { "Missing table: " + it } }
+                val requiredTables = if (root.getInt("version") >= 4) ROW_TABLES else ROW_TABLES - "asset_balance_events"
+                requiredTables.forEach { require(tables.optJSONArray(it) != null) { "Missing table: " + it } }
                 require(tables.getJSONArray("ledgers").length() > 0) { "Backup has no ledger" }
                 val photos = root.getJSONArray("photos")
                 val photoUris = mutableMapOf<String, String>()
@@ -495,6 +497,7 @@ class BackupArchiveManager(private val context: Context) {
         var ledgers = 0
         var categories = 0
         var assets = 0
+        var balanceEvents = 0
         var records = 0
         var recurring = 0
         var sessions = 0
@@ -587,6 +590,14 @@ class BackupArchiveManager(private val context: Context) {
                             useBackupBalances)) balanceConflicts++
                     if (added) assets++
                 }
+                rows(tables, "asset_balance_events").forEach { row ->
+                    val assetId = requiredId(mapped("assets", row.getLong("asset_id")))
+                    // Validate the signed delta without applying it: the backup already contains the balance.
+                    AssetBalanceEvent(assetId = assetId, kind = row.getInt("kind"), date = row.getString("date"),
+                        createdAt = row.getLong("created_at"), balanceBeforeMinor = row.getLong("balance_before"),
+                        balanceAfterMinor = row.getLong("balance_after"))
+                    if (insert("asset_balance_events", row) { it.put("asset_id", assetId) }) balanceEvents++
+                }
                 rows(tables, "records").forEach { row ->
                     val added = insert("records", row) { content ->
                         content.put("ledger_id", requiredId(mapped("ledgers", row.getLong("ledger_id"))))
@@ -659,7 +670,7 @@ class BackupArchiveManager(private val context: Context) {
         }
         if (!dryRun) replayPendingPreferences()
         return MergeResult(ledgers, categories, assets, records, recurring, sessions, messages,
-            skipped = skipped, different = different, balanceConflicts = balanceConflicts)
+            skipped = skipped, different = different, balanceConflicts = balanceConflicts, balanceEvents = balanceEvents)
     }
 
     private fun rowDiffers(
@@ -725,7 +736,7 @@ class BackupArchiveManager(private val context: Context) {
             cursor.getLong(0)
         }
         val dependentTables = listOf(
-            "assets", "records", "recurring_records", "ai_chat_sessions", "ai_chat_messages",
+            "assets", "asset_balance_events", "records", "recurring_records", "ai_chat_sessions", "ai_chat_messages",
             "ledger_shared_assets", "ledger_shared_ledgers", "backup_import_map", "backup_asset_snapshot"
         )
         if (dependentTables.any { table ->
@@ -820,6 +831,7 @@ class BackupArchiveManager(private val context: Context) {
     private fun requiredId(value: Long?): Long = value ?: error("Missing referenced backup row")
 
     private fun rows(tables: JSONObject, table: String): List<JSONObject> {
+        if (table == "asset_balance_events" && !tables.has(table)) return emptyList()
         val array = tables.getJSONArray(table)
         return (0 until array.length()).map { array.getJSONObject(it) }
     }
@@ -1038,7 +1050,7 @@ class BackupArchiveManager(private val context: Context) {
     companion object {
         private val ENCRYPTED_MAGIC = byteArrayOf('C'.code.toByte(), 'T'.code.toByte(), 'B'.code.toByte(), '3'.code.toByte())
         private const val FORMAT = "cardtally-backup"
-        private const val VERSION = 3
+        private const val VERSION = 4
         private const val MAX_MANIFEST_BYTES = 128 * 1024 * 1024
         private const val MAX_PHOTO_BYTES = 50L * 1024 * 1024
         private const val MAX_TOTAL_PHOTO_BYTES = 1024L * 1024 * 1024
@@ -1055,11 +1067,11 @@ class BackupArchiveManager(private val context: Context) {
         private val PREF_TYPES = setOf("boolean", "int", "long", "float", "string", "string_set")
         private val ROW_TABLES = listOf(
             "ledgers", "ledger_shared_assets", "ledger_shared_ledgers", "categories", "assets",
-            "records", "recurring_records", "ai_chat_sessions", "ai_chat_messages"
+            "records", "recurring_records", "ai_chat_sessions", "ai_chat_messages", "asset_balance_events"
         )
         private val ID_TABLES = listOf(
             "ledgers", "categories", "assets", "records", "recurring_records",
-            "ai_chat_sessions", "ai_chat_messages"
+            "ai_chat_sessions", "ai_chat_messages", "asset_balance_events"
         )
     }
 }

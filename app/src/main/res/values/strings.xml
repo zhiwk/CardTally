@@ -276,6 +276,10 @@
     <string name="asset_records_transfer">转账</string>
     <string name="asset_records_section">账单记录</string>
     <string name="asset_records_empty">暂无相关记录</string>
+    <string name="asset_balance_initial">初始余额</string>
+    <string name="asset_balance_adjustment">调整余额</string>
+    <string name="asset_balance_change">余额：¥%1$s → ¥%2$s</string>
+    <string name="settings_backup_balance_events">新增资产余额条目：%1$d</string>
     <string name="asset_records_unknown_ledger">未知账本</string>
     <string name="archived_assets_title">归档资产</string>
     <string name="archived_assets_empty">暂无归档资产</string>

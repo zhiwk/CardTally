@@ -26,7 +26,7 @@ class CategoryDefaultsCompletionTest {
         if (::context.isInitialized) context.deleteDatabase("CardTally.db")
     }
 
-    @Test fun existingV43WithCategoriesMergesKnownLeavesAndKeepsRecordSnapshots() {
+    @Test fun existingCurrentSchemaWithCategoriesMergesKnownLeavesAndKeepsRecordSnapshots() {
         legacyFixture()
         rawDatabase().use { db ->
             db.execSQL("CREATE TABLE category_defaults_state (id INTEGER PRIMARY KEY, catalog_version INTEGER NOT NULL)")
@@ -35,7 +35,7 @@ class CategoryDefaultsCompletionTest {
         val original = rawDatabase().use { rows(it, "categories") to rows(it, "records") }
         DatabaseHelper(context).use { helper ->
             val db = helper.writableDatabase
-            assertEquals(43, db.version)
+            assertEquals(44, db.version)
             assertCatalog(db)
             assertEquals(1, scalar(db, "SELECT COUNT(*) FROM categories WHERE id = 502 AND name = '服饰'"))
             assertEquals(original.second.map { row -> row.filterIndexed { index, _ -> index != 4 } },
@@ -110,7 +110,8 @@ class CategoryDefaultsCompletionTest {
             db.execSQL("INSERT INTO categories (id, name, type) VALUES (504, '餐饮', 0)")
             db.execSQL("INSERT INTO categories (id, name, type, parent_id) VALUES (505, '早餐', 0, 504), (506, '午餐', 0, 504), (507, '自定义夜宵', 0, 504)")
             db.execSQL("INSERT INTO records (date, amount, category, category_id, type) VALUES ('2026-10-23', 1000, '午餐', 506, 0)")
-            db.version = 43
+            // Keep the current schema version: these fixtures test directory completion on open,
+            // not the isolated verification build's destructive schema-upgrade path.
         }
     }
 

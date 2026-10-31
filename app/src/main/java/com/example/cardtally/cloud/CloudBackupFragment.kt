@@ -191,7 +191,8 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
             val result = ui.preview
             list.addView(TextView(requireContext()).apply { text = getString(R.string.settings_backup_preview,
                 result.ledgers, result.categories, result.assets, result.records, result.recurring, result.sessions,
-                result.messages, result.skipped, result.different) })
+                result.messages, result.skipped, result.different) + "\n" +
+                getString(R.string.settings_backup_balance_events, result.balanceEvents) })
             list.addView(MaterialButton(requireContext()).apply { setText(R.string.cloud_confirm_restore)
                 setOnClickListener { dialog = AlertDialog.Builder(requireContext()).setMessage(R.string.cloud_restore_hint)
                     .setNegativeButton(android.R.string.cancel, null).setPositiveButton(R.string.cloud_confirm_restore) { _, _ ->

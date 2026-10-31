@@ -12,8 +12,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.cardtally.adapter.DateGroupAdapter
+import com.example.cardtally.adapter.AssetHistoryAdapter
 import com.example.cardtally.database.DatabaseHelper
-import com.example.cardtally.model.DateGroup
+import com.example.cardtally.model.AssetHistoryEntry
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.Money
 import com.example.cardtally.util.RecordAssetDisplay
@@ -26,9 +27,9 @@ class AssetRecordsFragment : Fragment() {
     private lateinit var textEmpty: TextView
     private lateinit var recyclerRecords: RecyclerView
     private lateinit var databaseHelper: DatabaseHelper
-    private var adapter: DateGroupAdapter? = null
-    private val loadedRecords = mutableListOf<Record>()
-    private var nextCursor: DatabaseHelper.RecordListCursor? = null
+    private var adapter: AssetHistoryAdapter? = null
+    private val loadedRecords = mutableListOf<AssetHistoryEntry>()
+    private var nextCursor: DatabaseHelper.AssetHistoryCursor? = null
     private var loadingPage = false
 
     private var assetName: String = ""
@@ -253,28 +254,29 @@ class AssetRecordsFragment : Fragment() {
         loadedRecords.clear()
         nextCursor = null
         loadingPage = false
-        appendPage(databaseHelper.getAssetRecordsPage(assetId.takeIf { it != 0L }, assetName))
+        appendPage(databaseHelper.getAssetHistoryPage(assetId.takeIf { it != 0L }, assetName))
     }
 
     private fun loadNextPage() {
         val cursor = nextCursor ?: return
         if (loadingPage) return
         loadingPage = true
-        val page = databaseHelper.getAssetRecordsPage(assetId.takeIf { it != 0L }, assetName, cursor)
+        val page = databaseHelper.getAssetHistoryPage(assetId.takeIf { it != 0L }, assetName, cursor)
         loadingPage = false
         appendPage(page)
     }
 
-    private fun appendPage(page: DatabaseHelper.RecordListPage) {
+    private fun appendPage(page: DatabaseHelper.AssetHistoryPage) {
         nextCursor = page.nextCursor
+        val bills = page.entries.filterIsInstance<AssetHistoryEntry.Bill>().map { it.record }
         val ledgerNames = databaseHelper.getLedgerNamesByIds(
-            page.records.mapNotNull { it.ledgerId }.toSet()
+            bills.mapNotNull { it.ledgerId }.toSet()
         )
-        page.records.forEach { record ->
+        bills.forEach { record ->
             record.ledgerName = record.ledgerId?.let { ledgerNames[it] }
                 ?: getString(R.string.asset_records_unknown_ledger)
         }
-        loadedRecords.addAll(page.records)
+        loadedRecords.addAll(page.entries)
 
         if (loadedRecords.isEmpty()) {
             textEmpty.visibility = View.VISIBLE
@@ -285,7 +287,6 @@ class AssetRecordsFragment : Fragment() {
             textEmpty.visibility = View.GONE
             recyclerRecords.visibility = View.VISIBLE
 
-            val dateGroups = groupRecordsByDate(loadedRecords)
             val categories = databaseHelper.getAllCategories()
             val categoryPaths = com.example.cardtally.util.RecordCategoryDisplay.paths(categories)
             val categoryIconsById = categories
@@ -294,8 +295,7 @@ class AssetRecordsFragment : Fragment() {
             val assetNames = RecordAssetDisplay.names(databaseHelper.getAllAssets() + databaseHelper.getArchivedAssets())
 
             if (adapter == null) {
-                adapter = DateGroupAdapter(
-                    dateGroups,
+                adapter = AssetHistoryAdapter(
                     object : DateGroupAdapter.OnRecordActionListener {
                         override fun onOpenDetails(record: Record) {
                             parentFragmentManager.beginTransaction()
@@ -324,27 +324,15 @@ class AssetRecordsFragment : Fragment() {
                         override fun onEnterMultiSelectMode(record: Record) {}
 
                         override fun onToggleMultiSelect(record: Record) {}
-                    },
-                    categoryIconsById = categoryIconsById,
-                    showAssetRoute = false,
-                    categoryPathsById = categoryPaths,
-                    assetNamesById = assetNames
+                    }
                 )
                 recyclerRecords.adapter = adapter
-            } else {
-                adapter?.updateDateGroups(dateGroups, categoryPaths, assetNames)
-                if (recyclerRecords.adapter == null) {
-                    recyclerRecords.adapter = adapter
-                }
+            }
+            adapter?.submit(loadedRecords, categoryIconsById, categoryPaths, assetNames)
+            if (recyclerRecords.adapter !== adapter) {
+                recyclerRecords.adapter = adapter
             }
         }
-    }
-
-    private fun groupRecordsByDate(records: List<Record>): List<DateGroup> {
-        val grouped = records.groupBy { it.date }
-        return grouped.map { (date, records) ->
-            DateGroup(date, records)
-        }.sortedByDescending { it.date }
     }
 
     private fun hideBottomNav() {

@@ -266,6 +266,10 @@
     <string name="asset_records_transfer">Transfer</string>
     <string name="asset_records_section">Records</string>
     <string name="asset_records_empty">No records for this asset</string>
+    <string name="asset_balance_initial">Initial balance</string>
+    <string name="asset_balance_adjustment">Balance adjustment</string>
+    <string name="asset_balance_change">Balance: ¥%1$s → ¥%2$s</string>
+    <string name="settings_backup_balance_events">Asset balance entries added: %1$d</string>
     <string name="asset_records_unknown_ledger">Unknown ledger</string>
     <string name="archived_assets_title">Archived assets</string>
     <string name="archived_assets_empty">No archived assets</string>
