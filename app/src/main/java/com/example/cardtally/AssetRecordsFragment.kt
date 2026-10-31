@@ -16,6 +16,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.Money
+import com.example.cardtally.util.RecordAssetDisplay
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class AssetRecordsFragment : Fragment() {
@@ -290,6 +291,7 @@ class AssetRecordsFragment : Fragment() {
             val categoryIconsById = categories
                 .filter { !it.icon.isNullOrEmpty() }
                 .associate { it.id to it.icon.orEmpty() }
+            val assetNames = RecordAssetDisplay.names(databaseHelper.getAllAssets() + databaseHelper.getArchivedAssets())
 
             if (adapter == null) {
                 adapter = DateGroupAdapter(
@@ -325,11 +327,12 @@ class AssetRecordsFragment : Fragment() {
                     },
                     categoryIconsById = categoryIconsById,
                     showAssetRoute = false,
-                    categoryPathsById = categoryPaths
+                    categoryPathsById = categoryPaths,
+                    assetNamesById = assetNames
                 )
                 recyclerRecords.adapter = adapter
             } else {
-                adapter?.updateDateGroups(dateGroups, categoryPaths)
+                adapter?.updateDateGroups(dateGroups, categoryPaths, assetNames)
                 if (recyclerRecords.adapter == null) {
                     recyclerRecords.adapter = adapter
                 }

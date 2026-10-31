@@ -112,6 +112,8 @@
 
 ### 改数据库或数据展示
 
+资产改名后的账单展示见 `util/RecordAssetDisplay`：按不可变资产 ID 优先显示当前名称（包含归档账户），缺失/无 ID 时回退原名称快照，不按名称推断绑定、不重写账单。账单首页经 `LedgerDateGroupAdapter`、日历经 `CalendarRecordAdapter`、搜索/统计明细/资产流水经 `DateGroupAdapter` 将当前资产名称映射传给共用 `RecordViewHolder`；转账标题两侧分别解析，复用适配器更新分页数据时须同步名称映射。资产流水继续显示账本归属，不改为资产名。账单首页在 onResume 重读映射，其余页面沿用各自重载/分页入口；不要在逐行绑定时查询数据库。
+
 手动分类合并见2026-10-23-manual-category-merge决策、CategoryMergePlanner、CategoryMergeRepository、DatabaseHelper.previewCategoryMerge/mergeCategories及CategoryManageFragment。先规划兼容目标，确认完整路径及跨账本影响数量，再在事务内重新校验并合并；同时迁移账单/撤销的分类ID与名称/路径快照、重复任务、备份导入映射和排序别名，不调用会影响余额的保存/删除业务。叶子/整组分别处理，结构冲突或历史非叶子绑定拒绝；不要与自动目录迁移保留历史名称的策略混同。
 
 先读：

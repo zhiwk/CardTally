@@ -26,6 +26,7 @@ import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.Money
+import com.example.cardtally.util.RecordAssetDisplay
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import java.text.SimpleDateFormat
@@ -283,6 +284,7 @@ class SearchFragment : Fragment() {
             val iconCategories = categories.filter { !it.icon.isNullOrEmpty() }
             val categoryIconsById = iconCategories.associate { it.id to it.icon.orEmpty() }
             val categoryIconsByName = iconCategories.associate { it.name to it.icon.orEmpty() }
+            val assetNames = RecordAssetDisplay.names(databaseHelper.getAllAssets() + databaseHelper.getArchivedAssets())
 
             if (adapter == null) {
                 adapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
@@ -316,10 +318,11 @@ class SearchFragment : Fragment() {
 
                     override fun onToggleMultiSelect(record: Record) {
                     }
-                }, categoryIconsById, categoryIconsByName, showTypeSubtitle = false, categoryPathsById = categoryPaths)
+                }, categoryIconsById, categoryIconsByName, showTypeSubtitle = false,
+                    categoryPathsById = categoryPaths, assetNamesById = assetNames)
                 recyclerRecords.adapter = adapter
             } else {
-                adapter?.updateDateGroups(dateGroups, categoryPaths)
+                adapter?.updateDateGroups(dateGroups, categoryPaths, assetNames)
                 if (recyclerRecords.adapter == null) {
                     recyclerRecords.adapter = adapter
                 }

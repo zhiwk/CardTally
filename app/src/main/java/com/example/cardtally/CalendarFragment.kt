@@ -22,6 +22,7 @@ import com.example.cardtally.model.Record
 import com.example.cardtally.util.LedgerDateRange
 import com.example.cardtally.util.LedgerPeriodHelper
 import com.example.cardtally.util.Money
+import com.example.cardtally.util.RecordAssetDisplay
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -185,7 +186,8 @@ class CalendarFragment : Fragment() {
         val categoryPaths = com.example.cardtally.util.RecordCategoryDisplay.paths(categories)
         val categoryIcons = categories.filter { !it.icon.isNullOrEmpty() }
             .associate { it.id to it.icon.orEmpty() }
-        recordsRecycler.adapter = CalendarRecordAdapter(dayRecords, listener, categoryPaths, categoryIcons)
+        val assetNames = RecordAssetDisplay.names(databaseHelper.getAllAssets() + databaseHelper.getArchivedAssets())
+        recordsRecycler.adapter = CalendarRecordAdapter(dayRecords, listener, categoryPaths, categoryIcons, assetNames)
         appendDayPage(databaseHelper.getRecordsPage(selectedDate, selectedDate))
     }
 
@@ -212,7 +214,8 @@ class CalendarFragment : Fragment() {
         private val records: List<Record>,
         private val listener: DateGroupAdapter.OnRecordActionListener,
         private val categoryPathsById: Map<Long, String>,
-        private val categoryIconsById: Map<Long, String>
+        private val categoryIconsById: Map<Long, String>,
+        private val assetNamesById: Map<Long, String>
     ) : RecyclerView.Adapter<DateGroupAdapter.RecordViewHolder>() {
         override fun onCreateViewHolder(
             parent: ViewGroup,
@@ -228,7 +231,8 @@ class CalendarFragment : Fragment() {
             position: Int
         ) {
             holder.bind(records[position], listener, false, false,
-                categoryIconsById = categoryIconsById, categoryPathsById = categoryPathsById)
+                categoryIconsById = categoryIconsById, categoryPathsById = categoryPathsById,
+                assetNamesById = assetNamesById)
         }
 
         override fun getItemCount(): Int = records.size

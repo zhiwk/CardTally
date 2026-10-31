@@ -16,6 +16,7 @@ import com.example.cardtally.adapter.DateGroupAdapter
 import com.example.cardtally.database.DatabaseHelper
 import com.example.cardtally.model.Asset
 import com.example.cardtally.model.Category
+import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.state.RecordFormState
 import com.example.cardtally.testing.IsolatedTestGuard
@@ -57,12 +58,14 @@ class RecordPresentationTest {
                     categoryNameSnapshot = "早餐",
                     description = "和同事一起吃饭",
                     type = 0,
+                    assetId = 1,
                     assetSource = "招商银行"
                 ),
                 listener,
                 isMultiSelect = false,
                 isSelected = false,
-                showTypeSubtitle = false
+                showTypeSubtitle = false,
+                assetNamesById = mapOf(1L to "日常账户")
             )
             assertEquals("早餐", view.findViewById<TextView>(R.id.text_category).text.toString())
             assertEquals(
@@ -72,6 +75,7 @@ class RecordPresentationTest {
             assertEquals("和同事一起吃饭", view.findViewById<TextView>(R.id.text_description).text.toString())
             assertEquals(View.VISIBLE, view.findViewById<View>(R.id.text_description).visibility)
             assertEquals(View.VISIBLE, view.findViewById<View>(R.id.text_asset).visibility)
+            assertEquals("日常账户", view.findViewById<TextView>(R.id.text_asset).text.toString())
 
             holder.bind(
                 Record(
@@ -98,6 +102,23 @@ class RecordPresentationTest {
             assertEquals(View.GONE, view.findViewById<View>(R.id.text_description).visibility)
             assertEquals(View.GONE, view.findViewById<View>(R.id.text_asset).visibility)
 
+            val transfer = Record(type = 2, assetId = 1, destinationAssetId = 2,
+                assetSource = "旧转出账户", destinationAssetSource = "旧转入账户")
+            holder.bind(transfer, listener, false, false,
+                assetNamesById = mapOf(1L to "新转出账户", 2L to "新转入账户"))
+            assertEquals("新转出账户 → 新转入账户", view.findViewById<TextView>(R.id.text_category).text.toString())
+            assertEquals("旧转出账户", transfer.assetSource)
+            assertEquals("旧转入账户", transfer.destinationAssetSource)
+
+            val groups = listOf(DateGroup("2026-10-31", listOf(transfer)))
+            val adapter = DateGroupAdapter(groups, listener,
+                assetNamesById = mapOf(1L to "新转出账户", 2L to "新转入账户"))
+            adapter.onBindViewHolder(holder, 1)
+            assertEquals("新转出账户 → 新转入账户", view.findViewById<TextView>(R.id.text_category).text.toString())
+            adapter.updateDateGroups(groups, assetNamesById = mapOf(1L to "再次改名", 2L to "新转入账户"))
+            adapter.onBindViewHolder(holder, 1)
+            assertEquals("再次改名 → 新转入账户", view.findViewById<TextView>(R.id.text_category).text.toString())
+
             holder.bind(
                 Record(category = "工资", description = "本月工资", type = 1),
                 listener,
@@ -108,6 +129,7 @@ class RecordPresentationTest {
             assertEquals("工资", view.findViewById<TextView>(R.id.text_category).text.toString())
             assertEquals("本月工资", view.findViewById<TextView>(R.id.text_description).text.toString())
             assertEquals(View.VISIBLE, view.findViewById<View>(R.id.text_description).visibility)
+            assertEquals(View.GONE, view.findViewById<View>(R.id.text_asset).visibility)
         }
     }
 

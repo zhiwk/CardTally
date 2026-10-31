@@ -23,6 +23,7 @@ import com.example.cardtally.util.IncomeExpenseColorScheme
 import com.example.cardtally.util.LedgerFloatingActionsController
 import com.example.cardtally.util.LedgerMonthIndex
 import com.example.cardtally.util.Money
+import com.example.cardtally.util.RecordAssetDisplay
 import com.example.cardtally.util.ScrollTopFabHelper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.text.SimpleDateFormat
@@ -39,6 +40,7 @@ class LedgerFragment : Fragment() {
     private val states = mutableMapOf<Int, MonthState>()
     private var categoryIcons = emptyMap<Long, String>()
     private var categoryPaths = emptyMap<Long, String>()
+    private var assetNames = emptyMap<Long, String>()
 
     private class MonthState {
         val records = mutableListOf<Record>()
@@ -140,6 +142,7 @@ class LedgerFragment : Fragment() {
         categoryPaths = com.example.cardtally.util.RecordCategoryDisplay.paths(categories)
         categoryIcons = categories.filter { !it.icon.isNullOrEmpty() }
             .associate { it.id to it.icon.orEmpty() }
+        assetNames = RecordAssetDisplay.names(databaseHelper.getAllAssets() + databaseHelper.getArchivedAssets())
         states.values.forEach { it.loaded = false }
         pages?.notifyDataSetChanged()
         pager?.post { if (view != null) refreshFloatingActions() }
@@ -247,7 +250,7 @@ class LedgerFragment : Fragment() {
             }
             rows = LedgerDateGroupAdapter(emptyList(), recordListener, { header ->
                 bindSummary(header, month, state)
-            }, categoryIcons, categoryPaths)
+            }, categoryIcons, categoryPaths, assetNames)
             restoring = true
             list.adapter = rows
             updateRows(state)

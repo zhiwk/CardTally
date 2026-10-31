@@ -34,6 +34,7 @@ import com.example.cardtally.util.LedgerDateRange
 import com.example.cardtally.util.LedgerDisplayHelper
 import com.example.cardtally.util.LedgerPeriodHelper
 import com.example.cardtally.util.Money
+import com.example.cardtally.util.RecordAssetDisplay
 import com.example.cardtally.util.LedgerPeriodPreset
 import com.example.cardtally.util.LedgerUxPreferences
 import com.example.cardtally.util.LedgerView
@@ -617,6 +618,7 @@ class StatisticsFragment : Fragment() {
             recyclerRecords.visibility = View.VISIBLE
             val dateGroups = groupRecordsByDate(detailRecords)
             val categoryPaths = com.example.cardtally.util.RecordCategoryDisplay.paths(databaseHelper.getAllCategories())
+            val assetNames = RecordAssetDisplay.names(databaseHelper.getAllAssets() + databaseHelper.getArchivedAssets())
             if (recordsAdapter == null) {
                 recordsAdapter = DateGroupAdapter(dateGroups, object : DateGroupAdapter.OnRecordActionListener {
                     override fun onOpenDetails(record: Record) {
@@ -642,9 +644,9 @@ class StatisticsFragment : Fragment() {
                     override fun onDeleteSelected(records: List<Record>) {}
                     override fun onEnterMultiSelectMode(record: Record) {}
                     override fun onToggleMultiSelect(record: Record) {}
-                }, categoryPathsById = categoryPaths)
+                }, categoryPathsById = categoryPaths, assetNamesById = assetNames)
             } else {
-                recordsAdapter?.updateDateGroups(dateGroups, categoryPaths)
+                recordsAdapter?.updateDateGroups(dateGroups, categoryPaths, assetNames)
             }
             if (recyclerRecords.adapter !== recordsAdapter) recyclerRecords.adapter = recordsAdapter
         }

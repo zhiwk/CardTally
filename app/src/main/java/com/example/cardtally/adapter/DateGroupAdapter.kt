@@ -13,6 +13,7 @@ import com.example.cardtally.R
 import com.example.cardtally.model.DateGroup
 import com.example.cardtally.model.Record
 import com.example.cardtally.util.Money
+import com.example.cardtally.util.RecordAssetDisplay
 import com.example.cardtally.util.LedgerDisplayHelper
 import com.example.cardtally.util.TablerIconCatalog
 import com.example.cardtally.util.ThemeColorHelper
@@ -30,7 +31,8 @@ class DateGroupAdapter(
      * bill and search pages keep their existing asset label semantics.
      */
     private val showAssetRoute: Boolean = true,
-    private var categoryPathsById: Map<Long, String> = emptyMap()
+    private var categoryPathsById: Map<Long, String> = emptyMap(),
+    private var assetNamesById: Map<Long, String> = emptyMap()
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -101,7 +103,8 @@ class DateGroupAdapter(
                     showDivider = recordIndex < dateGroup.records.lastIndex,
                     roundTopCorners = recordIndex == 0,
                     roundBottomCorners = recordIndex == dateGroup.records.lastIndex,
-                    categoryPathsById = categoryPathsById
+                    categoryPathsById = categoryPathsById,
+                    assetNamesById = assetNamesById
                 )
                 return
             }
@@ -117,8 +120,13 @@ class DateGroupAdapter(
         return count
     }
 
-    fun updateDateGroups(newDateGroups: List<DateGroup>, categoryPathsById: Map<Long, String> = this.categoryPathsById) {
+    fun updateDateGroups(
+        newDateGroups: List<DateGroup>,
+        categoryPathsById: Map<Long, String> = this.categoryPathsById,
+        assetNamesById: Map<Long, String> = this.assetNamesById
+    ) {
         this.categoryPathsById = categoryPathsById
+        this.assetNamesById = assetNamesById
         dateGroups = newDateGroups
         notifyDataSetChanged()
     }
@@ -293,16 +301,14 @@ class DateGroupAdapter(
             roundTopCorners: Boolean = false,
             roundBottomCorners: Boolean = false,
             parentProvidesBackground: Boolean = false,
-            categoryPathsById: Map<Long, String> = emptyMap()
+            categoryPathsById: Map<Long, String> = emptyMap(),
+            assetNamesById: Map<Long, String> = emptyMap()
         ) {
             currentRecord = record
             recordDivider.visibility = if (showDivider) View.VISIBLE else View.GONE
-            val transferRoute = listOfNotNull(
-                record.assetSource?.takeIf { it.isNotBlank() },
-                record.destinationAssetSource?.takeIf { it.isNotBlank() }
-            ).joinToString(" → ")
             textCategory.text = if (record.type == 2) {
-                transferRoute.ifBlank { itemView.context.getString(R.string.record_type_transfer) }
+                RecordAssetDisplay.transferRoute(record, assetNamesById)
+                    .ifBlank { itemView.context.getString(R.string.record_type_transfer) }
             } else {
                 com.example.cardtally.util.RecordCategoryDisplay.label(record, categoryPathsById)
             }
@@ -311,7 +317,7 @@ class DateGroupAdapter(
             textAsset.text = if (record.type == 2) {
                 ""
             } else {
-                record.assetSource?.takeIf { it.isNotBlank() }.orEmpty()
+                RecordAssetDisplay.name(record.assetId, record.assetSource, assetNamesById).orEmpty()
             }
             textAsset.visibility = if (record.type != 2 && showAssetRoute && !textAsset.text.isNullOrBlank()) {
                 View.VISIBLE
