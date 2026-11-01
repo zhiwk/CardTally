@@ -113,6 +113,10 @@ class BackupArchiveManagerTest {
         DatabaseHelper(context).use { helper ->
             helper.addAsset(Asset(name = "Wallet", amount = 500.0))
             helper.updateAsset(helper.getAllAssets().single().copy(amount = 600.0))
+            val session = helper.addAiChatSession("Ledger history")
+            helper.addAiChatMessage(com.example.cardtally.model.AiChatMessage(
+                sessionId = session, role = com.example.cardtally.model.AiChatRole.USER,
+                content = "Restored history", isLocalOnly = true))
         }
         val first = backup()
         DatabaseHelper(context).use { helper -> helper.updateAsset(helper.getAllAssets().single().copy(amount = 400.0)) }
@@ -132,6 +136,11 @@ class BackupArchiveManagerTest {
                 check(it.moveToFirst()); it.getLong(0)
             }
             val wallet = DatabaseHelper(context, ledger).use { it.getAllAssets().single { asset -> asset.name == "Wallet" } }
+            DatabaseHelper(context, ledger).use { scoped ->
+                val session = scoped.getAiChatSessions().single { it.title == "Ledger history" }
+                assertEquals(ledger, requireNotNull(session.ledgerId))
+                assertEquals(listOf("Restored history"), scoped.getAiChatMessages(session.id).map { it.content })
+            }
             org.junit.Assert.assertTrue(wallet.id != 1L)
             assertEquals(400.0, wallet.amount, 0.0)
             val history = helper.getAssetHistoryPage(wallet.id, wallet.name).entries
@@ -146,10 +155,14 @@ class BackupArchiveManagerTest {
     }
 
     @Test fun v3WithoutBalanceEventsRestoresWithoutInventingAnInitialization() {
-        DatabaseHelper(context).use { it.addAsset(Asset(name = "Legacy wallet", amount = 500.0)) }
+        DatabaseHelper(context).use {
+            it.addAsset(Asset(name = "Legacy wallet", amount = 500.0))
+            it.addAiChatSession("Legacy session")
+        }
         val archive = zipManifest { root ->
             root.put("version", 3)
             root.getJSONObject("tables").remove("asset_balance_events")
+            root.getJSONObject("tables").getJSONArray("ai_chat_sessions").getJSONObject(0).remove("ledger_id")
             val aliases = root.getJSONArray("aliases")
             for (index in aliases.length() - 1 downTo 0) {
                 if (aliases.getJSONObject(index).getString("table") == "asset_balance_events") aliases.remove(index)
@@ -159,11 +172,17 @@ class BackupArchiveManagerTest {
         restore(archive)
         assertEquals(50_000L, balance())
         assertEquals(0, count("asset_balance_events"))
+        DatabaseHelper(context).use { helper ->
+            org.junit.Assert.assertNull(helper.getAiChatSessions().single { it.title == "Legacy session" }.ledgerId)
+        }
     }
 
     @Test fun v4MissingBalanceEventsTableFailsWithoutImportingAssets() {
         DatabaseHelper(context).use { it.addAsset(Asset(name = "Wallet", amount = 500.0)) }
-        val archive = zipManifest { it.getJSONObject("tables").remove("asset_balance_events") }
+        val archive = zipManifest {
+            it.put("version", 4)
+            it.getJSONObject("tables").remove("asset_balance_events")
+        }
         resetInstallation()
         assertThrows(IllegalArgumentException::class.java) {
             BackupArchiveManager(context).importFrom(ByteArrayInputStream(archive), password)

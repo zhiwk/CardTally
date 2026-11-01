@@ -330,8 +330,8 @@ class DatabaseHelper(
     companion object {
         private const val DATABASE_NAME = "CardTally.db"
         private val RECURRING_PROCESS_LOCK = Any()
-        /** v44 records future asset initialization/manual adjustments without fabricating old history. */
-        private const val DATABASE_VERSION = 44
+        /** v45 scopes chat sessions to ledgers; old sessions remain explicitly unassigned. */
+        private const val DATABASE_VERSION = 45
         const val MAX_RECORD_QUERY_LIMIT = 200
         const val RECORD_UNDO_WINDOW_MS = 10_000L
 
@@ -760,7 +760,7 @@ class DatabaseHelper(
             "$COLUMN_AI_CHAT_SESSION_ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "$COLUMN_AI_CHAT_SESSION_TITLE TEXT NOT NULL, " +
             "$COLUMN_AI_CHAT_SESSION_CREATED_AT INTEGER NOT NULL, " +
-            "$COLUMN_AI_CHAT_SESSION_UPDATED_AT INTEGER NOT NULL)"
+            "$COLUMN_AI_CHAT_SESSION_UPDATED_AT INTEGER NOT NULL, ledger_id INTEGER)"
 
         private const val CREATE_TABLE_AI_CHAT_MESSAGES =
             "CREATE TABLE $TABLE_AI_CHAT_MESSAGES (" +
@@ -950,6 +950,10 @@ class DatabaseHelper(
         if (oldVersion < 44) {
             db.execSQL(AssetHistoryRepository.CREATE_TABLE_SQL)
             db.execSQL(AssetHistoryRepository.CREATE_INDEX_SQL)
+        }
+        if (oldVersion < 45) {
+            ensureColumn(db, TABLE_AI_CHAT_SESSIONS, "ledger_id",
+                "ALTER TABLE $TABLE_AI_CHAT_SESSIONS ADD COLUMN ledger_id INTEGER")
         }
     }
 
@@ -1628,22 +1632,35 @@ class DatabaseHelper(
         title: String,
         createdAt: Long = System.currentTimeMillis(),
         updatedAt: Long = createdAt
-    ): Long = aiChatRepository.addSession(title, createdAt, updatedAt)
+    ): Long = aiChatRepository.addSession(title, createdAt, updatedAt, currentLedgerId())
 
     fun getAiChatSessions(): List<AiChatSession> = aiChatRepository.getSessions()
+        .filter { it.ledgerId == null || it.ledgerId == currentLedgerId() }
+
+    fun bindAiChatSession(id: Long, ledgerId: Long): Boolean {
+        require(getLedgers().any { it.id == ledgerId })
+        return writableDatabase.update(TABLE_AI_CHAT_SESSIONS,
+            ContentValues().apply { put("ledger_id", ledgerId) },
+            "id = ? AND ledger_id IS NULL", arrayOf(id.toString())) == 1
+    }
 
     fun getAiChatSessionById(id: Long): AiChatSession? = aiChatRepository.getSessionById(id)
+        ?.takeIf { it.ledgerId == null || it.ledgerId == currentLedgerId() }
 
     fun updateAiChatSessionTitle(
         id: Long,
         title: String,
         updatedAt: Long = System.currentTimeMillis()
-    ): Int = aiChatRepository.updateSessionTitle(id, title, updatedAt)
+    ): Int = if (getAiChatSessionById(id) != null) aiChatRepository.updateSessionTitle(id, title, updatedAt) else 0
 
     fun touchAiChatSession(id: Long, updatedAt: Long = System.currentTimeMillis()): Int =
-        aiChatRepository.touchSession(id, updatedAt)
+        if (getAiChatSessionById(id) != null) aiChatRepository.touchSession(id, updatedAt) else 0
 
-    fun addAiChatMessage(message: AiChatMessage): Long = aiChatRepository.addMessage(message)
+    fun addAiChatMessage(message: AiChatMessage): Long {
+        require(getAiChatSessionById(message.sessionId)?.ledgerId == currentLedgerId())
+        return aiChatRepository.addMessage(message)
+    }
 
-    fun getAiChatMessages(sessionId: Long): List<AiChatMessage> = aiChatRepository.getMessages(sessionId)
+    fun getAiChatMessages(sessionId: Long): List<AiChatMessage> =
+        if (getAiChatSessionById(sessionId) != null) aiChatRepository.getMessages(sessionId) else emptyList()
 }

@@ -149,6 +149,8 @@
 
 ### 改 AI 助手 / MiniMax 对话 / 会话持久化
 
+会话上下文另读 `2026-11-01-ai-session-history.md`、`ai/AiSessionContext.kt`：SQLite v45会话归属账本，旧会话显式认领；每次请求从同会话持久文本构建近期上下文，跨API继续发送，不重放工具调用/确认。备份ZIP v5需重映射会话ledger_id，旧格式无归属保持空；删除/合并来源账本会话保留待归属。普通与工具请求均使用相同文本筛选，不能只改普通请求或仅移除local_only过滤。
+
 先读：
 
 1. `app/src/main/java/com/example/cardtally/AgentFragment.kt`

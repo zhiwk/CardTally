@@ -228,6 +228,7 @@ internal class LedgerWriteRepository(
                 ledgerIds.map(Long::toString).toTypedArray()
             )
             ledgerIds.forEach { db.delete(columns.assetsTable, "${columns.assetLedgerId} = ?", arrayOf(it.toString())) }
+            ledgerIds.forEach { db.execSQL("UPDATE ai_chat_sessions SET ledger_id = NULL WHERE ledger_id = ?", arrayOf(it)) }
             db.delete(
                 columns.ledgersTable,
                 "${columns.ledgerId} IN (${ledgerIds.joinToString { "?" }})",
@@ -310,6 +311,7 @@ internal class LedgerWriteRepository(
                     )
                 }
                 db.delete(columns.sharedLedgersTable, "${columns.sharedLedgerId} = ?", arrayOf(sourceLedgerId.toString()))
+                db.execSQL("UPDATE ai_chat_sessions SET ledger_id = NULL WHERE ledger_id = ?", arrayOf(sourceLedgerId))
                 db.delete(columns.ledgersTable, "${columns.ledgerId} = ?", arrayOf(sourceLedgerId.toString()))
                 repointSharedReferences(db, members, sourceLedgerId, targetLedgerId)
             }

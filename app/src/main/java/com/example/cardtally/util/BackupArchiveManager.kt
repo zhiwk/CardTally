@@ -634,7 +634,12 @@ class BackupArchiveManager(private val context: Context) {
                         }) recurring++
                 }
                 rows(tables, "ai_chat_sessions").forEach { row ->
-                    if (insert("ai_chat_sessions", row)) sessions++
+                    require(root.getInt("version") < 5 || row.has("ledger_id")) { "Missing session ledger scope" }
+                    if (insert("ai_chat_sessions", row) { content ->
+                            if (row.has("ledger_id") && !row.isNull("ledger_id")) {
+                                content.put("ledger_id", requiredId(mapped("ledgers", row.getLong("ledger_id"))))
+                            } else content.putNull("ledger_id")
+                        }) sessions++
                 }
                 rows(tables, "ai_chat_messages").forEach { row ->
                     if (insert("ai_chat_messages", row) {
@@ -1050,7 +1055,7 @@ class BackupArchiveManager(private val context: Context) {
     companion object {
         private val ENCRYPTED_MAGIC = byteArrayOf('C'.code.toByte(), 'T'.code.toByte(), 'B'.code.toByte(), '3'.code.toByte())
         private const val FORMAT = "cardtally-backup"
-        private const val VERSION = 4
+        private const val VERSION = 5
         private const val MAX_MANIFEST_BYTES = 128 * 1024 * 1024
         private const val MAX_PHOTO_BYTES = 50L * 1024 * 1024
         private const val MAX_TOTAL_PHOTO_BYTES = 1024L * 1024 * 1024

@@ -909,7 +909,7 @@
     <string name="theme_wallpaper_reset_failed">无法恢复默认图片，请重试</string>
 
     <string name="ai_record_enable">允许 AI 提出账单操作</string>
-    <string name="ai_record_enable_hint">开启后，AI 可自动查询当前账本的账单、账户和分类，并将查询结果及本页对话上下文发送给所配置的服务和模型。中途只补充信息；最终新增、修改或删除账单时，才需你确认一次。不发送账户余额或附件。</string>
+    <string name="ai_record_enable_hint">开启后，AI 可自动查询当前账本的账单、账户和分类，并将查询结果及本会话近期历史发送给所配置的服务和模型。重新打开会话或切换 API 后，历史仍会在发送消息时提供；关闭账单工具不会清除已保存的会话历史。最终新增、修改或删除账单需你确认一次。不发送账户余额或附件。</string>
     <string name="ai_record_ready">账单操作已开启 · 模型 %1$s</string>
     <string name="ai_record_create">新增账单</string>
     <string name="ai_record_update">修改账单</string>
@@ -941,7 +941,7 @@
 备注：%8$s</string>
     <string name="ai_record_invalid">AI 给出的账单参数不完整或不符合规则，未执行。请补充准确的日期、金额与叶子分类，或重新查询目标账单；转账还需两个不同的账户。</string>
     <string name="ai_record_changed_or_failed">账单或相关账户、分类已变化，或操作未能完成。未确认成功的操作不会继续发送给模型，请重新查询并确认。</string>
-    <string name="ai_record_disclosure">本次操作结果会发送至 %1$s，模型 %2$s。查询结果和本页对话上下文已按账单工具设置自动提供给该服务；只需确认以上最终账单操作。不会在对话内容中发送账户余额、附件、API Key 或操作日志；API Key 仅用于请求认证。</string>
+    <string name="ai_record_disclosure">本次操作结果会发送至 %1$s，模型 %2$s。查询结果和本会话近期历史已按设置自动提供给该服务；只需确认以上最终账单操作。历史不代表当前账目或执行授权。不会在对话内容中发送账户余额、附件、API Key 或操作日志；API Key 仅用于请求认证。</string>
     <string name="ai_record_confirm">确认执行</string>
     <string name="ai_record_review">查看并确认</string>
     <string name="ai_record_reject">取消操作</string>
@@ -1003,4 +1003,8 @@
     <string name="category_action_unsaved_message">此操作使用已保存的分类，不会保存当前修改。取消后可继续编辑，是否继续？</string>
     <string name="category_continue">继续</string>
     <string name="category_editor_save_failed">操作未完成，请检查分类状态、层级限制或名称后重试</string>
+    <string name="agent_session_unassigned">待归属 · %1$s</string>
+    <string name="agent_session_assign_title">为旧会话选择账本（仅归属一次）</string>
+    <string name="agent_history_disclosure">会话仅属于创建时的账本。发送消息时会自动携带本会话近期历史（含财务查询内容）；切换 API 服务或模型后，历史仍会发送给新配置的服务。仅打开会话不会发送。历史不代表当前账目或执行授权。</string>
+    <string name="agent_message_too_long">消息过长，请缩短至 48000 字符以内。</string>
 </resources>

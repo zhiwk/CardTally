@@ -35,7 +35,7 @@ class CategoryDefaultsCompletionTest {
         val original = rawDatabase().use { rows(it, "categories") to rows(it, "records") }
         DatabaseHelper(context).use { helper ->
             val db = helper.writableDatabase
-            assertEquals(44, db.version)
+            assertEquals(45, db.version)
             assertCatalog(db)
             assertEquals(1, scalar(db, "SELECT COUNT(*) FROM categories WHERE id = 502 AND name = '服饰'"))
             assertEquals(original.second.map { row -> row.filterIndexed { index, _ -> index != 4 } },

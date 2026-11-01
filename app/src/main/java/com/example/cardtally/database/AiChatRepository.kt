@@ -30,11 +30,12 @@ internal class AiChatRepository(
         val messageLocalOnly: String = "local_only"
     )
 
-    fun addSession(title: String, createdAt: Long, updatedAt: Long): Long {
+    fun addSession(title: String, createdAt: Long, updatedAt: Long, ledgerId: Long): Long {
         val values = ContentValues().apply {
             put(columns.sessionTitle, title)
             put(columns.sessionCreatedAt, createdAt)
             put(columns.sessionUpdatedAt, updatedAt)
+            put("ledger_id", ledgerId)
         }
         return writableDatabase().insert(columns.sessionsTable, null, values)
     }
@@ -109,7 +110,8 @@ internal class AiChatRepository(
         id = getLong(column(columns.sessionId)),
         title = getString(column(columns.sessionTitle)),
         createdAt = getLong(column(columns.sessionCreatedAt)),
-        updatedAt = getLong(column(columns.sessionUpdatedAt))
+        updatedAt = getLong(column(columns.sessionUpdatedAt)),
+        ledgerId = getColumnIndex("ledger_id").takeIf { it >= 0 && !isNull(it) }?.let { getLong(it) }
     )
 
     private fun Cursor.toMessage() = AiChatMessage(

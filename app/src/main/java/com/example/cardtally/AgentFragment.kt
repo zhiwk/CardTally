@@ -74,6 +74,8 @@ class AgentFragment : Fragment() {
     private lateinit var recordActionPanel: View
     private lateinit var recordActionText: TextView
     private var currentSessionId = 0L
+    private var pageLedgerId = 0L
+    private var legacySessionDialog: AlertDialog? = null
     private var isSessionDrawerOpen = false
     // Monotonically increasing request identity. A callback is only applied when
     // its captured requestId matches this value, so a stopped request A cannot
@@ -88,7 +90,8 @@ class AgentFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_agent, container, false)
 
-        databaseHelper = DatabaseHelper(requireContext())
+        pageLedgerId = DatabaseHelper(requireContext()).use { requireNotNull(it.getCurrentLedger()).id }
+        databaseHelper = DatabaseHelper(requireContext(), pageLedgerId)
         recyclerMessages = view.findViewById(R.id.recycler_agent_messages)
         recyclerSessions = view.findViewById(R.id.recycler_agent_sessions)
         layoutConfigMissing = view.findViewById(R.id.layout_agent_config_missing)
@@ -176,7 +179,9 @@ class AgentFragment : Fragment() {
         applyComposerGapAboveBottomNav()
         restoredAgentState = AgentScreenState.readFrom(savedInstanceState)
         initializeChatState(restoredAgentState!!)
-        editMessage.setText(restoredAgentState!!.composerText)
+        editMessage.setText(restoredAgentState!!.composerText.takeIf {
+            restoredAgentState!!.activeSessionId == currentSessionId
+        }.orEmpty())
         refreshChatUi()
         view.post { restoreAgentViewState() }
         return view
@@ -192,6 +197,17 @@ class AgentFragment : Fragment() {
         (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(isSessionDrawerOpen)
         applyComposerGapAboveBottomNav()
 
+        val ledgerId = com.example.cardtally.util.LedgerSession.getCurrentId(requireContext()) ?: pageLedgerId
+        if (ledgerId != pageLedgerId) {
+            forceStopStreamingIfNeeded()
+            recordAssistant = null
+            legacySessionDialog?.dismiss()
+            databaseHelper.close()
+            pageLedgerId = ledgerId
+            databaseHelper = DatabaseHelper(requireContext(), ledgerId)
+            initializeChatState(AgentScreenState.readFrom(null))
+            editMessage.setText("")
+        }
         if (!AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext()) ||
             !AiAssistantSettingsHelper.isMiniMaxConfigComplete(requireContext())) {
             forceStopStreamingIfNeeded()
@@ -215,6 +231,8 @@ class AgentFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        legacySessionDialog?.dismiss()
+        legacySessionDialog = null
         (activity as? MainActivity)?.setBottomNavigationTemporarilyHidden(false)
         if (isSending) {
             stopActiveStreamByUser()
@@ -267,6 +285,8 @@ class AgentFragment : Fragment() {
     }
 
     internal fun sendCurrentMessage() {
+        if (com.example.cardtally.util.LedgerSession.getCurrentId(requireContext()) != pageLedgerId ||
+            databaseHelper.getAiChatSessionById(currentSessionId)?.ledgerId != pageLedgerId) return
         if (isSending) {
             if (hasActiveStream) {
                 stopActiveStreamByUser()
@@ -285,6 +305,10 @@ class AgentFragment : Fragment() {
         val content = editMessage.text.toString().trim()
         if (content.isBlank()) {
             editMessage.error = getString(R.string.agent_error_empty_message)
+            return
+        }
+        if (content.length > com.example.cardtally.ai.AiSessionContext.MAX_CHARACTERS) {
+            editMessage.error = getString(R.string.agent_message_too_long)
             return
         }
 
@@ -334,20 +358,19 @@ class AgentFragment : Fragment() {
         val handle = if (recordTurn) {
             val ledgerId = requireNotNull(databaseHelper.getCurrentLedger()).id
             val config = AiAssistantSettingsHelper.getMiniMaxConfig(requireContext())
-            val previousContext = recordAssistant?.contextForNextTurn(config, ledgerId, requestSessionId)
             recordAssistant = AiRecordAssistant(
-                requireContext(), AiAssistantSettingsHelper.getMiniMaxConfig(requireContext()),
+                requireContext(), config,
                 ledgerId, requestSessionId,
                 onPending = { plan -> showRecordAction(plan) },
                 onLocalResult = { receipt -> deliverAiResult(requestId, requestSessionId,
                     MiniMaxChatResult.StreamingChunk(receipt)) },
                 onComplete = { result -> deliverAiResult(requestId, requestSessionId, result) }
             )
-            recordAssistant!!.start(content, previousContext)
+            recordAssistant!!.start(content, history = chatMessages.filter { it !== userMessage })
         } else {
             miniMaxClient.sendChat(
                 config = AiAssistantSettingsHelper.getMiniMaxConfig(requireContext()),
-                messages = chatMessages.filter { !it.isError && !it.isLocalOnly && it.content.isNotBlank() }.toList()
+                messages = com.example.cardtally.ai.AiSessionContext.history(chatMessages, currentSessionId)
             ) { result -> deliverAiResult(requestId, requestSessionId, result) }
         }
         requestLifecycle.markStarted(handle)
@@ -453,7 +476,9 @@ class AgentFragment : Fragment() {
 
     /** Guards against stale callbacks: a request is only applied while it is current. */
     private fun isCurrentRequest(requestId: Long, requestSessionId: Long): Boolean {
-        return requestIdentity.isCurrent(requestId, requestSessionId)
+        return requestIdentity.isCurrent(requestId, requestSessionId) &&
+            com.example.cardtally.util.LedgerSession.getCurrentId(requireContext()) == pageLedgerId &&
+            databaseHelper.getAiChatSessionById(requestSessionId)?.ledgerId == pageLedgerId
     }
 
     /** Marks the active request finished / expected to no longer receive callbacks. */
@@ -568,7 +593,7 @@ class AgentFragment : Fragment() {
     }
 
     private fun initializeChatState(restoredState: AgentScreenState) {
-        val sessions = databaseHelper.getAiChatSessions()
+        val sessions = databaseHelper.getAiChatSessions().filter { it.ledgerId == pageLedgerId }
         val savedSessionId = AiAssistantSettingsHelper.getActiveSessionId(requireContext())
         currentSessionId = sessions.firstOrNull { it.id == restoredState.activeSessionId }?.id
             ?: sessions.firstOrNull { it.id == savedSessionId }?.id
@@ -576,6 +601,7 @@ class AgentFragment : Fragment() {
             ?: createSessionInternal(AgentSessionTitleHelper.createDefaultTitle())
 
         AiAssistantSettingsHelper.saveActiveSessionId(requireContext(), currentSessionId)
+        databaseHelper.touchAiChatSession(currentSessionId)
         ensureGreetingMessageIfNeeded(currentSessionId)
         loadCurrentSessionMessages()
         refreshSessionList()
@@ -633,7 +659,7 @@ class AgentFragment : Fragment() {
             val sessionMessages = getSessionMessagesWithCurrentGreeting(session.id)
             AgentSessionListItem(
                 sessionId = session.id,
-                title = session.title,
+                title = if (session.ledgerId == null) getString(R.string.agent_session_unassigned, session.title) else session.title,
                 preview = sessionMessages.lastOrNull()?.content?.replace("\n", " ")
                     ?.takeIf { it.isNotBlank() }
                     ?: getString(R.string.agent_session_empty_state),
@@ -645,6 +671,23 @@ class AgentFragment : Fragment() {
     }
 
     private fun switchToSession(sessionId: Long) {
+        val session = databaseHelper.getAiChatSessionById(sessionId) ?: return
+        if (session.ledgerId == null) {
+            val ledgers = databaseHelper.getLedgers()
+            legacySessionDialog?.dismiss()
+            legacySessionDialog = AlertDialog.Builder(requireContext())
+                .setTitle(R.string.agent_session_assign_title)
+                .setItems(ledgers.map { it.name }.toTypedArray()) { _, index ->
+                    if (databaseHelper.bindAiChatSession(sessionId, ledgers[index].id)) {
+                        refreshSessionList()
+                        if (ledgers[index].id == pageLedgerId) switchToSession(sessionId)
+                    }
+                }
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .show()
+            return
+        }
+        if (session.ledgerId != pageLedgerId) return
         if (sessionId <= 0L || sessionId == currentSessionId) {
             closeSessionDrawer()
             return
@@ -652,6 +695,7 @@ class AgentFragment : Fragment() {
 
         forceStopStreamingIfNeeded()
         currentSessionId = sessionId
+        databaseHelper.touchAiChatSession(sessionId)
         AiAssistantSettingsHelper.saveActiveSessionId(requireContext(), currentSessionId)
         ensureGreetingMessageIfNeeded(currentSessionId)
         loadCurrentSessionMessages()
@@ -682,7 +726,7 @@ class AgentFragment : Fragment() {
         showSessionNameDialog(
             title = getString(R.string.agent_session_rename_title),
             positiveButtonText = getString(R.string.agent_session_rename_confirm),
-            initialValue = item.title,
+            initialValue = databaseHelper.getAiChatSessionById(item.sessionId)?.title ?: return,
             onConfirm = { newTitle ->
                 databaseHelper.updateAiChatSessionTitle(item.sessionId, newTitle)
                 refreshSessionList()

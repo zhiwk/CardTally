@@ -14,6 +14,6 @@ data class AiChatMessage(
     val reasoning: String? = null,
     val isError: Boolean = false,
     val createdAt: Long = 0L,
-    /** Financial-tool turns stay local and are never replayed into ordinary chat. */
+    /** Legacy financial-turn marker; session-scoped context explicitly permits text reuse. */
     val isLocalOnly: Boolean = false
 )

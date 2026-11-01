@@ -823,7 +823,7 @@
     <string name="theme_wallpaper_reset_failed">Cannot restore the default picture. Please try again.</string>
 
     <string name="ai_record_enable">Allow AI record proposals</string>
-    <string name="ai_record_enable_hint">When enabled, AI can automatically query this ledger’s records, accounts and categories and send results and this page’s conversation context to your configured service and model. Clarify details in chat; confirm once for the final create, update or delete. Account balances and attachments are not sent.</string>
+    <string name="ai_record_enable_hint">When enabled, AI can query this ledger’s records, accounts and categories and send results and recent session history to your configured service and model. History is included when sending, even after reopening or changing APIs. Turning tools off does not clear saved session history. Confirm once for the final create, update or delete. Account balances and attachments are not sent.</string>
     <string name="ai_record_ready">Record tools enabled · Model %1$s</string>
     <string name="ai_record_create">Create record</string>
     <string name="ai_record_update">Update record</string>
@@ -855,7 +855,7 @@ Fee: ¥%7$s
 Note: %8$s</string>
     <string name="ai_record_invalid">The proposed record parameters are incomplete or invalid. Nothing was executed. Provide the date, amount and leaf category, or query the target record again. Transfers also require two different accounts.</string>
     <string name="ai_record_changed_or_failed">The record, account or category changed, or the operation could not complete. Unsuccessful operations are not sent back to the model. Query again and review a new proposal.</string>
-    <string name="ai_record_disclosure">This operation’s result will be sent to %1$s, model %2$s. Query results and this page’s conversation context are automatically shared under your record tool setting; confirm only the final record operation above. Account balances, attachments, API keys and operation logs are not sent in chat content. The API key is used only for request authentication.</string>
+    <string name="ai_record_disclosure">This operation’s result will be sent to %1$s, model %2$s. Query results and recent session history are automatically shared under your settings; confirm only the final record operation above. History is not current account data or execution authorization. Account balances, attachments, API keys and operation logs are not sent in chat content. The API key is used only for request authentication.</string>
     <string name="ai_record_confirm">Confirm operation</string>
     <string name="ai_record_review">Review and confirm</string>
     <string name="ai_record_reject">Cancel operation</string>
@@ -917,4 +917,8 @@ Type: %7$s · Destination: %8$s · Fee: ¥%9$s</string>
     <string name="category_action_unsaved_message">This action uses the saved category and will not save your edits. You can continue editing if you cancel. Continue?</string>
     <string name="category_continue">Continue</string>
     <string name="category_editor_save_failed">Action not completed. Check the category, depth limit or name and try again.</string>
+    <string name="agent_session_unassigned">Unassigned · %1$s</string>
+    <string name="agent_session_assign_title">Choose a ledger for this legacy session (once only)</string>
+    <string name="agent_history_disclosure">Sessions belong to their original ledger. Sending a message includes recent session history, including financial query content, even after changing API services or models. Opening a session alone sends nothing. History is not current account data or execution authorization.</string>
+    <string name="agent_message_too_long">Message too long. Please use no more than 48000 characters.</string>
 </resources>

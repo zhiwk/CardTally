@@ -203,8 +203,12 @@ class DataTransferManager(private val context: Context) : AutoCloseable {
             rows(tables, "ai_chat_sessions").forEach { row ->
                 val oldId = row.optLong("id", 0L)
                 if (oldId <= 0L) return@forEach
-                val existing = db.rawQuery("SELECT id FROM ai_chat_sessions WHERE title = ? AND created_at = ? LIMIT 1", arrayOf(row.optString("title"), row.optLong("created_at").toString())).use { if (it.moveToFirst()) it.getLong(0) else 0L }
-                val id = existing.takeIf { it > 0 } ?: db.insertOrThrow("ai_chat_sessions", null, values(row, setOf("id"), columns(db, "ai_chat_sessions")))
+                val ledger = if (row.has("ledger_id") && !row.isNull("ledger_id"))
+                    requireNotNull(ledgerMap[row.getLong("ledger_id")]) else null
+                val existing = db.rawQuery("SELECT id FROM ai_chat_sessions WHERE title = ? AND created_at = ? AND ledger_id IS ? LIMIT 1", arrayOf(row.optString("title"), row.optLong("created_at").toString(), ledger?.toString())).use { if (it.moveToFirst()) it.getLong(0) else 0L }
+                val content = values(row, setOf("id"), columns(db, "ai_chat_sessions"))
+                if (ledger == null) content.putNull("ledger_id") else content.put("ledger_id", ledger)
+                val id = existing.takeIf { it > 0 } ?: db.insertOrThrow("ai_chat_sessions", null, content)
                 sessionMap[oldId] = id
                 if (existing == 0L) sessionCount++
             }

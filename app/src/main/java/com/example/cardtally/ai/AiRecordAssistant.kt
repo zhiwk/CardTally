@@ -12,6 +12,7 @@ import com.example.cardtally.network.MiniMaxErrorType
 import com.example.cardtally.network.MiniMaxRequestHandle
 import com.example.cardtally.util.AiAssistantSettingsHelper
 import com.example.cardtally.util.LedgerSession
+import com.example.cardtally.model.AiChatMessage
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import okhttp3.Call
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -32,7 +33,6 @@ class AiRecordAssistant(
     private val onLocalResult: (String) -> Unit,
     private val onComplete: (MiniMaxChatResult) -> Unit
 ) {
-    data class ContinuationContext(val serialize: () -> String)
     private val db = DatabaseHelper(context, ledgerId)
     private val engine = AiRecordEngine(context, db)
     private val audit get() = AiRecordAuditStore(db.writableDatabase)
@@ -50,18 +50,15 @@ class AiRecordAssistant(
     private val receipts = mutableListOf<String>()
     private val origin = config.requestUrl.toHttpUrlOrNull()?.let { "${it.scheme}://${it.host}:${it.port}" }.orEmpty()
 
-    fun contextForNextTurn(nextConfig: MiniMaxConfig, nextLedger: Long, nextSession: Long): ContinuationContext? =
-        if (!active && config == nextConfig && ledgerId == nextLedger && sessionId == nextSession)
-            ContinuationContext { messages.toString() } else null
-
-    fun start(content: String, previousContext: ContinuationContext? = null): MiniMaxRequestHandle {
+    fun start(content: String, history: List<AiChatMessage> = emptyList()): MiniMaxRequestHandle {
         audit.expireUnfinished()
         val handle = MiniMaxRequestHandle { cancel() }
         if (!validScope()) { cancel(); return handle }
         messages.put(RecordToolProtocol.systemMessage(SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())))
-        if (previousContext != null) {
-            val previous = JSONArray(previousContext.serialize())
-            for (index in 1 until previous.length()) messages.put(previous.getJSONObject(index))
+        AiSessionContext.history(history, sessionId,
+            (AiSessionContext.MAX_CHARACTERS - content.length).coerceAtLeast(0),
+            AiSessionContext.MAX_MESSAGES - 1).forEach {
+            messages.put(JSONObject().put("role", it.role.apiValue).put("content", it.content))
         }
         messages.put(JSONObject().put("role", "user").put("content", content))
         request()
@@ -72,7 +69,8 @@ class AiRecordAssistant(
         AiAssistantSettingsHelper.getRecordToolsEnabled(context) &&
         AiAssistantSettingsHelper.getMiniMaxConfig(context) == config &&
         LedgerSession.getCurrentId(context) == ledgerId &&
-        AiAssistantSettingsHelper.getActiveSessionId(context) == sessionId
+        AiAssistantSettingsHelper.getActiveSessionId(context) == sessionId &&
+        db.getAiChatSessionById(sessionId)?.ledgerId == ledgerId
 
     private fun request() {
         if (!validScope()) { cancel(); return }

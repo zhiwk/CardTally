@@ -50,6 +50,20 @@ class DatabaseHelperAgentChatSessionTest {
 
         assertEquals(listOf(newerId, olderId), sessions.map { it.id })
         assertEquals(listOf("新会话", "旧会话"), sessions.map { it.title })
+        val ledgerId = databaseHelper.getCurrentLedger()!!.id
+        assertTrue(sessions.all { it.ledgerId == ledgerId })
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val otherLedger = databaseHelper.addLedger("其他账本")
+        DatabaseHelper(context, otherLedger).use { other ->
+            val otherSession = other.addAiChatSession("隔离会话")
+            assertEquals(listOf(otherSession), other.getAiChatSessions().map { it.id })
+            assertNull(other.getAiChatSessionById(olderId))
+            assertTrue(other.getAiChatMessages(olderId).isEmpty())
+        }
+        databaseHelper.writableDatabase.execSQL("UPDATE ai_chat_sessions SET ledger_id = NULL WHERE id = ?", arrayOf(olderId))
+        assertNull(databaseHelper.getAiChatSessionById(olderId)?.ledgerId)
+        assertTrue(databaseHelper.bindAiChatSession(olderId, ledgerId))
+        org.junit.Assert.assertFalse(databaseHelper.bindAiChatSession(olderId, otherLedger))
     }
 
     @Test
