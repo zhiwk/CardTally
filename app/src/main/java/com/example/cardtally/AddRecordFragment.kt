@@ -85,7 +85,11 @@ open class AddRecordFragment : Fragment() {
                 selectedDate = date,
                 selectedAssetId = assetId,
                 expenseAssetId = assetId,
-                hasEnteredExpense = true
+                incomeAssetId = assetId,
+                transferSourceAssetId = assetId,
+                hasEnteredExpense = true,
+                hasEnteredIncome = true,
+                hasEnteredTransfer = true
             )
             return newEntryInstance(initialState, ledgerId)
         }

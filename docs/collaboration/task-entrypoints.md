@@ -92,7 +92,7 @@
 
 ### 改重复记账 / 转账资产选择
 
-账户详情入口见 `AssetRecordsFragment.openRecord` / `openTransfer` 与 `AddRecordFragment.newAssetRecordInstance` / `newTransferInstance`：两者以当前账本和当前可用资产 ID 初始化草稿。「记一笔」只预选本资产为支出账户，收入和转账仍沿用原逻辑；直接「转账」预选本资产为转出方，转入方为空。仅初始化草稿，后续用户选择及重建恢复优先，不修改全局默认资产；保存沿用原记账事务，返回详情重新读取余额及流水。共享资产可转账，不以管理所有权限制记账。
+账户详情入口见 `AssetRecordsFragment.openRecord` / `openTransfer` 与 `AddRecordFragment.newAssetRecordInstance` / `newTransferInstance`：两者以当前账本和当前可用资产 ID 初始化草稿。「记一笔」预选本资产为支出、收入账户及转账转出方，转入方为空；直接「转账」仍只预选本资产为转出方，转入方为空。仅初始化草稿，后续各类型用户选择（包括收支清空）及重建恢复优先，不修改全局默认资产；保存沿用原记账事务，返回详情重新读取余额及流水。共享资产可转账，不以管理所有权限制记账。
 
 先读：
 
