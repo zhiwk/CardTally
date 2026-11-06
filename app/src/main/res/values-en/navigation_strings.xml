@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="settings_bottom_navigation">Bottom navigation style</string>
+  <string name="navigation_position_title">Menu position</string>
+  <string name="ai_entry_style_title">AI entry style</string>
+  <string name="ai_entry_style_menu">In menu</string>
+  <string name="ai_entry_style_menu_desc">Keep AI alongside the other navigation destinations</string>
+  <string name="ai_entry_style_circle">Separate circle</string>
+  <string name="ai_entry_style_circle_desc">Show AI separately from the other destinations, on the left or right</string>
+  <string name="ai_entry_position_title">AI entry position</string>
+  <string name="ai_entry_position_left">Left</string>
+  <string name="ai_entry_position_right">Right</string>
+  <string name="navigation_order_title">Menu order</string>
+  <string name="navigation_order_hint">Drag the handles to reorder; release to save. Only visible in-menu destinations are listed. Hidden entries and separate AI keep their saved slots. The start page does not change.</string>
+  <string name="navigation_order_reset">Restore default order</string>
+  <string name="navigation_order_move_up">Move up</string>
+  <string name="navigation_order_move_down">Move down</string>
+  <string name="navigation_style_summary">%1$s · %2$s</string>
   <string name="navigation_style_floating">Floating</string>
   <string name="navigation_style_floating_desc">A floating capsule above full-screen page content</string>
   <string name="navigation_style_docked">Docked</string>

@@ -934,6 +934,7 @@ class BackupArchiveManager(private val context: Context) {
         "default_record_asset_prefs" -> if (key.endsWith("_asset_id")) "long" else null
         "record_category_order_prefs" -> "string"
         "record_entry_mode_prefs" -> if (key == "record_entry_mode") "string" else null
+        "bottom_navigation_prefs" -> if (key in setOf("style", "ai_entry_style", "ai_entry_position", "item_order")) "string" else null
         "statistics_ranking_mode_prefs" ->
             if (key == "statistics_ranking_mode") "string" else null
         "language_prefs" -> when (key) {

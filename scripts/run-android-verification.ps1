@@ -68,8 +68,8 @@ function Assert-DeviceGroupCoverage {
     if ($duplicate.Count -gt 0 -or $difference.Count -gt 0) {
         throw "Device test groups do not cover each androidTest class exactly once. Duplicates: $($duplicate.Name -join ', '); differences: $($difference.InputObject -join ', ')"
     }
-    if (($deviceTestGroups | ForEach-Object { $_.Expected } | Measure-Object -Sum).Sum -ne 170) {
-        throw 'Expected device test counts must total 170; review the group manifest.'
+    if (($deviceTestGroups | ForEach-Object { $_.Expected } | Measure-Object -Sum).Sum -ne 173) {
+        throw 'Expected device test counts must total 173; review the group manifest.'
     }
 }
 

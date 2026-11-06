@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="settings_bottom_navigation">底部菜单样式</string>
+  <string name="navigation_position_title">菜单位置</string>
+  <string name="ai_entry_style_title">AI 入口样式</string>
+  <string name="ai_entry_style_menu">菜单内</string>
+  <string name="ai_entry_style_menu_desc">AI 助手与其他菜单项排列在同一底栏</string>
+  <string name="ai_entry_style_circle">独立圆形</string>
+  <string name="ai_entry_style_circle_desc">AI 助手独立于其他菜单项显示，可选择左侧或右侧</string>
+  <string name="ai_entry_position_title">AI 入口位置</string>
+  <string name="ai_entry_position_left">左侧</string>
+  <string name="ai_entry_position_right">右侧</string>
+  <string name="navigation_order_title">菜单排序</string>
+  <string name="navigation_order_hint">拖动右侧手柄排序，松手保存。仅列出菜单内显示的入口；隐藏入口和独立 AI 保留原有排序位置。排序不改变启动页。</string>
+  <string name="navigation_order_reset">恢复默认顺序</string>
+  <string name="navigation_order_move_up">上移</string>
+  <string name="navigation_order_move_down">下移</string>
+  <string name="navigation_style_summary">%1$s · %2$s</string>
   <string name="navigation_style_floating">悬浮菜单</string>
   <string name="navigation_style_floating_desc">胶囊悬浮在页面上方，内容铺满屏幕</string>
   <string name="navigation_style_docked">吸附底部</string>

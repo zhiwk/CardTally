@@ -42,6 +42,7 @@ class ElasticBottomNavigationView @JvmOverloads constructor(
     private var animatedIcon: View? = null
     private var geometryChanged = true
     private var visibleItems = emptyList<Int>()
+    private var externalDestinationSelected = false
 
     private val frame = Choreographer.FrameCallback { time -> tick(time) }
 
@@ -73,6 +74,13 @@ class ElasticBottomNavigationView @JvmOverloads constructor(
         shape.setStroke(if (docked) 0 else (density + 0.5f).toInt(),
             ContextCompat.getColor(context, R.color.navigation_dock_outline))
         invalidateOutline()
+        invalidate()
+    }
+
+    fun setExternalDestinationSelected(selected: Boolean) {
+        if (externalDestinationSelected == selected) return
+        externalDestinationSelected = selected
+        resetMotion()
         invalidate()
     }
 
@@ -126,7 +134,7 @@ class ElasticBottomNavigationView @JvmOverloads constructor(
 
     override fun dispatchDraw(canvas: Canvas) {
         syncTarget()
-        if (initialized) {
+        if (initialized && !externalDestinationSelected) {
             val stretch = (abs(position.velocity) / (900f * density)).coerceIn(0f, 1f) * .25f
             val lift = pressure.value.coerceIn(-.15f, 1.15f)
             val width = capsuleWidth * (1f + stretch + .08f * lift)

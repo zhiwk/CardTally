@@ -39,6 +39,14 @@
 
 先读 BottomNavigationSettingsFragment、BottomNavigationPreferences、MainActivity.refreshBottomNavigationStyle 和 ElasticBottomNavigationView.setDocked。默认悬浮；吸附时 page bottomToTop=nav_shell，非吸附/二级页 bottomToBottom=parent。菜单尺寸由同一 shell 测量，只有悬浮模式添加滚动尾部/FAB额外避让；样式偏好参与完整/云备份。
 
+同页的「AI 入口样式」独立于菜单位置：AiEntryStyle 缺失或未知值默认 SEPARATE_CIRCLE，隐藏原 nav_agent 可见项并显示 AiNavigationButton；显式保存的 IN_MENU 继续使用菜单内，不重写旧选择，也不自动开启 AI 显示总开关。MainActivity 统一处理设置开关、资产显隐、两种入口的页面切换和选中态，SettingsFragment 不再直接操作菜单显隐。独立圆形与其他菜单项的胶囊同属 nav_shell，二级页一起隐藏，吸附时仍整行实底贴底并预留内容空间；悬浮尾垫/FAB/AI输入区继续按整个 shell 实测高度避让。底栏关闭 AI 时剩余菜单恢复全宽但不清除 ai_entry_style；该 string 与原 style 同存 bottom_navigation_prefs，纳入现有备份及类型校验。相关测试源码为 AiEntryStyleTest、AiEntryPositionTest 与 AiNavigationStyleTest，设备测试仅允许隔离 verification 变体。
+
+「AI 入口位置」仅在独立圆形样式显示：AiEntryPosition 缺失/未知默认 LEFT，RIGHT 可选；以 string ai_entry_position 独立存入 bottom_navigation_prefs，参与既有备份和类型校验，不覆盖样式或总开关。MainActivity.refreshBottomNavigationStyle 调整原圆形 View 在 nav_shell 中的顺序及左右 margin，其他菜单内部顺序不变；内侧12dp、吸附外侧8dp/上下4dp随左右对调，悬浮两侧21dp及整行避让不变。切回菜单内隐藏位置单选组但保留选择；关闭 AI 也不清除。修改时同时核对两种菜单位置、左右切换、二级页隐藏、重建与勾选态。
+
+同页「菜单排序」先读 BottomNavigationOrder/BottomNavigationDestination、BottomNavigationOrderAdapter 和 MainActivity.applyBottomNavigationOrder。getVisibleMenuOrder 只列当前可见菜单内入口；手柄 ItemTouchHelper 拖拽结束或读屏上移/下移后以 mergeVisible 合并，保持隐藏/独立 AI 的完整排序槽位。item_order 为稳定英文 key 的逗号分隔 string，同存 bottom_navigation_prefs 并纳入备份类型校验；未知/重复项丢弃，缺项按默认补齐，不用资源整数 ID 或本地化标题保存。恢复默认仅清除此键。MainActivity 用原菜单 ID/图标/文案重建并直接恢复勾选，不能通过 selectedItemId 触发跳页；同时核对隐藏 AI 已选、页面重建、原冷启动页和弹性指示器按可见 ID 顺序重新定位。排序列表随样式选择更新，生命周期退出保存已移动内容并释放 helper/adapter。相关 JVM 为 BottomNavigationOrderTest，设备场景扩展到既有 AiNavigationStyleTest，默认不运行。
+
+拖拽手柄仅在 DOWN 调用 startDrag，由 ItemTouchHelper 管理外层父容器的拦截互斥；禁止从 handle/row 调用 requestDisallowInterceptTouchEvent(true)，否则会同时禁止 RecyclerView 接管 MOVE。AiNavigationStyleTest 的排序场景包含窗口级触摸注入，覆盖连续立即拖动/按住拖动、外层页面不滚动、松手保存及取消后再次拖动，不以适配器方法或读屏上移/下移替代真实触摸路径。
+
 
 ### 改账单页浮动操作显示
 
@@ -108,7 +116,7 @@
 
 默认支出/收入账户与普通/编辑/重复记账通过 `AssetPickerSheetFragment` 复用 `bottom_sheet_default_record_asset_picker.xml`、`DefaultRecordAssetPickerAdapter` 和纯筛选器 `DefaultAssetPickerOptions`，不再内嵌 AssetFragment。两个具体Fragment保留独立结果契约：默认设置仍是 `selected_id`/`for_income`，记账仍是 `selected_asset_id`/`select_destination`。保留普通收支可选无资产（ID0）及转账排除另一侧账户规则，重复记账继续传任务ledgerId并复用原getAllAssets(ledgerId)范围，不改默认账户清空语义。共享层只返回选择、不保存默认值，保留记账页键盘shown/dismissed回调；超过5个账户显示搜索，最多占可用窗口75%。
 
-默认选择器按资产页的资金/信用/充值/理财/应收/应付类型分组；置顶仅在所属组内靠前，空组和搜索后无结果组不展示，不另设重复的置顶列表。修改分类标签映射时同时核对 `AssetFragment` 与 `DefaultAssetPickerOptions.groupOf`，定位选中项须计入标题行。
+默认选择器按资产页的资金/信用/充值/理财/应收/应付类型分组；置顶仅在所属组内靠前，空组和搜索后无结果组不展示，不另设重复的置顶列表。修改分类标签映射时同时核对 `AssetFragment` 与 `DefaultAssetPickerOptions.groupOf`。共用 AssetPickerSheetFragment 新打开从列表头展示（普通收支有「不选择」时该项在前，否则从首个分组标题开始），不再主动定位已选账户；勾选/高亮、排序和回调不变。重建沿用已有搜索与列表位置恢复，不强制归顶。
 
 ### 改数据库或数据展示
 

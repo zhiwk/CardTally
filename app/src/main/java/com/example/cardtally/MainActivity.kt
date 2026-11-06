@@ -10,6 +10,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.cardtally.util.AiAssistantSettingsHelper
 import com.example.cardtally.util.AssetDisplayHelper
+import com.example.cardtally.util.AiEntryStyle
+import com.example.cardtally.util.AiEntryPosition
+import com.example.cardtally.util.BottomNavigationPreferences
 import com.example.cardtally.util.LanguageHelper
 import com.example.cardtally.util.QuickAddHelper
 import com.example.cardtally.util.RecurringRecordScheduler
@@ -37,10 +40,12 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var navShell: View
+    private lateinit var aiNavigationButton: View
     private lateinit var fragmentContainer: View
     private lateinit var localeTransitionOverlay: View
     private val floatingViewBaselines = WeakHashMap<View, Int>()
     private var isBottomNavigationTemporarilyHidden = false
+    private var pendingPrimaryDestination: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applyTheme()
@@ -56,6 +61,8 @@ class MainActivity : AppCompatActivity() {
 
         bottomNavigationView = findViewById(R.id.bottom_navigation)
         navShell = findViewById(R.id.nav_shell)
+        aiNavigationButton = findViewById(R.id.ai_navigation_button)
+        aiNavigationButton.setOnClickListener { openPrimaryDestination(R.id.nav_agent) }
         fragmentContainer = findViewById(R.id.fragment_container)
         localeTransitionOverlay = findViewById(R.id.locale_transition_overlay)
         navShell.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
@@ -85,26 +92,7 @@ class MainActivity : AppCompatActivity() {
         })
         
         bottomNavigationView.setOnItemSelectedListener { item ->
-            val selectedFragment: Fragment? = when (item.itemId) {
-                R.id.nav_ledger -> LedgerFragment()
-                R.id.nav_asset -> AssetFragment()
-                R.id.nav_statistics -> StatisticsFragment()
-                R.id.nav_agent -> AgentFragment()
-                R.id.nav_settings -> SettingsFragment()
-                else -> null
-            }
-
-            selectedFragment?.let {
-                val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
-                if (currentFragment != null && currentFragment::class == it::class) {
-                    return@setOnItemSelectedListener true
-                }
-
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, it)
-                    .commit()
-                true
-            } ?: false
+            openPrimaryDestination(item.itemId)
         }
 
         bottomNavigationView.setOnItemReselectedListener { }
@@ -132,6 +120,26 @@ class MainActivity : AppCompatActivity() {
                 updateBottomNavigationForFragment(it)
             }
         }
+    }
+
+    private fun openPrimaryDestination(destination: Int): Boolean {
+        val fragment = when (destination) {
+            R.id.nav_ledger -> LedgerFragment()
+            R.id.nav_asset -> AssetFragment()
+            R.id.nav_statistics -> StatisticsFragment()
+            R.id.nav_agent -> AgentFragment()
+            R.id.nav_settings -> SettingsFragment()
+            else -> return false
+        }
+        val current = supportFragmentManager.findFragmentById(R.id.fragment_container)
+        if (pendingPrimaryDestination == destination ||
+            (pendingPrimaryDestination == null && current?.javaClass == fragment.javaClass)) return true
+        pendingPrimaryDestination = destination
+        supportFragmentManager.beginTransaction().replace(R.id.fragment_container, fragment)
+            .runOnCommit {
+                if (pendingPrimaryDestination == destination) pendingPrimaryDestination = null
+            }.commit()
+        return true
     }
 
     private fun applyTheme() {
@@ -185,13 +193,51 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateBottomNavigationVisibility() {
+        applyBottomNavigationOrder()
         val showAiAssistant = AiAssistantSettingsHelper.getAiAssistantEnabled(this)
         val showAsset = AssetDisplayHelper.getShowAsset(this)
         val menu = bottomNavigationView.menu
         val aiItem = menu.findItem(R.id.nav_agent)
         val assetItem = menu.findItem(R.id.nav_asset)
-        aiItem.isVisible = showAiAssistant
+        val separateAi = showAiAssistant && BottomNavigationPreferences.getAiEntryStyle(this) == AiEntryStyle.SEPARATE_CIRCLE
+        aiItem.isVisible = showAiAssistant && !separateAi
+        aiNavigationButton.visibility = if (separateAi) View.VISIBLE else View.GONE
         assetItem.isVisible = showAsset
+    }
+
+    private fun applyBottomNavigationOrder() {
+        val menu = bottomNavigationView.menu
+        val order = BottomNavigationPreferences.getMenuOrder(this)
+        if ((0 until menu.size()).map { menu.getItem(it).itemId } == order.map { it.menuId }) return
+        val selected = (0 until menu.size()).map { menu.getItem(it) }
+            .firstOrNull { it.isChecked }?.itemId ?: R.id.nav_ledger
+        // Check items directly instead of invoking selectedItemId: sorting must never navigate.
+        menu.clear()
+        order.forEachIndexed { index, destination ->
+            menu.add(0, destination.menuId, index, destination.titleRes).apply {
+                setIcon(destination.iconRes)
+                isCheckable = true
+            }
+        }
+        menu.findItem(selected)?.isChecked = true
+    }
+
+    private fun syncNavigationSelection() {
+        val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+        val destination = when (fragment) {
+            is LedgerFragment -> R.id.nav_ledger
+            is StatisticsFragment -> R.id.nav_statistics
+            is AssetFragment -> R.id.nav_asset
+            is AgentFragment -> R.id.nav_agent
+            is SettingsFragment -> R.id.nav_settings
+            else -> null
+        }
+        // Keep the hidden native AI item checked: visible menu destinations must not look selected.
+        destination?.let { bottomNavigationView.menu.findItem(it).isChecked = true }
+        val externalSelected = aiNavigationButton.visibility == View.VISIBLE && fragment is AgentFragment
+        aiNavigationButton.isSelected = externalSelected
+        (bottomNavigationView as? com.example.cardtally.view.ElasticBottomNavigationView)
+            ?.setExternalDestinationSelected(externalSelected)
     }
 
     private fun updateBottomNavigationForFragment(fragment: Fragment) {
@@ -209,14 +255,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun refreshBottomNavigationStyle() {
-        val docked = com.example.cardtally.util.BottomNavigationPreferences.isDocked(this)
+        updateBottomNavigationVisibility()
+        syncNavigationSelection()
+        val docked = BottomNavigationPreferences.isDocked(this)
         val side = if (docked) 0 else (21 * resources.displayMetrics.density + 0.5f).toInt()
         val top = if (docked) 0 else (8 * resources.displayMetrics.density + 0.5f).toInt()
         val bottom = if (docked) 0 else resources.getDimensionPixelSize(R.dimen.floating_nav_shell_bottom_padding)
         navShell.setPaddingRelative(side, top, side, bottom)
-        val menuParams = bottomNavigationView.layoutParams
-        menuParams.width = ViewGroup.LayoutParams.MATCH_PARENT
-        bottomNavigationView.layoutParams = menuParams
+        val separateAi = aiNavigationButton.visibility == View.VISIBLE
+        val aiOnLeft = BottomNavigationPreferences.getAiEntryPosition(this) == AiEntryPosition.LEFT
+        val shell = navShell as android.widget.LinearLayout
+        val aiIndex = if (aiOnLeft) 0 else shell.childCount - 1
+        if (shell.indexOfChild(aiNavigationButton) != aiIndex) {
+            // Move the existing destination view, keeping its selection and click/accessibility behavior.
+            shell.removeView(aiNavigationButton)
+            shell.addView(aiNavigationButton, aiIndex)
+        }
+        val aiParams = aiNavigationButton.layoutParams as android.widget.LinearLayout.LayoutParams
+        val edge = if (docked) (8 * resources.displayMetrics.density + .5f).toInt() else 0
+        val gap = (12 * resources.displayMetrics.density + .5f).toInt()
+        aiParams.marginStart = if (aiOnLeft) edge else gap
+        aiParams.marginEnd = if (aiOnLeft) gap else edge
+        aiParams.topMargin = if (docked) (4 * resources.displayMetrics.density + .5f).toInt() else 0
+        aiParams.bottomMargin = aiParams.topMargin
+        aiNavigationButton.layoutParams = aiParams
+        // Docked mode still paints one full-width bottom card, including the space around AI.
+        navShell.background = if (docked && separateAi) android.graphics.drawable.GradientDrawable().apply {
+            setColor(com.example.cardtally.util.ThemeColorHelper.resolveCardSurface(this@MainActivity) or 0xFF000000.toInt())
+            val radius = 12 * resources.displayMetrics.density
+            cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+        } else null
         (bottomNavigationView as? com.example.cardtally.view.ElasticBottomNavigationView)?.setDocked(docked)
         val pageParams = fragmentContainer.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
         val reserve = docked && navShell.visibility == View.VISIBLE

@@ -88,9 +88,9 @@ abstract class AssetPickerSheetFragment : BottomSheetDialogFragment() {
         }
         search.doAfterTextChanged {
             query = it?.toString().orEmpty()
-            showAssets(view, revealSelected = false)
+            showAssets(view)
         }
-        showAssets(view, revealSelected = savedInstanceState == null)
+        showAssets(view)
         val bottomPadding = view.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(view) { root, insets ->
             root.setPadding(root.paddingLeft, root.paddingTop, root.paddingRight,
@@ -99,7 +99,7 @@ abstract class AssetPickerSheetFragment : BottomSheetDialogFragment() {
         }
     }
 
-    private fun showAssets(root: View, revealSelected: Boolean) {
+    private fun showAssets(root: View) {
         val results = DefaultAssetPickerOptions.groupedRows(assets, query, allowNoAsset) { asset ->
             BankIconCatalog.forCard(asset.categoryLabel, asset.categoryIconName, asset.type)?.let {
                 BankIconCatalog.displayLabel(requireContext(), asset.categoryLabel, it)
@@ -113,15 +113,9 @@ abstract class AssetPickerSheetFragment : BottomSheetDialogFragment() {
         }
         root.findViewById<View>(R.id.recycler_default_assets).visibility =
             if (results.isEmpty()) View.GONE else View.VISIBLE
-        val submittedQuery = query
-        pickerAdapter?.submitList(results) {
-            if (view !== root || query != submittedQuery || !revealSelected) return@submitList
-            val index = results.indexOfFirst {
-                (it is DefaultAssetPickerOptions.Row.Account && it.asset.id == selectedAssetId) ||
-                    (it is DefaultAssetPickerOptions.Row.NoAsset && selectedAssetId == null)
-            }
-            if (index >= 0) root.findViewById<RecyclerView>(R.id.recycler_default_assets).scrollToPosition(index)
-        }
+        // Fresh sheets start at the list head; selection only controls row highlighting.
+        // Normal list-position restoration still applies on recreation.
+        pickerAdapter?.submitList(results)
     }
 
     override fun onStart() {
@@ -161,7 +155,7 @@ abstract class AssetPickerSheetFragment : BottomSheetDialogFragment() {
             DatabaseHelper(requireContext(), ledgerId).use {
                 assets = it.getAllAssets(pickerLedgerId).filter { candidate -> candidate.id != excludedAssetId }
             }
-            view?.let { showAssets(it, revealSelected = false) }
+            view?.let(::showAssets)
             return
         }
         returningSelection = true

@@ -6,6 +6,9 @@ import android.view.View
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.widget.FrameLayout
+import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -14,6 +17,7 @@ import com.example.cardtally.model.Asset
 import com.example.cardtally.testing.IsolatedTestGuard
 import org.junit.After
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -30,13 +34,17 @@ class RecordSheetInteractionTest {
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
     private lateinit var databaseHelper: DatabaseHelper
+    private var selectedAssetId = 0L
 
     @Before
     fun setUp() {
         IsolatedTestGuard.requireIsolatedBuild()
         context.deleteDatabase(DATABASE_NAME)
         databaseHelper = DatabaseHelper(context)
-        databaseHelper.addAsset(Asset(name = "ZzVerificationWallet", amount = 100.0))
+        repeat(12) { index ->
+            databaseHelper.addAsset(Asset(name = "ZzVerificationWallet$index", amount = 100.0))
+        }
+        selectedAssetId = databaseHelper.addAsset(Asset(name = "ZzSelectedCredit", categoryLabel = "花呗"))
     }
 
     @After
@@ -50,6 +58,21 @@ class RecordSheetInteractionTest {
         withRecordForm { scenario ->
             verifySheetSwitch(scenario, R.id.row_date, R.id.recycler_date_calendar, R.id.btn_confirm_date)
             verifySheetSwitch(scenario, R.id.row_asset, R.id.recycler_default_assets, R.id.button_record_asset_none)
+            scenario.onActivity { activity ->
+                DefaultRecordAssetPickerBottomSheetFragment.newInstance(false, selectedAssetId)
+                    .show(activity.supportFragmentManager, DefaultRecordAssetPickerBottomSheetFragment.TAG)
+            }
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                val sheet = activity.supportFragmentManager.findFragmentByTag(
+                    DefaultRecordAssetPickerBottomSheetFragment.TAG) as DefaultRecordAssetPickerBottomSheetFragment
+                val list = sheet.requireView().findViewById<RecyclerView>(R.id.recycler_default_assets)
+                assertEquals("default-account sheets also open at their first group header", 0,
+                    (list.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())
+                assertEquals("the first row must remain the group header, not the selected account", 0,
+                    list.adapter!!.getItemViewType(0))
+                sheet.dismiss()
+            }
         }
     }
 
@@ -87,8 +110,12 @@ class RecordSheetInteractionTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 activity.supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, AddRecordFragment())
+                    .replace(R.id.fragment_container, AddRecordFragment.newAssetRecordInstance(
+                        selectedAssetId, requireNotNull(databaseHelper.getCurrentLedger()).id, "2026-11-06"))
                     .commitNow()
+                val root = activity.supportFragmentManager.findFragmentById(R.id.fragment_container)!!.requireView()
+                assertEquals("opening from an asset must retain its selection", "ZzSelectedCredit",
+                    root.findViewById<TextView>(R.id.text_asset_single_value).text.toString())
             }
             instrumentation.waitForIdleSync()
             checks(scenario)
@@ -130,6 +157,12 @@ class RecordSheetInteractionTest {
             if (sheetContentId == R.id.recycler_date_calendar) {
                 val calendar = content as androidx.recyclerview.widget.RecyclerView
                 assertTrue("calendar must render a complete six-row month grid", calendar.adapter?.itemCount == 42)
+            } else if (sheetContentId == R.id.recycler_default_assets) {
+                val list = content as RecyclerView
+                assertEquals("opening the picker must not scroll to the selected credit account", 0,
+                    (list.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())
+                assertEquals("the selected draft account must not change when the picker opens", "ZzSelectedCredit",
+                    fragment.requireView().findViewById<TextView>(R.id.text_asset_single_value).text.toString())
             }
         }
         instrumentation.waitForIdleSync()

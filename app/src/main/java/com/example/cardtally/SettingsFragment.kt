@@ -442,9 +442,12 @@ class SettingsFragment : Fragment() {
     }
 
     private fun refreshSettingsFromStorage() {
-        view?.findViewById<TextView>(R.id.text_bottom_navigation_style)?.setText(
-            if (com.example.cardtally.util.BottomNavigationPreferences.isDocked(requireContext()))
-                R.string.navigation_style_docked else R.string.navigation_style_floating)
+        val navigationPosition = if (com.example.cardtally.util.BottomNavigationPreferences.isDocked(requireContext()))
+            R.string.navigation_style_docked else R.string.navigation_style_floating
+        val aiEntryStyle = if (com.example.cardtally.util.BottomNavigationPreferences.getAiEntryStyle(requireContext()) ==
+            com.example.cardtally.util.AiEntryStyle.SEPARATE_CIRCLE) R.string.ai_entry_style_circle else R.string.ai_entry_style_menu
+        view?.findViewById<TextView>(R.id.text_bottom_navigation_style)?.text = getString(
+            R.string.navigation_style_summary, getString(navigationPosition), getString(aiEntryStyle))
 
         updateThemeText()
         updateCurrentLanguageText()
@@ -597,13 +600,6 @@ class SettingsFragment : Fragment() {
     private fun Int.dp(): Int = (this * resources.displayMetrics.density).toInt()
 
     private fun updateBottomNavigation() {
-        val showAiAssistant = AiAssistantSettingsHelper.getAiAssistantEnabled(requireContext())
-        val showAsset = AssetDisplayHelper.getShowAsset(requireContext())
-        val bottomNavigationView = requireActivity().findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-        val menu = bottomNavigationView.menu
-        val aiItem = menu.findItem(R.id.nav_agent)
-        val assetItem = menu.findItem(R.id.nav_asset)
-        aiItem.isVisible = showAiAssistant
-        assetItem.isVisible = showAsset
+        (activity as? MainActivity)?.refreshBottomNavigationStyle()
     }
 }
