@@ -1,7 +1,7 @@
 package com.example.cardtally.util
 
 enum class LauncherIconMode(val value: Int) {
-    WHITE(0), DARK(1), SYSTEM(2), APP(3);
+    WHITE(0), DARK(1);
 
     companion object {
         fun fromValue(value: Int): LauncherIconMode = entries.firstOrNull { it.value == value } ?: WHITE
@@ -9,10 +9,9 @@ enum class LauncherIconMode(val value: Int) {
 }
 
 object LauncherIconPolicy {
-    fun useDark(mode: LauncherIconMode, systemDark: Boolean, appDark: Boolean): Boolean = when (mode) {
-        LauncherIconMode.WHITE -> false
-        LauncherIconMode.DARK -> true
-        LauncherIconMode.SYSTEM -> systemDark
-        LauncherIconMode.APP -> appDark
+    /** Legacy follow modes freeze to the enabled launcher alias, never the current theme. */
+    fun resolveMode(storedValue: Int?, darkIconEnabled: Boolean): LauncherIconMode = when (storedValue) {
+        2, 3 -> if (darkIconEnabled) LauncherIconMode.DARK else LauncherIconMode.WHITE
+        else -> LauncherIconMode.fromValue(storedValue ?: 0)
     }
 }

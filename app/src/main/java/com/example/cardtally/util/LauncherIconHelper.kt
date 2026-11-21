@@ -3,11 +3,8 @@ package com.example.cardtally.util
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.res.Configuration
-import android.content.res.Resources
 import android.os.Build
 import android.util.Log
-import androidx.appcompat.app.AppCompatDelegate
 
 /** Only launcher aliases are toggled; MainActivity itself always remains enabled. */
 object LauncherIconHelper {
@@ -16,23 +13,17 @@ object LauncherIconHelper {
 
     fun getMode(context: Context): LauncherIconMode {
         val stored = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).all[KEY] as? Int
-        return LauncherIconMode.fromValue(stored ?: 0)
+        if (stored != 2 && stored != 3) return LauncherIconMode.fromValue(stored ?: 0)
+        // Old follow choices become a fixed choice matching the existing launcher entry.
+        // LauncherDark is disabled by default in the manifest, so only an explicit enable is dark.
+        val dark = ComponentName(context.packageName, "${context.packageName}.LauncherDark")
+        val darkIconEnabled = context.packageManager.getComponentEnabledSetting(dark) ==
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        return LauncherIconPolicy.resolveMode(stored, darkIconEnabled).also { saveMode(context, it) }
     }
 
     fun saveMode(context: Context, mode: LauncherIconMode) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt(KEY, mode.value).apply()
-    }
-
-    fun useDark(context: Context): Boolean {
-        // AppCompat can override the Activity's uiMode. Read the system independently.
-        val systemDark = (Resources.getSystem().configuration.uiMode and
-            Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        val appDark = when (ThemeHelper.nightModeFor(ThemeHelper.getTheme(context), ThemeHelper.getWallpaperPalette(context))) {
-            AppCompatDelegate.MODE_NIGHT_YES -> true
-            AppCompatDelegate.MODE_NIGHT_NO -> false
-            else -> systemDark
-        }
-        return LauncherIconPolicy.useDark(getMode(context), systemDark, appDark)
     }
 
     /** Apply only when leaving the Activity, avoiding foreground alias replacement. */
@@ -47,7 +38,7 @@ object LauncherIconHelper {
         val pm = context.packageManager
         val white = ComponentName(context.packageName, "${context.packageName}.LauncherWhite")
         val dark = ComponentName(context.packageName, "${context.packageName}.LauncherDark")
-        val desired = if (useDark(context)) dark else white
+        val desired = if (getMode(context) == LauncherIconMode.DARK) dark else white
         val other = if (desired == white) dark else white
         val old = listOf(white, dark).associateWith(pm::getComponentEnabledSetting)
         fun isEnabled(component: ComponentName): Boolean = when (old.getValue(component)) {

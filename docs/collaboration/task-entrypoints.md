@@ -198,7 +198,7 @@
 
 ### 改主题 / 样式 / 视觉一致性
 
-桌面图标四选一见 `LauncherIconMode/LauncherIconPolicy`、`LauncherIconHelper`、`AppearanceSettingsFragment` 及外观页尾部图标卡片。theme_prefs/launcher_icon_mode整数0–3，默认白底，已纳入BackupArchiveManager/DataTransferManager整数恢复；只备份模式，不备份PackageManager组件状态。系统深浅色读Resources.getSystem，应用深浅色复用ThemeHelper.nightModeFor（含壁纸配色）。MainActivity.onStop非配置重建时同步白/深两个applicationId别名；仅切换别名，不能禁用MainActivity。API33+批量，旧版先启用目标再禁用旧项，失败尝试回滚；不要加后台常驻或宣称关闭应用后系统变化可立即刷新。桌面快捷方式迁移/缓存和dev/release实际入口需要用户授权后设备验证。
+桌面图标仅手动二选一见 `LauncherIconMode/LauncherIconPolicy`、`LauncherIconHelper`、`AppearanceSettingsFragment` 及外观页尾部图标卡片。theme_prefs/launcher_icon_mode整数0/1，默认白底，已纳入BackupArchiveManager/DataTransferManager整数恢复；只备份模式，不备份PackageManager组件状态。不读取系统或应用配色；旧跟随值2/3在首次getMode时按本机LauncherDark是否显式启用解析成固定深/白并保存，旧备份恢复同规则；缺失/未知值默认白底，已有0/1不受组件状态影响。MainActivity.onStop非配置重建时同步白/深两个applicationId别名；仅切换别名，不能禁用MainActivity。API33+批量，旧版先启用目标再禁用旧项，失败尝试回滚；不要加后台常驻或承诺桌面立即刷新。LauncherIconPolicyTest覆盖默认/未知值、固定选择、旧值迁移及迁移后固定。桌面快捷方式迁移/缓存和dev/release实际入口需要用户授权后设备验证。
 
 先读：
 
@@ -222,6 +222,10 @@
 分类管理半透明卡片后的编辑/删除见 `CategoryAdapter`、`item_category.xml` 与 `SwipeToEditDeleteHelper` 的 `clipCoveredActions=true`：操作层初始 INVISIBLE，拖动及吸附动画按前卡片右边界裁切，只绘制已露出部分，收起时隐藏；不能通过改成实底取消用户选定的不透明度。绑定/回收先 `dispose()` 取消旧动画、长按及布局监听，再恢复闭合状态。共享 helper 其他宿主默认不开启裁切，修改时也核对归档资产回调。
 
 分类支出/收入样式见 `fragment_category_manage.xml`、`item_category_type_tab.xml`、`bg_category_type_indicator.xml` 与 `CategoryManageFragment.styleTypeTab`：保持原生 TabLayout、48dp 点击区；标签透明，只有父卡片铺 `cardSurfaceColor`，16sp 字体及选中加粗/未选中 muted 色与统计页一致，28dp × 2dp 横线原生 180ms 过渡。不要重新给标签设置实底 `bg_category_tab_white`。
+
+### 改 WebDAV 配置二维码
+
+先读云备份决策的「2026-11-17 WebDAV 配置二维码」、`cloud/CloudBackupFragment`、`WebDavQrController`、`WebDavQrCodec`、`WebDavQrImages`、`WebDavQrCaptureActivity`、`CloudConnectionRules`、`fragment_cloud_backup.xml` 及两份 `dialog_webdav_qr_*.xml`。分享未加密且包含登录密码，可选备份密码每次默认关闭，必须先确认风险；不能直接导出CloudConfig.json或顺带带出自动备份/keep/device。camera使用ZXing4.3.0、本机图片识别/生成，无在线二维码服务；相机只返回内存token，不把密码放入待保存Intent。导入确认只填草稿，清空未携带的旧备份密码并取消表单保存密码/自动备份勾选，keep不变，清除旧列表与预检；不修改保存配置/调度任务或自动发请求。分享PNG只在明确分享时落入cache/webdav_qr窄路径，过期文件在下次进入或分享时清理，不能声称定时自动删除。保留原HTTPS、证书、重定向及防覆盖规则。JVM源码为WebDavQrCodecTest，未获明确授权不运行构建/测试/扫码/分享或真实WebDAV请求。
 
 ### 改文案 / 国际化 / 语言切换
 

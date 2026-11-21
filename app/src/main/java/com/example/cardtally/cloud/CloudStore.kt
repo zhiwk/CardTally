@@ -22,8 +22,8 @@ internal class CloudStore(private val config: CloudConfig, private val gate: () 
         .connectTimeout(20, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).writeTimeout(60, TimeUnit.SECONDS)
         .addNetworkInterceptor { chain -> gate(); chain.proceed(chain.request()) }.build()
     init {
-        require(base.scheme == "https" && base.username.isEmpty() && base.password.isEmpty() && base.query == null && base.fragment == null)
-        require(prefix.none { it == "." || it == ".." })
+        require(CloudConnectionRules.validEndpoint(config.endpoint))
+        require(CloudConnectionRules.validPrefix(config.prefix))
     }
     fun cancel() = client.dispatcher.cancelAll()
     private fun url(name: String? = null): HttpUrl {

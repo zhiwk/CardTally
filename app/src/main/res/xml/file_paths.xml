@@ -2,4 +2,5 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <files-path name="record_photos" path="record_photos/" />
     <cache-path name="app_updates" path="updates/" />
+    <cache-path name="webdav_qr" path="webdav_qr/" />
 </paths>

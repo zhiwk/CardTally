@@ -8,25 +8,33 @@ class LauncherIconPolicyTest {
         assertEquals(LauncherIconMode.WHITE, LauncherIconMode.fromValue(-1))
         assertEquals(LauncherIconMode.WHITE, LauncherIconMode.fromValue(0))
         assertEquals(LauncherIconMode.WHITE, LauncherIconMode.fromValue(99))
+        for (enabled in listOf(false, true)) {
+            for (stored in listOf(null, -1, 99)) {
+                assertEquals(LauncherIconMode.WHITE, LauncherIconPolicy.resolveMode(stored, enabled))
+            }
+        }
         LauncherIconMode.entries.forEach { assertEquals(it, LauncherIconMode.fromValue(it.value)) }
     }
 
-    @Test fun fixedChoicesIgnoreBothThemes() {
-        for (system in listOf(false, true)) for (app in listOf(false, true)) {
-            assertEquals(false, LauncherIconPolicy.useDark(LauncherIconMode.WHITE, system, app))
-            assertEquals(true, LauncherIconPolicy.useDark(LauncherIconMode.DARK, system, app))
+    @Test fun fixedChoicesIgnoreEnabledAlias() {
+        assertEquals(listOf(LauncherIconMode.WHITE, LauncherIconMode.DARK), LauncherIconMode.entries.toList())
+        for (enabled in listOf(false, true)) {
+            assertEquals(LauncherIconMode.WHITE, LauncherIconPolicy.resolveMode(0, enabled))
+            assertEquals(LauncherIconMode.DARK, LauncherIconPolicy.resolveMode(1, enabled))
         }
     }
 
-    @Test fun systemChoiceIgnoresAppOverride() {
-        for (system in listOf(false, true)) for (app in listOf(false, true)) {
-            assertEquals(system, LauncherIconPolicy.useDark(LauncherIconMode.SYSTEM, system, app))
+    @Test fun legacyFollowChoicesFreezeToEnabledAlias() {
+        for (stored in listOf(2, 3)) {
+            assertEquals(LauncherIconMode.WHITE, LauncherIconPolicy.resolveMode(stored, false))
+            assertEquals(LauncherIconMode.DARK, LauncherIconPolicy.resolveMode(stored, true))
         }
     }
 
-    @Test fun appChoiceIgnoresSystemOverride() {
-        for (system in listOf(false, true)) for (app in listOf(false, true)) {
-            assertEquals(app, LauncherIconPolicy.useDark(LauncherIconMode.APP, system, app))
+    @Test fun migratedChoicesStayFixedWhenEnabledAliasChanges() {
+        for (stored in listOf(2, 3)) for (enabled in listOf(false, true)) {
+            val migrated = LauncherIconPolicy.resolveMode(stored, enabled)
+            assertEquals(migrated, LauncherIconPolicy.resolveMode(migrated.value, !enabled))
         }
     }
 }

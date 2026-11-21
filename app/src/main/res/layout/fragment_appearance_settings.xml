@@ -286,14 +286,6 @@
                             style="@style/Widget.CardTally.AppearanceChoice" android:layout_width="match_parent" android:layout_height="wrap_content"
                             android:saveEnabled="false" android:background="?attr/selectableItemBackground" android:text="@string/launcher_icon_dark"
                             android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
-                        <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/radio_launcher_system"
-                            style="@style/Widget.CardTally.AppearanceChoice" android:layout_width="match_parent" android:layout_height="wrap_content"
-                            android:saveEnabled="false" android:background="?attr/selectableItemBackground" android:text="@string/launcher_icon_system"
-                            android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
-                        <com.google.android.material.radiobutton.MaterialRadioButton android:id="@+id/radio_launcher_app"
-                            style="@style/Widget.CardTally.AppearanceChoice" android:layout_width="match_parent" android:layout_height="wrap_content"
-                            android:saveEnabled="false" android:background="?attr/selectableItemBackground" android:text="@string/launcher_icon_app"
-                            android:textColor="?attr/colorOnSurface" android:textSize="16sp" />
                     </RadioGroup>
                     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:paddingHorizontal="16dp" android:paddingTop="8dp" android:text="@string/launcher_icon_hint"

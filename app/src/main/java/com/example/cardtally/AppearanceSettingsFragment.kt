@@ -79,8 +79,6 @@ class AppearanceSettingsFragment : Fragment() {
             val mode = when (checkedId) {
                 R.id.radio_launcher_white -> LauncherIconMode.WHITE
                 R.id.radio_launcher_dark -> LauncherIconMode.DARK
-                R.id.radio_launcher_system -> LauncherIconMode.SYSTEM
-                R.id.radio_launcher_app -> LauncherIconMode.APP
                 else -> return@setOnCheckedChangeListener
             }
             // Save immediately; MainActivity applies aliases after leaving the foreground.
@@ -94,8 +92,6 @@ class AppearanceSettingsFragment : Fragment() {
             root.findViewById<RadioGroup>(R.id.group_launcher_icon).check(when (LauncherIconHelper.getMode(requireContext())) {
                 LauncherIconMode.WHITE -> R.id.radio_launcher_white
                 LauncherIconMode.DARK -> R.id.radio_launcher_dark
-                LauncherIconMode.SYSTEM -> R.id.radio_launcher_system
-                LauncherIconMode.APP -> R.id.radio_launcher_app
             })
         } finally {
             syncingIconSelection = false

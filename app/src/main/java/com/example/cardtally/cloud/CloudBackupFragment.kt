@@ -1,7 +1,6 @@
 package com.example.cardtally.cloud
 
 import android.os.Bundle
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
@@ -18,6 +17,7 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
     private var dialog: AlertDialog? = null
     private val fields = listOf(R.id.cloud_endpoint, R.id.cloud_user, R.id.cloud_secret,
         R.id.cloud_prefix, R.id.cloud_password, R.id.cloud_keep)
+    private val qr = WebDavQrController(this, ::qrConnection, ::applyQrConnection)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding = view
@@ -56,6 +56,7 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
                     catch (_: Exception) { toast(R.string.cloud_config_failed) }
                 }.show()
         }
+        qr.bind(view)
         model.state.observe(viewLifecycleOwner) { ui -> render(ui) }
         val prefs = requireContext().getSharedPreferences("cloud_internal", android.content.Context.MODE_PRIVATE)
         val stamp = prefs.getLong("status_time", 0)
@@ -94,34 +95,63 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
                 (config == null || (config.automatic && all.optString("active") == "webdav"))
         } catch (_: Exception) { toast(R.string.cloud_config_failed) }
     }
-    private fun config(): CloudConfig? {
+    private fun qrConnection(includeBackupPassword: Boolean): WebDavQrConnection? {
         val view = binding ?: return null
         fun field(id: Int) = view.findViewById<EditText>(id)
         fun text(id: Int) = field(id).text.toString()
         fields.forEach { field(it).error = null }
-        fun reject(id: Int, message: Int): CloudConfig? {
+        fun reject(id: Int, message: Int): WebDavQrConnection? {
             field(id).error = getString(message)
             field(id).requestFocus()
             return null
         }
         val endpoint = text(R.id.cloud_endpoint).trim()
-        val url = endpoint.toHttpUrlOrNull()
-        if (url == null || url.scheme != "https" || url.username.isNotEmpty() || url.password.isNotEmpty() || url.query != null || url.fragment != null)
+        if (!CloudConnectionRules.validEndpoint(endpoint))
             return reject(R.id.cloud_endpoint, R.string.cloud_endpoint_error)
         if (text(R.id.cloud_user).isBlank()) return reject(R.id.cloud_user, R.string.cloud_required_error)
         if (text(R.id.cloud_secret).isBlank()) return reject(R.id.cloud_secret, R.string.cloud_required_error)
         val prefix = text(R.id.cloud_prefix).trim()
-        if (prefix.trim('/').split('/').any { it == "." || it == ".." })
+        if (!CloudConnectionRules.validPrefix(prefix))
             return reject(R.id.cloud_prefix, R.string.cloud_prefix_error)
-        if (text(R.id.cloud_password).length < 8) return reject(R.id.cloud_password, R.string.cloud_password_error)
-        val keep = text(R.id.cloud_keep).toIntOrNull()
-        if (keep == null || keep !in 1..365) return reject(R.id.cloud_keep, R.string.cloud_keep_error)
-        val config = CloudConfig(endpoint, text(R.id.cloud_user).trim(), text(R.id.cloud_secret), prefix, text(R.id.cloud_password),
+        val password = if (includeBackupPassword) text(R.id.cloud_password) else null
+        if (password != null && password.length < 8) return reject(R.id.cloud_password, R.string.cloud_password_error)
+        return WebDavQrConnection(endpoint, text(R.id.cloud_user).trim(), text(R.id.cloud_secret), prefix, password)
+    }
+    private fun config(): CloudConfig? {
+        val view = binding ?: return null
+        val connection = qrConnection(includeBackupPassword = true) ?: return null
+        val keepField = view.findViewById<EditText>(R.id.cloud_keep)
+        val keep = keepField.text.toString().toIntOrNull()
+        if (keep == null || keep !in 1..365) {
+            keepField.error = getString(R.string.cloud_keep_error)
+            keepField.requestFocus()
+            return null
+        }
+        val config = CloudConfig(connection.endpoint, connection.user, connection.secret, connection.prefix,
+            requireNotNull(connection.backupPassword),
             view.findViewById<CheckBox>(R.id.cloud_auto).isChecked, keep)
         return try {
             CloudStore(config).cancel() // Validate locally; do not send credentials or perform a request.
             config
         } catch (_: IllegalArgumentException) { toast(R.string.cloud_invalid); null }
+    }
+    private fun applyQrConnection(connection: WebDavQrConnection) {
+        val view = binding ?: return
+        if (model.state.value?.busy == true) return
+        fields.forEach { view.findViewById<EditText>(it).error = null }
+        fun value(id: Int, text: String) { view.findViewById<EditText>(id).setText(text) }
+        value(R.id.cloud_endpoint, connection.endpoint)
+        value(R.id.cloud_user, connection.user)
+        value(R.id.cloud_secret, connection.secret)
+        value(R.id.cloud_prefix, connection.prefix)
+        // Never pair the imported account with the old form's encryption password.
+        value(R.id.cloud_password, connection.backupPassword.orEmpty())
+        view.findViewById<CheckBox>(R.id.cloud_auto).isChecked = false
+        view.findViewById<CheckBox>(R.id.cloud_remember).isChecked = false
+        // Discard old connection results/previews, not the persisted connection or its jobs.
+        model.dismissPreview()
+        view.findViewById<TextView>(R.id.cloud_usage).text = ""
+        toast(R.string.cloud_qr_imported)
     }
     private fun run(action: String, snapshot: CloudSnapshot? = null, balances: Boolean = false) {
         val config = config() ?: return
@@ -154,6 +184,7 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
     })
     private fun render(ui: CloudBackupViewModel.Ui) {
         val view = binding ?: return
+        qr.setCloudBusy(ui.busy)
         val httpDetail = ui.httpStatus?.let { "\n" + getString(R.string.cloud_http_detail, ui.httpMethod, it) }.orEmpty()
         val info = message(ui.message) + httpDetail + if (ui.bytes > 0 || ui.expected > 0) "\n" + getString(R.string.cloud_transfer_value, ui.bytes / 1048576.0, ui.expected / 1048576.0) else ""
         view.findViewById<TextView>(R.id.cloud_status).text = info
@@ -209,5 +240,9 @@ class CloudBackupFragment : Fragment(R.layout.fragment_cloud_backup) {
         }
     }
     private fun toast(id: Int) { context?.let { Toast.makeText(it, id, Toast.LENGTH_LONG).show() } }
-    override fun onDestroyView() { dialog?.dismiss(); dialog = null; binding = null; super.onDestroyView() }
+    override fun onDestroyView() {
+        qr.destroyView()
+        dialog?.dismiss(); dialog = null; binding = null
+        super.onDestroyView()
+    }
 }

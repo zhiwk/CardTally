@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cloud_qr_share">分享二维码</string>
+    <string name="cloud_qr_import">扫码导入</string>
+    <string name="cloud_qr_help">可分享当前表单的连接，或用相机、图片导入 CardTally 配置码。二维码含登录凭据，请仅交给可信设备。</string>
+    <string name="cloud_qr_share_warning">二维码不加密，包含当前表单的服务地址、用户名、登录密码和备份目录。任何拿到图片的人都能解码，并在该账号权限范围内访问 WebDAV。只分享给可信设备，勿公开或发到群聊。</string>
+    <string name="cloud_qr_include_password">同时分享备份加密密码</string>
+    <string name="cloud_qr_full_warning">同时分享登录凭据和备份密码后，拿到二维码的人可能下载并解密财务备份。备份加密无法再保护这份分享。确认接受此风险后再生成。</string>
+    <string name="cloud_qr_generate">确认风险并生成</string>
+    <string name="cloud_qr_generate_failed">无法生成二维码。请检查连接字段；二维码内容过长时，请缩短地址或目录，或不携带备份密码。</string>
+    <string name="cloud_qr_image_description">含 WebDAV 登录凭据的配置二维码，可能同时含备份加密密码</string>
+    <string name="cloud_qr_image_hint">请用另一台设备扫描，或点击「分享图片」。二维码不加密，可能包含备份加密密码。应用内禁止截图；导出的图片仍可被接收方复制或转发。</string>
+    <string name="cloud_qr_share_image">分享图片</string>
+    <string name="cloud_qr_share_failed">无法分享二维码图片，请稍后重试或直接用另一台设备扫描。</string>
+    <string name="cloud_qr_close">关闭</string>
+    <string name="cloud_qr_scan_camera">相机扫码</string>
+    <string name="cloud_qr_scan_image">从图片识别</string>
+    <string name="cloud_qr_scan_prompt">扫描 CardTally WebDAV 配置二维码</string>
+    <string name="cloud_qr_camera_denied">未授予相机权限。可从图片识别，或在系统设置中允许相机权限后重试。</string>
+    <string name="cloud_qr_camera_failed">无法启动相机，请检查设备相机是否可用，或从图片识别。</string>
+    <string name="cloud_qr_image_failed">未能识别支持的配置码。请选择清晰的二维码图片（不超过 16MB）；内容、版本或长度不支持时请重新生成。</string>
+    <string name="cloud_qr_invalid">不是受支持的 CardTally WebDAV 配置码，或地址、目录、字段及内容长度不符合要求。</string>
+    <string name="cloud_qr_import_preview">核对导入连接</string>
+    <string name="cloud_qr_password_included">已包含（隐藏）</string>
+    <string name="cloud_qr_password_missing">未包含，将清空表单中的旧备份密码</string>
+    <string name="cloud_qr_import_summary">服务地址：%1$s\n用户名：%2$s\n备份目录：%3$s\n登录密码：已包含（隐藏）\n备份加密密码：%4$s\n\n仅导入可信来源。这将替换当前未保存的表单，取消表单中的保存密码和自动备份勾选，不改变已保存配置及现有任务。不会自动联网、保存或恢复；请核对后手动测试并确认保存。</string>
+    <string name="cloud_qr_fill_form">确认填入</string>
+    <string name="cloud_qr_imported">连接已填入，尚未保存。请核对密码，手动测试并确认保存。</string>
+</resources>

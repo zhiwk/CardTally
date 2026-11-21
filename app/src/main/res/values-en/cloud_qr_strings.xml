@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cloud_qr_share">Share QR code</string>
+    <string name="cloud_qr_import">Import QR code</string>
+    <string name="cloud_qr_help">Share the current form, or import a CardTally configuration code using the camera or an image. The QR code contains login credentials. Share only with trusted devices.</string>
+    <string name="cloud_qr_share_warning">This QR code is not encrypted. It contains the endpoint, username, login password and backup directory from the current form. Anyone with the image can decode it and access WebDAV within this account’s permissions. Share only with trusted devices, never publicly or in group chats.</string>
+    <string name="cloud_qr_include_password">Also share the backup encryption password</string>
+    <string name="cloud_qr_full_warning">With both login credentials and the backup password, anyone with the QR code may download and decrypt financial backups. Backup encryption no longer protects this shared information. Generate only if you accept this risk.</string>
+    <string name="cloud_qr_generate">Accept risk and generate</string>
+    <string name="cloud_qr_generate_failed">Cannot generate the QR code. Check the connection fields. If the content is too long, shorten the endpoint or directory, or exclude the backup password.</string>
+    <string name="cloud_qr_image_description">Configuration QR code containing WebDAV login credentials and possibly the backup encryption password</string>
+    <string name="cloud_qr_image_hint">Scan with another device or choose Share image. This code is not encrypted and may include the backup password. Screenshots are blocked in the app; recipients can still copy or forward exported images.</string>
+    <string name="cloud_qr_share_image">Share image</string>
+    <string name="cloud_qr_share_failed">Cannot share the QR image. Try again, or scan directly with another device.</string>
+    <string name="cloud_qr_close">Close</string>
+    <string name="cloud_qr_scan_camera">Scan with camera</string>
+    <string name="cloud_qr_scan_image">Choose an image</string>
+    <string name="cloud_qr_scan_prompt">Scan a CardTally WebDAV configuration QR code</string>
+    <string name="cloud_qr_camera_denied">Camera permission was not granted. Choose an image instead, or allow camera access in system settings and retry.</string>
+    <string name="cloud_qr_camera_failed">Cannot start the camera. Check camera availability or choose an image instead.</string>
+    <string name="cloud_qr_image_failed">No supported configuration code could be read. Choose a clear QR image up to 16MB. Regenerate codes with unsupported content, version or length.</string>
+    <string name="cloud_qr_invalid">Not a supported CardTally WebDAV code, or the endpoint, directory, fields or content length is invalid.</string>
+    <string name="cloud_qr_import_preview">Review imported connection</string>
+    <string name="cloud_qr_password_included">Included (hidden)</string>
+    <string name="cloud_qr_password_missing">Not included; the old backup password in the form will be cleared</string>
+    <string name="cloud_qr_import_summary">Endpoint: %1$s\nUsername: %2$s\nDirectory: %3$s\nLogin password: Included (hidden)\nBackup encryption password: %4$s\n\nImport only from trusted sources. This replaces the unsaved form and unchecks Remember password and Automatic backup in the form. Saved settings and existing tasks are unchanged. No automatic connection, saving or restore. Review, test manually and confirm Save.</string>
+    <string name="cloud_qr_fill_form">Confirm and fill form</string>
+    <string name="cloud_qr_imported">Connection filled in, not saved. Check passwords, test manually and confirm Save.</string>
+</resources>
